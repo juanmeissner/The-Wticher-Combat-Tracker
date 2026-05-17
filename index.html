@@ -151,7 +151,7 @@
                 <div class="grid grid-cols-2 gap-2">
                     <button onclick="openModal('player')" class="btn-control hover:bg-blue-900/40 border-blue-900/50" title="Add Jogador">🧙‍♂️</button>
                     <button onclick="openModal('monster')" class="btn-control hover:bg-slate-700" title="Add Monstro">🧌</button>
-                    <button onclick="endCombat()" onmousedown="startEndCombatPress(event)" onmouseup="cancelEndCombatPress(event)" onmouseleave="cancelEndCombatPress(event)" ontouchstart="startEndCombatPress(event)" ontouchend="cancelEndCombatPress(event)" class="btn-control hover:bg-red-900/40 border-red-900/50" title="Terminar Combate (Segure 3s para apagar tudo)">❌</button>
+                    <button onclick="endCombat()" onmousedown="startEndCombatPress(event)" onmouseup="cancelEndCombatPress(event)" onmouseleave="cancelEndCombatPress(event)" ontouchstart="startEndCombatPress(event)" ontouchend="cancelEndCombatPress(event)" class="btn-control hover:bg-red-700/30 border-red-900/50" title="Terminar Combate (Segure 3s para apagar tudo)">❌</button>
                     <button onclick="nextTurn()" class="btn-control hover:bg-amber-900/40 border-amber-900/50" title="Próximo">⏩</button>
                     <button onclick="openConditionMenu()" class="btn-control hover:bg-slate-700" title="Condições">🌀</button>
                     <button onclick="toggleBrainStatus()" class="btn-control hover:bg-slate-700" title="Concentração (🧠)">🧠</button>
@@ -189,6 +189,11 @@
                 <button onclick="openDamageBodyModal()" class="flex-1 bg-red-600 hover:bg-red-500 text-white rounded-xl flex items-center justify-center shadow-lg text-2xl" title="Dano / Add Falha (0 HP)">
                     💀
                 </button>
+                <button onclick="openSTModal()"
+                class="flex-1 bg-cyan-600 hover:bg-cyan-500 text-white rounded-xl flex items-center justify-center shadow-lg text-2xl"
+                title="Gerenciar ST">
+                🔷
+                </button>
                 <button onclick="applyInitiative()" onmousedown="startInitPress(event)" onmouseup="cancelInitPress(event)" onmouseleave="cancelInitPress(event)" ontouchstart="startInitPress(event)" ontouchend="cancelInitPress(event)" class="flex-1 bg-blue-600 hover:bg-blue-500 text-white rounded-xl flex items-center justify-center shadow-lg" title="Definir Iniciativa">
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M13 10h7l-9 11v-7H4l9-11v7z"/></svg>
                 </button>
@@ -211,6 +216,10 @@
                 <div>
                     <label class="text-xs text-slate-500 font-bold uppercase">HP Max</label>
                     <input type="number" id="hpInp" placeholder="10">
+                </div>
+                <div>
+                    <label class="text-xs text-slate-500 font-bold uppercase">ST Max</label>
+                    <input type="number" id="stInp" placeholder="10">
                 </div>
                 <div>
                     <label class="text-xs text-slate-500 font-bold uppercase">CA</label>
@@ -324,6 +333,41 @@
 
     </div>
 </div>
+<!-- ========================================= -->
+
+<!-- ========================================= -->
+<!-- MODAL ST -->
+<!-- ========================================= -->
+
+<div id="stModal" class="modal" style="z-index: 82;">
+    <div class="bg-slate-900 p-6 rounded-2xl w-full max-w-sm border border-slate-700 text-center">
+
+        <h2 class="text-xl font-bold mb-6 text-cyan-400">
+            Gerenciar ST
+        </h2>
+
+        <div class="flex flex-col gap-3">
+
+            <button onclick="applyST(false)"
+                class="p-4 rounded-xl bg-cyan-700 font-bold hover:bg-cyan-600 transition-all">
+                Gastar ST
+            </button>
+
+            <button onclick="applyST(true)"
+                class="p-4 rounded-xl bg-emerald-700 font-bold hover:bg-emerald-600 transition-all">
+                Regenerar ST
+            </button>
+
+        </div>
+
+        <button onclick="closeSTModal()"
+            class="mt-4 w-full p-3 rounded-xl bg-slate-700 hover:bg-slate-600 transition-all">
+            Cancelar
+        </button>
+
+    </div>
+</div>
+
     <script>
         let combatants = [];
         let activeTurnId = null; 
@@ -332,8 +376,8 @@
         let monsterCounter = 1;
         let playerCounter = 1;
         let currentInput = "0";
-        let lastMonsterData = { hp: "", ca: "", atk: "" };
-        let lastPlayerData = { hp: "", ca: "", atk: "" };
+        let lastMonsterData = { hp: "", st: "", ca: "", atk: "" };
+        let lastPlayerData = { hp: "", st: "", ca: "", atk: "" };
 
         let pressTimer;
         let startY = 0; // Para ignorar scrolls na delegação
@@ -444,6 +488,7 @@
         function openModal(type) {
             const nameInput = document.getElementById('nameInp');
             const hpInp = document.getElementById('hpInp');
+            const stInp = document.getElementById('stInp');
             const caInp = document.getElementById('caInp');
             const atkInp = document.getElementById('atkInp');
             
@@ -455,11 +500,13 @@
             if (type === 'monster') {
                 nameInput.value = "Inimigo " + monsterCounter;
                 hpInp.value = lastMonsterData.hp;
+                stInp.value = lastMonsterData.st;
                 caInp.value = lastMonsterData.ca;
                 atkInp.value = lastMonsterData.atk;
             } else {
                 nameInput.value = "Jogador " + playerCounter;
                 hpInp.value = lastPlayerData.hp;
+                stInp.value = lastPlayerData.st;
                 caInp.value = lastPlayerData.ca;
                 atkInp.value = lastPlayerData.atk;
             }
@@ -474,6 +521,7 @@
             const name = document.getElementById('nameInp').value;
             const init = parseInt(document.getElementById('initInp').value) || 0;
             const hp = parseInt(document.getElementById('hpInp').value) || 1;
+            const st = parseInt(document.getElementById('stInp').value) || 0;
             const ca = parseInt(document.getElementById('caInp').value) || 10;
             const atk = document.getElementById('atkInp').value || "-";
 
@@ -489,6 +537,8 @@
                     combatants[index].initiative = init;
                     combatants[index].hpMax = hp;
                     if (combatants[index].hpCurrent > hp) combatants[index].hpCurrent = hp;
+                    combatants[index].stMax = st;
+                    if (combatants[index].stCurrent > st) combatants[index].stCurrent = st;
                     combatants[index].ca = ca;
                     combatants[index].atkInfo = atk;
                     
@@ -511,6 +561,8 @@
                     initiative: init,
                     hpMax: hp,
                     hpCurrent: hp,
+                    stMax: st,
+                    stCurrent: st,
                     ca,
                     atkInfo: atk,
                     type: modalType,
@@ -525,10 +577,10 @@
 
                 if (modalType === 'monster') {
                     monsterCounter++;
-                    lastMonsterData = { hp, ca, atk };
+                    lastMonsterData = { hp, st, ca, atk };
                 } else {
                     playerCounter++;
-                    lastPlayerData = { hp, ca, atk };
+                    lastPlayerData = { hp, st, ca, atk };
                     savePlayersToStorage();
                 }
             }
@@ -774,7 +826,11 @@
                 const card = document.createElement('div');
                 card.id = `card-${c.id}`;
                 
-                const opacityClass = isEliminated ? 'opacity-50 grayscale' : 'bg-slate-800/80';
+                const opacityClass = isEliminated
+    ? 'opacity-50 grayscale'
+    : (c.type === 'monster'
+        ? 'bg-red-700/30'
+        : 'bg-emerald-950/40');
                 card.className = `combat-card border border-slate-700 p-0 rounded-2xl cursor-pointer transition-all relative overflow-hidden
                     ${selectedId === c.id ? 'card-selected' : ''} 
                     ${activeTurnId === c.id && !isEliminated ? 'active-turn' : ''}
@@ -840,9 +896,23 @@
                         </div>
                         <div class="flex items-center gap-2 shrink-0">
                             <div class="status-container text-xl flex gap-1">${statusHtml}</div>
-                            <div class="hp-container text-center py-1 w-20">
-                                ${hpDisplayHtml}
-                            </div>
+<div class="flex flex-col items-end justify-center text-right min-w-[72px]">
+
+    <div class="hp-container text-center">
+        ${hpDisplayHtml}
+    </div>
+
+    <div class="mt-1">
+        <div class="text-sm font-bold leading-none text-cyan-400">
+            ${c.stCurrent ?? 0}/${c.stMax ?? 0}
+        </div>
+
+        <div class="text-[10px] uppercase text-cyan-600 font-bold tracking-wider leading-none mt-1 text-center">
+            ST
+        </div>
+    </div>
+
+</div>
                         </div>
                     </div>
                 `;
@@ -873,31 +943,57 @@
             }
 
             const hpContainer = card.querySelector('.hp-container');
-            if (hpContainer) {
-                const hpColor = c.type === 'monster' ? 'text-red-500' : 'text-emerald-400';
-                if (isDeadMonster) {
-                    hpContainer.innerHTML = `<div class="hp-text text-3xl leading-none pt-1">💀</div>`;
-                } else if (isDeadPlayer) {
-                    hpContainer.innerHTML = `
-                        <div class="hp-text text-3xl leading-none pt-1">💀</div>
-                        <div class="text-[10px] uppercase text-red-500 font-bold tracking-wider leading-none mt-1">Morto</div>
-                    `;
-                } else if (c.hpCurrent <= 0 && !c.stabilized) {
-                    const s = c.deathSaves?.success || 0;
-                    const f = c.deathSaves?.failures || 0;
-                    hpContainer.innerHTML = `
-                        <div class="hp-text text-xl font-bold leading-none text-red-500">0/${c.hpMax}</div>
-                        <div class="text-[11px] font-bold mt-1 tracking-widest leading-none">
-                            <span class="text-emerald-400">S${s}</span><span class="text-slate-500 mx-1">|</span><span class="text-red-500">F${f}</span>
-                        </div>
-                    `;
-                } else {
-                    hpContainer.innerHTML = `
-                        <div class="hp-text text-xl font-bold leading-none ${hpColor}">${c.hpCurrent}/${c.hpMax}</div>
-                        <div class="text-[10px] uppercase text-slate-500 font-bold tracking-wider leading-none mt-1">HP</div>
-                    `;
-                }
-            }
+
+if (hpContainer) {
+
+    const hpColor = c.type === 'monster'
+        ? 'text-red-500'
+        : 'text-emerald-400';
+
+    if (isDeadMonster) {
+
+        hpContainer.innerHTML =
+            `<div class="hp-text text-3xl leading-none pt-1">💀</div>`;
+
+    } else if (isDeadPlayer) {
+
+        hpContainer.innerHTML = `
+            <div class="hp-text text-3xl leading-none pt-1">💀</div>
+            <div class="text-[10px] uppercase text-red-500 font-bold tracking-wider leading-none mt-1">
+                Morto
+            </div>
+        `;
+
+    } else if (c.hpCurrent <= 0 && !c.stabilized) {
+
+        const s = c.deathSaves?.success || 0;
+        const f = c.deathSaves?.failures || 0;
+
+        hpContainer.innerHTML = `
+            <div class="hp-text text-xl font-bold leading-none text-red-500">
+                0/${c.hpMax}
+            </div>
+
+            <div class="text-[11px] font-bold mt-1 tracking-widest leading-none">
+                <span class="text-emerald-400">S${s}</span>
+                <span class="text-slate-500 mx-1">|</span>
+                <span class="text-red-500">F${f}</span>
+            </div>
+        `;
+
+    } else {
+
+        hpContainer.innerHTML = `
+            <div class="hp-text text-xl font-bold leading-none ${hpColor}">
+                ${c.hpCurrent}/${c.hpMax}
+            </div>
+
+            <div class="text-[10px] uppercase text-slate-500 font-bold tracking-wider leading-none mt-1">
+                HP
+            </div>
+        `;
+    }
+}
 
             const statusContainer = card.querySelector('.status-container');
             if (statusContainer) {
@@ -906,12 +1002,39 @@
                 statusContainer.innerHTML = statusHtml;
             }
 
+            // Atualiza ST
+            const stContainer = card.querySelector('.st-container');
+
+            if (stContainer) {
+
+                stContainer.innerHTML = `
+                    <div class="text-sm font-bold leading-none text-cyan-400">
+                        ${c.stCurrent ?? 0}/${c.stMax ?? 0}
+                    </div>
+
+                    <div class="text-[10px] uppercase text-cyan-600 font-bold tracking-wider leading-none mt-1 text-center">
+                        ST
+                    </div>
+                `;
+            }
+
             if (isEliminated) {
                 card.classList.add('opacity-50', 'grayscale');
                 card.classList.remove('bg-slate-800/80', 'active-turn');
             } else {
-                card.classList.remove('opacity-50', 'grayscale');
-                card.classList.add('bg-slate-800/80');
+                card.classList.remove(
+    'opacity-50',
+    'grayscale',
+    'bg-slate-800/80',
+    'bg-red-700/30',
+    'bg-emerald-950/40'
+);
+
+card.classList.add(
+    c.type === 'monster'
+        ? 'bg-red-700/30'
+        : 'bg-emerald-950/40'
+);
                 if (activeTurnId === c.id) card.classList.add('active-turn');
             }
         }
@@ -1070,7 +1193,7 @@ currentInput = oldInput;
 
 updateNumpad();
 }
-        function applyHP(isHealing) {
+        function applyHP(isHealing) {   
             if (!selectedId) { showToast('⚠️ Selecione um alvo!'); return; }
             const value = parseInt(currentInput) || 0;
             
@@ -1146,6 +1269,62 @@ updateNumpad();
                 }
             }
         }
+        function openSTModal() {
+
+if (!selectedId) {
+    showToast('⚠️ Selecione um alvo!');
+    return;
+}
+
+const value = parseInt(currentInput) || 0;
+
+if (value <= 0) {
+    showToast('⚠️ Digite um valor!');
+    return;
+}
+
+document.getElementById('stModal').style.display = 'flex';
+}
+
+function closeSTModal() {
+
+document.getElementById('stModal').style.display = 'none';
+}
+function applyST(isHealing) {
+
+if (!selectedId) {
+    showToast('⚠️ Selecione um alvo!');
+    return;
+}
+
+const value = parseInt(currentInput) || 0;
+
+const index = combatants.findIndex(c => c.id === selectedId);
+
+if (index !== -1) {
+
+    const c = combatants[index];
+
+    if (isHealing) {
+
+        c.stCurrent = Math.min(c.stMax, c.stCurrent + value);
+
+    } else {
+
+        c.stCurrent = Math.max(0, c.stCurrent - value);
+
+    }
+
+    if (c.type === 'player')
+        savePlayersToStorage();
+
+    updateCardTargeted(c);
+
+    clearDisplay();
+
+    closeSTModal();
+}
+}
 
         function askConcentration(id) {
             concentrationTargetId = id;
