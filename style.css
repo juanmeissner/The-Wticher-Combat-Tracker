@@ -1,0 +1,168 @@
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+
+
+
+html, body {
+    font-family: 'Inter', sans-serif;
+    background-color: #0f172a;
+    color: #f1f5f9;
+    overscroll-behavior-y: none;
+    height: 100vh;
+    height: 100dvh;
+    overflow: hidden;
+    user-select: none;
+    -webkit-user-select: none;
+
+    touch-action: manipulation;
+}
+
+.combat-list {
+    flex-grow: 1;
+    overflow-y: auto;
+    scroll-behavior: smooth;
+    overscroll-behavior-y: contain;
+}
+
+.card-selected {
+    border: 2px solid #3b82f6 !important;
+}
+
+.active-turn {
+    border-left: 6px solid #fbbf24 !important;
+}
+
+.combat-list::-webkit-scrollbar { width: 4px; }
+.combat-list::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
+
+.numpad-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+}
+
+.btn-numpad {
+    background-color: #334155;
+    padding: 10px;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 1.1rem;
+    transition: all 0.2s;
+}
+
+.btn-control {
+    background-color: #1e293b;
+    border: 1px solid #334155;
+    padding: 10px;
+    border-radius: 12px;
+    font-size: 1.25rem;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-numpad:active, .btn-control:active { transform: scale(0.95); background-color: #475569; }
+
+.modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.8);
+    align-items: center;
+    justify-content: center;
+    z-index: 50;
+    padding: 20px;
+}
+
+input {
+    background: #1e293b;
+    border: 1px solid #334155;
+    color: white;
+    padding: 8px;
+    border-radius: 8px;
+    width: 100%;
+}
+
+.delete-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(127, 29, 29, 0.9);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: inherit;
+    z-index: 20;
+}
+
+#toast {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #eab308;
+    color: #0f172a;
+    padding: 12px 24px;
+    border-radius: 12px;
+    font-weight: bold;
+    font-size: 1.1rem;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s, top 0.3s;
+    z-index: 100;
+}
+.toast-show { opacity: 1 !important; top: 40px !important; }
+
+/* Menu Circular */
+#circularMenu {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.8);
+    align-items: center;
+    justify-content: center;
+    z-index: 60;
+}
+
+.status-container {
+display: flex;
+flex-wrap: wrap;
+justify-content: flex-end;
+gap: 2px;
+max-width: 72px;
+min-width: 72px;
+}
+
+.status-icon {
+    font-size: 18px;
+    line-height: 1;
+}
+
+/* =========================================
+TELA COMBATE
+========================================= */
+
+#combatScreen {
+
+    display: flex;
+
+    flex-direction: column;
+
+    height: 100vh;
+}
+
+.combat-list {
+
+    flex: 1;
+
+    overflow-y: auto;
+}
+
+#combatScreen,
+#inventoryScreen {
+
+    overflow-y: auto;
+
+    -webkit-overflow-scrolling: touch;
+}

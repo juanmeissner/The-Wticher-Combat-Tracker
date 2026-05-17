@@ -8,151 +8,13 @@
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#0f172a">
     <link rel="apple-touch-icon" href="https://raw.githubusercontent.com/SharkPolo/combat-tracker/refs/heads/main/image.jpg">
-
+    <link rel="stylesheet" href="style.css">
     <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
-        
-        
 
-        html, body {
-            font-family: 'Inter', sans-serif;
-            background-color: #0f172a;
-            color: #f1f5f9;
-            overscroll-behavior-y: none;
-            height: 100vh;
-            height: 100dvh;
-            overflow: hidden;
-            user-select: none;
-            -webkit-user-select: none;
-
-            touch-action: manipulation;
-        }
-
-        .combat-list {
-            flex-grow: 1;
-            overflow-y: auto;
-            scroll-behavior: smooth;
-            overscroll-behavior-y: contain;
-        }
-
-        .card-selected {
-            border: 2px solid #3b82f6 !important;
-        }
-
-        .active-turn {
-            border-left: 6px solid #fbbf24 !important;
-        }
-
-        .combat-list::-webkit-scrollbar { width: 4px; }
-        .combat-list::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
-
-        .numpad-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 6px;
-        }
-
-        .btn-numpad {
-            background-color: #334155;
-            padding: 10px;
-            border-radius: 12px;
-            font-weight: 600;
-            font-size: 1.1rem;
-            transition: all 0.2s;
-        }
-
-        .btn-control {
-            background-color: #1e293b;
-            border: 1px solid #334155;
-            padding: 10px;
-            border-radius: 12px;
-            font-size: 1.25rem;
-            transition: all 0.2s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .btn-numpad:active, .btn-control:active { transform: scale(0.95); background-color: #475569; }
-
-        .modal {
-            display: none;
-            position: fixed;
-            inset: 0;
-            background: rgba(0,0,0,0.8);
-            align-items: center;
-            justify-content: center;
-            z-index: 50;
-            padding: 20px;
-        }
-
-        input {
-            background: #1e293b;
-            border: 1px solid #334155;
-            color: white;
-            padding: 8px;
-            border-radius: 8px;
-            width: 100%;
-        }
-
-        .delete-overlay {
-            position: absolute;
-            inset: 0;
-            background: rgba(127, 29, 29, 0.9);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: inherit;
-            z-index: 20;
-        }
-
-        #toast {
-            position: fixed;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: #eab308;
-            color: #0f172a;
-            padding: 12px 24px;
-            border-radius: 12px;
-            font-weight: bold;
-            font-size: 1.1rem;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.3s, top 0.3s;
-            z-index: 100;
-        }
-        .toast-show { opacity: 1 !important; top: 40px !important; }
-
-        /* Menu Circular */
-        #circularMenu {
-            display: none;
-            position: fixed;
-            inset: 0;
-            background: rgba(0,0,0,0.8);
-            align-items: center;
-            justify-content: center;
-            z-index: 60;
-        }
-
-        .status-container {
-        display: flex;
-        flex-wrap: wrap;
-        justify-content: flex-end;
-        gap: 2px;
-        max-width: 72px;
-        min-width: 72px;
-        }
-
-        .status-icon {
-            font-size: 18px;
-            line-height: 1;
-        }
-    </style>
 </head>
-<body class="flex flex-col">
+<body class="flex flex-col"> <div id="appWrapper">
+
+    <section id="combatScreen">
 
     <div id="toast">🧠 Teste de Concentração!</div>
 
@@ -404,46 +266,18 @@
 
     </div>
 </div>
-    <script src="monsters.js"></script>
+</section>
+    <script src="js/monsters.js"></script>
+    
+    <script src="js/state.js"></script>
     <script>
-        let combatants = [];
-        let activeTurnId = null; 
-        let selectedId = null;
-        let round = 1;
-        let monsterCounter = 1;
-        let playerCounter = 1;
-        let currentInput = "0";
-        let lastMonsterData = {
-    hp: "",
-    st: "",
-    ca: "",
-    atk: "",
-    armor: {
-        head: 0,
-        torso: 0,
-        arm: 0,
-        leg: 0
-    }
-};
 
-let lastPlayerData = {
-    hp: "",
-    st: "",
-    ca: "",
-    atk: "",
-    armor: {
-        head: 0,
-        torso: 0,
-        arm: 0,
-        leg: 0
-    }
-};
 
         let pressTimer;
-        let startY = 0; // Para ignorar scrolls na delegaÃ§Ã£o
+        let startY = 0; // Para ignorar scrolls na delegação
         let deleteVisibleId = null;
         let editingId = null; 
-        let showEliminated = true; // Controle da divisÃ³ria
+        let showEliminated = true; // Controle da divisória
         let concentrationTargetId = null;
         // =========================================
         // SISTEMA DE DANO LOCALIZADO
@@ -491,7 +325,7 @@ let lastPlayerData = {
                 renderList();
             }
 
-            // DelegaÃ§Ã£o de Eventos na Main List
+            // Delegação de Eventos na Main List
             const list = document.getElementById('combatList');
             list.addEventListener('mousedown', handleCardPressStart);
             list.addEventListener('touchstart', (e) => {
@@ -507,7 +341,7 @@ let lastPlayerData = {
             list.addEventListener('click', handleListClick);
         };
 
-        // LÃ³gica de Eventos Delegados
+        // Lógica de Eventos Delegados
         function handleCardPressStart(e) {
             const card = e.target.closest('.combat-card');
             if (!card || deleteVisibleId || e.target.closest('.delete-overlay')) return;
@@ -624,7 +458,7 @@ let lastPlayerData = {
                 editingId = null;
             } 
             else {
-                // Verifica se Ã© a maior iniciativa
+                // Verifica se é a maior iniciativa
                 if (combatants.length === 0) {
                     isHighestInit = true;
                 } else {
@@ -771,7 +605,7 @@ const outerRadius = 190;
 
 conditions.forEach((cond, i) => {
 
-    // Divide em dois anÃ©is
+    // Divide em dois anéis
     const isOuter = i >= Math.ceil(conditions.length / 2);
 
     const ringConditions = isOuter
@@ -1811,7 +1645,7 @@ if (index !== -1) {
 
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('sw.js')
+                navigator.serviceWorker.register('js/sw.js')
                     .then(() => console.log('Service Worker Registado!'))
                     .catch((err) => console.log('Erro no registo do Service Worker:', err));
             });
@@ -1827,9 +1661,11 @@ if (index !== -1) {
 // =========================================
 
 // Bloqueia pinch zoom
+// Bloqueia apenas pinch zoom
 document.addEventListener('touchmove', function (event) {
 
-if (event.scale !== 1) {
+if (event.touches.length > 1) {
+
     event.preventDefault();
 }
 
@@ -1987,6 +1823,6 @@ e.preventDefault();
     </div>
 
 </div>
-
+</div>
 </body>
 </html>

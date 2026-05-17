@@ -2,6 +2,7 @@ const CACHE_NAME = 'dnd-tracker-v5-0';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
+  'style.css',
   './manifest.json',
   'https://raw.githubusercontent.com/SharkPolo/combat-tracker/refs/heads/main/image.jpg'
 ];
