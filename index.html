@@ -1,0 +1,1040 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Witcher Combat Tracker</title>
+    
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#0f172a">
+    <link rel="apple-touch-icon" href="https://raw.githubusercontent.com/SharkPolo/combat-tracker/refs/heads/main/image.jpg">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+        
+        html, body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0f172a;
+            color: #f1f5f9;
+            overscroll-behavior-y: none;
+            height: 100vh;
+            height: 100dvh;
+            overflow: hidden;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        .combat-list {
+            flex-grow: 1;
+            overflow-y: auto;
+            scroll-behavior: smooth;
+            overscroll-behavior-y: contain;
+        }
+
+        .card-selected {
+            border: 2px solid #3b82f6 !important;
+        }
+
+        .active-turn {
+            border-left: 6px solid #fbbf24 !important;
+        }
+
+        .combat-list::-webkit-scrollbar { width: 4px; }
+        .combat-list::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
+
+        .numpad-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 6px;
+        }
+
+        .btn-numpad {
+            background-color: #334155;
+            padding: 10px;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 1.1rem;
+            transition: all 0.2s;
+        }
+
+        .btn-control {
+            background-color: #1e293b;
+            border: 1px solid #334155;
+            padding: 10px;
+            border-radius: 12px;
+            font-size: 1.25rem;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn-numpad:active, .btn-control:active { transform: scale(0.95); background-color: #475569; }
+
+        .modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.8);
+            align-items: center;
+            justify-content: center;
+            z-index: 50;
+            padding: 20px;
+        }
+
+        input {
+            background: #1e293b;
+            border: 1px solid #334155;
+            color: white;
+            padding: 8px;
+            border-radius: 8px;
+            width: 100%;
+        }
+
+        .delete-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(127, 29, 29, 0.9);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: inherit;
+            z-index: 20;
+        }
+
+        #toast {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #eab308;
+            color: #0f172a;
+            padding: 12px 24px;
+            border-radius: 12px;
+            font-weight: bold;
+            font-size: 1.1rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s, top 0.3s;
+            z-index: 100;
+        }
+        .toast-show { opacity: 1 !important; top: 40px !important; }
+
+        /* Menu Circular */
+        #circularMenu {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.8);
+            align-items: center;
+            justify-content: center;
+            z-index: 60;
+        }
+    </style>
+</head>
+<body class="flex flex-col">
+
+    <div id="toast">🧠 Teste de Concentração!</div>
+
+    <main class="combat-list p-4 space-y-3" id="combatList"></main>
+
+    <footer class="bg-slate-900 border-t border-slate-800 py-4 px-0 shrink-0 relative z-30">
+        <div class="max-w-xl mx-auto flex gap-4">
+            
+            <div class="flex flex-col gap-2 w-24 shrink-0 justify-between py-1">
+                <div class="text-center">
+                    <p class="text-[10px] text-slate-500 uppercase font-bold tracking-widest leading-none">Rodada</p>
+                    <p id="roundCounter" class="text-xl font-bold text-slate-200">1</p>
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <button onclick="openModal('player')" class="btn-control hover:bg-blue-900/40 border-blue-900/50" title="Add Jogador">🧙‍♂️</button>
+                    <button onclick="openModal('monster')" class="btn-control hover:bg-slate-700" title="Add Monstro">🧌</button>
+                    <button onclick="endCombat()" onmousedown="startEndCombatPress(event)" onmouseup="cancelEndCombatPress(event)" onmouseleave="cancelEndCombatPress(event)" ontouchstart="startEndCombatPress(event)" ontouchend="cancelEndCombatPress(event)" class="btn-control hover:bg-red-900/40 border-red-900/50" title="Terminar Combate (Segure 3s para apagar tudo)">❌</button>
+                    <button onclick="nextTurn()" class="btn-control hover:bg-amber-900/40 border-amber-900/50" title="Próximo">⏩</button>
+                    <button onclick="openConditionMenu()" class="btn-control hover:bg-slate-700" title="Condições">🌀</button>
+                    <button onclick="toggleBrainStatus()" class="btn-control hover:bg-slate-700" title="Concentração (🧠)">🧠</button>
+                </div>
+            </div>
+
+            <div class="flex-1">
+                <div class="flex justify-between items-center mb-2 px-1">
+                    <div class="text-lg text-slate-500 font-bold overflow-hidden whitespace-nowrap truncate mr-2">
+                        Alvo: <span id="targetName" class="text-blue-400">Nenhum</span>
+                    </div>
+                    <div class="text-lg font-mono font-bold text-slate-100 shrink-0" id="numpadDisplay">0</div>
+                </div>
+
+                <div class="numpad-grid">
+                    <button class="btn-numpad" onclick="addDigit('7')">7</button>
+                    <button class="btn-numpad" onclick="addDigit('8')">8</button>
+                    <button class="btn-numpad" onclick="addDigit('9')">9</button>
+                    <button class="btn-numpad" onclick="addDigit('4')">4</button>
+                    <button class="btn-numpad" onclick="addDigit('5')">5</button>
+                    <button class="btn-numpad" onclick="addDigit('6')">6</button>
+                    <button class="btn-numpad" onclick="addDigit('1')">1</button>
+                    <button class="btn-numpad" onclick="addDigit('2')">2</button>
+                    <button class="btn-numpad" onclick="addDigit('3')">3</button>
+                    <button class="btn-numpad text-red-400" onclick="clearDisplay()">C</button>
+                    <button class="btn-numpad" onclick="addDigit('0')">0</button>
+                    <button class="btn-numpad text-slate-500" onclick="popDigit()">←</button>
+                </div>
+            </div>
+
+            <div class="flex flex-col gap-2 w-16 shrink-0 py-1">
+                <button onclick="applyHP(true)" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl flex items-center justify-center shadow-lg" title="Curar / Add Sucesso (0 HP)">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+                </button>
+                <button onclick="applyHP(false)" class="flex-1 bg-red-600 hover:bg-red-500 text-white rounded-xl flex items-center justify-center shadow-lg text-2xl" title="Dano / Add Falha (0 HP)">
+                    ☠️
+                </button>
+                <button onclick="applyInitiative()" onmousedown="startInitPress(event)" onmouseup="cancelInitPress(event)" onmouseleave="cancelInitPress(event)" ontouchstart="startInitPress(event)" ontouchend="cancelInitPress(event)" class="flex-1 bg-blue-600 hover:bg-blue-500 text-white rounded-xl flex items-center justify-center shadow-lg" title="Definir Iniciativa">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M13 10h7l-9 11v-7H4l9-11v7z"/></svg>
+                </button>
+            </div>
+        </div>
+    </footer>
+
+    <div id="entityModal" class="modal">
+        <div class="bg-slate-900 p-6 rounded-2xl w-full max-w-md border border-slate-700">
+            <h2 id="modalTitle" class="text-xl font-bold mb-4">Adicionar Entidade</h2>
+            <div class="grid grid-cols-2 gap-4">
+                <div class="col-span-2">
+                    <label class="text-xs text-slate-500 font-bold uppercase">Nome</label>
+                    <input type="text" id="nameInp" placeholder="Ex: Grog ou Goblin">
+                </div>
+                <div>
+                    <label class="text-xs text-slate-500 font-bold uppercase">Iniciativa</label>
+                    <input type="number" id="initInp" placeholder="0">
+                </div>
+                <div>
+                    <label class="text-xs text-slate-500 font-bold uppercase">HP Max</label>
+                    <input type="number" id="hpInp" placeholder="10">
+                </div>
+                <div>
+                    <label class="text-xs text-slate-500 font-bold uppercase">CA</label>
+                    <input type="number" id="caInp" placeholder="10">
+                </div>
+                <div>
+                    <label class="text-xs text-slate-500 font-bold uppercase">Ataque/Dano</label>
+                    <input type="text" id="atkInp" placeholder="+5 / 1d8">
+                </div>
+            </div>
+            <div class="flex gap-2 mt-6">
+                <button onclick="closeModal()" class="flex-1 p-2 rounded-lg bg-slate-700 font-bold">Cancelar</button>
+                <button onclick="saveEntity()" class="flex-1 p-2 rounded-lg bg-blue-600 font-bold">Salvar</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="concentrationModal" class="modal" style="z-index: 70;">
+        <div class="bg-slate-900 p-6 rounded-2xl w-full max-w-sm border border-slate-700 text-center">
+            <div class="text-4xl mb-4">🧠</div>
+            <h2 class="text-xl font-bold mb-4 text-white">Teste de Concentração</h2>
+            <p class="text-slate-300 mb-6">Passou no teste de concentração? Sim ou Não.</p>
+            <div class="flex gap-4">
+                <button onclick="answerConcentration(true)" class="flex-1 p-3 rounded-xl bg-emerald-600 font-bold text-white hover:bg-emerald-500">Sim</button>
+                <button onclick="answerConcentration(false)" class="flex-1 p-3 rounded-xl bg-red-600 font-bold text-white hover:bg-red-500">Não</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="circularMenu" onclick="closeConditionMenu(event)">
+        <div class="relative w-64 h-64" id="circleContainer">
+            </div>
+    </div>
+
+    <script>
+        let combatants = [];
+        let activeTurnId = null; 
+        let selectedId = null;
+        let round = 1;
+        let monsterCounter = 1;
+        let playerCounter = 1;
+        let currentInput = "0";
+        let lastMonsterData = { hp: "", ca: "", atk: "" };
+        let lastPlayerData = { hp: "", ca: "", atk: "" };
+
+        let pressTimer;
+        let startY = 0; // Para ignorar scrolls na delegação
+        let deleteVisibleId = null;
+        let editingId = null; 
+        let showEliminated = true; // Controle da divisória
+        let concentrationTargetId = null;
+
+        let initPressTimer;
+        let didInitLongPress = false;
+
+        let endCombatPressTimer;
+        let didEndCombatLongPress = false;
+
+        // INICIALIZAÇÃO E DELEGAÇÃO DE EVENTOS
+        window.onload = () => {
+            const savedPlayers = localStorage.getItem('dnd_players');
+            if (savedPlayers) {
+                combatants = JSON.parse(savedPlayers);
+                let pCount = 0;
+                let lastP = null;
+                combatants.forEach(c => {
+                    if (c.type === 'player') {
+                        pCount++;
+                        lastP = c;
+                    }
+                    if (!c.conditions) c.conditions = [];
+                    if (!c.deathSaves) c.deathSaves = { success: 0, failures: 0 };
+                    if (c.stabilized === undefined) c.stabilized = false;
+                    // Migrar dados antigos
+                    if (c.statusSpiral) {
+                        if (!c.conditions.includes('🌀')) c.conditions.push('🌀');
+                        delete c.statusSpiral;
+                    }
+                });
+                playerCounter = pCount + 1;
+                if (lastP) lastPlayerData = { hp: lastP.hpMax, ca: lastP.ca, atk: lastP.atkInfo };
+                if (combatants.length > 0) activeTurnId = combatants[0].id;
+                renderList();
+            }
+
+            // Delegação de Eventos na Main List
+            const list = document.getElementById('combatList');
+            list.addEventListener('mousedown', handleCardPressStart);
+            list.addEventListener('touchstart', (e) => {
+                startY = e.touches[0].clientY;
+                handleCardPressStart(e);
+            }, {passive: true});
+            list.addEventListener('touchmove', (e) => {
+                if (Math.abs(e.touches[0].clientY - startY) > 10) handleCardPressEnd();
+            }, {passive: true});
+            list.addEventListener('mouseup', handleCardPressEnd);
+            list.addEventListener('mouseleave', handleCardPressEnd);
+            list.addEventListener('touchend', handleCardPressEnd);
+            list.addEventListener('click', handleListClick);
+        };
+
+        // Lógica de Eventos Delegados
+        function handleCardPressStart(e) {
+            const card = e.target.closest('.combat-card');
+            if (!card || deleteVisibleId || e.target.closest('.delete-overlay')) return;
+            const id = parseInt(card.id.split('-')[1]);
+            pressTimer = setTimeout(() => {
+                deleteVisibleId = id;
+                renderList();
+            }, 1000); 
+        }
+
+        function handleCardPressEnd() {
+            clearTimeout(pressTimer);
+        }
+
+        function handleListClick(e) {
+            if (e.target.closest('.eliminated-divider')) {
+                showEliminated = !showEliminated;
+                renderList();
+                return;
+            }
+
+            if (e.target.closest('.delete-overlay')) return;
+
+            const card = e.target.closest('.combat-card');
+            if (card && !deleteVisibleId) {
+                const id = parseInt(card.id.split('-')[1]);
+                const c = combatants.find(comp => comp.id === id);
+                if (c) selectCombatant(c.id, c.name);
+            }
+        }
+
+        function getHPColor(pct) {
+            if (pct > 50) return '#10b981'; // emerald
+            if (pct > 25) return '#f59e0b'; // amber
+            return '#ef4444'; // red
+        }
+
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.innerText = message;
+            toast.classList.add('toast-show');
+            setTimeout(() => toast.classList.remove('toast-show'), 3000);
+        }
+
+        function openModal(type) {
+            const nameInput = document.getElementById('nameInp');
+            const hpInp = document.getElementById('hpInp');
+            const caInp = document.getElementById('caInp');
+            const atkInp = document.getElementById('atkInp');
+            
+            editingId = null; 
+            modalType = type;
+            document.getElementById('modalTitle').innerText = type === 'player' ? 'Novo Jogador' : 'Novo Monstro';
+            document.getElementById('initInp').value = "";
+
+            if (type === 'monster') {
+                nameInput.value = "Inimigo " + monsterCounter;
+                hpInp.value = lastMonsterData.hp;
+                caInp.value = lastMonsterData.ca;
+                atkInp.value = lastMonsterData.atk;
+            } else {
+                nameInput.value = "Jogador " + playerCounter;
+                hpInp.value = lastPlayerData.hp;
+                caInp.value = lastPlayerData.ca;
+                atkInp.value = lastPlayerData.atk;
+            }
+            document.getElementById('entityModal').style.display = 'flex';
+        }
+
+        function closeModal() {
+            document.getElementById('entityModal').style.display = 'none';
+        }
+
+        function saveEntity() {
+            const name = document.getElementById('nameInp').value;
+            const init = parseInt(document.getElementById('initInp').value) || 0;
+            const hp = parseInt(document.getElementById('hpInp').value) || 1;
+            const ca = parseInt(document.getElementById('caInp').value) || 10;
+            const atk = document.getElementById('atkInp').value || "-";
+
+            if (!name) return;
+
+            let newlyAddedId = null;
+            let isHighestInit = false;
+
+            if (editingId) {
+                const index = combatants.findIndex(c => c.id === editingId);
+                if (index !== -1) {
+                    combatants[index].name = name;
+                    combatants[index].initiative = init;
+                    combatants[index].hpMax = hp;
+                    if (combatants[index].hpCurrent > hp) combatants[index].hpCurrent = hp;
+                    combatants[index].ca = ca;
+                    combatants[index].atkInfo = atk;
+                    
+                    if (combatants[index].type === 'player') savePlayersToStorage();
+                }
+                editingId = null;
+            } 
+            else {
+                // Verifica se é a maior iniciativa
+                if (combatants.length === 0) {
+                    isHighestInit = true;
+                } else {
+                    const maxInit = Math.max(...combatants.map(c => c.initiative));
+                    if (init >= maxInit) isHighestInit = true;
+                }
+
+                const newEntity = {
+                    id: Date.now(),
+                    name,
+                    initiative: init,
+                    hpMax: hp,
+                    hpCurrent: hp,
+                    ca,
+                    atkInfo: atk,
+                    type: modalType,
+                    statusBrain: false,
+                    conditions: [],
+                    deathSaves: { success: 0, failures: 0 },
+                    stabilized: false
+                };
+
+                combatants.push(newEntity);
+                newlyAddedId = newEntity.id;
+
+                if (modalType === 'monster') {
+                    monsterCounter++;
+                    lastMonsterData = { hp, ca, atk };
+                } else {
+                    playerCounter++;
+                    lastPlayerData = { hp, ca, atk };
+                    savePlayersToStorage();
+                }
+            }
+
+            sortCombatants();
+
+            // Configura para ser a vez dele se for a maior iniciativa
+            if (newlyAddedId && isHighestInit) {
+                activeTurnId = newlyAddedId;
+            }
+
+            closeModal();
+            renderList(true);
+        }
+
+        function editCombatant(event, id) {
+            event.stopPropagation();
+            cancelDeleteMode(event);
+            
+            const c = combatants.find(c => c.id === id);
+            if (!c) return;
+
+            editingId = c.id;
+            modalType = c.type;
+            
+            document.getElementById('modalTitle').innerText = 'Editar ' + (c.type === 'player' ? 'Jogador' : 'Monstro');
+            document.getElementById('nameInp').value = c.name;
+            document.getElementById('initInp').value = c.initiative;
+            document.getElementById('hpInp').value = c.hpMax;
+            document.getElementById('caInp').value = c.ca;
+            document.getElementById('atkInp').value = c.atkInfo;
+            
+            document.getElementById('entityModal').style.display = 'flex';
+        }
+
+        function removeCombatant(event, id) {
+            event.stopPropagation();
+            const index = combatants.findIndex(c => c.id === id);
+            if (index === -1) return;
+            
+            const entity = combatants[index];
+
+            if (id === activeTurnId) {
+                let nextIndex = index + 1;
+                if (nextIndex >= combatants.length) nextIndex = 0;
+                activeTurnId = combatants.length > 1 ? combatants[nextIndex].id : null;
+            }
+
+            if (selectedId === id) {
+                selectedId = null;
+                document.getElementById('targetName').innerText = "Nenhum";
+            }
+            
+            combatants.splice(index, 1);
+            if (entity.type === 'player') savePlayersToStorage();
+            deleteVisibleId = null;
+            renderList();
+        }
+
+        function cancelDeleteMode(event) {
+            if (event) event.stopPropagation();
+            deleteVisibleId = null;
+            renderList();
+        }
+
+        function toggleBrainStatus() {
+            if (!selectedId) { showToast('⚠️ Selecione um alvo!'); return; }
+            const index = combatants.findIndex(c => c.id === selectedId);
+            if (index !== -1) {
+                combatants[index].statusBrain = !combatants[index].statusBrain;
+                if (combatants[index].type === 'player') savePlayersToStorage();
+                updateCardTargeted(combatants[index]); // Atualiza DOM sem piscar a tela
+            }
+        }
+
+        function openConditionMenu() {
+            if (!selectedId) { showToast('⚠️ Selecione um alvo!'); return; }
+            const container = document.getElementById('circleContainer');
+            container.innerHTML = `<button class="absolute top-1/2 left-1/2 -mt-6 -ml-6 w-12 h-12 bg-slate-700 rounded-full flex items-center justify-center text-white font-bold z-10 border border-slate-500 shadow-xl" onclick="closeConditionMenu(event, true)">X</button>`;
+            
+            const conditions = [
+                { icon: '😍', name: 'Enfeit.' },
+                { icon: '😱', name: 'Amedr.' },
+                { icon: '🚫', name: 'Incap.' },
+                { icon: '👻', name: 'Invis.' },
+                { icon: '🐍', name: 'Enven.' },
+                { icon: '🧎', name: 'Caído' },
+                { icon: '😮‍💨', name: 'Exaust.' }
+            ];
+
+            const radius = 95;
+            conditions.forEach((cond, i) => {
+                const angle = (i * (360 / conditions.length) - 90) * (Math.PI / 180); 
+                const x = Math.cos(angle) * radius;
+                const y = Math.sin(angle) * radius;
+
+                const el = document.createElement('div');
+                el.className = "absolute top-1/2 left-1/2 -mt-6 -ml-6 w-12 h-12 flex flex-col items-center justify-center";
+                el.style.transform = `translate(${x}px, ${y}px)`;
+                
+                const c = combatants.find(comp => comp.id === selectedId);
+                const isActive = c.conditions && c.conditions.includes(cond.icon);
+                const bgClass = isActive ? 'bg-blue-600 border-blue-400' : 'bg-slate-800 border-slate-600';
+
+                el.innerHTML = `
+                    <button onclick="toggleCondition('${cond.icon}')" class="w-12 h-12 rounded-full text-2xl flex items-center justify-center border ${bgClass} shadow-lg active:scale-90 transition-transform">
+                        ${cond.icon}
+                    </button>
+                    <span class="text-[10px] text-slate-200 mt-1 font-bold bg-slate-900/80 px-1 rounded">${cond.name}</span>
+                `;
+                container.appendChild(el);
+            });
+
+            document.getElementById('circularMenu').style.display = 'flex';
+        }
+
+        function closeConditionMenu(e, force = false) {
+            if (force || (e && e.target.id === 'circularMenu')) {
+                document.getElementById('circularMenu').style.display = 'none';
+            }
+        }
+
+        function toggleCondition(icon) {
+            if (!selectedId) return;
+            const index = combatants.findIndex(c => c.id === selectedId);
+            if (index !== -1) {
+                if (!combatants[index].conditions) combatants[index].conditions = [];
+                
+                const condIndex = combatants[index].conditions.indexOf(icon);
+                if (condIndex !== -1) {
+                    combatants[index].conditions.splice(condIndex, 1);
+                } else {
+                    combatants[index].conditions.push(icon);
+                }
+                
+                if (combatants[index].type === 'player') savePlayersToStorage();
+                updateCardTargeted(combatants[index]);
+                openConditionMenu(); // Atualiza cores no menu sem fechar
+            }
+        }
+
+        function startEndCombatPress(event) {
+            didEndCombatLongPress = false;
+            endCombatPressTimer = window.setTimeout(() => {
+                didEndCombatLongPress = true;
+                hardResetCombat();
+            }, 3000); 
+        }
+
+        function cancelEndCombatPress(event) {
+            window.clearTimeout(endCombatPressTimer);
+        }
+
+        function hardResetCombat() {
+            combatants = [];
+            savePlayersToStorage();
+            activeTurnId = null;
+            round = 1;
+            monsterCounter = 1;
+            lastMonsterData = { hp: "", ca: "", atk: "" };
+            selectedId = null;
+            deleteVisibleId = null;
+            document.getElementById('targetName').innerText = "Nenhum";
+            renderList(true);
+        }
+
+        function endCombat() {
+            if (didEndCombatLongPress) {
+                didEndCombatLongPress = false;
+                return;
+            }
+
+            combatants = combatants.filter(c => c.type === 'player');
+            combatants.forEach(c => {
+                c.initiative = 0;
+                c.hpCurrent = c.hpMax; 
+                c.statusBrain = false; 
+                c.conditions = []; 
+                c.deathSaves = { success: 0, failures: 0 };
+                c.stabilized = false;
+            });
+            
+            savePlayersToStorage(); 
+            
+            activeTurnId = combatants.length > 0 ? combatants[0].id : null;
+            round = 1;
+            monsterCounter = 1;
+            lastMonsterData = { hp: "", ca: "", atk: "" };
+            selectedId = null;
+            deleteVisibleId = null;
+            document.getElementById('targetName').innerText = "Nenhum";
+            sortCombatants();
+            renderList(true);
+        }
+
+        function sortCombatants() {
+            combatants.sort((a, b) => {
+                const aEliminated = (a.type === 'monster' && a.hpCurrent <= 0) || (a.type === 'player' && a.deathSaves?.failures >= 3);
+                const bEliminated = (b.type === 'monster' && b.hpCurrent <= 0) || (b.type === 'player' && b.deathSaves?.failures >= 3);
+
+                if (aEliminated && !bEliminated) return 1;
+                if (!aEliminated && bEliminated) return -1;
+
+                if (b.initiative !== a.initiative) return b.initiative - a.initiative;
+                if (a.type === 'player' && b.type === 'monster') return -1;
+                if (a.type === 'monster' && b.type === 'player') return 1;
+                return a.id - b.id; 
+            });
+        }
+
+        function renderList(shouldScroll = false) {
+            const container = document.getElementById('combatList');
+            container.innerHTML = "";
+
+            if (combatants.length === 0) {
+                container.innerHTML = `<div class="text-slate-600 text-center mt-10">Lista vazia.</div>`;
+                return;
+            }
+
+            let printedDivider = false;
+
+            combatants.forEach((c) => {
+                const isDeadMonster = c.type === 'monster' && c.hpCurrent <= 0;
+                const isDeadPlayer = c.type === 'player' && c.deathSaves?.failures >= 3;
+                const isEliminated = isDeadMonster || isDeadPlayer;
+
+                if (isEliminated && !printedDivider) {
+                    const divider = document.createElement('div');
+                    divider.className = "eliminated-divider flex items-center gap-4 my-4 cursor-pointer hover:opacity-80 transition-opacity py-2 bg-slate-800/20 rounded-lg";
+                    divider.innerHTML = `
+                        <div class="h-px bg-slate-700 flex-1"></div>
+                        <span class="text-slate-500 text-xs font-bold uppercase tracking-widest flex items-center gap-2">
+                            Eliminados <span class="text-lg">${showEliminated ? '▼' : '▶'}</span>
+                        </span>
+                        <div class="h-px bg-slate-700 flex-1"></div>
+                    `;
+                    container.appendChild(divider);
+                    printedDivider = true;
+                }
+
+                if (isEliminated && !showEliminated) return; 
+
+                const card = document.createElement('div');
+                card.id = `card-${c.id}`;
+                
+                const opacityClass = isEliminated ? 'opacity-50 grayscale' : 'bg-slate-800/80';
+                card.className = `combat-card border border-slate-700 p-0 rounded-2xl cursor-pointer transition-all relative overflow-hidden
+                    ${selectedId === c.id ? 'card-selected' : ''} 
+                    ${activeTurnId === c.id && !isEliminated ? 'active-turn' : ''}
+                    ${opacityClass}`;
+
+                const pct = Math.max(0, Math.min(100, (c.hpCurrent / c.hpMax) * 100));
+                const hpBarColor = getHPColor(pct);
+
+                if (deleteVisibleId === c.id) {
+                    const overlay = document.createElement('div');
+                    overlay.className = "delete-overlay gap-6";
+                    overlay.innerHTML = `
+                        <button onclick="cancelDeleteMode(event)" class="bg-slate-800 p-3 rounded-full text-slate-300">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                        </button>
+                        <button onclick="editCombatant(event, ${c.id})" class="bg-blue-600 p-4 rounded-full text-white shadow-xl">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                        </button>
+                        <button onclick="removeCombatant(event, ${c.id})" class="bg-white p-4 rounded-full text-red-700 shadow-xl">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18m-2 0v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6m3 0V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2m-6 9 6-6m-6 0 6 6"/></svg>
+                        </button>
+                    `;
+                    card.appendChild(overlay);
+                }
+
+                const hpColor = c.type === 'monster' ? 'text-red-500' : 'text-emerald-400';
+                let statusHtml = (c.conditions || []).join('');
+                if (c.statusBrain) statusHtml += '🧠';
+
+                let hpDisplayHtml = `
+                    <div class="hp-text text-xl font-bold leading-none ${hpColor}">${c.hpCurrent}/${c.hpMax}</div>
+                    <div class="text-[10px] uppercase text-slate-500 font-bold tracking-wider leading-none mt-1">HP</div>
+                `;
+                if (isDeadMonster) {
+                    hpDisplayHtml = `<div class="hp-text text-3xl leading-none pt-1">💀</div>`;
+                } else if (isDeadPlayer) {
+                    hpDisplayHtml = `
+                        <div class="hp-text text-3xl leading-none pt-1">💀</div>
+                        <div class="text-[10px] uppercase text-red-500 font-bold tracking-wider leading-none mt-1">Morto</div>
+                    `;
+                } else if (c.hpCurrent <= 0 && !c.stabilized) {
+                    const s = c.deathSaves?.success || 0;
+                    const f = c.deathSaves?.failures || 0;
+                    hpDisplayHtml = `
+                        <div class="hp-text text-xl font-bold leading-none text-red-500">0/${c.hpMax}</div>
+                        <div class="text-[11px] font-bold mt-1 tracking-widest leading-none">
+                            <span class="text-emerald-400">S${s}</span><span class="text-slate-500 mx-1">|</span><span class="text-red-500">F${f}</span>
+                        </div>
+                    `;
+                }
+
+                card.innerHTML += `
+                    <div class="hp-bar absolute left-0 top-0 bottom-0 z-0 opacity-20 transition-all duration-500" style="width: ${pct}%; background-color: ${hpBarColor};"></div>
+                    <div class="relative z-10 flex items-center justify-between px-2 w-full h-full min-h-[64px]">
+                        <div class="flex items-center gap-2">
+                            <div class="init-circle ${activeTurnId === c.id && !isEliminated ? 'bg-amber-500 text-slate-900' : 'bg-slate-700 text-slate-300'} font-bold w-10 h-10 flex items-center justify-center rounded-full text-lg shrink-0 my-1">
+                                ${c.initiative}
+                            </div>
+                            <div class="py-1 flex-1 min-w-0">
+                                <h3 class="font-bold text-lg leading-none truncate ${c.type === 'monster' ? 'text-red-400' : ''}">${c.name}</h3>
+                                <p class="text-slate-300 text-lg font-semibold tracking-tight leading-none mt-1 truncate">CA: ${c.ca} | ${c.atkInfo}</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2 shrink-0">
+                            <div class="status-container text-xl flex gap-1">${statusHtml}</div>
+                            <div class="hp-container text-center py-1 w-20">
+                                ${hpDisplayHtml}
+                            </div>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+
+            document.getElementById('roundCounter').innerText = round;
+            if (shouldScroll) {
+                const activeCard = container.querySelector('.active-turn');
+                if (activeCard) activeCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        }
+
+        function updateCardTargeted(c) {
+            const card = document.getElementById(`card-${c.id}`);
+            if (!card) return;
+
+            const isDeadMonster = c.type === 'monster' && c.hpCurrent <= 0;
+            const isDeadPlayer = c.type === 'player' && c.deathSaves?.failures >= 3;
+            const isEliminated = isDeadMonster || isDeadPlayer;
+            const pct = Math.max(0, Math.min(100, (c.hpCurrent / c.hpMax) * 100));
+            const hpBarColor = getHPColor(pct);
+
+            const hpBar = card.querySelector('.hp-bar');
+            if (hpBar) {
+                hpBar.style.width = `${pct}%`;
+                hpBar.style.backgroundColor = hpBarColor;
+            }
+
+            const hpContainer = card.querySelector('.hp-container');
+            if (hpContainer) {
+                const hpColor = c.type === 'monster' ? 'text-red-500' : 'text-emerald-400';
+                if (isDeadMonster) {
+                    hpContainer.innerHTML = `<div class="hp-text text-3xl leading-none pt-1">💀</div>`;
+                } else if (isDeadPlayer) {
+                    hpContainer.innerHTML = `
+                        <div class="hp-text text-3xl leading-none pt-1">💀</div>
+                        <div class="text-[10px] uppercase text-red-500 font-bold tracking-wider leading-none mt-1">Morto</div>
+                    `;
+                } else if (c.hpCurrent <= 0 && !c.stabilized) {
+                    const s = c.deathSaves?.success || 0;
+                    const f = c.deathSaves?.failures || 0;
+                    hpContainer.innerHTML = `
+                        <div class="hp-text text-xl font-bold leading-none text-red-500">0/${c.hpMax}</div>
+                        <div class="text-[11px] font-bold mt-1 tracking-widest leading-none">
+                            <span class="text-emerald-400">S${s}</span><span class="text-slate-500 mx-1">|</span><span class="text-red-500">F${f}</span>
+                        </div>
+                    `;
+                } else {
+                    hpContainer.innerHTML = `
+                        <div class="hp-text text-xl font-bold leading-none ${hpColor}">${c.hpCurrent}/${c.hpMax}</div>
+                        <div class="text-[10px] uppercase text-slate-500 font-bold tracking-wider leading-none mt-1">HP</div>
+                    `;
+                }
+            }
+
+            const statusContainer = card.querySelector('.status-container');
+            if (statusContainer) {
+                let statusHtml = (c.conditions || []).join('');
+                if (c.statusBrain) statusHtml += '🧠';
+                statusContainer.innerHTML = statusHtml;
+            }
+
+            if (isEliminated) {
+                card.classList.add('opacity-50', 'grayscale');
+                card.classList.remove('bg-slate-800/80', 'active-turn');
+            } else {
+                card.classList.remove('opacity-50', 'grayscale');
+                card.classList.add('bg-slate-800/80');
+                if (activeTurnId === c.id) card.classList.add('active-turn');
+            }
+        }
+
+        function selectCombatant(id, name) {
+            const oldSelected = selectedId;
+            selectedId = id;
+            document.getElementById('targetName').innerText = name;
+            
+            if (oldSelected) {
+                const oldCard = document.getElementById(`card-${oldSelected}`);
+                if (oldCard) oldCard.classList.remove('card-selected');
+            }
+            const newCard = document.getElementById(`card-${id}`);
+            if (newCard) newCard.classList.add('card-selected');
+        }
+
+        function nextTurn() {
+            if (combatants.length === 0) return;
+            
+            let currentIndex = combatants.findIndex(c => c.id === activeTurnId);
+            let nextIndex = currentIndex;
+            let loopGuard = 0;
+            let incrementedRound = false;
+            
+            do {
+                nextIndex++;
+                if (nextIndex >= combatants.length || currentIndex === -1) { 
+                    nextIndex = 0; 
+                    if (currentIndex !== -1 && !incrementedRound) { 
+                        round++; 
+                        incrementedRound = true;
+                    }
+                }
+                loopGuard++;
+                if (loopGuard > combatants.length) break; 
+            } while (combatants[nextIndex] && ((combatants[nextIndex].type === 'monster' && combatants[nextIndex].hpCurrent <= 0) || (combatants[nextIndex].type === 'player' && combatants[nextIndex].deathSaves?.failures >= 3)));
+            
+            activeTurnId = combatants[nextIndex] ? combatants[nextIndex].id : null;
+            deleteVisibleId = null;
+            renderList(true);
+        }
+
+        function addDigit(digit) {
+            if (currentInput === "0") currentInput = digit;
+            else if (currentInput.length < 4) currentInput += digit;
+            updateNumpad();
+        }
+
+        function clearDisplay() { currentInput = "0"; updateNumpad(); }
+        function popDigit() { currentInput = currentInput.length > 1 ? currentInput.slice(0, -1) : "0"; updateNumpad(); }
+        function updateNumpad() { document.getElementById('numpadDisplay').innerText = currentInput; }
+
+        function applyHP(isHealing) {
+            if (!selectedId) { showToast('⚠️ Selecione um alvo!'); return; }
+            const value = parseInt(currentInput) || 0;
+            
+            const index = combatants.findIndex(c => c.id === selectedId);
+            if (index !== -1) {
+                const c = combatants[index];
+                const oldHP = c.hpCurrent;
+                const oldFailures = c.deathSaves?.failures || 0;
+                let triggerConcentration = false;
+                
+                if (!c.deathSaves) c.deathSaves = { success: 0, failures: 0 };
+
+                if (isHealing) {
+                    if (c.hpCurrent <= 0 && value === 0) {
+                        if (oldFailures < 3) {
+                            c.deathSaves.success += 1;
+                            if (c.deathSaves.success >= 3) {
+                                c.deathSaves = { success: 0, failures: 0 };
+                                c.stabilized = true;
+                                showToast('🛡️ Estabilizado!');
+                            }
+                        }
+                    } else if (value > 0) {
+                        c.hpCurrent = Math.min(c.hpMax, c.hpCurrent + value);
+                        c.deathSaves = { success: 0, failures: 0 };
+                        c.stabilized = false;
+                    } else {
+                        return; // Zero e HP normal ignora
+                    }
+                } else {
+                    if (c.hpCurrent <= 0 && value === 0) {
+                        if (oldFailures < 3) {
+                            c.deathSaves.failures = Math.min(3, c.deathSaves.failures + 1);
+                            c.stabilized = false;
+                            if (c.deathSaves.failures >= 3) showToast('☠️ Morto!');
+                        }
+                    } else if (value > 0) {
+                        c.hpCurrent = Math.max(0, c.hpCurrent - value);
+                        c.stabilized = false;
+                        if (c.hpCurrent <= 0 && oldHP > 0) {
+                            c.statusBrain = false;
+                            c.deathSaves = { success: 0, failures: 0 };
+                        } else if (c.hpCurrent <= 0 && oldHP <= 0) {
+                            if (oldFailures < 3) {
+                                c.deathSaves.failures = Math.min(3, c.deathSaves.failures + 1); // Dano com 0 HP soma falha
+                                if (c.deathSaves.failures >= 3) showToast('☠️ Morto!');
+                            }
+                        } else if (c.statusBrain && oldHP > 0) {
+                            triggerConcentration = true;
+                        }
+                    } else {
+                        return; // Zero e HP normal ignora
+                    }
+                }
+                
+                const newFailures = c.deathSaves.failures;
+                if (c.type === 'player') savePlayersToStorage(); 
+                
+                const monsterDiedOrRevived = c.type === 'monster' && ((oldHP > 0 && c.hpCurrent <= 0) || (oldHP <= 0 && c.hpCurrent > 0));
+                const playerDiedOrRevived = c.type === 'player' && ((oldFailures < 3 && newFailures >= 3) || (oldFailures >= 3 && newFailures < 3));
+
+                if (monsterDiedOrRevived || playerDiedOrRevived) {
+                    sortCombatants(); 
+                    renderList(false);
+                } else {
+                    updateCardTargeted(c); 
+                }
+                
+                clearDisplay();
+
+                if (triggerConcentration) {
+                    askConcentration(c.id);
+                }
+            }
+        }
+
+        function askConcentration(id) {
+            concentrationTargetId = id;
+            document.getElementById('concentrationModal').style.display = 'flex';
+        }
+
+        function answerConcentration(passed) {
+            document.getElementById('concentrationModal').style.display = 'none';
+            if (!passed && concentrationTargetId) {
+                const index = combatants.findIndex(c => c.id === concentrationTargetId);
+                if (index !== -1) {
+                    combatants[index].statusBrain = false;
+                    if (combatants[index].type === 'player') savePlayersToStorage();
+                    updateCardTargeted(combatants[index]);
+                }
+            }
+            concentrationTargetId = null;
+        }
+
+        function startInitPress(event) {
+            didInitLongPress = false;
+            initPressTimer = window.setTimeout(() => {
+                didInitLongPress = true;
+                rollMonsterInitiatives();
+            }, 2000);
+        }
+
+        function cancelInitPress(event) {
+            window.clearTimeout(initPressTimer);
+        }
+
+        function rollMonsterInitiatives() {
+            let changed = false;
+            combatants.forEach(c => {
+                if (c.type === 'monster') {
+                    c.initiative = Math.floor(Math.random() * 20) + 1;
+                    changed = true;
+                }
+            });
+            
+            if (changed) {
+                sortCombatants();
+                renderList(true);
+                clearDisplay();
+            }
+        }
+
+        function applyInitiative() {
+            if (didInitLongPress) {
+                didInitLongPress = false;
+                return;
+            }
+
+            if (!selectedId) { showToast('⚠️ Selecione um alvo!'); return; }
+            const value = parseInt(currentInput);
+            const index = combatants.findIndex(c => c.id === selectedId);
+            if (index !== -1) {
+                combatants[index].initiative = value;
+                
+                if (combatants[index].type === 'player') savePlayersToStorage(); 
+                
+                sortCombatants();
+                renderList(true);
+                clearDisplay();
+            }
+        }
+
+        function savePlayersToStorage() {
+            localStorage.setItem('dnd_players', JSON.stringify(combatants.filter(c => c.type === 'player')));
+        }
+
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js')
+                    .then(() => console.log('Service Worker Registado!'))
+                    .catch((err) => console.log('Erro no registo do Service Worker:', err));
+            });
+        }
+    </script>
+</body>
+</html>
