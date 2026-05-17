@@ -150,7 +150,7 @@
                 </div>
                 <div class="grid grid-cols-2 gap-2">
                     <button onclick="openModal('player')" class="btn-control hover:bg-blue-900/40 border-blue-900/50" title="Add Jogador">🧙‍♂️</button>
-                    <button onclick="openModal('monster')" class="btn-control hover:bg-slate-700" title="Add Monstro">👹</button>
+                    <button onclick="openMonsterChoiceModal()" class="btn-control hover:bg-slate-700" title="Add Monstro">👹</button>
                     <button onclick="endCombat()" onmousedown="startEndCombatPress(event)" onmouseup="cancelEndCombatPress(event)" onmouseleave="cancelEndCombatPress(event)" ontouchstart="startEndCombatPress(event)" ontouchend="cancelEndCombatPress(event)" class="btn-control hover:bg-red-600/50 border-red-900/50" title="Terminar Combate (Segure 3s para apagar tudo)">❌</button>
                     <button onclick="nextTurn()" class="btn-control hover:bg-amber-900/40 border-amber-900/50" title="Próximo">⏩</button>
                     <button onclick="openConditionMenu()" class="btn-control hover:bg-slate-700" title="Condições">🌀</button>
@@ -386,7 +386,7 @@
 
     </div>
 </div>
-
+    <script src="monsters.js"></script>
     <script>
         let combatants = [];
         let activeTurnId = null; 
@@ -439,6 +439,7 @@ let lastPlayerData = {
         let endCombatPressTimer;
         let didEndCombatLongPress = false;
 
+        
          // INICIALIZAÇÃO E DELEGAÇÃO DE EVENTOS
         window.onload = () => {
             const savedPlayers = localStorage.getItem('dnd_players');
@@ -1181,11 +1182,23 @@ document.getElementById('conditionInfoModal').style.display =
                             </div>
                             <div class="py-1 flex-1 min-w-0">
                                 <h3 class="font-bold text-lg leading-none truncate ${c.type === 'monster' ? 'text-red-400' : ''}">${c.name}</h3>
-                                <p class="text-slate-300 text-lg font-semibold tracking-tight leading-none mt-1 truncate">CA: ${c.ca} | ${c.atkInfo}</p>
+                                <p class="text-slate-300 text-lg font-semibold tracking-tight leading-none mt-1 truncate">${c.atkInfo}</p>
                             </div>
                         </div>
                         <div class="flex items-center gap-2 shrink-0">
-                            <div class="status-container text-xl flex gap-1">${statusHtml}</div>
+                            <div class="status-container
+            grid
+            grid-cols-3
+            gap-1
+            justify-items-center
+            items-center
+            min-w-[72px]
+            max-w-[72px]
+            text-lg">
+
+    ${statusHtml}
+
+</div>
 <div class="flex flex-col items-end justify-center text-right min-w-[72px]">
 
     <div class="hp-container text-center">
@@ -1287,8 +1300,18 @@ if (hpContainer) {
 
             const statusContainer = card.querySelector('.status-container');
             if (statusContainer) {
-                let statusHtml = (c.conditions || []).join('');
-                if (c.statusBrain) statusHtml += '🧠 ';
+                let allStatuses = [...(c.conditions || [])];
+
+            if (c.statusBrain)
+                allStatuses.push('🧠');
+
+            let statusHtml = allStatuses.map(icon => `
+
+                <div class="w-5 h-5 flex items-center justify-center">
+                    ${icon}
+                </div>
+
+            `).join('');
                 statusContainer.innerHTML = statusHtml;
             }
 
@@ -1793,5 +1816,73 @@ if (index !== -1) {
     </div>
 
 </div>
+
+<div id="monsterChoiceModal" class="modal">
+
+    <div class="bg-slate-900 p-6 rounded-2xl w-full max-w-sm border border-slate-700">
+
+        <h2 class="text-xl font-bold mb-6 text-white text-center">
+            Adicionar Monstro
+        </h2>
+
+        <div class="flex flex-col gap-3">
+
+            <button
+                onclick="openModal('monster'); closeMonsterChoiceModal();"
+
+                class="p-4 rounded-xl bg-red-700 hover:bg-red-600 font-bold transition-all">
+
+                ➕ Criar Novo
+            </button>
+
+            <button
+                onclick="openPresetMonsterModal()"
+
+                class="p-4 rounded-xl bg-slate-700 hover:bg-slate-600 font-bold transition-all">
+
+                📚 Usar Predefinido
+            </button>
+
+        </div>
+
+        <button
+            onclick="closeMonsterChoiceModal()"
+
+            class="mt-4 w-full p-3 rounded-xl bg-slate-800 hover:bg-slate-700 transition-all">
+
+            Cancelar
+        </button>
+
+    </div>
+
+</div>
+
+<div id="presetMonsterModal" class="modal">
+
+    <div class="bg-slate-900 p-6 rounded-2xl w-full max-w-md border border-slate-700">
+
+        <h2 class="text-xl font-bold mb-6 text-white text-center">
+            Bestiário
+        </h2>
+
+        <div
+            id="presetMonsterList"
+
+            class="flex flex-col gap-3 max-h-[400px] overflow-y-auto">
+
+        </div>
+
+        <button
+            onclick="closePresetMonsterModal()"
+
+            class="mt-4 w-full p-3 rounded-xl bg-slate-800 hover:bg-slate-700 transition-all">
+
+            Fechar
+        </button>
+
+    </div>
+
+</div>
+
 </body>
 </html>
