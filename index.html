@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
@@ -150,7 +150,7 @@
                 </div>
                 <div class="grid grid-cols-2 gap-2">
                     <button onclick="openModal('player')" class="btn-control hover:bg-blue-900/40 border-blue-900/50" title="Add Jogador">🧙‍♂️</button>
-                    <button onclick="openModal('monster')" class="btn-control hover:bg-slate-700" title="Add Monstro">🧌</button>
+                    <button onclick="openModal('monster')" class="btn-control hover:bg-slate-700" title="Add Monstro">👹</button>
                     <button onclick="endCombat()" onmousedown="startEndCombatPress(event)" onmouseup="cancelEndCombatPress(event)" onmouseleave="cancelEndCombatPress(event)" ontouchstart="startEndCombatPress(event)" ontouchend="cancelEndCombatPress(event)" class="btn-control hover:bg-red-700/30 border-red-900/50" title="Terminar Combate (Segure 3s para apagar tudo)">❌</button>
                     <button onclick="nextTurn()" class="btn-control hover:bg-amber-900/40 border-amber-900/50" title="Próximo">⏩</button>
                     <button onclick="openConditionMenu()" class="btn-control hover:bg-slate-700" title="Condições">🌀</button>
@@ -187,7 +187,7 @@
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
                 </button>
                 <button onclick="openDamageBodyModal()" class="flex-1 bg-red-600 hover:bg-red-500 text-white rounded-xl flex items-center justify-center shadow-lg text-2xl" title="Dano / Add Falha (0 HP)">
-                    💀
+                    ☠️
                 </button>
                 <button onclick="openSTModal()"
                 class="flex-1 bg-cyan-600 hover:bg-cyan-500 text-white rounded-xl flex items-center justify-center shadow-lg text-2xl"
@@ -226,6 +226,25 @@
                     <input type="number" id="caInp" placeholder="10">
                 </div>
                 <div>
+                    <label class="text-xs text-slate-500 font-bold uppercase">Armadura Cabeça</label>
+                    <input type="number" id="armorHeadInp" placeholder="0">
+                </div>
+                
+                <div>
+                    <label class="text-xs text-slate-500 font-bold uppercase">Armadura Tronco</label>
+                    <input type="number" id="armorTorsoInp" placeholder="0">
+                </div>
+                
+                <div>
+                    <label class="text-xs text-slate-500 font-bold uppercase">Armadura Braço</label>
+                    <input type="number" id="armorArmInp" placeholder="0">
+                </div>
+                
+                <div>
+                    <label class="text-xs text-slate-500 font-bold uppercase">Armadura Perna</label>
+                    <input type="number" id="armorLegInp" placeholder="0">
+                </div>
+                <div>
                     <label class="text-xs text-slate-500 font-bold uppercase">Ataque/Dano</label>
                     <input type="text" id="atkInp" placeholder="+5 / 1d8">
                 </div>
@@ -244,7 +263,7 @@
             <p class="text-slate-300 mb-6">Passou no teste de concentração? Sim ou Não.</p>
             <div class="flex gap-4">
                 <button onclick="answerConcentration(true)" class="flex-1 p-3 rounded-xl bg-emerald-600 font-bold text-white hover:bg-emerald-500">Sim</button>
-                <button onclick="answerConcentration(false)" class="flex-1 p-3 rounded-xl bg-red-600 font-bold text-white hover:bg-red-500">Não</button>
+                <button onclick="answerConcentration(false)" class="flex-1 p-3 rounded-xl bg-red-600 font-bold text-white hover:bg-red-500">NÃ£o</button>
             </div>
         </div>
     </div>
@@ -376,14 +395,37 @@
         let monsterCounter = 1;
         let playerCounter = 1;
         let currentInput = "0";
-        let lastMonsterData = { hp: "", st: "", ca: "", atk: "" };
-        let lastPlayerData = { hp: "", st: "", ca: "", atk: "" };
+        let lastMonsterData = {
+    hp: "",
+    st: "",
+    ca: "",
+    atk: "",
+    armor: {
+        head: 0,
+        torso: 0,
+        arm: 0,
+        leg: 0
+    }
+};
+
+let lastPlayerData = {
+    hp: "",
+    st: "",
+    ca: "",
+    atk: "",
+    armor: {
+        head: 0,
+        torso: 0,
+        arm: 0,
+        leg: 0
+    }
+};
 
         let pressTimer;
-        let startY = 0; // Para ignorar scrolls na delegação
+        let startY = 0; // Para ignorar scrolls na delegaÃ§Ã£o
         let deleteVisibleId = null;
         let editingId = null; 
-        let showEliminated = true; // Controle da divisória
+        let showEliminated = true; // Controle da divisÃ³ria
         let concentrationTargetId = null;
         // =========================================
         // SISTEMA DE DANO LOCALIZADO
@@ -397,7 +439,7 @@
         let endCombatPressTimer;
         let didEndCombatLongPress = false;
 
-        // INICIALIZAÇÃO E DELEGAÇÃO DE EVENTOS
+         // INICIALIZAÇÃO E DELEGAÇÃO DE EVENTOS
         window.onload = () => {
             const savedPlayers = localStorage.getItem('dnd_players');
             if (savedPlayers) {
@@ -419,12 +461,18 @@
                     }
                 });
                 playerCounter = pCount + 1;
-                if (lastP) lastPlayerData = { hp: lastP.hpMax, ca: lastP.ca, atk: lastP.atkInfo };
+                if (lastP) 
+                lastPlayerData = {
+                hp: lastP.hpMax,
+                st: lastP.stMax,
+                ca: lastP.ca,
+                atk: lastP.atkInfo
+            };
                 if (combatants.length > 0) activeTurnId = combatants[0].id;
                 renderList();
             }
 
-            // Delegação de Eventos na Main List
+            // DelegaÃ§Ã£o de Eventos na Main List
             const list = document.getElementById('combatList');
             list.addEventListener('mousedown', handleCardPressStart);
             list.addEventListener('touchstart', (e) => {
@@ -440,7 +488,7 @@
             list.addEventListener('click', handleListClick);
         };
 
-        // Lógica de Eventos Delegados
+        // LÃ³gica de Eventos Delegados
         function handleCardPressStart(e) {
             const card = e.target.closest('.combat-card');
             if (!card || deleteVisibleId || e.target.closest('.delete-overlay')) return;
@@ -524,6 +572,10 @@
             const st = parseInt(document.getElementById('stInp').value) || 0;
             const ca = parseInt(document.getElementById('caInp').value) || 10;
             const atk = document.getElementById('atkInp').value || "-";
+            const armorHead = parseInt(document.getElementById('armorHeadInp').value) || 0;
+            const armorTorso = parseInt(document.getElementById('armorTorsoInp').value) || 0;
+            const armorArm = parseInt(document.getElementById('armorArmInp').value) || 0;
+            const armorLeg = parseInt(document.getElementById('armorLegInp').value) || 0;
 
             if (!name) return;
 
@@ -541,13 +593,19 @@
                     if (combatants[index].stCurrent > st) combatants[index].stCurrent = st;
                     combatants[index].ca = ca;
                     combatants[index].atkInfo = atk;
+                    combatants[index].armor = {
+                    head: armorHead,
+                    torso: armorTorso,
+                    arm: armorArm,
+                    leg: armorLeg
+                };
                     
                     if (combatants[index].type === 'player') savePlayersToStorage();
                 }
                 editingId = null;
             } 
             else {
-                // Verifica se é a maior iniciativa
+                // Verifica se Ã© a maior iniciativa
                 if (combatants.length === 0) {
                     isHighestInit = true;
                 } else {
@@ -565,6 +623,12 @@
                     stCurrent: st,
                     ca,
                     atkInfo: atk,
+                    armor: {
+                    head: armorHead,
+                    torso: armorTorso,
+                    arm: armorArm,
+                    leg: armorLeg
+                    },
                     type: modalType,
                     statusBrain: false,
                     conditions: [],
@@ -610,8 +674,13 @@
             document.getElementById('nameInp').value = c.name;
             document.getElementById('initInp').value = c.initiative;
             document.getElementById('hpInp').value = c.hpMax;
+            document.getElementById('stInp').value = c.stMax;
             document.getElementById('caInp').value = c.ca;
             document.getElementById('atkInp').value = c.atkInfo;
+            document.getElementById('armorHeadInp').value = c.armor?.head || 0;
+            document.getElementById('armorTorsoInp').value = c.armor?.torso || 0;
+            document.getElementById('armorArmInp').value = c.armor?.arm || 0;
+            document.getElementById('armorLegInp').value = c.armor?.leg || 0;
             
             document.getElementById('entityModal').style.display = 'flex';
         }
@@ -662,20 +731,18 @@
             container.innerHTML = `<button class="absolute top-1/2 left-1/2 -mt-6 -ml-6 w-12 h-12 bg-slate-700 rounded-full flex items-center justify-center text-white font-bold z-10 border border-slate-500 shadow-xl" onclick="closeConditionMenu(event, true)">X</button>`;
             
             const conditions = [
-    { icon: '😍', name: 'Enfeitiçado.' },
-    { icon: '😱', name: 'Medo.' },
-    { icon: '🚫', name: 'Incapacitado.' },
-    { icon: '👻', name: 'Invisível.' },
-    { icon: '🐍', name: 'Veneno.' },
-    { icon: '🧎', name: 'Caído' },
-    { icon: '😮‍💨', name: 'Exausto.' },
-
-    // Novas condições
-    { icon: '🔥', name: 'Fogo' },
-    { icon: '💫', name: 'Atordoado.' },
-    { icon: '🩸', name: 'Sangramento.' },
-    { icon: '🧊', name: 'Congelado.' },
-    { icon: '⚖️', name: 'Desequilibrado.' }
+                { icon: '😍', name: 'Enfeitiçado.' },
+                { icon: '😱', name: 'Medo.' },
+                { icon: '🚫', name: 'Incapacitado.' },
+                { icon: '👻', name: 'Invisível.' },
+                { icon: '🐍', name: 'Envenado.' },
+                { icon: '🧎', name: 'Caído' },
+                { icon: '😮‍💨', name: 'Exausto.' },
+                { icon: '🔥', name: 'Em Chamas' },
+                { icon: '💫', name: 'Atordoado.' },
+                { icon: '🩸', name: 'Sangrando.' },
+                { icon: '🧊', name: 'Congelado.' },
+                { icon: '⚖️', name: 'Desequilibrado.' }
 ];
 
 const innerRadius = 95;
@@ -683,7 +750,7 @@ const outerRadius = 190;
 
 conditions.forEach((cond, i) => {
 
-    // Divide em dois anéis
+    // Divide em dois anÃ©is
     const isOuter = i >= Math.ceil(conditions.length / 2);
 
     const ringConditions = isOuter
@@ -775,37 +842,37 @@ conditions.forEach((cond, i) => {
 
 '😍': {
     title: 'Enfeitiçado',
-    desc: 'A criatura fica encantada e não pode atacar quem a enfeitiçou.'
+    desc: 'A criatura fica encantada e nÃ£o pode atacar quem a enfeitiÃ§ou.'
 },
 
 '😱': {
-    title: 'Amedrontado',
-    desc: 'Sofre desvantagens enquanto puder ver a fonte do medo.'
+    title: 'Medo',
+    desc: 'Movimento reduzido pela metade, se falhar em teste de Coragem irá ficar paralisado durante o turno inteiro.'
 },
 
 '🚫': {
     title: 'Incapacitado',
-    desc: 'Não pode realizar ações nem reações.'
+    desc: 'O alvo ficará desmaiado até passar em um teste de resistência ND 18.'
 },
 
 '👻': {
     title: 'Invisível',
-    desc: 'Difícil de detectar visualmente e recebe vantagens apropriadas.'
+    desc: 'Díficil de detectar visualmente e recebe vantagens apropriadas.'
 },
 
 '🐍': {
     title: 'Envenenado',
-    desc: 'Sofre 1d4 de dano por turno e –2 em testes físicos. Pode fazer um teste de resistência ao fim de cada turno para encerrar o efeito.												'
+    desc: 'Sofre 1d6 de dano por turno e –2 em testes físicos. Pode fazer um teste de resistência ao fim de cada turno para encerrar o efeito.												'
 },
 
 '🧎': {
-    title: 'Caído',
-    desc: 'A criatura está no chão e vulnerável em combate corpo a corpo.'
+    title: 'Caí­do',
+    desc: 'Sofre desvantagem em ataques corpo a corpo, ataques contra ele têm vantagem, e levantar-se consome uma ação, pode esquivar ou bloquear.'
 },
 
-'😮‍💨': {
-    title: 'Exaustão',
-    desc: 'A criatura sofre penalidades físicas progressivas.'
+'😮‍💨¨': {
+    title: 'Exausto',
+    desc: 'A criatura sofre penalidades física progressivas.'
 },
 
 '🔥': {
@@ -815,22 +882,22 @@ conditions.forEach((cond, i) => {
 
 '💫': {
     title: 'Atordoado',
-    desc: 'O personagem perde a próxima ação e sofre e não pode realizar defesa até o fim do próximo turno.'
+    desc: 'O personagem perde a próxima ação e não pode realizar defesa ou esquiva até o fim do próximo turno.'
 },
 
 '🩸': {
-    title: 'Sangramento',
+    title: 'Sangrando',
     desc: 'Sofre 1d6 de dano por turno até receber primeiros socorros ou ser curado. O efeito acumula se reaplicado.'
 },
 
 '🧊': {
     title: 'Congelado',
-    desc: 'Movimento reduzido e possíveis penalidades físicas.'
+    desc: 'Movimento reduzido pela metade e desvantagem em ações físicas. Se falhar em um teste de resistência, fica Atordoado por 1 turno.'
 },
 
 '⚖️': {
     title: 'Desequilibrado',
-    desc: 'A criatura perde estabilidade e sofre penalidades defensivas.'
+    desc: 'Sofre –2 em ataques e defesas e não pode realizar reações até o próximo turno.'
 }
 };
 
@@ -965,7 +1032,7 @@ document.getElementById('conditionInfoModal').style.display =
                     divider.innerHTML = `
                         <div class="h-px bg-slate-700 flex-1"></div>
                         <span class="text-slate-500 text-xs font-bold uppercase tracking-widest flex items-center gap-2">
-                            Eliminados <span class="text-lg">${showEliminated ? '▼' : '▶'}</span>
+                            Eliminados <span class="text-lg">${showEliminated ? 'â–¼' : 'â–¶'}</span>
                         </span>
                         <div class="h-px bg-slate-700 flex-1"></div>
                     `;
@@ -1010,7 +1077,7 @@ document.getElementById('conditionInfoModal').style.display =
 
                 const hpColor = c.type === 'monster' ? 'text-red-500' : 'text-emerald-400';
                 let statusHtml = (c.conditions || []).join('');
-                if (c.statusBrain) statusHtml += '🧠';
+                if (c.statusBrain) statusHtml += '🧠 ';
 
                 let hpDisplayHtml = `
                     <div class="hp-text text-xl font-bold leading-none ${hpColor}">${c.hpCurrent}/${c.hpMax}</div>
@@ -1054,7 +1121,7 @@ document.getElementById('conditionInfoModal').style.display =
         ${hpDisplayHtml}
     </div>
 
-    <div class="mt-1">
+    <div class="mt-1 st-container">
         <div class="text-sm font-bold leading-none text-cyan-400">
             ${c.stCurrent ?? 0}/${c.stMax ?? 0}
         </div>
@@ -1150,7 +1217,7 @@ if (hpContainer) {
             const statusContainer = card.querySelector('.status-container');
             if (statusContainer) {
                 let statusHtml = (c.conditions || []).join('');
-                if (c.statusBrain) statusHtml += '🧠';
+                if (c.statusBrain) statusHtml += '🧠 ';
                 statusContainer.innerHTML = statusHtml;
             }
 
@@ -1263,14 +1330,14 @@ if (newCard)
 function openDamageBodyModal() {
 
 if (!selectedId) {
-    showToast('⚠️ Selecione um alvo!');
+    showToast('Por favor, Selecione um alvo!');
     return;
 }
 
 pendingDamageBase = parseInt(currentInput) || 0;
 
 if (pendingDamageBase <= 0) {
-    showToast('⚠️ Digite um dano!');
+    showToast('Por favor, Digite um dano!');
     return;
 }
 
@@ -1295,6 +1362,57 @@ document.getElementById('damageTypeModal').style.display = 'flex';
 
 function applyCalculatedDamage(typeMultiplier) {
 
+const target = combatants.find(c => c.id === selectedId);
+
+if (!target) return;
+
+let armorValue = 0;
+
+// =========================================
+// ARMADURA DA PARTE DO CORPO
+// =========================================
+
+switch (pendingDamageBodyPart) {
+
+    case 'head':
+        armorValue = target.armor?.head || 0;
+        break;
+
+    case 'torso':
+        armorValue = target.armor?.torso || 0;
+        break;
+
+    case 'arm':
+        armorValue = target.armor?.arm || 0;
+        break;
+
+    case 'leg':
+        armorValue = target.armor?.leg || 0;
+        break;
+}
+
+// =========================================
+// REDUZ ARMADURA PRIMEIRO
+// =========================================
+
+let finalDamage = pendingDamageBase - armorValue;
+
+if (finalDamage < 0)
+    finalDamage = 0;
+
+    if (finalDamage === 0) {
+
+    closeDamageModals();
+
+    showToast('🛡️ A armadura absorveu todo o dano!');
+
+    return;
+    }
+
+// =========================================
+// MULTIPLICADOR DA PARTE DO CORPO
+// =========================================
+
 let bodyMultiplier = 1;
 
 switch (pendingDamageBodyPart) {
@@ -1316,15 +1434,18 @@ switch (pendingDamageBodyPart) {
         break;
 }
 
-let finalDamage = pendingDamageBase;
-
-// Multiplicador da parte do corpo
 finalDamage *= bodyMultiplier;
 
-// Multiplicador do tipo de dano
+// =========================================
+// MULTIPLICADOR DO TIPO DE DANO
+// =========================================
+
 finalDamage *= typeMultiplier;
 
-// Arredondamento
+// =========================================
+// ARREDONDAMENTO
+// =========================================
+
 finalDamage = Math.floor(finalDamage);
 
 closeDamageModals();
@@ -1346,7 +1467,7 @@ currentInput = oldInput;
 updateNumpad();
 }
         function applyHP(isHealing) {   
-            if (!selectedId) { showToast('⚠️ Selecione um alvo!'); return; }
+            if (!selectedId) { showToast('âš ï¸� Selecione um alvo!'); return; }
             const value = parseInt(currentInput) || 0;
             
             const index = combatants.findIndex(c => c.id === selectedId);
@@ -1365,7 +1486,7 @@ updateNumpad();
                             if (c.deathSaves.success >= 3) {
                                 c.deathSaves = { success: 0, failures: 0 };
                                 c.stabilized = true;
-                                showToast('🛡️ Estabilizado!');
+                                showToast('ðŸ›¡ï¸� Estabilizado!');
                             }
                         }
                     } else if (value > 0) {
@@ -1380,7 +1501,7 @@ updateNumpad();
                         if (oldFailures < 3) {
                             c.deathSaves.failures = Math.min(3, c.deathSaves.failures + 1);
                             c.stabilized = false;
-                            if (c.deathSaves.failures >= 3) showToast('☠️ Morto!');
+                            if (c.deathSaves.failures >= 3) showToast('â˜ ï¸� Morto!');
                         }
                     } else if (value > 0) {
                         c.hpCurrent = Math.max(0, c.hpCurrent - value);
@@ -1391,7 +1512,7 @@ updateNumpad();
                         } else if (c.hpCurrent <= 0 && oldHP <= 0) {
                             if (oldFailures < 3) {
                                 c.deathSaves.failures = Math.min(3, c.deathSaves.failures + 1); // Dano com 0 HP soma falha
-                                if (c.deathSaves.failures >= 3) showToast('☠️ Morto!');
+                                if (c.deathSaves.failures >= 3) showToast('â˜ ï¸� Morto!');
                             }
                         } else if (c.statusBrain && oldHP > 0) {
                             triggerConcentration = true;
@@ -1424,14 +1545,14 @@ updateNumpad();
         function openSTModal() {
 
 if (!selectedId) {
-    showToast('⚠️ Selecione um alvo!');
+    showToast('âš ï¸� Selecione um alvo!');
     return;
 }
 
 const value = parseInt(currentInput) || 0;
 
 if (value <= 0) {
-    showToast('⚠️ Digite um valor!');
+    showToast('âš ï¸� Digite um valor!');
     return;
 }
 
@@ -1445,7 +1566,7 @@ document.getElementById('stModal').style.display = 'none';
 function applyST(isHealing) {
 
 if (!selectedId) {
-    showToast('⚠️ Selecione um alvo!');
+    showToast('âš ï¸� Selecione um alvo!');
     return;
 }
 
@@ -1530,7 +1651,7 @@ if (index !== -1) {
                 return;
             }
 
-            if (!selectedId) { showToast('⚠️ Selecione um alvo!'); return; }
+            if (!selectedId) { showToast('âš ï¸� Selecione um alvo!'); return; }
             const value = parseInt(currentInput);
             const index = combatants.findIndex(c => c.id === selectedId);
             if (index !== -1) {
@@ -1558,7 +1679,7 @@ if (index !== -1) {
     </script>
 
 <!-- ========================================= -->
-<!-- MODAL DESCRIÇÃO DE STATUS -->
+<!-- MODAL DESCRIÃ‡ÃƒO DE STATUS -->
 <!-- ========================================= -->
 
 <div id="conditionInfoModal" class="modal" style="z-index: 90;">
