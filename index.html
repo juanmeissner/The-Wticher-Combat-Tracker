@@ -81,191 +81,7 @@
         </div>
     </footer>
 
-    <div id="entityModal" class="modal">
-        <div class="bg-slate-900 p-6 rounded-2xl w-full max-w-md border border-slate-700">
-            <h2 id="modalTitle" class="text-xl font-bold mb-4">Adicionar Entidade</h2>
-            <div class="grid grid-cols-2 gap-4">
-                <div class="col-span-2">
-                    <label class="text-xs text-slate-500 font-bold uppercase">Nome</label>
-                    <input type="text" id="nameInp" placeholder="Ex: Grog ou Goblin">
-                </div>
-                <div>
-                    <label class="text-xs text-slate-500 font-bold uppercase">Iniciativa</label>
-                    <input type="number" id="initInp" placeholder="0">
-                </div>
-                <div>
-                    <label class="text-xs text-slate-500 font-bold uppercase">HP Max</label>
-                    <input type="number" id="hpInp" placeholder="10">
-                </div>
-                <div>
-                    <label class="text-xs text-slate-500 font-bold uppercase">ST Max</label>
-                    <input type="number" id="stInp" placeholder="10">
-                </div>
-                <div>
-                    <label class="text-xs text-slate-500 font-bold uppercase">CA</label>
-                    <input type="number" id="caInp" placeholder="10">
-                </div>
-                <div>
-                    <label class="text-xs text-slate-500 font-bold uppercase">Armadura Cabeça</label>
-                    <input type="number" id="armorHeadInp" placeholder="0">
-                </div>
-                
-                <div>
-                    <label class="text-xs text-slate-500 font-bold uppercase">Armadura Tronco</label>
-                    <input type="number" id="armorTorsoInp" placeholder="0">
-                </div>
-                
-                <div>
-                    <label class="text-xs text-slate-500 font-bold uppercase">Armadura Braço</label>
-                    <input type="number" id="armorArmInp" placeholder="0">
-                </div>
-                
-                <div>
-                    <label class="text-xs text-slate-500 font-bold uppercase">Armadura Perna</label>
-                    <input type="number" id="armorLegInp" placeholder="0">
-                </div>
-                <div>
-                    <label class="text-xs text-slate-500 font-bold uppercase">Ataque/Dano</label>
-                    <input type="text" id="atkInp" placeholder="+5 / 1d8">
-                </div>
-            </div>
-            <div class="flex gap-2 mt-6">
-                <button onclick="closeModal()" class="flex-1 p-2 rounded-lg bg-slate-700 font-bold">Cancelar</button>
-                <button onclick="saveEntity()" class="flex-1 p-2 rounded-lg bg-blue-600 font-bold">Salvar</button>
-            </div>
-        </div>
-    </div>
 
-    <div id="concentrationModal" class="modal" style="z-index: 70;">
-        <div class="bg-slate-900 p-6 rounded-2xl w-full max-w-sm border border-slate-700 text-center">
-            <div class="text-4xl mb-4">🧠</div>
-            <h2 class="text-xl font-bold mb-4 text-white">Teste de Concentração</h2>
-            <p class="text-slate-300 mb-6">Passou no teste de concentração? Sim ou Não.</p>
-            <div class="flex gap-4">
-                <button onclick="answerConcentration(true)" class="flex-1 p-3 rounded-xl bg-emerald-600 font-bold text-white hover:bg-emerald-500">Sim</button>
-                <button onclick="answerConcentration(false)" class="flex-1 p-3 rounded-xl bg-red-600 font-bold text-white hover:bg-red-500">NÃ£o</button>
-            </div>
-        </div>
-    </div>
-
-    <div id="circularMenu" onclick="closeConditionMenu(event)">
-        <div class="relative w-[430px] h-[430px]" id="circleContainer">
-            </div>
-    </div>
-<!-- ========================================= -->
-<!-- MODAL LOCAL DO DANO -->
-<!-- ========================================= -->
-
-<div id="damageBodyModal" class="modal" style="z-index: 80;">
-    <div class="bg-slate-900 p-6 rounded-2xl w-full max-w-sm border border-slate-700 text-center">
-
-        <h2 class="text-xl font-bold mb-6 text-white">
-            Local do Dano
-        </h2>
-
-        <div class="grid grid-cols-2 gap-3">
-
-            <button onclick="selectBodyPart('head')"
-                class="p-4 rounded-xl bg-red-700 font-bold hover:bg-red-600 transition-all">
-                Cabeça
-            </button>
-
-            <button onclick="selectBodyPart('torso')"
-                class="p-4 rounded-xl bg-orange-700 font-bold hover:bg-orange-600 transition-all">
-                Tronco
-            </button>
-
-            <button onclick="selectBodyPart('arm')"
-                class="p-4 rounded-xl bg-yellow-700 font-bold hover:bg-yellow-600 transition-all">
-                Braço
-            </button>
-
-            <button onclick="selectBodyPart('leg')"
-                class="p-4 rounded-xl bg-green-700 font-bold hover:bg-green-600 transition-all">
-                Perna
-            </button>
-
-        </div>
-
-        <button onclick="closeDamageModals()"
-            class="mt-4 w-full p-3 rounded-xl bg-slate-700 hover:bg-slate-600 transition-all">
-            Cancelar
-        </button>
-
-    </div>
-</div>
-
-<!-- ========================================= -->
-<!-- MODAL TIPO DE DANO -->
-<!-- ========================================= -->
-
-<div id="damageTypeModal" class="modal" style="z-index: 81;">
-    <div class="bg-slate-900 p-6 rounded-2xl w-full max-w-sm border border-slate-700 text-center">
-
-        <h2 class="text-xl font-bold mb-6 text-white">
-            Tipo de Dano
-        </h2>
-
-        <div class="flex flex-col gap-3">
-
-            <button onclick="applyCalculatedDamage(1)"
-                class="p-4 rounded-xl bg-red-600 font-bold hover:bg-red-500 transition-all">
-                Dano Cheio
-            </button>
-
-            <button onclick="applyCalculatedDamage(0.5)"
-                class="p-4 rounded-xl bg-yellow-600 font-bold hover:bg-yellow-500 transition-all">
-                Dano Dividido
-            </button>
-
-            <button onclick="applyCalculatedDamage(2)"
-                class="p-4 rounded-xl bg-purple-600 font-bold hover:bg-purple-500 transition-all">
-                Dano Dobrado
-            </button>
-
-        </div>
-
-        <button onclick="closeDamageModals()"
-            class="mt-4 w-full p-3 rounded-xl bg-slate-700 hover:bg-slate-600 transition-all">
-            Cancelar
-        </button>
-
-    </div>
-</div>
-<!-- ========================================= -->
-
-<!-- ========================================= -->
-<!-- MODAL ST -->
-<!-- ========================================= -->
-
-<div id="stModal" class="modal" style="z-index: 82;">
-    <div class="bg-slate-900 p-6 rounded-2xl w-full max-w-sm border border-slate-700 text-center">
-
-        <h2 class="text-xl font-bold mb-6 text-cyan-400">
-            Gerenciar ST
-        </h2>
-
-        <div class="flex flex-col gap-3">
-
-            <button onclick="applyST(false)"
-                class="p-4 rounded-xl bg-cyan-700 font-bold hover:bg-cyan-600 transition-all">
-                Gastar ST
-            </button>
-
-            <button onclick="applyST(true)"
-                class="p-4 rounded-xl bg-emerald-700 font-bold hover:bg-emerald-600 transition-all">
-                Regenerar ST
-            </button>
-
-        </div>
-
-        <button onclick="closeSTModal()"
-            class="mt-4 w-full p-3 rounded-xl bg-slate-700 hover:bg-slate-600 transition-all">
-            Cancelar
-        </button>
-
-    </div>
-</div>
 </section>
 
 <section id="inventoryScreen">
@@ -1838,72 +1654,7 @@ e.preventDefault();
 
 </div>
 
-<div id="monsterChoiceModal" class="modal">
 
-    <div class="bg-slate-900 p-6 rounded-2xl w-full max-w-sm border border-slate-700">
-
-        <h2 class="text-xl font-bold mb-6 text-white text-center">
-            Adicionar Monstro
-        </h2>
-
-        <div class="flex flex-col gap-3">
-
-            <button
-                onclick="openModal('monster'); closeMonsterChoiceModal();"
-
-                class="p-4 rounded-xl bg-red-700 hover:bg-red-600 font-bold transition-all">
-
-                ➕ Criar Novo
-            </button>
-
-            <button
-                onclick="openPresetMonsterModal()"
-
-                class="p-4 rounded-xl bg-slate-700 hover:bg-slate-600 font-bold transition-all">
-
-                📚 Usar Predefinido
-            </button>
-
-        </div>
-
-        <button
-            onclick="closeMonsterChoiceModal()"
-
-            class="mt-4 w-full p-3 rounded-xl bg-slate-800 hover:bg-slate-700 transition-all">
-
-            Cancelar
-        </button>
-
-    </div>
-
-</div>
-
-<div id="presetMonsterModal" class="modal">
-
-    <div class="bg-slate-900 p-6 rounded-2xl w-full max-w-md border border-slate-700">
-
-        <h2 class="text-xl font-bold mb-6 text-white text-center">
-            Bestiário
-        </h2>
-
-        <div
-            id="presetMonsterList"
-
-            class="flex flex-col gap-3 max-h-[400px] overflow-y-auto">
-
-        </div>
-
-        <button
-            onclick="closePresetMonsterModal()"
-
-            class="mt-4 w-full p-3 rounded-xl bg-slate-800 hover:bg-slate-700 transition-all">
-
-            Fechar
-        </button>
-
-    </div>
-
-</div>
 </div>
 
 <!-- =====================================
@@ -2005,6 +1756,258 @@ ITEM DETAILS MODAL
 
             Fechar
 
+        </button>
+
+    </div>
+
+</div>
+<div id="entityModal" class="modal">
+    <div class="bg-slate-900 p-6 rounded-2xl w-full max-w-md border border-slate-700">
+        <h2 id="modalTitle" class="text-xl font-bold mb-4">Adicionar Entidade</h2>
+        <div class="grid grid-cols-2 gap-4">
+            <div class="col-span-2">
+                <label class="text-xs text-slate-500 font-bold uppercase">Nome</label>
+                <input type="text" id="nameInp" placeholder="Ex: Grog ou Goblin">
+            </div>
+            <div>
+                <label class="text-xs text-slate-500 font-bold uppercase">Iniciativa</label>
+                <input type="number" id="initInp" placeholder="0">
+            </div>
+            <div>
+                <label class="text-xs text-slate-500 font-bold uppercase">HP Max</label>
+                <input type="number" id="hpInp" placeholder="10">
+            </div>
+            <div>
+                <label class="text-xs text-slate-500 font-bold uppercase">ST Max</label>
+                <input type="number" id="stInp" placeholder="10">
+            </div>
+            <div>
+                <label class="text-xs text-slate-500 font-bold uppercase">CA</label>
+                <input type="number" id="caInp" placeholder="10">
+            </div>
+            <div>
+                <label class="text-xs text-slate-500 font-bold uppercase">Armadura Cabeça</label>
+                <input type="number" id="armorHeadInp" placeholder="0">
+            </div>
+            
+            <div>
+                <label class="text-xs text-slate-500 font-bold uppercase">Armadura Tronco</label>
+                <input type="number" id="armorTorsoInp" placeholder="0">
+            </div>
+            
+            <div>
+                <label class="text-xs text-slate-500 font-bold uppercase">Armadura Braço</label>
+                <input type="number" id="armorArmInp" placeholder="0">
+            </div>
+            
+            <div>
+                <label class="text-xs text-slate-500 font-bold uppercase">Armadura Perna</label>
+                <input type="number" id="armorLegInp" placeholder="0">
+            </div>
+            <div>
+                <label class="text-xs text-slate-500 font-bold uppercase">Ataque/Dano</label>
+                <input type="text" id="atkInp" placeholder="+5 / 1d8">
+            </div>
+        </div>
+        <div class="flex gap-2 mt-6">
+            <button onclick="closeModal()" class="flex-1 p-2 rounded-lg bg-slate-700 font-bold">Cancelar</button>
+            <button onclick="saveEntity()" class="flex-1 p-2 rounded-lg bg-blue-600 font-bold">Salvar</button>
+        </div>
+    </div>
+</div>
+
+<div id="concentrationModal" class="modal" style="z-index: 70;">
+    <div class="bg-slate-900 p-6 rounded-2xl w-full max-w-sm border border-slate-700 text-center">
+        <div class="text-4xl mb-4">🧠</div>
+        <h2 class="text-xl font-bold mb-4 text-white">Teste de Concentração</h2>
+        <p class="text-slate-300 mb-6">Passou no teste de concentração? Sim ou Não.</p>
+        <div class="flex gap-4">
+            <button onclick="answerConcentration(true)" class="flex-1 p-3 rounded-xl bg-emerald-600 font-bold text-white hover:bg-emerald-500">Sim</button>
+            <button onclick="answerConcentration(false)" class="flex-1 p-3 rounded-xl bg-red-600 font-bold text-white hover:bg-red-500">NÃ£o</button>
+        </div>
+    </div>
+</div>
+
+<div id="circularMenu" onclick="closeConditionMenu(event)">
+    <div class="relative w-[430px] h-[430px]" id="circleContainer">
+        </div>
+</div>
+<!-- ========================================= -->
+<!-- MODAL LOCAL DO DANO -->
+<!-- ========================================= -->
+
+<div id="damageBodyModal" class="modal" style="z-index: 80;">
+<div class="bg-slate-900 p-6 rounded-2xl w-full max-w-sm border border-slate-700 text-center">
+
+    <h2 class="text-xl font-bold mb-6 text-white">
+        Local do Dano
+    </h2>
+
+    <div class="grid grid-cols-2 gap-3">
+
+        <button onclick="selectBodyPart('head')"
+            class="p-4 rounded-xl bg-red-700 font-bold hover:bg-red-600 transition-all">
+            Cabeça
+        </button>
+
+        <button onclick="selectBodyPart('torso')"
+            class="p-4 rounded-xl bg-orange-700 font-bold hover:bg-orange-600 transition-all">
+            Tronco
+        </button>
+
+        <button onclick="selectBodyPart('arm')"
+            class="p-4 rounded-xl bg-yellow-700 font-bold hover:bg-yellow-600 transition-all">
+            Braço
+        </button>
+
+        <button onclick="selectBodyPart('leg')"
+            class="p-4 rounded-xl bg-green-700 font-bold hover:bg-green-600 transition-all">
+            Perna
+        </button>
+
+    </div>
+
+    <button onclick="closeDamageModals()"
+        class="mt-4 w-full p-3 rounded-xl bg-slate-700 hover:bg-slate-600 transition-all">
+        Cancelar
+    </button>
+
+</div>
+</div>
+
+<!-- ========================================= -->
+<!-- MODAL TIPO DE DANO -->
+<!-- ========================================= -->
+
+<div id="damageTypeModal" class="modal" style="z-index: 81;">
+<div class="bg-slate-900 p-6 rounded-2xl w-full max-w-sm border border-slate-700 text-center">
+
+    <h2 class="text-xl font-bold mb-6 text-white">
+        Tipo de Dano
+    </h2>
+
+    <div class="flex flex-col gap-3">
+
+        <button onclick="applyCalculatedDamage(1)"
+            class="p-4 rounded-xl bg-red-600 font-bold hover:bg-red-500 transition-all">
+            Dano Cheio
+        </button>
+
+        <button onclick="applyCalculatedDamage(0.5)"
+            class="p-4 rounded-xl bg-yellow-600 font-bold hover:bg-yellow-500 transition-all">
+            Dano Dividido
+        </button>
+
+        <button onclick="applyCalculatedDamage(2)"
+            class="p-4 rounded-xl bg-purple-600 font-bold hover:bg-purple-500 transition-all">
+            Dano Dobrado
+        </button>
+
+    </div>
+
+    <button onclick="closeDamageModals()"
+        class="mt-4 w-full p-3 rounded-xl bg-slate-700 hover:bg-slate-600 transition-all">
+        Cancelar
+    </button>
+
+</div>
+</div>
+<!-- ========================================= -->
+
+<!-- ========================================= -->
+<!-- MODAL ST -->
+<!-- ========================================= -->
+
+<div id="stModal" class="modal" style="z-index: 82;">
+<div class="bg-slate-900 p-6 rounded-2xl w-full max-w-sm border border-slate-700 text-center">
+
+    <h2 class="text-xl font-bold mb-6 text-cyan-400">
+        Gerenciar ST
+    </h2>
+
+    <div class="flex flex-col gap-3">
+
+        <button onclick="applyST(false)"
+            class="p-4 rounded-xl bg-cyan-700 font-bold hover:bg-cyan-600 transition-all">
+            Gastar ST
+        </button>
+
+        <button onclick="applyST(true)"
+            class="p-4 rounded-xl bg-emerald-700 font-bold hover:bg-emerald-600 transition-all">
+            Regenerar ST
+        </button>
+
+    </div>
+
+    <button onclick="closeSTModal()"
+        class="mt-4 w-full p-3 rounded-xl bg-slate-700 hover:bg-slate-600 transition-all">
+        Cancelar
+    </button>
+
+</div>
+</div>
+
+<div id="monsterChoiceModal" class="modal">
+
+    <div class="bg-slate-900 p-6 rounded-2xl w-full max-w-sm border border-slate-700">
+
+        <h2 class="text-xl font-bold mb-6 text-white text-center">
+            Adicionar Monstro
+        </h2>
+
+        <div class="flex flex-col gap-3">
+
+            <button
+                onclick="openModal('monster'); closeMonsterChoiceModal();"
+
+                class="p-4 rounded-xl bg-red-700 hover:bg-red-600 font-bold transition-all">
+
+                ➕ Criar Novo
+            </button>
+
+            <button
+                onclick="openPresetMonsterModal()"
+
+                class="p-4 rounded-xl bg-slate-700 hover:bg-slate-600 font-bold transition-all">
+
+                📚 Usar Predefinido
+            </button>
+
+        </div>
+
+        <button
+            onclick="closeMonsterChoiceModal()"
+
+            class="mt-4 w-full p-3 rounded-xl bg-slate-800 hover:bg-slate-700 transition-all">
+
+            Cancelar
+        </button>
+
+    </div>
+
+</div>
+
+<div id="presetMonsterModal" class="modal">
+
+    <div class="bg-slate-900 p-6 rounded-2xl w-full max-w-md border border-slate-700">
+
+        <h2 class="text-xl font-bold mb-6 text-white text-center">
+            Bestiário
+        </h2>
+
+        <div
+            id="presetMonsterList"
+
+            class="flex flex-col gap-3 max-h-[400px] overflow-y-auto">
+
+        </div>
+
+        <button
+            onclick="closePresetMonsterModal()"
+
+            class="mt-4 w-full p-3 rounded-xl bg-slate-800 hover:bg-slate-700 transition-all">
+
+            Fechar
         </button>
 
     </div>
