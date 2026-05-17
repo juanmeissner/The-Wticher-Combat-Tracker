@@ -1413,7 +1413,7 @@ updateNumpad();
         function openSTModal() {
 
 if (!selectedId) {
-    showToast('âš ï¸� Selecione um alvo!');
+    showToast('Por favor, Selecione um alvo!');
     return;
 }
 
@@ -1612,47 +1612,7 @@ e.preventDefault();
 
     </script>
 
-<!-- ========================================= -->
-<!-- MODAL DESCRIÃ‡ÃƒO DE STATUS -->
-<!-- ========================================= -->
 
-<div id="conditionInfoModal" class="modal" style="z-index: 90;">
-
-    <div class="bg-slate-900 p-6 rounded-2xl w-full max-w-md border border-slate-700">
-
-        <div class="flex items-center gap-3 mb-4">
-
-            <div id="conditionInfoIcon" class="text-4xl">
-                🔥
-            </div>
-
-            <div>
-
-                <h2 id="conditionInfoTitle"
-                    class="text-xl font-bold text-white">
-                    Fogo
-                </h2>
-
-            </div>
-
-        </div>
-
-        <div id="conditionInfoDescription"
-            class="text-slate-300 leading-relaxed text-sm">
-
-            Descrição...
-        </div>
-
-        <button onclick="closeConditionInfoModal()"
-            class="mt-6 w-full p-3 rounded-xl bg-slate-700 hover:bg-slate-600 transition-all font-bold">
-
-            Fechar
-
-        </button>
-
-    </div>
-
-</div>
 
 
 </div>
@@ -2008,6 +1968,48 @@ ITEM DETAILS MODAL
             class="mt-4 w-full p-3 rounded-xl bg-slate-800 hover:bg-slate-700 transition-all">
 
             Fechar
+        </button>
+
+    </div>
+
+</div>
+
+<!-- ========================================= -->
+<!-- MODAL DESCRIÇÃO DE STATUS -->
+<!-- ========================================= -->
+
+<div id="conditionInfoModal" class="modal" style="z-index: 90;">
+
+    <div class="bg-slate-900 p-6 rounded-2xl w-full max-w-md border border-slate-700">
+
+        <div class="flex items-center gap-3 mb-4">
+
+            <div id="conditionInfoIcon" class="text-4xl">
+                🔥
+            </div>
+
+            <div>
+
+                <h2 id="conditionInfoTitle"
+                    class="text-xl font-bold text-white">
+                    Fogo
+                </h2>
+
+            </div>
+
+        </div>
+
+        <div id="conditionInfoDescription"
+            class="text-slate-300 leading-relaxed text-sm">
+
+            Descrição...
+        </div>
+
+        <button onclick="closeConditionInfoModal()"
+            class="mt-6 w-full p-3 rounded-xl bg-slate-700 hover:bg-slate-600 transition-all font-bold">
+
+            Fechar
+
         </button>
 
     </div>
