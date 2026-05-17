@@ -637,6 +637,7 @@ let lastPlayerData = {
                 };
 
                 combatants.push(newEntity);
+                savePlayersToStorage();
                 newlyAddedId = newEntity.id;
 
                 if (modalType === 'monster') {
@@ -655,7 +656,7 @@ let lastPlayerData = {
             if (newlyAddedId && isHighestInit) {
                 activeTurnId = newlyAddedId;
             }
-
+            savePlayersToStorage();
             closeModal();
             renderList(true);
         }
@@ -704,7 +705,8 @@ let lastPlayerData = {
             }
             
             combatants.splice(index, 1);
-            if (entity.type === 'player') savePlayersToStorage();
+            savePlayersToStorage();
+            
             deleteVisibleId = null;
             renderList();
         }
@@ -720,7 +722,7 @@ let lastPlayerData = {
             const index = combatants.findIndex(c => c.id === selectedId);
             if (index !== -1) {
                 combatants[index].statusBrain = !combatants[index].statusBrain;
-                if (combatants[index].type === 'player') savePlayersToStorage();
+                savePlayersToStorage();
                 updateCardTargeted(combatants[index]); // Atualiza DOM sem piscar a tela
             }
         }
@@ -737,7 +739,7 @@ let lastPlayerData = {
                 { icon: '👻', name: 'Invisível.' },
                 { icon: '🐍', name: 'Envenado.' },
                 { icon: '🧎', name: 'Caído' },
-                { icon: '😮‍💨', name: 'Exausto.' },
+                { icon: '😮', name: 'Exausto.' },
                 { icon: '🔥', name: 'Em Chamas' },
                 { icon: '💫', name: 'Atordoado.' },
                 { icon: '🩸', name: 'Sangrando.' },
@@ -832,7 +834,7 @@ conditions.forEach((cond, i) => {
                     combatants[index].conditions.push(icon);
                 }
                 
-                if (combatants[index].type === 'player') savePlayersToStorage();
+                savePlayersToStorage();
                 updateCardTargeted(combatants[index]);
                 openConditionMenu(); // Atualiza cores no menu sem fechar
             }
@@ -870,7 +872,7 @@ conditions.forEach((cond, i) => {
     desc: 'Sofre desvantagem em ataques corpo a corpo, ataques contra ele têm vantagem, e levantar-se consome uma ação, pode esquivar ou bloquear.'
 },
 
-'😮‍💨¨': {
+'😮': {
     title: 'Exausto',
     desc: 'A criatura sofre penalidades física progressivas.'
 },
@@ -1592,7 +1594,7 @@ updateNumpad();
                 }
                 
                 const newFailures = c.deathSaves.failures;
-                if (c.type === 'player') savePlayersToStorage(); 
+                savePlayersToStorage();
                 
                 const monsterDiedOrRevived = c.type === 'monster' && ((oldHP > 0 && c.hpCurrent <= 0) || (oldHP <= 0 && c.hpCurrent > 0));
                 const playerDiedOrRevived = c.type === 'player' && ((oldFailures < 3 && newFailures >= 3) || (oldFailures >= 3 && newFailures < 3));
@@ -1621,7 +1623,7 @@ if (!selectedId) {
 const value = parseInt(currentInput) || 0;
 
 if (value <= 0) {
-    showToast('âš ï¸� Digite um valor!');
+    showToast('Por favor, Digite um valor!');
     return;
 }
 
@@ -1635,7 +1637,7 @@ document.getElementById('stModal').style.display = 'none';
 function applyST(isHealing) {
 
 if (!selectedId) {
-    showToast('âš ï¸� Selecione um alvo!');
+    showToast('Por favor, Selecione um alvo!');
     return;
 }
 
@@ -1657,8 +1659,7 @@ if (index !== -1) {
 
     }
 
-    if (c.type === 'player')
-        savePlayersToStorage();
+    savePlayersToStorage();
 
     updateCardTargeted(c);
 
@@ -1679,7 +1680,7 @@ if (index !== -1) {
                 const index = combatants.findIndex(c => c.id === concentrationTargetId);
                 if (index !== -1) {
                     combatants[index].statusBrain = false;
-                    if (combatants[index].type === 'player') savePlayersToStorage();
+                    savePlayersToStorage();
                     updateCardTargeted(combatants[index]);
                 }
             }
@@ -1726,7 +1727,7 @@ if (index !== -1) {
             if (index !== -1) {
                 combatants[index].initiative = value;
                 
-                if (combatants[index].type === 'player') savePlayersToStorage(); 
+                savePlayersToStorage();
                 
                 sortCombatants();
                 renderList(true);
@@ -1735,7 +1736,11 @@ if (index !== -1) {
         }
 
         function savePlayersToStorage() {
-            localStorage.setItem('dnd_players', JSON.stringify(combatants.filter(c => c.type === 'player')));
+
+        localStorage.setItem(
+            'dnd_players',
+            JSON.stringify(combatants)
+        );
         }
 
         if ('serviceWorker' in navigator) {
