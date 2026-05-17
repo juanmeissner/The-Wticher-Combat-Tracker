@@ -2,7 +2,7 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>The Witcher Combat Tracker</title>
     
     <link rel="manifest" href="manifest.json">
@@ -13,6 +13,8 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
         
+        
+
         html, body {
             font-family: 'Inter', sans-serif;
             background-color: #0f172a;
@@ -23,6 +25,8 @@
             overflow: hidden;
             user-select: none;
             -webkit-user-select: none;
+
+            touch-action: manipulation;
         }
 
         .combat-list {
@@ -1812,6 +1816,27 @@ if (index !== -1) {
                     .catch((err) => console.log('Erro no registo do Service Worker:', err));
             });
         }
+
+        document.addEventListener('gesturestart', function (e) {
+    e.preventDefault();
+});
+
+        document.addEventListener('dblclick', function (e) {
+            e.preventDefault();
+        }, { passive: false });
+
+        let lastTouchEnd = 0;
+
+        document.addEventListener('touchend', function (event) {
+            const now = (new Date()).getTime();
+
+            if (now - lastTouchEnd <= 300) {
+                event.preventDefault();
+            }
+
+            lastTouchEnd = now;
+        }, false);
+
     </script>
 
 <!-- ========================================= -->
