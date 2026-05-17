@@ -954,16 +954,85 @@ document.getElementById('conditionInfoModal').style.display =
         }
 
         function hardResetCombat() {
-            combatants = [];
-            savePlayersToStorage();
-            activeTurnId = null;
-            round = 1;
-            monsterCounter = 1;
-            lastMonsterData = { hp: "", ca: "", atk: "" };
-            selectedId = null;
-            deleteVisibleId = null;
-            document.getElementById('targetName').innerText = "Nenhum";
-            renderList(true);
+
+        // =========================================
+        // LIMPA COMBATE
+        // =========================================
+
+        combatants = [];
+
+        // =========================================
+        // LIMPA STORAGE
+        // =========================================
+
+        localStorage.removeItem('dnd_players');
+
+        // =========================================
+        // RESET TURNOS
+        // =========================================
+
+        activeTurnId = null;
+        selectedId = null;
+        deleteVisibleId = null;
+
+        round = 1;
+
+        // =========================================
+        // RESET CONTADORES
+        // =========================================
+
+        monsterCounter = 1;
+        playerCounter = 1;
+
+        // =========================================
+        // RESET ÚLTIMOS DADOS
+        // =========================================
+
+        lastMonsterData = {
+            hp: "",
+            st: "",
+            ca: "",
+            atk: "",
+            armor: {
+                head: 0,
+                torso: 0,
+                arm: 0,
+                leg: 0
+            }
+        };
+
+        lastPlayerData = {
+            hp: "",
+            st: "",
+            ca: "",
+            atk: "",
+            armor: {
+                head: 0,
+                torso: 0,
+                arm: 0,
+                leg: 0
+            }
+        };
+
+        // =========================================
+        // RESET UI
+        // =========================================
+
+        document.getElementById('targetName').innerText = "Nenhum";
+
+        clearDisplay();
+
+        // =========================================
+        // RENDER
+        // =========================================
+
+        renderList(true);
+
+        // =========================================
+        // FEEDBACK
+        // =========================================
+
+        showToast('🔥 Combate resetado completamente!');
         }
 
         function endCombat() {
