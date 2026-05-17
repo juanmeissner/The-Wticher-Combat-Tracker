@@ -41,7 +41,9 @@
             <div class="flex-1">
                 <div class="flex justify-between items-center mb-2 px-1">
                     <div class="text-lg text-slate-500 font-bold overflow-hidden whitespace-nowrap truncate mr-2">
-                        Alvo: <span id="targetName" class="text-blue-400">Nenhum</span>
+                        <span id="targetName" class="truncate
+                        max-w-[140px]
+                        min-w-0">Nenhum</span>
                     </div>
                     <div class="text-lg font-mono font-bold text-slate-100 shrink-0" id="numpadDisplay">0</div>
                 </div>
@@ -937,7 +939,7 @@ document.getElementById('conditionInfoModal').style.display =
                 card.innerHTML += `
                     <div class="hp-bar absolute left-0 top-0 bottom-0 z-0 opacity-20 transition-all duration-500" style="width: ${pct}%; background-color: ${hpBarColor};"></div>
                     <div class="relative z-10 flex items-center justify-between px-2 w-full h-full min-h-[64px]">
-                        <div class="flex items-center gap-2">
+                        <div class="flex items-center gap-2 flex-1 min-w-0">
                             <div class="init-circle ${activeTurnId === c.id && !isEliminated ? 'bg-amber-500 text-slate-900' : 'bg-slate-700 text-slate-300'} font-bold w-10 h-10 flex items-center justify-center rounded-full text-lg shrink-0 my-1">
                                 ${c.initiative}
                             </div>
@@ -973,7 +975,12 @@ document.getElementById('conditionInfoModal').style.display =
                                 ${statusHtml}
 
                             </div>
-<div class="flex flex-col items-end justify-center text-right min-w-[72px]">
+<div class="flex flex-col
+            items-end
+            justify-center
+            text-right
+            min-w-[72px]
+            shrink-0">
 
     <div class="hp-container text-center">
         ${hpDisplayHtml}
