@@ -132,6 +132,20 @@
             justify-content: center;
             z-index: 60;
         }
+
+        .status-container {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+        gap: 2px;
+        max-width: 72px;
+        min-width: 72px;
+        }
+
+        .status-icon {
+            font-size: 18px;
+            line-height: 1;
+        }
     </style>
 </head>
 <body class="flex flex-col">
@@ -783,7 +797,8 @@ conditions.forEach((cond, i) => {
     const c = combatants.find(comp => comp.id === selectedId);
 
     const isActive =
-        c.conditions && c.conditions.includes(cond.icon);
+    Array.isArray(c.conditions) &&
+    c.conditions.includes(cond.icon);
 
     const bgClass = isActive
         ? 'bg-blue-600 border-blue-400'
@@ -837,7 +852,11 @@ conditions.forEach((cond, i) => {
                 
                 savePlayersToStorage();
                 updateCardTargeted(combatants[index]);
-                openConditionMenu(); // Atualiza cores no menu sem fechar
+                document.getElementById('circularMenu').style.display = 'none';
+
+                setTimeout(() => {
+                    openConditionMenu();
+                }, 0);
             }
         }
 
@@ -1148,8 +1167,15 @@ document.getElementById('conditionInfoModal').style.display =
                 }
 
                 const hpColor = c.type === 'monster' ? 'text-red-500' : 'text-emerald-400';
-                let statusHtml = (c.conditions || []).join('');
-                if (c.statusBrain) statusHtml += '🧠 ';
+                let statusHtml = '';
+
+                (c.conditions || []).forEach(icon => {
+                    statusHtml += `<span class="status-icon">${icon}</span>`;
+                });
+
+                if (c.statusBrain) {
+                    statusHtml += `<span class="status-icon">🧠</span>`;
+                }
 
                 let hpDisplayHtml = `
                     <div class="hp-text text-xl font-bold leading-none ${hpColor}">${c.hpCurrent}/${c.hpMax}</div>
@@ -1182,23 +1208,36 @@ document.getElementById('conditionInfoModal').style.display =
                             </div>
                             <div class="py-1 flex-1 min-w-0">
                                 <h3 class="font-bold text-lg leading-none truncate ${c.type === 'monster' ? 'text-red-400' : ''}">${c.name}</h3>
-                                <p class="text-slate-300 text-lg font-semibold tracking-tight leading-none mt-1 truncate">${c.atkInfo}</p>
+                            <p class="text-slate-300
+                                    text-sm
+                                    font-semibold
+                                    tracking-tight
+                                    leading-snug
+                                    mt-1
+                                    break-words
+                                    whitespace-normal
+                                    max-w-[160px]">
+
+                                ${c.atkInfo}
+
+                            </p>
                             </div>
                         </div>
                         <div class="flex items-center gap-2 shrink-0">
                             <div class="status-container
-            grid
-            grid-cols-3
-            gap-1
-            justify-items-center
-            items-center
-            min-w-[72px]
-            max-w-[72px]
-            text-lg">
+                                        grid
+                                        grid-cols-3
+                                        gap-1
+                                        justify-items-center
+                                        content-start
+                                        w-[72px]
+                                        min-h-[24px]
+                                        text-lg
+                                        shrink-0">
 
-    ${statusHtml}
+                                ${statusHtml}
 
-</div>
+                            </div>
 <div class="flex flex-col items-end justify-center text-right min-w-[72px]">
 
     <div class="hp-container text-center">

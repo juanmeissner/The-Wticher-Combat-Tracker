@@ -113,6 +113,82 @@ function spawnPresetMonster(monsterId) {
 const monsterDatabase = [
 
     {
+        id: 'nilfgardian01',
+    
+        name: 'Nilfgard',
+    
+        hp: 40,
+        st: 10,
+        ca: 13,
+    
+        armor: {
+            head: 5,
+            torso: 5,
+            arm: 5,
+            leg: 5
+        },
+    
+        atk: 'Espada: 6d6+4'
+    },
+
+    {
+        id: 'grifo',
+    
+        name: 'Grifo',
+    
+        hp: 100,
+        st: 10,
+        ca: 13,
+    
+        armor: {
+            head: 3,
+            torso: 3,
+            arm: 3,
+            leg: 3
+        },
+    
+        atk: 'Garras: 6d6 / Mordida: 7d6 (Sangue) / Investida Aérea: 10d6'
+    },
+
+    {
+        id: 'lamia',
+    
+        name: 'Lâmia',
+    
+        hp: 70,
+        st: 10,
+        ca: 13,
+    
+        armor: {
+            head: 0,
+            torso: 0,
+            arm: 0,
+            leg: 0
+        },
+    
+        atk: 'Garras: 5d6 / Mordida: 2d6 (Sangue) / Grito: Atordoa'
+    },
+
+    {
+        id: 'witch',
+    
+        name: 'Bruxa Sepulcral',
+    
+        hp: 60,
+        st: 10,
+        ca: 13,
+    
+        armor: {
+            head: 0,
+            torso: 0,
+            arm: 0,
+            leg: 0
+        },
+    
+        atk: 'Garras: 5d6 / Mordida: 6d6 (Veneno) / Língua: 3d6 (Veneno)'
+    },
+
+    {
         id: 'ghoul',
     
         name: 'Carniçal',
@@ -128,7 +204,7 @@ const monsterDatabase = [
             leg: 2
         },
     
-        atk: '3d6 / 3d6 (Sangue)'
+        atk: 'Garras: 3d6 / Mordida: 3d6+2 (Sangue)'
     },
     
     {
@@ -147,7 +223,7 @@ const monsterDatabase = [
             leg: 0
         },
     
-        atk: '3d6'
+        atk: 'Garras: 3d6'
     }
     
     ];
