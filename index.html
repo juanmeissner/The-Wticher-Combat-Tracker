@@ -186,8 +186,8 @@
                 <button onclick="applyHP(true)" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl flex items-center justify-center shadow-lg" title="Curar / Add Sucesso (0 HP)">
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
                 </button>
-                <button onclick="applyHP(false)" class="flex-1 bg-red-600 hover:bg-red-500 text-white rounded-xl flex items-center justify-center shadow-lg text-2xl" title="Dano / Add Falha (0 HP)">
-                    ☠️
+                <button onclick="openDamageBodyModal()" class="flex-1 bg-red-600 hover:bg-red-500 text-white rounded-xl flex items-center justify-center shadow-lg text-2xl" title="Dano / Add Falha (0 HP)">
+                    💀
                 </button>
                 <button onclick="applyInitiative()" onmousedown="startInitPress(event)" onmouseup="cancelInitPress(event)" onmouseleave="cancelInitPress(event)" ontouchstart="startInitPress(event)" ontouchend="cancelInitPress(event)" class="flex-1 bg-blue-600 hover:bg-blue-500 text-white rounded-xl flex items-center justify-center shadow-lg" title="Definir Iniciativa">
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M13 10h7l-9 11v-7H4l9-11v7z"/></svg>
@@ -244,7 +244,86 @@
         <div class="relative w-64 h-64" id="circleContainer">
             </div>
     </div>
+<!-- ========================================= -->
+<!-- MODAL LOCAL DO DANO -->
+<!-- ========================================= -->
 
+<div id="damageBodyModal" class="modal" style="z-index: 80;">
+    <div class="bg-slate-900 p-6 rounded-2xl w-full max-w-sm border border-slate-700 text-center">
+
+        <h2 class="text-xl font-bold mb-6 text-white">
+            Local do Dano
+        </h2>
+
+        <div class="grid grid-cols-2 gap-3">
+
+            <button onclick="selectBodyPart('head')"
+                class="p-4 rounded-xl bg-red-700 font-bold hover:bg-red-600 transition-all">
+                Cabeça
+            </button>
+
+            <button onclick="selectBodyPart('torso')"
+                class="p-4 rounded-xl bg-orange-700 font-bold hover:bg-orange-600 transition-all">
+                Tronco
+            </button>
+
+            <button onclick="selectBodyPart('arm')"
+                class="p-4 rounded-xl bg-yellow-700 font-bold hover:bg-yellow-600 transition-all">
+                Braço
+            </button>
+
+            <button onclick="selectBodyPart('leg')"
+                class="p-4 rounded-xl bg-green-700 font-bold hover:bg-green-600 transition-all">
+                Perna
+            </button>
+
+        </div>
+
+        <button onclick="closeDamageModals()"
+            class="mt-4 w-full p-3 rounded-xl bg-slate-700 hover:bg-slate-600 transition-all">
+            Cancelar
+        </button>
+
+    </div>
+</div>
+
+<!-- ========================================= -->
+<!-- MODAL TIPO DE DANO -->
+<!-- ========================================= -->
+
+<div id="damageTypeModal" class="modal" style="z-index: 81;">
+    <div class="bg-slate-900 p-6 rounded-2xl w-full max-w-sm border border-slate-700 text-center">
+
+        <h2 class="text-xl font-bold mb-6 text-white">
+            Tipo de Dano
+        </h2>
+
+        <div class="flex flex-col gap-3">
+
+            <button onclick="applyCalculatedDamage(1)"
+                class="p-4 rounded-xl bg-red-600 font-bold hover:bg-red-500 transition-all">
+                Dano Cheio
+            </button>
+
+            <button onclick="applyCalculatedDamage(0.5)"
+                class="p-4 rounded-xl bg-yellow-600 font-bold hover:bg-yellow-500 transition-all">
+                Dano Dividido
+            </button>
+
+            <button onclick="applyCalculatedDamage(2)"
+                class="p-4 rounded-xl bg-purple-600 font-bold hover:bg-purple-500 transition-all">
+                Dano Dobrado
+            </button>
+
+        </div>
+
+        <button onclick="closeDamageModals()"
+            class="mt-4 w-full p-3 rounded-xl bg-slate-700 hover:bg-slate-600 transition-all">
+            Cancelar
+        </button>
+
+    </div>
+</div>
     <script>
         let combatants = [];
         let activeTurnId = null; 
@@ -262,7 +341,12 @@
         let editingId = null; 
         let showEliminated = true; // Controle da divisória
         let concentrationTargetId = null;
+        // =========================================
+        // SISTEMA DE DANO LOCALIZADO
+        // =========================================
 
+        let pendingDamageBodyPart = null;
+        let pendingDamageBase = 0;
         let initPressTimer;
         let didInitLongPress = false;
 
@@ -833,17 +917,34 @@
         }
 
         function selectCombatant(id, name) {
-            const oldSelected = selectedId;
-            selectedId = id;
-            document.getElementById('targetName').innerText = name;
-            
-            if (oldSelected) {
-                const oldCard = document.getElementById(`card-${oldSelected}`);
-                if (oldCard) oldCard.classList.remove('card-selected');
-            }
-            const newCard = document.getElementById(`card-${id}`);
-            if (newCard) newCard.classList.add('card-selected');
-        }
+
+// Se clicar novamente no mesmo alvo
+if (selectedId === id) {
+
+    openEntryActionModal();
+
+    return;
+}
+
+const oldSelected = selectedId;
+
+selectedId = id;
+
+document.getElementById('targetName').innerText = name;
+
+if (oldSelected) {
+
+    const oldCard = document.getElementById(`card-${oldSelected}`);
+
+    if (oldCard)
+        oldCard.classList.remove('card-selected');
+}
+
+const newCard = document.getElementById(`card-${id}`);
+
+if (newCard)
+    newCard.classList.add('card-selected');
+}
 
         function nextTurn() {
             if (combatants.length === 0) return;
@@ -880,7 +981,95 @@
         function clearDisplay() { currentInput = "0"; updateNumpad(); }
         function popDigit() { currentInput = currentInput.length > 1 ? currentInput.slice(0, -1) : "0"; updateNumpad(); }
         function updateNumpad() { document.getElementById('numpadDisplay').innerText = currentInput; }
+// =========================================
+// SISTEMA DE DANO LOCALIZADO
+// =========================================
 
+function openDamageBodyModal() {
+
+if (!selectedId) {
+    showToast('⚠️ Selecione um alvo!');
+    return;
+}
+
+pendingDamageBase = parseInt(currentInput) || 0;
+
+if (pendingDamageBase <= 0) {
+    showToast('⚠️ Digite um dano!');
+    return;
+}
+
+document.getElementById('damageBodyModal').style.display = 'flex';
+}
+
+function closeDamageModals() {
+
+document.getElementById('damageBodyModal').style.display = 'none';
+
+document.getElementById('damageTypeModal').style.display = 'none';
+}
+
+function selectBodyPart(part) {
+
+pendingDamageBodyPart = part;
+
+document.getElementById('damageBodyModal').style.display = 'none';
+
+document.getElementById('damageTypeModal').style.display = 'flex';
+}
+
+function applyCalculatedDamage(typeMultiplier) {
+
+let bodyMultiplier = 1;
+
+switch (pendingDamageBodyPart) {
+
+    case 'head':
+        bodyMultiplier = 3;
+        break;
+
+    case 'torso':
+        bodyMultiplier = 1;
+        break;
+
+    case 'arm':
+        bodyMultiplier = 0.5;
+        break;
+
+    case 'leg':
+        bodyMultiplier = 0.5;
+        break;
+}
+
+let finalDamage = pendingDamageBase;
+
+// Multiplicador da parte do corpo
+finalDamage *= bodyMultiplier;
+
+// Multiplicador do tipo de dano
+finalDamage *= typeMultiplier;
+
+// Arredondamento
+finalDamage = Math.floor(finalDamage);
+
+closeDamageModals();
+
+applyDirectDamage(finalDamage);
+}
+
+function applyDirectDamage(value) {
+
+const oldInput = currentInput;
+
+currentInput = String(value);
+
+// Usa o sistema ORIGINAL do tracker
+applyHP(false);
+
+currentInput = oldInput;
+
+updateNumpad();
+}
         function applyHP(isHealing) {
             if (!selectedId) { showToast('⚠️ Selecione um alvo!'); return; }
             const value = parseInt(currentInput) || 0;
