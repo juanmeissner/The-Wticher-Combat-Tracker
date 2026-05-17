@@ -41,9 +41,7 @@
             <div class="flex-1">
                 <div class="flex justify-between items-center mb-2 px-1">
                     <div class="text-lg text-slate-500 font-bold overflow-hidden whitespace-nowrap truncate mr-2">
-                        <span id="targetName" class="truncate
-                        max-w-[140px]
-                        min-w-0">Nenhum</span>
+                        <span id="targetName" class="text-blue-400">Nenhum</span>
                     </div>
                     <div class="text-lg font-mono font-bold text-slate-100 shrink-0" id="numpadDisplay">0</div>
                 </div>
@@ -136,21 +134,37 @@
     
         </button>
     
-        <button
-            onclick="increaseSelectedItem()"
-            class="inventory-action-btn bg-emerald-700">
-    
-            +
-    
-        </button>
-    
-        <button
-            onclick="decreaseSelectedItem()"
-            class="inventory-action-btn bg-red-700">
-    
-            -
-    
-        </button>
+<!-- BOTÃO + -->
+<button
+
+    ontouchstart="startInventoryIncreaseHold(event)"
+    ontouchend="endInventoryIncreaseHold(event)"
+
+    onmousedown="startInventoryIncreaseHold(event)"
+    onmouseup="endInventoryIncreaseHold(event)"
+    onmouseleave="endInventoryIncreaseHold(event)"
+
+    class="inventory-action-btn bg-emerald-700">
+
+    +
+
+</button>
+
+<!-- BOTÃO - -->
+<button
+
+    ontouchstart="startInventoryDecreaseHold(event)"
+    ontouchend="endInventoryDecreaseHold(event)"
+
+    onmousedown="startInventoryDecreaseHold(event)"
+    onmouseup="endInventoryDecreaseHold(event)"
+    onmouseleave="endInventoryDecreaseHold(event)"
+
+    class="inventory-action-btn bg-red-700">
+
+    -
+
+</button>
     
     </div>
     
