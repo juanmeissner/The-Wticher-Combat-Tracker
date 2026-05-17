@@ -151,7 +151,7 @@
                 <div class="grid grid-cols-2 gap-2">
                     <button onclick="openModal('player')" class="btn-control hover:bg-blue-900/40 border-blue-900/50" title="Add Jogador">🧙‍♂️</button>
                     <button onclick="openModal('monster')" class="btn-control hover:bg-slate-700" title="Add Monstro">👹</button>
-                    <button onclick="endCombat()" onmousedown="startEndCombatPress(event)" onmouseup="cancelEndCombatPress(event)" onmouseleave="cancelEndCombatPress(event)" ontouchstart="startEndCombatPress(event)" ontouchend="cancelEndCombatPress(event)" class="btn-control hover:bg-red-700/30 border-red-900/50" title="Terminar Combate (Segure 3s para apagar tudo)">❌</button>
+                    <button onclick="endCombat()" onmousedown="startEndCombatPress(event)" onmouseup="cancelEndCombatPress(event)" onmouseleave="cancelEndCombatPress(event)" ontouchstart="startEndCombatPress(event)" ontouchend="cancelEndCombatPress(event)" class="btn-control hover:bg-red-600/50 border-red-900/50" title="Terminar Combate (Segure 3s para apagar tudo)">❌</button>
                     <button onclick="nextTurn()" class="btn-control hover:bg-amber-900/40 border-amber-900/50" title="Próximo">⏩</button>
                     <button onclick="openConditionMenu()" class="btn-control hover:bg-slate-700" title="Condições">🌀</button>
                     <button onclick="toggleBrainStatus()" class="btn-control hover:bg-slate-700" title="Concentração (🧠)">🧠</button>
@@ -1101,7 +1101,7 @@ document.getElementById('conditionInfoModal').style.display =
                     divider.innerHTML = `
                         <div class="h-px bg-slate-700 flex-1"></div>
                         <span class="text-slate-500 text-xs font-bold uppercase tracking-widest flex items-center gap-2">
-                            Eliminados <span class="text-lg">${showEliminated ? 'â–¼' : 'â–¶'}</span>
+                            Eliminados <span class="text-lg">${showEliminated ? '▼' : '▶'}</span>
                         </span>
                         <div class="h-px bg-slate-700 flex-1"></div>
                     `;
@@ -1117,7 +1117,7 @@ document.getElementById('conditionInfoModal').style.display =
                 const opacityClass = isEliminated
     ? 'opacity-50 grayscale'
     : (c.type === 'monster'
-        ? 'bg-red-700/30'
+        ? 'bg-red-600/50'
         : 'bg-emerald-950/40');
                 card.className = `combat-card border border-slate-700 p-0 rounded-2xl cursor-pointer transition-all relative overflow-hidden
                     ${selectedId === c.id ? 'card-selected' : ''} 
@@ -1314,13 +1314,13 @@ if (hpContainer) {
     'opacity-50',
     'grayscale',
     'bg-slate-800/80',
-    'bg-red-700/30',
+    'bg-red-600/50',
     'bg-emerald-950/40'
 );
 
 card.classList.add(
     c.type === 'monster'
-        ? 'bg-red-700/30'
+        ? 'bg-red-600/50'
         : 'bg-emerald-950/40'
 );
                 if (activeTurnId === c.id) card.classList.add('active-turn');
