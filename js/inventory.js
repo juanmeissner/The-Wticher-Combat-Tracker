@@ -9,6 +9,37 @@ function handleItemTouchEnd(itemId) {
     selectInventoryItem(itemId);
 }
 
+function renderIcon(icon, className = 'item-icon') {
+
+    if (!icon) return '';
+
+    const isImage =
+        icon.includes('.png') ||
+        icon.includes('.jpg') ||
+        icon.includes('.jpeg') ||
+        icon.includes('.webp') ||
+        icon.includes('.svg') ||
+        icon.startsWith('http') ||
+        icon.startsWith('assets/');
+
+    if (isImage) {
+
+        return `
+            <img
+                src="${icon}"
+                class="${className}"
+                draggable="false"
+            >
+        `;
+    }
+
+    return `
+        <span class="${className}">
+            ${icon}
+        </span>
+    `;
+}
+
 function startItemLongPress(itemId) {
 
     wasLongPress = false;
@@ -81,7 +112,7 @@ function showItemDetails(itemId) {
 
         <div class="text-3xl mb-3">
 
-            ${item.icon}
+        ${renderIcon(item.icon)}
 
         </div>
 
@@ -214,7 +245,7 @@ const predefinedItems = [
     {
         id: 'solucaoacida',
         name: 'Solução Ácida',
-        icon: '💥',
+        icon: 'https://static.divine-pride.net/images/items/item/22542.png',
         category: 'usable',
         goldValue: 10,
         description: 'Provoca 4d6 de dano ao ser arremessada; 1d6 de dano de ablação a armas/armaduras. Espalha-se num cone de 3m.',
@@ -228,7 +259,7 @@ const predefinedItems = [
     {
         id: 'tumbadeadda',
         name: 'Tumba de Adda',
-        icon: '🧪',
+        icon: 'https://static.divine-pride.net/images/items/item/11573.png',
         category: 'usable',
         goldValue: 0,
         description: 'Preserva comidas e corpos. Perecíveis tratados não apodrecem por 1d10 dias (corpo humano = 2 doses).',
@@ -242,7 +273,7 @@ const predefinedItems = [
     {
         id: 'adesivoalquimico',
         name: 'Adesivo Alquímico',
-        icon: '🧪',
+        icon: 'https://static.divine-pride.net/images/items/item/12475.png',
         category: 'usable',
         goldValue: 0,
         description: 'Gruda objetos e pessoas após 2 rodadas. Para separar, é necessário teste de Físico ND:16. Arremessável..',
@@ -256,7 +287,7 @@ const predefinedItems = [
     {
         id: 'pobasico',
         name: 'Pó Básico',
-        icon: '🧪',
+        icon: 'https://static.divine-pride.net/images/items/item/656.png',
         category: 'usable',
         goldValue: 0,
         description: 'Anula o efeito da solução ácida ou remove o dano de um ferimento crítico de estômago rasgado.',
@@ -270,7 +301,7 @@ const predefinedItems = [
     {
         id: 'venenonegro',
         name: 'Veneno Negro',
-        icon: '🧪',
+        icon: 'https://static.divine-pride.net/images/items/item/22613.png',
         category: 'usable',
         goldValue: 0,
         description: 'Envenena se ingerido ou em contato com sangue. Teste de Tolerância ND:18 para resistir.',
@@ -284,7 +315,7 @@ const predefinedItems = [
     {
         id: 'furiadebredan',
         name: 'Fúria de Bredan',
-        icon: '💥',
+        icon: 'https://static.divine-pride.net/images/items/item/12424.png',
         category: 'usable',
         goldValue: 0,
         description: 'Explode ao contato com o ar, causando 2d6 de dano num raio de 4m, os alvos terão que passar em um teste de tolerância para não incendiar.',
@@ -298,7 +329,7 @@ const predefinedItems = [
     {
         id: 'cloroformio',
         name: 'Clorofórmio',
-        icon: '🧪',
+        icon: 'https://static.divine-pride.net/images/items/item/103649.png',
         category: 'usable',
         goldValue: 0,
         description: 'Induz inconsciência por respiração. Teste de resistência a Desmaiado ND 18 com penalidade de -2.',
@@ -312,7 +343,7 @@ const predefinedItems = [
     {
         id: 'podecoagulacao',
         name: 'Pó de Coagulação',
-        icon: '🧪',
+        icon: 'https://static.divine-pride.net/images/items/item/14614.png',
         category: 'usable',
         goldValue: 0,
         description: 'Estanca sangramentos por 2d10 rodadas. Após o tempo, o ferimento volta a sangrar.',
@@ -326,7 +357,7 @@ const predefinedItems = [
     {
         id: 'fissstech',
         name: 'Fissstech',
-        icon: '🧪',
+        icon: 'https://static.divine-pride.net/images/items/item/22545.png',
         category: 'usable',
         goldValue: 0,
         description: 'Provoca transe eufórico. Serve como anestésico, irá receber apenas metade do dano ao usar e não sofre penalidades relacionadas á dor. Altamente viciante (teste de Resistência ND:20 após cada uso).',
@@ -340,7 +371,7 @@ const predefinedItems = [
     {
         id: 'alucinogeno',
         name: 'Alucinógeno',
-        icon: '🧪',
+        icon: 'https://static.divine-pride.net/images/items/item/12419.png',
         category: 'usable',
         goldValue: 0,
         description: 'Causa alucinações até o alvo passar em um teste de resistência ND 18. Pode ser jogado ou dissolvido em bebida.',
@@ -354,7 +385,7 @@ const predefinedItems = [
     {
         id: 'tintainvisivel',
         name: 'Tinta Invisível',
-        icon: '🧪',
+        icon: 'https://static.divine-pride.net/images/items/item/11501.png',
         category: 'usable',
         goldValue: 0,
         description: 'Permite escrever mensagens invisíveis, visíveis apenas ao serem aquecidas por 1 turno.',
@@ -368,7 +399,7 @@ const predefinedItems = [
     {
         id: 'ervasentorpecentes',
         name: 'Ervas Entorpecentes',
-        icon: '🌿',
+        icon: 'https://static.divine-pride.net/images/items/item/11551.png',
         category: 'usable',
         goldValue: 0,
         description: 'Aplicadas em ferimentos, aliviam a dor, reduzindo negativos de ferimentos críticos e de estado próximo da morte em 2. Dura 2d10 rodadas.',
@@ -383,7 +414,7 @@ const predefinedItems = [
     {
         id: 'elixirdepantagran',
         name: 'Elixir de Pantagran',
-        icon: '🧪',
+        icon: 'https://static.divine-pride.net/images/items/item/22612.png',
         category: 'usable',
         goldValue: 0,
         description: 'Provoca alegria delirante por 2 horas. Usuário sofre -2 em Resistir Coerção.',
@@ -397,7 +428,7 @@ const predefinedItems = [
     {
         id: 'pocaodeperfume',
         name: 'Poção de Perfume',
-        icon: '🧪',
+        icon: 'https://static.divine-pride.net/images/items/item/12131.png',
         category: 'usable',
         goldValue: 0,
         description: 'Teste de Tolerância ND:16. Fracasso causa intoxicação por 1d10 horas.',
@@ -412,7 +443,7 @@ const predefinedItems = [
     {
         id: 'amigodoenvenenador',
         name: 'Amigo do Envenenador',
-        icon: '🧪',
+        icon: 'https://static.divine-pride.net/images/items/item/12418.png',
         category: 'usable',
         goldValue: 0,
         description: 'Líquido que torna comidas e bebidas mais apetitosas e realça o cheiro. Aumenta o ND de detectar veneno para 20.',
@@ -427,7 +458,7 @@ const predefinedItems = [
     {
         id: 'inflamador',
         name: 'Inflamador',
-        icon: '💥',
+        icon: 'https://static.divine-pride.net/images/items/item/23077.png',
         category: 'usable',
         goldValue: 0,
         description: 'Torna alvos extremamente inflamáveis. 50% de chance de incendiar ao contato com faíscas.',
@@ -441,7 +472,7 @@ const predefinedItems = [
     {
         id: 'saisaromaticos',
         name: 'Sais Aromáticos',
-        icon: '🧪',
+        icon: 'https://static.divine-pride.net/images/items/item/11600.png',
         category: 'usable',
         goldValue: 0,
         description: 'Acorda imediatamente pessoas ou criaturas inconscientes ou atordoadas. Cada frasco permite 25 usos.',
@@ -455,7 +486,7 @@ const predefinedItems = [
     {
         id: 'fluidoesterilizante',
         name: 'Fluido Esterilizante',
-        icon: '🧪',
+        icon: 'https://static.divine-pride.net/images/items/item/11517.png',
         category: 'usable',
         goldValue: 0,
         description: 'Aumenta a cura de ferimentos e reduz o tempo de recuperação.',
@@ -469,7 +500,7 @@ const predefinedItems = [
     {
         id: 'soprodesucubo',
         name: 'Sopro de Súcubo',
-        icon: '🧪',
+        icon: 'https://static.divine-pride.net/images/items/item/23547.png',
         category: 'usable',
         goldValue: 0,
         description: 'Recebe +2 em Sedução na pele; -5 na Resistência a Sedução na bebida.',
@@ -484,7 +515,7 @@ const predefinedItems = [
     {
         id: 'lagrimasdetalgar',
         name: 'Lágrimas de Talgar',
-        icon: '🧪',
+        icon: 'https://static.divine-pride.net/images/items/item/11517.png',
         category: 'usable',
         goldValue: 0,
         description: 'Congela imediatamente alvos atingidos. Itens congelados sofrem o dobro de dano de ablação.',
@@ -498,7 +529,7 @@ const predefinedItems = [
     {
         id: 'lagrimasdeesposas',
         name: 'Lágrimas de Esposas',
-        icon: '🧪',
+        icon: 'https://static.divine-pride.net/images/items/item/12422.png',
         category: 'usable',
         goldValue: 0,
         description: 'Cura estados de intoxicação instantaneamente, deixando o usuário sóbrio.',
@@ -512,7 +543,7 @@ const predefinedItems = [
     {
         id: 'fogodazerikania',
         name: 'Fogo da Zerikânia',
-        icon: '💥',
+        icon: 'https://static.divine-pride.net/images/items/item/102455.png',
         category: 'usable',
         goldValue: 0,
         description: 'Explode e incendeia tudo que tocar; causa 8d6 de dano de explosão e incendeia por 1d10 turnos. Espalha-se em um círculo de 5m ao ser arremessado; pode ampliar o efeito se usado com algo inflamável.',
@@ -527,7 +558,7 @@ const predefinedItems = [
     {
         id: 'sanguepreto',
         name: 'Sangue Preto',
-        icon: '⚱️',
+        icon: 'https://static.divine-pride.net/images/items/item/23078.png',
         category: 'usable',
         goldValue: 0,
         description: 'O sangue do bruxo envenena criaturas vampíricas e necrófagas que o beberem, causando 1d6 de dano por rodada até um teste de Tolerância; impede cura natural e exige teste de resistência a cada turno para não ficar atordoado (ND 20).',
@@ -542,7 +573,7 @@ const predefinedItems = [
     {
         id: 'nevasca',
         name: 'Nevasca',
-        icon: '⚱️',
+        icon: 'https://static.divine-pride.net/images/items/item/12245.png',
         category: 'usable',
         goldValue: 0,
         description: '1d6 em todos os sentidos, Reflexo, Defesa, Audição, Percepção, Esquiva, Atletismo, Acrobacias, Habilidades com armas como Esgrima etc...',
@@ -557,7 +588,7 @@ const predefinedItems = [
     {
         id: 'gato',
         name: 'Gato',
-        icon: '⚱️',
+        icon: 'https://static.divine-pride.net/images/items/item/503.png',
         category: 'usable',
         goldValue: 0,
         description: 'Nenhuma penalidade por escuridão ou pouca luz; não pode ser hipnotizado; +5 contra ilusões.',
@@ -571,7 +602,7 @@ const predefinedItems = [
     {
         id: 'luacheia',
         name: 'Lua Cheia',
-        icon: '⚱️',
+        icon: 'https://static.divine-pride.net/images/items/item/546.png',
         category: 'usable',
         goldValue: 0,
         description: 'Role 1d8. Fornece +10 PV mais o resultado do dado em PV temporários até o fim da duração. Não acumula.',
@@ -585,7 +616,7 @@ const predefinedItems = [
     {
         id: 'papafigo',
         name: 'Papa-figo',
-        icon: '⚱️',
+        icon: 'https://static.divine-pride.net/images/items/item/12119.png',
         category: 'usable',
         goldValue: 0,
         description: 'Fornece imunidade a venenos e neutraliza quaisquer poções no sistema.',
@@ -599,7 +630,7 @@ const predefinedItems = [
     {
         id: 'baleiaassassina',
         name: 'Baleia Assassina',
-        icon: '⚱️',
+        icon: 'https://static.divine-pride.net/images/items/item/12118.png',
         category: 'usable',
         goldValue: 0,
         description: 'Aumenta em 50% a habilidade de segurar a respiração e nega penalidades de visão subaquática.',
@@ -613,7 +644,7 @@ const predefinedItems = [
     {
         id: 'bosquedemaribor',
         name: 'Bosque de Maribor',
-        icon: '⚱️',
+        icon: 'https://static.divine-pride.net/images/items/item/12120.png',
         category: 'usable',
         goldValue: 0,
         description: 'Toda vez que ganhar um dado de adrenalina, adicione um dado extra.',
@@ -627,7 +658,7 @@ const predefinedItems = [
     {
         id: 'filtrodepetri',
         name: 'Filtro de Petri',
-        icon: '⚱️',
+        icon: 'https://static.divine-pride.net/images/items/item/12121.png',
         category: 'usable',
         goldValue: 0,
         description: 'Recebe +1d6 em Lançar Feitiços, Hexes e Criar Ritual.',
@@ -641,7 +672,7 @@ const predefinedItems = [
     {
         id: 'andorinha',
         name: 'Andorinha',
-        icon: '⚱️',
+        icon: 'https://static.divine-pride.net/images/items/item/505.png',
         category: 'usable',
         goldValue: 0,
         description: 'Regenera 1d6 PV por rodada. Em rodadas em que for atacado, não regenera. Não acumula.',
@@ -655,7 +686,7 @@ const predefinedItems = [
     {
         id: 'corujadomato',
         name: 'Coruja-do-mato',
-        icon: '⚱️',
+        icon: 'https://static.divine-pride.net/images/items/item/11504.png',
         category: 'usable',
         goldValue: 0,
         description: 'A cada turno recupera 1d6 de EST.',
@@ -669,7 +700,7 @@ const predefinedItems = [
     {
         id: 'trovoada',
         name: 'Trovoada',
-        icon: '⚱️',
+        icon: 'https://static.divine-pride.net/images/items/item/11548.png',
         category: 'usable',
         goldValue: 0,
         description: 'Role 1d6+3 de dano adicional em ataques físicos.',
@@ -683,7 +714,7 @@ const predefinedItems = [
     {
         id: 'melbranco',
         name: 'Mel Branco',
-        icon: '⚱️',
+        icon: 'https://static.divine-pride.net/images/items/item/12428.png',
         category: 'usable',
         goldValue: 0,
         description: 'Remove toxicidade e todos os efeitos de poções.',
@@ -698,7 +729,7 @@ const predefinedItems = [
     {
         id: 'oleodefera',
         name: 'Óleo de fera',
-        icon: '🧴',
+        icon: 'https://static.divine-pride.net/images/items/item/14535.png',
         category: 'usable',
         goldValue: 0,
         description: 'Ganha +12 de dano contra feras',
@@ -712,7 +743,7 @@ const predefinedItems = [
     {
         id: 'oleodeamaldicoado',
         name: 'Óleo de amaldiçoado',
-        icon: '🧴',
+        icon: 'https://static.divine-pride.net/images/items/item/14535.png',
         category: 'usable',
         goldValue: 0,
         description: 'Ganha +12 de dano contra amaldiçoados',
@@ -727,7 +758,7 @@ const predefinedItems = [
     {
         id: 'oleodedraconideo',
         name: 'Óleo de draconídeo',
-        icon: '🧴',
+        icon: 'https://static.divine-pride.net/images/items/item/14535.png',
         category: 'usable',
         goldValue: 0,
         description: 'Ganha +12 de dano contra draconídeos',
@@ -741,7 +772,7 @@ const predefinedItems = [
     {
         id: 'oleodeelemental',
         name: 'Óleo de elemental',
-        icon: '🧴',
+        icon: 'https://static.divine-pride.net/images/items/item/14535.png',
         category: 'usable',
         goldValue: 0,
         description: 'Ganha +12 de dano contra elemental',
@@ -754,7 +785,7 @@ const predefinedItems = [
     {
         id: 'venenodoenforcado',
         name: 'Veneno do Enforcado',
-        icon: '🧴',
+        icon: 'https://static.divine-pride.net/images/items/item/14535.png',
         category: 'usable',
         goldValue: 0,
         description: 'Ganha +12 de dano contra humanoides',
@@ -767,7 +798,7 @@ const predefinedItems = [
     {
         id: 'oleodehibrido',
         name: 'Óleo de híbrido',
-        icon: '🧴',
+        icon: 'https://static.divine-pride.net/images/items/item/14535.png',
         category: 'usable',
         goldValue: 0,
         description: 'Ganha +12 de dano contra híbrido',
@@ -780,7 +811,7 @@ const predefinedItems = [
     {
         id: 'oleodeinsetoide',
         name: 'Óleo de insetoide',
-        icon: '🧴',
+        icon: 'https://static.divine-pride.net/images/items/item/14535.png',
         category: 'usable',
         goldValue: 0,
         description: 'Ganha +12 de dano contra insetoides',
@@ -795,7 +826,7 @@ const predefinedItems = [
     {
         id: 'oleodenecrofago',
         name: 'Óleo de necrófago',
-        icon: '🧴',
+        icon: 'https://static.divine-pride.net/images/items/item/14535.png',
         category: 'usable',
         goldValue: 0,
         description: 'Ganha +12 de dano contra necrófago',
@@ -808,7 +839,7 @@ const predefinedItems = [
     {
         id: 'oleodeogroide',
         name: 'Óleo de ogroide',
-        icon: '🧴',
+        icon: 'https://static.divine-pride.net/images/items/item/14535.png',
         category: 'usable',
         goldValue: 0,
         description: 'Ganha +12 de dano contra ogroides',
@@ -821,7 +852,7 @@ const predefinedItems = [
     {
         id: 'oleoderelicto',
         name: 'Óleo de relicto',
-        icon: '🧴',
+        icon: 'https://static.divine-pride.net/images/items/item/14535.png',
         category: 'usable',
         goldValue: 0,
         description: 'Ganha +12 de dano contra relicto',
@@ -834,7 +865,7 @@ const predefinedItems = [
     {
         id: 'oleodeespectro',
         name: 'Óleo de espectro',
-        icon: '🧴',
+        icon: 'https://static.divine-pride.net/images/items/item/14535.png',
         category: 'usable',
         goldValue: 0,
         description: 'Ganha +12 de dano contra espectro',
@@ -847,7 +878,7 @@ const predefinedItems = [
     {
         id: 'oleodevampiro',
         name: 'Óleo de vampiro',
-        icon: '🧴',
+        icon: 'https://static.divine-pride.net/images/items/item/14535.png',
         category: 'usable',
         goldValue: 0,
         description: 'Ganha +12 de dano contra vampiro',
@@ -862,7 +893,7 @@ const predefinedItems = [
     {
         id: 'podelua',
         name: 'Pó de Lua',
-        icon: '💥',
+        icon: 'https://static.divine-pride.net/images/items/item/22703.png',
         category: 'usable',
         goldValue: 0,
         description: 'Impede que inimigos se tornem intangíveis ou invisíveis; útil contra Espectros e outras aparições, impede regeneração de vida de vampiros e lobisomens.',
@@ -876,7 +907,7 @@ const predefinedItems = [
     {
         id: 'podedimeritio',
         name: 'Pó de Dimerítio',
-        icon: '💥',
+        icon: 'https://static.divine-pride.net/images/items/item/22706.png',
         category: 'usable',
         goldValue: 0,
         description: 'Bloqueia habilidades mágicas de inimigos (Elementais, Magos, Bruxas Sepulcrais) e fecha portais.',
@@ -888,9 +919,23 @@ const predefinedItems = [
     },
 
     {
+        id: 'podeprata',
+        name: 'Pó de Prata',
+        icon: 'https://static.divine-pride.net/images/items/item/22706.png',
+        category: 'usable',
+        goldValue: 0,
+        description: 'Bloqueia habilidades mágicas de inimigos (Elementais, Magos, Bruxas Sepulcrais) e fecha portais.',
+        recipe: [
+            'Prata',
+            'Pólvora',
+            'Pó de Dimerítio'
+        ]
+    },
+
+    {
         id: 'bafodedragao',
         name: 'Bafo de Dragão',
-        icon: '💥',
+        icon: 'https://static.divine-pride.net/images/items/item/22702.png',
         category: 'usable',
         goldValue: 0,
         description: 'Cria fumaça inflamável que causa dano extra com Fogo (Igni).',
@@ -905,7 +950,7 @@ const predefinedItems = [
     {
         id: 'samun',
         name: 'Samun',
-        icon: '💥',
+        icon: 'https://static.divine-pride.net/images/items/item/22705.png',
         category: 'usable',
         goldValue: 0,
         description: 'Cega inimigos temporariamente, facilitando o combate.',
@@ -919,7 +964,7 @@ const predefinedItems = [
     {
         id: 'bombadeestilhacos',
         name: 'Bomba de Estilhaços',
-        icon: '💥',
+        icon: 'https://static.divine-pride.net/images/items/item/22707.png',
         category: 'usable',
         goldValue: 0,
         description: 'Cega inimigos temporariamente, facilitando o combate.',
@@ -946,7 +991,7 @@ const predefinedItems = [
     {
         id: 'flechadeferro',
         name: 'Flecha de Ferro',
-        icon: '➶',
+        icon: 'https://static.divine-pride.net/images/items/item/1750.png',
         category: 'equipment',
         goldValue: 0.2,
         type: 'weapon',
@@ -965,7 +1010,7 @@ const predefinedItems = [
     {
         id: 'flechadeaco',
         name: 'Flecha de Aço',
-        icon: '➶',
+        icon: 'https://static.divine-pride.net/images/items/item/1753.png',
         category: 'equipment',
         goldValue: 0.5,
         type: 'weapon',
@@ -984,7 +1029,7 @@ const predefinedItems = [
     {
         id: 'flechadeprata',
         name: 'Flecha de Prata',
-        icon: '➶',
+        icon: 'https://static.divine-pride.net/images/items/item/1751.png',
         category: 'equipment',
         goldValue: 5,
         type: 'weapon',
@@ -1003,7 +1048,7 @@ const predefinedItems = [
     {
         id: 'espadadeacodebruxo',
         name: 'Espada de Aço de Bruxo',
-        icon: '🗡️',
+        icon: 'https://static.divine-pride.net/images/items/item/600021.png',
         category: 'equipment',
         goldValue: 800,
         type: 'weapon',
@@ -1022,7 +1067,7 @@ const predefinedItems = [
     {
         id: 'espadadeacodebruxo',
         name: 'Espada de Prata de Bruxo',
-        icon: '🗡️',
+        icon: 'https://static.divine-pride.net/images/items/item/1123.png',
         category: 'equipment',
         goldValue: 800,
         type: 'weapon',
@@ -1041,7 +1086,7 @@ const predefinedItems = [
     {
         id: 'espadalongadeferro',
         name: 'Espada Longa de Ferro',
-        icon: '🗡️',
+        icon: 'https://static.divine-pride.net/images/items/item/1135.png',
         category: 'equipment',
         goldValue: 160,
         type: 'weapon',
@@ -1060,7 +1105,7 @@ const predefinedItems = [
     {
         id: 'espadadecavaleiro',
         name: 'Espada de Cavaleiro',
-        icon: '🗡️',
+        icon: 'https://static.divine-pride.net/images/items/item/600032.png',
         category: 'equipment',
         goldValue: 270,
         type: 'weapon',
@@ -1079,7 +1124,7 @@ const predefinedItems = [
     {
         id: 'gleddyf',
         name: 'Gleddyf',
-        icon: '🗡️',
+        icon: 'https://static.divine-pride.net/images/items/item/1159.png',
         category: 'equipment',
         goldValue: 285,
         type: 'weapon',
@@ -1098,7 +1143,7 @@ const predefinedItems = [
     {
         id: 'falcionedocacador',
         name: 'Falcione do Caçador',
-        icon: '🗡️',
+        icon: 'https://static.divine-pride.net/images/items/item/1114.png',
         category: 'equipment',
         goldValue: 325,
         type: 'weapon',
@@ -1117,7 +1162,7 @@ const predefinedItems = [
     {
         id: 'krigsverd',
         name: 'Krigsverd',
-        icon: '🗡️',
+        icon: 'https://static.divine-pride.net/images/items/item/1169.png',
         category: 'equipment',
         goldValue: 570,
         type: 'weapon',
@@ -1136,7 +1181,7 @@ const predefinedItems = [
     {
         id: 'esboda',
         name: 'Esboda',
-        icon: '🗡️',
+        icon: 'https://static.divine-pride.net/images/items/item/1137.png',
         category: 'equipment',
         goldValue: 650,
         type: 'weapon',
@@ -1155,7 +1200,7 @@ const predefinedItems = [
     {
         id: 'kord',
         name: 'Kord',
-        icon: '🗡️',
+        icon: 'https://static.divine-pride.net/images/items/item/21039.png',
         category: 'equipment',
         goldValue: 725,
         type: 'weapon',
@@ -1174,7 +1219,7 @@ const predefinedItems = [
     {
         id: 'laminadevicovaro',
         name: 'Lâmina de Vicovaro',
-        icon: '🗡️',
+        icon: 'https://static.divine-pride.net/images/items/item/1192.png',
         category: 'equipment',
         goldValue: 955,
         type: 'weapon',
@@ -1193,7 +1238,7 @@ const predefinedItems = [
     {
         id: 'torrwr',
         name: 'Torrwr',
-        icon: '🗡️',
+        icon: 'https://static.divine-pride.net/images/items/item/13422.png',
         category: 'equipment',
         goldValue: 1075,
         type: 'weapon',
@@ -1212,7 +1257,7 @@ const predefinedItems = [
     {
         id: 'adaga',
         name: 'Adaga',
-        icon: '🔪',
+        icon: 'https://static.divine-pride.net/images/items/item/13052.png',
         category: 'equipment',
         goldValue: 50,
         type: 'weapon',
@@ -1231,7 +1276,7 @@ const predefinedItems = [
     {
         id: 'estilete',
         name: 'Estilete',
-        icon: '🔪',
+        icon: 'https://static.divine-pride.net/images/items/item/1216.png',
         category: 'equipment',
         goldValue: 275,
         type: 'weapon',
@@ -1250,7 +1295,7 @@ const predefinedItems = [
     {
         id: 'punhal',
         name: 'Punhal',
-        icon: '🔪',
+        icon: 'https://static.divine-pride.net/images/items/item/1219.png',
         category: 'equipment',
         goldValue: 350,
         type: 'weapon',
@@ -1269,7 +1314,7 @@ const predefinedItems = [
     {
         id: 'jambiya',
         name: 'Jambiya',
-        icon: '🔪',
+        icon: 'https://static.divine-pride.net/images/items/item/28746.png',
         category: 'equipment',
         goldValue: 440,
         type: 'weapon',
@@ -1288,7 +1333,7 @@ const predefinedItems = [
     {
         id: 'machadodemao',
         name: 'Machado de Mão',
-        icon: '🪓',
+        icon: 'https://static.divine-pride.net/images/items/item/520024.png',
         category: 'equipment',
         goldValue: 205,
         type: 'weapon',
@@ -1307,7 +1352,7 @@ const predefinedItems = [
     {
         id: 'machadodebatalha',
         name: 'Machado de Batalha',
-        icon: '🪓',
+        icon: 'https://static.divine-pride.net/images/items/item/28144.png',
         category: 'equipment',
         goldValue: 525,
         type: 'weapon',
@@ -1326,7 +1371,7 @@ const predefinedItems = [
     {
         id: 'machadoberserker',
         name: 'Machado Berserker',
-        icon: '🪓',
+        icon: 'https://static.divine-pride.net/images/items/item/1395.png',
         category: 'equipment',
         goldValue: 960,
         type: 'weapon',
@@ -1345,7 +1390,7 @@ const predefinedItems = [
     {
         id: 'soqueira',
         name: 'Soqueira',
-        icon: '👊',
+        icon: 'https://static.divine-pride.net/images/items/item/560006.png',
         category: 'equipment',
         goldValue: 50,
         type: 'weapon',
@@ -1364,7 +1409,7 @@ const predefinedItems = [
     {
         id: 'maca',
         name: 'Maça',
-        icon: '📏',
+        icon: 'https://static.divine-pride.net/images/items/item/1543.png',
         category: 'equipment',
         goldValue: 525,
         type: 'weapon',
@@ -1383,7 +1428,7 @@ const predefinedItems = [
     {
         id: 'martelodasterrasaltas',
         name: 'Martelo das Terras Altas',
-        icon: '📏',
+        icon: 'https://static.divine-pride.net/images/items/item/1548.png',
         category: 'equipment',
         goldValue: 1100,
         type: 'weapon',
@@ -1402,7 +1447,7 @@ const predefinedItems = [
     {
         id: 'lanca',
         name: 'Lança',
-        icon: '🔱',
+        icon: 'https://static.divine-pride.net/images/items/item/530040.png',
         category: 'equipment',
         goldValue: 375,
         type: 'weapon',
@@ -1421,7 +1466,7 @@ const predefinedItems = [
     {
         id: 'achadearma',
         name: 'Acha de Arma',
-        icon: '🔱',
+        icon: 'https://static.divine-pride.net/images/items/item/1417.png',
         category: 'equipment',
         goldValue: 460,
         type: 'weapon',
@@ -1440,7 +1485,7 @@ const predefinedItems = [
     {
         id: 'alabardavermelha',
         name: 'Alabarda Vermelha',
-        icon: '🔱',
+        icon: 'https://static.divine-pride.net/images/items/item/1465.png',
         category: 'equipment',
         goldValue: 865,
         type: 'weapon',
@@ -1459,7 +1504,7 @@ const predefinedItems = [
     {
         id: 'cajado',
         name: 'Cajado',
-        icon: '🦯',
+        icon: 'https://static.divine-pride.net/images/items/item/550108.png',
         category: 'equipment',
         goldValue: 335,
         type: 'weapon',
@@ -1478,7 +1523,7 @@ const predefinedItems = [
     {
         id: 'cajadodepastor',
         name: 'Cajado de Pastor',
-        icon: '🦯',
+        icon: 'https://static.divine-pride.net/images/items/item/26121.png',
         category: 'equipment',
         goldValue: 550,
         type: 'weapon',
@@ -1497,7 +1542,7 @@ const predefinedItems = [
     {
         id: 'cajadodeferro',
         name: 'Cajado de Ferro',
-        icon: '🦯',
+        icon: 'https://static.divine-pride.net/images/items/item/1627.png',
         category: 'equipment',
         goldValue: 675,
         type: 'weapon',
@@ -1516,7 +1561,7 @@ const predefinedItems = [
     {
         id: 'cajadodecristal',
         name: 'Cajado de Cristal',
-        icon: '🦯',
+        icon: 'https://static.divine-pride.net/images/items/item/1472.png',
         category: 'equipment',
         goldValue: 835,
         type: 'weapon',
@@ -1535,7 +1580,7 @@ const predefinedItems = [
     {
         id: 'arcocurto',
         name: 'Arco Curto',
-        icon: '🏹',
+        icon: 'https://static.divine-pride.net/images/items/item/1703.png',
         category: 'equipment',
         goldValue: 290,
         type: 'weapon',
@@ -1554,7 +1599,7 @@ const predefinedItems = [
     {
         id: 'arcolongo',
         name: 'Arco Longo',
-        icon: '🏹',
+        icon: 'https://static.divine-pride.net/images/items/item/18186.png',
         category: 'equipment',
         goldValue: 475,
         type: 'weapon',
@@ -1573,7 +1618,7 @@ const predefinedItems = [
     {
         id: 'arcodeguerra',
         name: 'Arco de Guerra',
-        icon: '🏹',
+        icon: 'https://static.divine-pride.net/images/items/item/1708.png',
         category: 'equipment',
         goldValue: 835,
         type: 'weapon',
@@ -1592,7 +1637,7 @@ const predefinedItems = [
     {
         id: 'bestademão',
         name: 'Besta de Mão',
-        icon: '🏹',
+        icon: 'https://static.divine-pride.net/images/items/item/1712.png',
         category: 'equipment',
         goldValue: 285,
         type: 'weapon',
@@ -1611,7 +1656,7 @@ const predefinedItems = [
     {
         id: 'besta',
         name: 'Besta',
-        icon: '🏹',
+        icon: 'https://static.divine-pride.net/images/items/item/700063.png',
         category: 'equipment',
         goldValue: 455,
         type: 'weapon',
@@ -1630,7 +1675,7 @@ const predefinedItems = [
     {
         id: 'besta',
         name: 'Besta de Caçador de Monstros',
-        icon: '🏹',
+        icon: 'https://static.divine-pride.net/images/items/item/18110.png',
         category: 'equipment',
         goldValue: 1125,
         type: 'weapon',
@@ -1652,14 +1697,14 @@ const predefinedItems = [
     // =====================================
 
     {
-        id: 'leather_armor',
-        name: 'Armadura de Couro',
-        icon: '🛡️',
+        id: 'jaquetao',
+        name: 'Jaquetão',
+        icon: 'https://static.divine-pride.net/images/items/item/15220.png',
         category: 'equipment',
-        goldValue: 0,
+        goldValue: 100,
         type: 'armor',
         weaponType: 'Armadura Leve',
-        defense: 8,
+        defense: 2,
         bonus: ' ',
         description: 'Armadura leve.',
         recipe: [
@@ -1669,19 +1714,1969 @@ const predefinedItems = [
         ]
     },
 
+    {
+        id: 'jaquetaodeaedirn',
+        name: 'Jaquetão de Aedirn',
+        icon: 'https://static.divine-pride.net/images/items/item/32656.png',
+        category: 'equipment',
+        goldValue: 175,
+        type: 'armor',
+        weaponType: 'Armadura Leve',
+        defense: 4,
+        bonus: ' ',
+        description: 'Armadura leve.',
+        recipe: [
+            '',
+            '',
+            ''
+        ]
+    },
+
+    {
+        id: 'jaquetaodetecidoduplo',
+        name: 'Jaquetão de Tecido duplo',
+        icon: 'https://static.divine-pride.net/images/items/item/2399.png',
+        category: 'equipment',
+        goldValue: 250,
+        type: 'armor',
+        weaponType: 'Armadura Leve',
+        defense: 6,
+        bonus: ' ',
+        description: 'Armadura leve.',
+        recipe: [
+            '',
+            '',
+            ''
+        ]
+    },
+
+    {
+        id: 'couraca',
+        name: 'Couraça',
+        icon: 'https://static.divine-pride.net/images/items/item/15283.png',
+        category: 'equipment',
+        goldValue: 300,
+        type: 'armor',
+        weaponType: 'Armadura Média',
+        defense: 8,
+        bonus: ' ',
+        description: 'Armadura Média',
+        recipe: [
+            '',
+            '',
+            ''
+        ]
+    },
+
+    {
+        id: 'armaduradealabardeiroredaniano',
+        name: 'Armadura de alabardeiro redaniano',
+        icon: 'https://static.divine-pride.net/images/items/item/2312.png',
+        category: 'equipment',
+        goldValue: 400,
+        type: 'armor',
+        weaponType: 'Armadura Média',
+        defense: 8,
+        bonus: ' ',
+        description: 'Armadura Média',
+        recipe: [
+            '',
+            '',
+            ''
+        ]
+    },
+
+    {
+        id: 'jaquetalyrianadecouro',
+        name: 'Jaqueta lyriana de couro',
+        icon: 'https://static.divine-pride.net/images/items/item/15180.png',
+        category: 'equipment',
+        goldValue: 525,
+        type: 'armor',
+        weaponType: 'Armadura Média',
+        defense: 10,
+        bonus: ' ',
+        description: 'Armadura Média',
+        recipe: [
+            '',
+            '',
+            ''
+        ]
+    },
+
+    {
+        id: 'armaduradeplaca',
+        name: 'Armadura de placa',
+        icon: 'https://static.divine-pride.net/images/items/item/2376.png',
+        category: 'equipment',
+        goldValue: 625,
+        type: 'armor',
+        weaponType: 'Armadura Média',
+        defense: 12,
+        bonus: ' ',
+        description: 'Armadura Média',
+        recipe: [
+            '',
+            '',
+            ''
+        ]
+    },
+
+    {
+        id: 'armadurapesadadailhahindar',
+        name: 'Armadura pesada da ilha hindar',
+        icon: 'https://static.divine-pride.net/images/items/item/2341.png',
+        category: 'equipment',
+        goldValue: 750,
+        type: 'armor',
+        weaponType: 'Armadura Pesada',
+        defense: 14,
+        bonus: ' ',
+        description: 'Armadura Pesada',
+        recipe: [
+            '',
+            '',
+            ''
+        ]
+    },
+
+    {
+        id: 'armaduradeplacanilfgardiana',
+        name: 'Armadura de placa nilfgardiana',
+        icon: 'https://static.divine-pride.net/images/items/item/450120.png',
+        category: 'equipment',
+        goldValue: 850,
+        type: 'armor',
+        weaponType: 'Armadura Pesada',
+        defense: 16,
+        bonus: ' ',
+        description: 'Armadura Pesada',
+        recipe: [
+            '',
+            '',
+            ''
+        ]
+    },
+
+    {
+        id: 'armaduradeurso',
+        name: 'Armadura de Urso',
+        icon: 'https://static.divine-pride.net/images/items/item/450350.png',
+        category: 'equipment',
+        goldValue: 1813,
+        type: 'armor',
+        weaponType: 'Armadura Pesada',
+        defense: 12,
+        bonus: ' ',
+        description: 'Armadura Pesada',
+        recipe: [
+            '',
+            '',
+            ''
+        ]
+    },
+
+    {
+        id: 'armaduradegato',
+        name: 'Armadura de Gato',
+        icon: 'https://static.divine-pride.net/images/items/item/450177.png',
+        category: 'equipment',
+        goldValue: 713,
+        type: 'armor',
+        weaponType: 'Armadura Leve',
+        defense: 4,
+        bonus: ' ',
+        description: 'Armadura Leve',
+        recipe: [
+            '',
+            '',
+            ''
+        ]
+    },
+
+    {
+        id: 'armaduradegrifo',
+        name: 'Armadura de Grifo',
+        icon: 'https://static.divine-pride.net/images/items/item/450101.png',
+        category: 'equipment',
+        goldValue: 1571,
+        type: 'armor',
+        weaponType: 'Armadura Média',
+        defense: 10,
+        bonus: ' ',
+        description: 'Armadura Média',
+        recipe: [
+            '',
+            '',
+            ''
+        ]
+    },
+
+    {
+        id: 'armadurademanticora',
+        name: 'Armadura de Manticora',
+        icon: 'https://static.divine-pride.net/images/items/item/450093.png',
+        category: 'equipment',
+        goldValue: 1052,
+        type: 'armor',
+        weaponType: 'Armadura Média',
+        defense: 8,
+        bonus: ' ',
+        description: 'Armadura Média',
+        recipe: [
+            '',
+            '',
+            ''
+        ]
+    },
+
+    {
+        id: 'armaduradevibora',
+        name: 'Armadura de Vibora',
+        icon: 'https://static.divine-pride.net/images/items/item/450102.png',
+        category: 'equipment',
+        goldValue: 842,
+        type: 'armor',
+        weaponType: 'Armadura Leve',
+        defense: 6,
+        bonus: ' ',
+        description: 'Armadura Leve',
+        recipe: [
+            '',
+            '',
+            ''
+        ]
+    },
+
+    {
+        id: 'armaduradelobo',
+        name: 'Armadura de Lobo',
+        icon: 'https://static.divine-pride.net/images/items/item/450071.png',
+        category: 'equipment',
+        goldValue: 1302,
+        type: 'armor',
+        weaponType: 'Armadura Média',
+        defense: 8,
+        bonus: ' ',
+        description: 'Armadura Média',
+        recipe: [
+            '',
+            '',
+            ''
+        ]
+    },
+
+    {
+        id: 'armaduradecorvo',
+        name: 'Armadura de Corvo',
+        icon: 'https://static.divine-pride.net/images/items/item/450067.png',
+        category: 'equipment',
+        goldValue: 990,
+        type: 'armor',
+        weaponType: 'Armadura Leve',
+        defense: 3,
+        bonus: ' ',
+        description: 'Armadura Leve',
+        recipe: [
+            '',
+            '',
+            ''
+        ]
+    },
+
+    {
+        id: 'capuzdearqueirodeverden',
+        name: 'Capuz de Arqueiro de Verden',
+        icon: 'https://static.divine-pride.net/images/items/item/19499.png',
+        category: 'equipment',
+        goldValue: 100,
+        type: 'armor',
+        weaponType: 'Armadura Leve',
+        defense: 2,
+        bonus: ' ',
+        description: 'Armadura Leve',
+        recipe: [
+            '',
+            '',
+            ''
+        ]
+    },
+
+    {
+        id: 'capuzdetecidoduplo',
+        name: 'Capuz de tecido duplo',
+        icon: 'https://static.divine-pride.net/images/items/item/420155.png',
+        category: 'equipment',
+        goldValue: 175,
+        type: 'armor',
+        weaponType: 'Armadura Leve',
+        defense: 4,
+        bonus: ' ',
+        description: 'Armadura Leve',
+        recipe: [
+            '',
+            '',
+            ''
+        ]
+    },
+
+    {
+        id: 'capuzcomprotecaodeolhos',
+        name: 'Capuz com proteção de olhos',
+        icon: 'https://static.divine-pride.net/images/items/item/420110.png',
+        category: 'equipment',
+        goldValue: 200,
+        type: 'armor',
+        weaponType: 'Armadura Leve',
+        defense: 6,
+        bonus: ' ',
+        description: 'Armadura Leve',
+        recipe: [
+            '',
+            '',
+            ''
+        ]
+    },
+
+    {
+        id: 'toucadecotademalha',
+        name: 'Touca de Cota de malha',
+        icon: 'https://static.divine-pride.net/images/items/item/5128.png',
+        category: 'equipment',
+        goldValue: 250,
+        type: 'armor',
+        weaponType: 'Armadura Média',
+        defense: 8,
+        bonus: ' ',
+        description: 'Armadura Média',
+        recipe: [
+            '',
+            '',
+            ''
+        ]
+    },
+
+    {
+        id: 'capuzblindado',
+        name: 'Capuz blindado',
+        icon: 'https://static.divine-pride.net/images/items/item/18820.png',
+        category: 'equipment',
+        goldValue: 350,
+        type: 'armor',
+        weaponType: 'Armadura Média',
+        defense: 8,
+        bonus: ' ',
+        description: 'Armadura Média',
+        recipe: [
+            '',
+            '',
+            ''
+        ]
+    },
+
+    {
+        id: 'armettemeriano',
+        name: 'Armet temeriano',
+        icon: 'https://static.divine-pride.net/images/items/item/18652.png',
+        category: 'equipment',
+        goldValue: 475,
+        type: 'armor',
+        weaponType: 'Armadura Média',
+        defense: 10,
+        bonus: ' ',
+        description: 'Armadura Média',
+        recipe: [
+            '',
+            '',
+            ''
+        ]
+    },
+
+    {
+        id: 'grandeelmo',
+        name: 'Grande elmo',
+        icon: 'https://static.divine-pride.net/images/items/item/19366.png',
+        category: 'equipment',
+        goldValue: 575,
+        type: 'armor',
+        weaponType: 'Armadura Pesada',
+        defense: 12,
+        bonus: ' ',
+        description: 'Armadura Pesada',
+        recipe: [
+            '',
+            '',
+            ''
+        ]
+    },
+
+    {
+        id: 'elmoskellige',
+        name: 'Elmo Skellige',
+        icon: 'https://static.divine-pride.net/images/items/item/400053.png',
+        category: 'equipment',
+        goldValue: 700,
+        type: 'armor',
+        weaponType: 'Armadura Pesada',
+        defense: 14,
+        bonus: ' ',
+        description: 'Armadura Pesada',
+        recipe: [
+            '',
+            '',
+            ''
+        ]
+    },
+
+    {
+        id: 'elmonilfgardiano',
+        name: 'Elmo Nilfgardiano',
+        icon: 'https://static.divine-pride.net/images/items/item/5808.png',
+        category: 'equipment',
+        goldValue: 900,
+        type: 'armor',
+        weaponType: 'Armadura Pesada',
+        defense: 16,
+        bonus: ' ',
+        description: 'Armadura Pesada',
+        recipe: [
+            '',
+            '',
+            ''
+        ]
+    },
+
+    {
+        id: 'escudodemadeira',
+        name: 'Escudo de Madeira',
+        icon: 'https://static.divine-pride.net/images/items/item/2135.png',
+        category: 'equipment',
+        goldValue: 50,
+        type: 'armor',
+        weaponType: 'Escudo',
+        defense: 1,
+        bonus: ' ',
+        description: 'Escudo',
+        recipe: [
+            '',
+            '',
+            ''
+        ]
+    },
+
+    {
+        id: 'broqueldeaco',
+        name: 'Broquel de Aço',
+        icon: 'https://static.divine-pride.net/images/items/item/2103.png',
+        category: 'equipment',
+        goldValue: 150,
+        type: 'armor',
+        weaponType: 'Escudo',
+        defense: 2,
+        bonus: ' ',
+        description: 'Escudo',
+        recipe: [
+            '',
+            '',
+            ''
+        ]
+    },
+
+    {
+        id: 'escudotemeriano',
+        name: 'Escudo Temeriano',
+        icon: 'https://static.divine-pride.net/images/items/item/28900.png',
+        category: 'equipment',
+        goldValue: 225,
+        type: 'armor',
+        weaponType: 'Escudo',
+        defense: 3,
+        bonus: ' ',
+        description: 'Escudo',
+        recipe: [
+            '',
+            '',
+            ''
+        ]
+    },
+
+    {
+        id: 'escudotemeriano',
+        name: 'Escudo Temeriano',
+        icon: 'https://static.divine-pride.net/images/items/item/28900.png',
+        category: 'equipment',
+        goldValue: 225,
+        type: 'armor',
+        weaponType: 'Escudo',
+        defense: 3,
+        bonus: ' ',
+        description: 'Escudo',
+        recipe: [
+            '',
+            '',
+            ''
+        ]
+    },
+
+    {
+        id: 'escudodesaqueadorskellige',
+        name: 'Escudo de Saqueador Skellige',
+        icon: 'https://static.divine-pride.net/images/items/item/2147.png',
+        category: 'equipment',
+        goldValue: 325,
+        type: 'armor',
+        weaponType: 'Escudo',
+        defense: 4,
+        bonus: ' ',
+        description: 'Escudo',
+        recipe: [
+            '',
+            '',
+            ''
+        ]
+    },
+
+    {
+        id: 'escudokaedweni',
+        name: 'Escudo Kaedweni',
+        icon: 'https://static.divine-pride.net/images/items/item/28953.png',
+        category: 'equipment',
+        goldValue: 400,
+        type: 'armor',
+        weaponType: 'Escudo',
+        defense: 5,
+        bonus: ' ',
+        description: 'Escudo',
+        recipe: [
+            '',
+            '',
+            ''
+        ]
+    },
+
+    {
+        id: 'escudolagrimadeaco',
+        name: 'Escudo Lagrima de Aço',
+        icon: 'https://static.divine-pride.net/images/items/item/460014.png',
+        category: 'equipment',
+        goldValue: 400,
+        type: 'armor',
+        weaponType: 'Escudo',
+        defense: 6,
+        bonus: ' ',
+        description: 'Escudo',
+        recipe: [
+            '',
+            '',
+            ''
+        ]
+    },
+
+    {
+        id: 'pavise',
+        name: 'Pavise',
+        icon: 'https://static.divine-pride.net/images/items/item/460037.png',
+        category: 'equipment',
+        goldValue: 500,
+        type: 'armor',
+        weaponType: 'Escudo',
+        defense: 7,
+        bonus: ' ',
+        description: 'Escudo',
+        recipe: [
+            '',
+            '',
+            ''
+        ]
+    },
+
+    {
+        id: 'pavisenilfgardiano',
+        name: 'Pavise Nilfgardiano',
+        icon: 'https://static.divine-pride.net/images/items/item/460016.png',
+        category: 'equipment',
+        goldValue: 600,
+        type: 'armor',
+        weaponType: 'Escudo',
+        defense: 8,
+        bonus: ' ',
+        description: 'Escudo',
+        recipe: [
+            '',
+            '',
+            ''
+        ]
+    },
+
+    {
+        id: 'escudopipanilfgardiano',
+        name: 'Escudo Pipa Nilfgardiano',
+        icon: 'https://static.divine-pride.net/images/items/item/28941.png',
+        category: 'equipment',
+        goldValue: 750,
+        type: 'armor',
+        weaponType: 'Escudo',
+        defense: 9,
+        bonus: ' ',
+        description: 'Escudo',
+        recipe: [
+            '',
+            '',
+            ''
+        ]
+    },
+
+    {
+        id: 'calcasdecavalaria',
+        name: 'Calças de cavalaria',
+        icon: 'https://static.divine-pride.net/images/items/item/22052.png',
+        category: 'equipment',
+        goldValue: 75,
+        type: 'armor',
+        weaponType: 'Armadura Leve',
+        defense: 2,
+        bonus: ' ',
+        description: 'Armadura para pernas',
+        recipe: [
+            '',
+            '',
+            ''
+        ]
+    },
+    
+    {
+        id: 'calcasacolchoadas',
+        name: 'Calças acolchoadas',
+        icon: 'https://static.divine-pride.net/images/items/item/22052.png',
+        category: 'equipment',
+        goldValue: 125,
+        type: 'armor',
+        weaponType: 'Armadura Leve',
+        defense: 4,
+        bonus: ' ',
+        description: 'Armadura para pernas',
+        recipe: [
+            '',
+            '',
+            ''
+        ]
+    },
+    
+    {
+        id: 'calcasdetecidoduplo',
+        name: 'Calças de tecido duplo',
+        icon: 'https://static.divine-pride.net/images/items/item/22052.png',
+        category: 'equipment',
+        goldValue: 225,
+        type: 'armor',
+        weaponType: 'Armadura Leve',
+        defense: 6,
+        bonus: ' ',
+        description: 'Armadura para pernas',
+        recipe: [
+            '',
+            '',
+            ''
+        ]
+    },
+    
+    {
+        id: 'calcasblindadas',
+        name: 'Calças blindadas',
+        icon: 'https://static.divine-pride.net/images/items/item/22052.png',
+        category: 'equipment',
+        goldValue: 250,
+        type: 'armor',
+        weaponType: 'Armadura Média',
+        defense: 8,
+        bonus: ' ',
+        description: 'Armadura para pernas',
+        recipe: [
+            '',
+            '',
+            ''
+        ]
+    },
+    
+    {
+        id: 'grevasredaniana',
+        name: 'Grevas redaniana',
+        icon: 'https://static.divine-pride.net/images/items/item/22052.png',
+        category: 'equipment',
+        goldValue: 400,
+        type: 'armor',
+        weaponType: 'Armadura Média',
+        defense: 8,
+        bonus: ' ',
+        description: 'Armadura para pernas',
+        recipe: [
+            '',
+            '',
+            ''
+        ]
+    },
+    
+    {
+        id: 'calcaslyrianasdecouro',
+        name: 'Calças lyrianas de couro',
+        icon: 'https://static.divine-pride.net/images/items/item/22052.png',
+        category: 'equipment',
+        goldValue: 525,
+        type: 'armor',
+        weaponType: 'Armadura Média',
+        defense: 10,
+        bonus: ' ',
+        description: 'Armadura para pernas',
+        recipe: [
+            '',
+            '',
+            ''
+        ]
+    },
+    
+    {
+        id: 'grevasdeplaca',
+        name: 'Grevas de placa',
+        icon: 'https://static.divine-pride.net/images/items/item/22052.png',
+        category: 'equipment',
+        goldValue: 625,
+        type: 'armor',
+        weaponType: 'Armadura Pesada',
+        defense: 12,
+        bonus: ' ',
+        description: 'Armadura para pernas',
+        recipe: [
+            '',
+            '',
+            ''
+        ]
+    },
+    
+    {
+        id: 'chaussespesadasdehindas',
+        name: 'Chausses pesadas de hindas',
+        icon: 'https://static.divine-pride.net/images/items/item/22052.png',
+        category: 'equipment',
+        goldValue: 650,
+        type: 'armor',
+        weaponType: 'Armadura Pesada',
+        defense: 14,
+        bonus: ' ',
+        description: 'Armadura para pernas',
+        recipe: [
+            '',
+            '',
+            ''
+        ]
+    },
+    
+    {
+        id: 'grevasnilfgardianas',
+        name: 'Grevas Nilfgardianas',
+        icon: 'https://static.divine-pride.net/images/items/item/22052.png',
+        category: 'equipment',
+        goldValue: 850,
+        type: 'armor',
+        weaponType: 'Armadura Pesada',
+        defense: 16,
+        bonus: ' ',
+        description: 'Armadura para pernas',
+        recipe: [
+            '',
+            '',
+            ''
+        ]
+    },
+
+    {
+        id: 'calcasdeurso',
+        name: 'Calças de Urso',
+        icon: 'https://static.divine-pride.net/images/items/item/22052.png',
+        category: 'equipment',
+        goldValue: 1813,
+        type: 'armor',
+        weaponType: 'Armadura Pesada',
+        defense: 12,
+        bonus: ' ',
+        description: 'Armadura para pernas',
+        recipe: [
+            '',
+            '',
+            ''
+        ]
+    },
+    
+    {
+        id: 'calcasdegato',
+        name: 'Calças de Gato',
+        icon: 'https://static.divine-pride.net/images/items/item/22052.png',
+        category: 'equipment',
+        goldValue: 713,
+        type: 'armor',
+        weaponType: 'Armadura Leve',
+        defense: 4,
+        bonus: ' ',
+        description: 'Armadura para pernas',
+        recipe: [
+            '',
+            '',
+            ''
+        ]
+    },
+    
+    {
+        id: 'calcasdegrifo',
+        name: 'Calças de Grifo',
+        icon: 'https://static.divine-pride.net/images/items/item/22052.png',
+        category: 'equipment',
+        goldValue: 1571,
+        type: 'armor',
+        weaponType: 'Armadura Média',
+        defense: 10,
+        bonus: ' ',
+        description: 'Armadura para pernas',
+        recipe: [
+            '',
+            '',
+            ''
+        ]
+    },
+    
+    {
+        id: 'calcasdemanticora',
+        name: 'Calças de Manticora',
+        icon: 'https://static.divine-pride.net/images/items/item/22052.png',
+        category: 'equipment',
+        goldValue: 1052,
+        type: 'armor',
+        weaponType: 'Armadura Média',
+        defense: 8,
+        bonus: ' ',
+        description: 'Armadura para pernas',
+        recipe: [
+            '',
+            '',
+            ''
+        ]
+    },
+    
+    {
+        id: 'calcasdevibora',
+        name: 'Calças de Vibora',
+        icon: 'https://static.divine-pride.net/images/items/item/22052.png',
+        category: 'equipment',
+        goldValue: 842,
+        type: 'armor',
+        weaponType: 'Armadura Leve',
+        defense: 6,
+        bonus: ' ',
+        description: 'Armadura para pernas',
+        recipe: [
+            '',
+            '',
+            ''
+        ]
+    },
+    
+    {
+        id: 'calcasdelobo',
+        name: 'Calças de Lobo',
+        icon: 'https://static.divine-pride.net/images/items/item/22052.png',
+        category: 'equipment',
+        goldValue: 1302,
+        type: 'armor',
+        weaponType: 'Armadura Média',
+        defense: 8,
+        bonus: ' ',
+        description: 'Armadura para pernas',
+        recipe: [
+            '',
+            '',
+            ''
+        ]
+    },
+    
+    {
+        id: 'calcasdecorvo',
+        name: 'Calças de Corvo',
+        icon: 'https://static.divine-pride.net/images/items/item/22052.png',
+        category: 'equipment',
+        goldValue: 990,
+        type: 'armor',
+        weaponType: 'Armadura Leve',
+        defense: 3,
+        bonus: ' ',
+        description: 'Armadura para pernas',
+        recipe: [
+            '',
+            '',
+            ''
+        ]
+    },
+
+    {
+        id: 'braceirasdacavalaria',
+        name: 'Braceiras da cavalaria',
+        icon: 'https://static.divine-pride.net/images/items/item/2984.png',
+        category: 'equipment',
+        goldValue: 50,
+        type: 'armor',
+        weaponType: 'Armadura Leve',
+        defense: 2,
+        bonus: ' ',
+        description: 'Armadura para braços',
+        recipe: [
+            '',
+            '',
+            ''
+        ]
+    },
+    
+    {
+        id: 'braceirasacolchoadas',
+        name: 'Braceiras acolchoadas',
+        icon: 'https://static.divine-pride.net/images/items/item/2984.png',
+        category: 'equipment',
+        goldValue: 100,
+        type: 'armor',
+        weaponType: 'Armadura Leve',
+        defense: 4,
+        bonus: ' ',
+        description: 'Armadura para braços',
+        recipe: [
+            '',
+            '',
+            ''
+        ]
+    },
+    
+    {
+        id: 'braceirasdetecidoduplo',
+        name: 'Braceiras de tecido duplo',
+        icon: 'https://static.divine-pride.net/images/items/item/2984.png',
+        category: 'equipment',
+        goldValue: 175,
+        type: 'armor',
+        weaponType: 'Armadura Leve',
+        defense: 6,
+        bonus: ' ',
+        description: 'Armadura para braços',
+        recipe: [
+            '',
+            '',
+            ''
+        ]
+    },
+    
+    {
+        id: 'braceirasblindadas',
+        name: 'Braceiras blindadas',
+        icon: 'https://static.divine-pride.net/images/items/item/2984.png',
+        category: 'equipment',
+        goldValue: 200,
+        type: 'armor',
+        weaponType: 'Armadura Média',
+        defense: 8,
+        bonus: ' ',
+        description: 'Armadura para braços',
+        recipe: [
+            '',
+            '',
+            ''
+        ]
+    },
+    
+    {
+        id: 'armaduradebracosredanianas',
+        name: 'Armadura de Braços Redanianas',
+        icon: 'https://static.divine-pride.net/images/items/item/2984.png',
+        category: 'equipment',
+        goldValue: 350,
+        type: 'armor',
+        weaponType: 'Armadura Média',
+        defense: 8,
+        bonus: ' ',
+        description: 'Armadura para braços',
+        recipe: [
+            '',
+            '',
+            ''
+        ]
+    },
+    
+    {
+        id: 'braceiraslyrianasdecouro',
+        name: 'Braceiras Lyrianas de couro',
+        icon: 'https://static.divine-pride.net/images/items/item/2984.png',
+        category: 'equipment',
+        goldValue: 475,
+        type: 'armor',
+        weaponType: 'Armadura Média',
+        defense: 10,
+        bonus: ' ',
+        description: 'Armadura para braços',
+        recipe: [
+            '',
+            '',
+            ''
+        ]
+    },
+    
+    {
+        id: 'armaduradeplacasparabraco',
+        name: 'Armadura de Placas para braço',
+        icon: 'https://static.divine-pride.net/images/items/item/2984.png',
+        category: 'equipment',
+        goldValue: 550,
+        type: 'armor',
+        weaponType: 'Armadura Pesada',
+        defense: 12,
+        bonus: ' ',
+        description: 'Armadura para braços',
+        recipe: [
+            '',
+            '',
+            ''
+        ]
+    },
+    
+    {
+        id: 'braceiraspesadasdehindar',
+        name: 'Braceiras pesadas de hindar',
+        icon: 'https://static.divine-pride.net/images/items/item/2984.png',
+        category: 'equipment',
+        goldValue: 625,
+        type: 'armor',
+        weaponType: 'Armadura Pesada',
+        defense: 14,
+        bonus: ' ',
+        description: 'Armadura para braços',
+        recipe: [
+            '',
+            '',
+            ''
+        ]
+    },
+    
+    {
+        id: 'armaduradebracosnilfgardianas',
+        name: 'Armadura de braços nilfgardianas',
+        icon: 'https://static.divine-pride.net/images/items/item/2984.png',
+        category: 'equipment',
+        goldValue: 750,
+        type: 'armor',
+        weaponType: 'Armadura Pesada',
+        defense: 16,
+        bonus: ' ',
+        description: 'Armadura para braços',
+        recipe: [
+            '',
+            '',
+            ''
+        ]
+    },
+    
+    {
+        id: 'braceirasdeurso',
+        name: 'Braceiras de Urso',
+        icon: 'https://static.divine-pride.net/images/items/item/2984.png',
+        category: 'equipment',
+        goldValue: 1813,
+        type: 'armor',
+        weaponType: 'Armadura Pesada',
+        defense: 12,
+        bonus: ' ',
+        description: 'Armadura para braços',
+        recipe: [
+            '',
+            '',
+            ''
+        ]
+    },
+    
+    {
+        id: 'braceirasdegato',
+        name: 'Braceiras de Gato',
+        icon: 'https://static.divine-pride.net/images/items/item/2984.png',
+        category: 'equipment',
+        goldValue: 713,
+        type: 'armor',
+        weaponType: 'Armadura Leve',
+        defense: 4,
+        bonus: ' ',
+        description: 'Armadura para braços',
+        recipe: [
+            '',
+            '',
+            ''
+        ]
+    },
+    
+    {
+        id: 'braceirasdegrifo',
+        name: 'Braceiras de Grifo',
+        icon: 'https://static.divine-pride.net/images/items/item/2984.png',
+        category: 'equipment',
+        goldValue: 1571,
+        type: 'armor',
+        weaponType: 'Armadura Média',
+        defense: 10,
+        bonus: ' ',
+        description: 'Armadura para braços',
+        recipe: [
+            '',
+            '',
+            ''
+        ]
+    },
+    
+    {
+        id: 'braceirasdemanticora',
+        name: 'Braceiras de Manticora',
+        icon: 'https://static.divine-pride.net/images/items/item/2984.png',
+        category: 'equipment',
+        goldValue: 1052,
+        type: 'armor',
+        weaponType: 'Armadura Média',
+        defense: 8,
+        bonus: ' ',
+        description: 'Armadura para braços',
+        recipe: [
+            '',
+            '',
+            ''
+        ]
+    },
+    
+    {
+        id: 'braceirasdevibora',
+        name: 'Braceiras de Vibora',
+        icon: 'https://static.divine-pride.net/images/items/item/2984.png',
+        category: 'equipment',
+        goldValue: 842,
+        type: 'armor',
+        weaponType: 'Armadura Leve',
+        defense: 6,
+        bonus: ' ',
+        description: 'Armadura para braços',
+        recipe: [
+            '',
+            '',
+            ''
+        ]
+    },
+    
+    {
+        id: 'braceirasdelobo',
+        name: 'Braceiras de Lobo',
+        icon: 'https://static.divine-pride.net/images/items/item/2984.png',
+        category: 'equipment',
+        goldValue: 1302,
+        type: 'armor',
+        weaponType: 'Armadura Média',
+        defense: 8,
+        bonus: ' ',
+        description: 'Armadura para braços',
+        recipe: [
+            '',
+            '',
+            ''
+        ]
+    },
+    
+    {
+        id: 'braceirasdecorvo',
+        name: 'Braceiras de Corvo',
+        icon: 'https://static.divine-pride.net/images/items/item/2984.png',
+        category: 'equipment',
+        goldValue: 990,
+        type: 'armor',
+        weaponType: 'Armadura Leve',
+        defense: 3,
+        bonus: ' ',
+        description: 'Armadura para braços',
+        recipe: [
+            '',
+            '',
+            ''
+        ]
+    },
+
+
     // =====================================
     // ETC
     // =====================================
 
     {
-        id: 'gem',
-        name: 'Gema',
-        icon: '💎',
+        id: 'ossosdeferas',
+        name: 'Ossos de Feras',
+        icon: 'https://static.divine-pride.net/images/items/item/932.png',
         category: 'misc',
         goldValue: 0,
-        description: 'Item raro.',
+        description: 'Partes de animais',
+        recipe: []
+    },
+    
+    {
+        id: 'courodevaca',
+        name: 'Couro de Vaca',
+        icon: 'https://static.divine-pride.net/images/items/item/919.png',
+        category: 'misc',
+        goldValue: 0,
+        description: 'Partes de animais',
+        recipe: []
+    },
+    
+    {
+        id: 'courodraconideo',
+        name: 'Couro Draconídeo',
+        icon: 'https://static.divine-pride.net/images/items/item/6403.png',
+        category: 'misc',
+        goldValue: 0,
+        description: 'Partes de animais',
+        recipe: []
+    },
+    
+    {
+        id: 'escamasdedraconideo',
+        name: 'Escamas de Draconídeo',
+        icon: 'https://static.divine-pride.net/images/items/item/1036.png',
+        category: 'misc',
+        goldValue: 0,
+        description: 'Partes de animais',
+        recipe: []
+    },
+    
+    {
+        id: 'penas',
+        name: 'Penas',
+        icon: 'https://static.divine-pride.net/images/items/item/7079.png',
+        category: 'misc',
+        goldValue: 0,
+        description: 'Partes de animais',
+        recipe: []
+    },
+    
+    {
+        id: 'courofortalecido',
+        name: 'Couro Fortalecido',
+        icon: 'https://static.divine-pride.net/images/items/item/1001158.png',
+        category: 'misc',
+        goldValue: 0,
+        description: 'Partes de animais',
+        recipe: []
+    },
+    
+    {
+        id: 'couro',
+        name: 'Couro',
+        icon: 'https://static.divine-pride.net/images/items/item/919.png',
+        category: 'misc',
+        goldValue: 0,
+        description: 'Partes de animais',
+        recipe: []
+    },
+    
+    {
+        id: 'courolyriano',
+        name: 'Couro Lyriano',
+        icon: 'https://static.divine-pride.net/images/items/item/6603.png',
+        category: 'misc',
+        goldValue: 0,
+        description: 'Partes de animais',
+        recipe: []
+    },
+    
+    {
+        id: 'courodelobo',
+        name: 'Couro de Lobo',
+        icon: 'https://static.divine-pride.net/images/items/item/919.png',
+        category: 'misc',
+        goldValue: 0,
+        description: 'Partes de animais',
+        recipe: []
+    },
+    
+    {
+        id: 'oleoescurecedor',
+        name: 'Óleo Escurecedor',
+        icon: 'https://static.divine-pride.net/images/items/item/6216.png',
+        category: 'misc',
+        goldValue: 0,
+        description: 'Óleo',
+        recipe: []
+    },
+    
+    {
+        id: 'oleodedraco',
+        name: 'Óleo de Draco',
+        icon: 'https://static.divine-pride.net/images/items/item/25232.png',
+        category: 'misc',
+        goldValue: 0,
+        description: 'Óleo',
+        recipe: []
+    },
+    
+    {
+        id: 'gorduradeester',
+        name: 'Gordura de Éster',
+        icon: 'https://static.divine-pride.net/images/items/item/7457.png',
+        category: 'misc',
+        goldValue: 0,
+        description: 'Óleo',
+        recipe: []
+    },
+    
+    {
+        id: 'aguaforte',
+        name: 'Água-forte',
+        icon: 'https://static.divine-pride.net/images/items/item/25783.png',
+        category: 'misc',
+        goldValue: 0,
+        description: 'Liquido',
+        recipe: []
+    },
+    
+    {
+        id: 'quintessencia',
+        name: 'Quintessência',
+        icon: 'https://static.divine-pride.net/images/items/item/1000552.png',
+        category: 'misc',
+        goldValue: 0,
+        description: 'Liquido',
+        recipe: []
+    },
+    
+    {
+        id: 'ceradeogro',
+        name: 'Cera de Ogro',
+        icon: 'https://static.divine-pride.net/images/items/item/979.png',
+        category: 'misc',
+        goldValue: 0,
+        description: 'Partes de Monstro',
+        recipe: []
+    },
+    
+    {
+        id: 'pedradeamolar',
+        name: 'Pedra de Amolar',
+        icon: 'https://static.divine-pride.net/images/items/item/7096.png',
+        category: 'misc',
+        goldValue: 0,
+        description: 'Minério',
+        recipe: []
+    },
+    
+    {
+        id: 'ferronegro',
+        name: 'Ferro Negro',
+        icon: 'https://static.divine-pride.net/images/items/item/7075.png',
+        category: 'misc',
+        goldValue: 0,
+        description: 'Minério',
+        recipe: []
+    },
+    
+    {
+        id: 'aconegro',
+        name: 'Aço Negro',
+        icon: 'https://static.divine-pride.net/images/items/item/6747.png',
+        category: 'misc',
+        goldValue: 0,
+        description: 'Minério',
+        recipe: []
+    },
+    
+    {
+        id: 'dimeritio',
+        name: 'Dimerítio',
+        icon: 'https://static.divine-pride.net/images/items/item/7095.png',
+        category: 'misc',
+        goldValue: 0,
+        description: 'Minério',
+        recipe: []
+    },
+    
+    {
+        id: 'pedrapreciosa',
+        name: 'Pedra Preciosa',
+        icon: 'https://static.divine-pride.net/images/items/item/7974.png',
+        category: 'misc',
+        goldValue: 0,
+        description: 'Minério',
+        recipe: []
+    },
+    
+    {
+        id: 'minerioincandescente',
+        name: 'Minério Incandescente',
+        icon: 'https://static.divine-pride.net/images/items/item/25272.png',
+        category: 'misc',
+        goldValue: 0,
+        description: 'Minério',
+        recipe: []
+    },
+    
+    {
+        id: 'ouro',
+        name: 'Ouro',
+        icon: 'https://static.divine-pride.net/images/items/item/969.png',
+        category: 'misc',
+        goldValue: 0,
+        description: 'Minério',
+        recipe: []
+    },
+    
+    {
+        id: 'ferro',
+        name: 'Ferro',
+        icon: 'https://static.divine-pride.net/images/items/item/998.png',
+        category: 'misc',
+        goldValue: 0,
+        description: 'Minério',
+        recipe: []
+    },
+    
+    {
+        id: 'dimeritiodemahakam',
+        name: 'Dimerítio de Mahakam',
+        icon: 'https://static.divine-pride.net/images/items/item/7075.png',
+        category: 'misc',
+        goldValue: 0,
+        description: 'Minério',
+        recipe: []
+    },
+    
+    {
+        id: 'acodemahakam',
+        name: 'Aço de Mahakam',
+        icon: 'https://static.divine-pride.net/images/items/item/1002.png',
+        category: 'misc',
+        goldValue: 0,
+        description: 'Minério',
+        recipe: []
+    },
+    
+    {
+        id: 'meteorito',
+        name: 'Meteorito',
+        icon: 'https://static.divine-pride.net/images/items/item/7232.png',
+        category: 'misc',
+        goldValue: 0,
+        description: 'Minério',
+        recipe: []
+    },
+    
+    {
+        id: 'argiladerio',
+        name: 'Argila de Rio',
+        icon: 'https://static.divine-pride.net/images/items/item/25619.png',
+        category: 'misc',
+        goldValue: 0,
+        description: 'Natureza',
+        recipe: []
+    },
+    
+    {
+        id: 'prata',
+        name: 'Prata',
+        icon: 'https://static.divine-pride.net/images/items/item/7229.png',
+        category: 'misc',
+        goldValue: 0,
+        description: 'Minério',
+        recipe: []
+    },
+    
+    {
+        id: 'aco',
+        name: 'Aço',
+        icon: 'https://static.divine-pride.net/images/items/item/999.png',
+        category: 'misc',
+        goldValue: 0,
+        description: 'Minério',
+        recipe: []
+    },
+    
+    {
+        id: 'pedra',
+        name: 'Pedra',
+        icon: 'https://static.divine-pride.net/images/items/item/7049.png',
+        category: 'misc',
+        goldValue: 0,
+        description: 'Natureza',
+        recipe: []
+    },
+    
+    {
+        id: 'acodetretogor',
+        name: 'Aço de Tretogor',
+        icon: 'https://static.divine-pride.net/images/items/item/7524.png',
+        category: 'misc',
+        goldValue: 0,
+        description: 'Minério',
+        recipe: []
+    },
+    
+    {
+        id: 'pozerrikano',
+        name: 'Pó Zerrikano',
+        icon: 'https://static.divine-pride.net/images/items/item/7574.png',
+        category: 'misc',
+        goldValue: 0,
+        description: 'Minério',
+        recipe: []
+    },
+    
+    {
+        id: 'linhodetecido',
+        name: 'Linho de Tecido',
+        icon: 'https://static.divine-pride.net/images/items/item/1059.png',
+        category: 'misc',
+        goldValue: 0,
+        description: 'Tecido',
+        recipe: []
+    },
+    
+    {
+        id: 'madeiraendurecida',
+        name: 'Madeira Endurecida',
+        icon: 'https://static.divine-pride.net/images/items/item/7068.png',
+        category: 'misc',
+        goldValue: 0,
+        description: 'Natureza',
+        recipe: []
+    },
+    
+    {
+        id: 'linho',
+        name: 'Linho',
+        icon: 'https://static.divine-pride.net/images/items/item/7166.png',
+        category: 'misc',
+        goldValue: 0,
+        description: 'Tecido',
+        recipe: []
+    },
+    
+    {
+        id: 'linha',
+        name: 'Linha',
+        icon: 'https://static.divine-pride.net/images/items/item/7285.png',
+        category: 'misc',
+        goldValue: 0,
+        description: 'Tecido',
+        recipe: []
+    },
+
+    {
+        id: 'aguaforte',
+        name: 'Água-forte',
+        icon: 'https://static.divine-pride.net/images/items/item/6386.png',
+        category: 'misc',
+        goldValue: 0,
+        description: 'Mineral / Alquímico',
+        recipe: []
+    },
+    
+    {
+        id: 'aguaducal',
+        name: 'Água Ducal',
+        icon: 'https://static.divine-pride.net/images/items/item/6386.png',
+        category: 'misc',
+        goldValue: 0,
+        description: 'Mineral / Alquímico',
+        recipe: []
+    },
+    
+    {
+        id: 'aguadestilada',
+        name: 'Água Destilada',
+        icon: 'https://static.divine-pride.net/images/items/item/1000552.png',
+        category: 'misc',
+        goldValue: 0,
+        description: 'Mineral / Alquímico',
+        recipe: []
+    },
+    
+    {
+        id: 'aguapurificada',
+        name: 'Água Purificada',
+        icon: 'https://static.divine-pride.net/images/items/item/1000552.png',
+        category: 'misc',
+        goldValue: 0,
+        description: 'Mineral / Alquímico',
+        recipe: []
+    },
+    
+    {
+        id: 'aconito',
+        name: 'Aconito',
+        icon: 'https://static.divine-pride.net/images/items/item/7763.png',
+        category: 'misc',
+        goldValue: 0,
+        description: 'Natureza',
+        recipe: []
+    },
+    
+    {
+        id: 'bostadedemonio',
+        name: 'Bosta de Demônio',
+        icon: 'https://static.divine-pride.net/images/items/item/764.png',
+        category: 'misc',
+        goldValue: 0,
+        description: 'Monstro',
+        recipe: []
+    },
+    
+    {
+        id: 'cerebrodeafogador',
+        name: 'Cérebro de Afogador',
+        icon: 'https://static.divine-pride.net/images/items/item/764.png',
+        category: 'misc',
+        goldValue: 0,
+        description: 'Monstro',
+        recipe: []
+    },
+        
+    {
+        id: 'cogumelosewant',
+        name: 'Cogumelo Sewant',
+        icon: 'https://static.divine-pride.net/images/items/item/1070.png',
+        category: 'misc',
+        goldValue: 0,
+        description: 'Natureza',
+        recipe: []
+    },
+    
+    {
+        id: 'cogumelosdeesgoto',
+        name: 'Cogumelos de Esgoto',
+        icon: 'https://static.divine-pride.net/images/items/item/6542.png',
+        category: 'misc',
+        goldValue: 0,
+        description: 'Natureza',
+        recipe: []
+    },
+    
+    {
+        id: 'coracaodegolem',
+        name: 'Coração de Golem',
+        icon: 'https://static.divine-pride.net/images/items/item/953.png',
+        category: 'misc',
+        goldValue: 0,
+        description: 'Monstro',
+        recipe: []
+    },
+    
+    {
+        id: 'dentedevampiro',
+        name: 'Dente de Vampiro',
+        icon: 'https://static.divine-pride.net/images/items/item/913.png',
+        category: 'misc',
+        goldValue: 0,
+        description: 'Monstro',
+        recipe: []
+    },
+    
+    {
+        id: 'enxofre',
+        name: 'Enxofre',
+        icon: 'https://static.divine-pride.net/images/items/item/25488.png',
+        category: 'misc',
+        goldValue: 0,
+        description: 'Mineral / Alquímico',
+        recipe: []
+    },
+    
+    {
+        id: 'essenciadeluz',
+        name: 'Essência de Luz',
+        icon: 'https://static.divine-pride.net/images/items/item/7178.png',
+        category: 'misc',
+        goldValue: 0,
+        description: 'Mineral / Alquímico',
+        recipe: []
+    },
+    
+    {
+        id: 'espiritoanaoalcool',
+        name: 'Espírito Anão (Álcool)',
+        icon: 'https://static.divine-pride.net/images/items/item/7487.png',
+        category: 'misc',
+        goldValue: 0,
+        description: 'Mineral / Alquímico',
+        recipe: []
+    },
+    
+    {
+        id: 'extratodeveneno',
+        name: 'Extrato de Veneno',
+        icon: 'https://static.divine-pride.net/images/items/item/7565.png',
+        category: 'misc',
+        goldValue: 0,
+        description: 'Mineral / Alquímico',
+        recipe: []
+    },
+    
+    {
+        id: 'figadodetroll',
+        name: 'Fígado de Troll',
+        icon: 'https://static.divine-pride.net/images/items/item/950.png',
+        category: 'misc',
+        goldValue: 0,
+        description: 'Monstro',
+        recipe: []
+    },
+        
+    {
+        id: 'folhasdealoe',
+        name: 'Folhas de Aloe',
+        icon: 'https://static.divine-pride.net/images/items/item/704.png',
+        category: 'misc',
+        goldValue: 0,
+        description: 'Natureza',
+        recipe: []
+    },
+    
+    {
+        id: 'folhasdebalisa',
+        name: 'Folhas de Bálisa',
+        icon: 'https://static.divine-pride.net/images/items/item/7100.png',
+        category: 'misc',
+        goldValue: 0,
+        description: 'Natureza',
+        recipe: []
+    },
+    
+    {
+        id: 'fragmentoslunares',
+        name: 'Fragmentos Lunares',
+        icon: 'https://static.divine-pride.net/images/items/item/6362.png',
+        category: 'misc',
+        goldValue: 0,
+        description: 'Mineral / Alquímico',
+        recipe: []
+    },
+    
+    {
+        id: 'frutadebalisa',
+        name: 'Fruta de Bálisa',
+        icon: 'https://static.divine-pride.net/images/items/item/6258.png',
+        category: 'misc',
+        goldValue: 0,
+        description: 'Natureza',
+        recipe: []
+    },
+    
+    {
+        id: 'frutadeuvaespim',
+        name: 'Fruta de Uva-Espim',
+        icon: 'https://static.divine-pride.net/images/items/item/6417.png',
+        category: 'misc',
+        goldValue: 0,
+        description: 'Natureza',
+        recipe: []
+    },
+    
+    {
+        id: 'garradecarnical',
+        name: 'Garra de Carníçal',
+        icon: 'https://static.divine-pride.net/images/items/item/1043.png',
+        category: 'misc',
+        goldValue: 0,
+        description: 'Monstro',
+        recipe: []
+    },
+    
+    {
+        id: 'ginatia',
+        name: 'Ginátia',
+        icon: 'https://static.divine-pride.net/images/items/item/6563.png',
+        category: 'misc',
+        goldValue: 0,
+        description: 'Natureza',
+        recipe: []
+    },
+    
+    {
+        id: 'heleboropetalas',
+        name: 'Heléboro (Pétalas)',
+        icon: 'https://static.divine-pride.net/images/items/item/7763.png',
+        category: 'misc',
+        goldValue: 0,
+        description: 'Natureza',
+        recipe: []
+    },
+    
+    {
+        id: 'linguadeafogador',
+        name: 'Língua de Afogador',
+        icon: 'https://static.divine-pride.net/images/items/item/1015.png',
+        category: 'misc',
+        goldValue: 0,
+        description: 'Monstro',
+        recipe: []
+    },
+    
+    {
+        id: 'linguadebruxasepulcral',
+        name: 'Língua de Bruxa Sepulcral',
+        icon: 'https://static.divine-pride.net/images/items/item/903.png',
+        category: 'misc',
+        goldValue: 0,
+        description: 'Monstro',
+        recipe: []
+    },
+    
+    {
+        id: 'madressilva',
+        name: 'Madressilva',
+        icon: 'https://static.divine-pride.net/images/items/item/25266.png',
+        category: 'misc',
+        goldValue: 0,
+        description: 'Natureza',
+        recipe: []
+    },
+    
+    {
+        id: 'medulaosseadecarnical',
+        name: 'Medula Óssea de Carníçal',
+        icon: 'https://static.divine-pride.net/images/items/item/25766.png',
+        category: 'misc',
+        goldValue: 0,
+        description: 'Monstro',
+        recipe: []
+    },
+    
+    {
+        id: 'mitrobranco',
+        name: 'Mitro Branco',
+        icon: 'https://static.divine-pride.net/images/items/item/25342.png',
+        category: 'misc',
+        goldValue: 0,
+        description: 'Natureza',
+        recipe: []
+    },
+    
+    {
+        id: 'mofoverde',
+        name: 'Mofo Verde',
+        icon: 'https://static.divine-pride.net/images/items/item/7565.png',
+        category: 'misc',
+        goldValue: 0,
+        description: 'Natureza',
+        recipe: []
+    },
+        
+    {
+        id: 'olhosdearacna',
+        name: 'Olhos de Aracna',
+        icon: 'https://static.divine-pride.net/images/items/item/7263.png',
+        category: 'misc',
+        goldValue: 0,
+        description: 'Monstro',
+        recipe: []
+    },
+    
+    {
+        id: 'olhosdewyvern',
+        name: 'Olhos de Wyvern',
+        icon: 'https://static.divine-pride.net/images/items/item/7337.png',
+        category: 'misc',
+        goldValue: 0,
+        description: 'Monstro',
+        recipe: []
+    },
+    
+    {
+        id: 'ovodewyvern',
+        name: 'Ovo de Wyvern',
+        icon: 'https://static.divine-pride.net/images/items/item/6093.png',
+        category: 'misc',
+        goldValue: 0,
+        description: 'Monstro',
+        recipe: []
+    },
+        
+    {
+        id: 'pequenacicuta',
+        name: 'Pequena Cicuta',
+        icon: 'https://static.divine-pride.net/images/items/item/7937.png',
+        category: 'misc',
+        goldValue: 0,
+        description: 'Natureza',
+        recipe: []
+    },
+    
+    {
+        id: 'petalasdeginatia',
+        name: 'Pétalas de Ginatía',
+        icon: 'https://static.divine-pride.net/images/items/item/25157.png',
+        category: 'misc',
+        goldValue: 0,
+        description: 'Natureza',
+        recipe: []
+    },
+    
+    {
+        id: 'petalasdeheleboro',
+        name: 'Pétalas de Heléboro',
+        icon: 'https://static.divine-pride.net/images/items/item/25157.png',
+        category: 'misc',
+        goldValue: 0,
+        description: 'Natureza',
+        recipe: []
+    },
+    
+    {
+        id: 'petalasdemirtobranco',
+        name: 'Pétalas de Mirto Branco',
+        icon: 'https://static.divine-pride.net/images/items/item/25157.png',
+        category: 'misc',
+        goldValue: 0,
+        description: 'Natureza',
+        recipe: []
+    },
+    
+    {
+        id: 'petalasdeverbena',
+        name: 'Pétalas de Verbena',
+        icon: 'https://static.divine-pride.net/images/items/item/25157.png',
+        category: 'misc',
+        goldValue: 0,
+        description: 'Natureza',
+        recipe: []
+    },
+    
+    {
+        id: 'poespectral',
+        name: 'Pó Espectral',
+        icon: 'https://static.divine-pride.net/images/items/item/1057.png',
+        category: 'misc',
+        goldValue: 0,
+        description: 'Mineral / Alquímico',
+        recipe: []
+    },
+    
+    {
+        id: 'poinfundido',
+        name: 'Pó Infundido',
+        icon: 'https://static.divine-pride.net/images/items/item/6247.png',
+        category: 'misc',
+        goldValue: 0,
+        description: 'Mineral / Alquímico',
+        recipe: []
+    },
+
+    {
+        id: 'polvora',
+        name: 'Pólvora',
+        icon: 'https://static.divine-pride.net/images/items/item/7204.png',
+        category: 'misc',
+        goldValue: 0,
+        description: 'Mineral / Alquímico',
         recipe: []
     }
+
 ];
 
 // =========================================
@@ -1753,27 +3748,33 @@ function renderInventory() {
                             justify-between
                             items-center">
     
-                    <div>
+ <div class="flex items-center gap-3">
 
-                        <div class="text-lg font-bold">
+    ${renderIcon(item.icon)}
 
-                            ${item.icon} ${item.name}
+    <div class="flex flex-col">
 
-                        </div>
+        <div class="text-lg font-bold leading-tight">
 
-                        <div class="text-sm text-slate-400 mt-1">
+            ${item.name}
 
-                            ${item.type === 'weapon'
-                                ? `⚔️ ${item.damage} DMG`
-                                : ''}
+        </div>
 
-                            ${item.type === 'armor'
-                                ? `🛡️ ${item.defense} DEF`
-                                : ''}
+        <div class="text-sm text-slate-400 mt-1">
 
-                        </div>
+            ${item.type === 'weapon'
+                ? `⚔️ ${item.damage} DMG`
+                : ''}
 
-                    </div>
+            ${item.type === 'armor'
+                ? `🛡️ ${item.defense} DEF`
+                : ''}
+
+        </div>
+
+    </div>
+
+</div>
     
                     <div class="text-cyan-400
                                 text-xl
@@ -1925,23 +3926,33 @@ function renderInventoryItemsModal() {
 
                 <div>
 
-    <div>
+                <div class="flex items-center gap-3">
 
-        ${item.icon} ${item.name}
+                    ${renderIcon(item.icon)}
 
-    </div>
+                    <div class="flex flex-col items-start">
 
-    <div class="text-sm text-slate-400">
+                        <div class="font-bold leading-tight">
 
-        ${item.type === 'weapon'
-            ? `⚔️ ${item.damage} DMG`
-            : ''}
+                            ${item.name}
 
-        ${item.type === 'armor'
-            ? `🛡️ ${item.defense} DEF`
-            : ''}
+                        </div>
 
-    </div>
+                        <div class="text-sm text-slate-400">
+
+                            ${item.type === 'weapon'
+                                ? `⚔️ ${item.damage} DMG`
+                                : ''}
+
+                            ${item.type === 'armor'
+                                ? `🛡️ ${item.defense} DEF`
+                                : ''}
+
+                        </div>
+
+                    </div>
+
+                </div>
 
 </div>
 
