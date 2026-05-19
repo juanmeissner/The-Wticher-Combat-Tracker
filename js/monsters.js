@@ -14,12 +14,46 @@ function openPresetMonsterModal() {
 
     closeMonsterChoiceModal();
 
+    document.getElementById(
+        'presetMonsterModal'
+    ).style.display = 'flex';
+
+    document.getElementById(
+        'monsterSearchInput'
+    ).value = '';
+
+    filterPresetMonsters();
+}
+
+function closePresetMonsterModal() {
+
+    document.getElementById('presetMonsterModal').style.display =
+        'none';
+}
+
+function filterPresetMonsters() {
+
+    const search =
+        document.getElementById(
+            'monsterSearchInput'
+        ).value.toLowerCase();
+
     const container =
-        document.getElementById('presetMonsterList');
+        document.getElementById(
+            'presetMonsterList'
+        );
 
     container.innerHTML = '';
 
-    monsterDatabase.forEach(monster => {
+    const filtered =
+        monsterDatabase.filter(monster =>
+
+            monster.name
+                .toLowerCase()
+                .includes(search)
+        );
+
+    filtered.forEach(monster => {
 
         container.innerHTML += `
 
@@ -27,7 +61,11 @@ function openPresetMonsterModal() {
 
                 onclick="spawnPresetMonster('${monster.id}')"
 
-                class="p-4 rounded-xl bg-red-700/40 hover:bg-red-600/50 transition-all text-left">
+                class="p-4
+                       rounded-xl
+                       bg-red-700/40
+                       hover:bg-red-600/50
+                       text-left">
 
                 <div class="font-bold text-lg">
                     ${monster.name}
@@ -40,15 +78,6 @@ function openPresetMonsterModal() {
             </button>
         `;
     });
-
-    document.getElementById('presetMonsterModal').style.display =
-        'flex';
-}
-
-function closePresetMonsterModal() {
-
-    document.getElementById('presetMonsterModal').style.display =
-        'none';
 }
 
 function spawnPresetMonster(monsterId) {

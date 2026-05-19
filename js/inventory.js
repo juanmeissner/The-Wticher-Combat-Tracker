@@ -3900,11 +3900,43 @@ function renderInventoryItemsModal() {
 
     container.innerHTML = '';
 
-    predefinedItems.forEach(item => {
+    // texto da busca
+    const search =
+        document.getElementById('inventorySearchInput')
+            ?.value
+            .toLowerCase() || '';
 
-        if (item.category !== currentInventoryFilter) {
-            return;
-        }
+    // filtra categoria + nome
+    const filteredItems =
+        predefinedItems.filter(item => {
+
+            const sameCategory =
+                item.category === currentInventoryFilter;
+
+            const matchesSearch =
+                item.name
+                    .toLowerCase()
+                    .includes(search);
+
+            return sameCategory && matchesSearch;
+        });
+
+    // vazio
+    if (filteredItems.length === 0) {
+
+        container.innerHTML = `
+
+            <div class="text-center text-slate-500 py-6">
+
+                Nenhum item encontrado
+
+            </div>
+        `;
+
+        return;
+    }
+
+    filteredItems.forEach(item => {
 
         container.innerHTML += `
 
@@ -3912,55 +3944,52 @@ function renderInventoryItemsModal() {
     
             onclick="addInventoryItemFromModal('${item.id}')"
 
-                class="w-full
-                       bg-slate-800
-                       hover:bg-slate-700
-                       text-white
-                       rounded-xl
-                       p-4
-                       flex
-                       justify-between
-                       items-center">
+            class="w-full
+                   bg-slate-800
+                   hover:bg-slate-700
+                   text-white
+                   rounded-xl
+                   p-4
+                   flex
+                   justify-between
+                   items-center
+                   transition-all">
 
-                <div>
+            <div class="flex items-center gap-3">
 
-                <div class="flex items-center gap-3">
+                ${renderIcon(item.icon)}
 
-                    ${renderIcon(item.icon)}
+                <div class="text-left">
 
-                    <div class="flex flex-col items-start">
+                    <div class="font-bold">
 
-                        <div class="font-bold leading-tight">
+                        ${item.name}
 
-                            ${item.name}
+                    </div>
 
-                        </div>
+                    <div class="text-sm text-slate-400">
 
-                        <div class="text-sm text-slate-400">
+                        ${item.type === 'weapon'
+                            ? `⚔️ ${item.damage} DMG`
+                            : ''}
 
-                            ${item.type === 'weapon'
-                                ? `⚔️ ${item.damage} DMG`
-                                : ''}
-
-                            ${item.type === 'armor'
-                                ? `🛡️ ${item.defense} DEF`
-                                : ''}
-
-                        </div>
+                        ${item.type === 'armor'
+                            ? `🛡️ ${item.defense} DEF`
+                            : ''}
 
                     </div>
 
                 </div>
 
-</div>
+            </div>
 
-                <span class="text-cyan-400">
+            <span class="text-cyan-400 font-bold">
 
-                    Adicionar
+                Adicionar
 
-                </span>
+            </span>
 
-            </button>
+        </button>
         `;
     });
 }

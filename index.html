@@ -1718,6 +1718,28 @@ MODAL INVENTÁRIO
 
         <!-- LISTA COM SCROLL -->
 
+        <div class="mb-4">
+
+            <input
+                type="text"
+                id="inventorySearchInput"
+                placeholder="Buscar item..."
+                oninput="renderInventoryItemsModal()"
+        
+                class="w-full
+                       bg-slate-800
+                       border border-slate-700
+                       rounded-xl
+                       px-4
+                       py-3
+                       text-white
+                       placeholder-slate-400
+                       outline-none
+                       focus:ring-2
+                       focus:ring-cyan-500">
+        
+        </div>
+
         <div id="inventoryItemsList"
 
              class="flex-1
@@ -1996,10 +2018,36 @@ ITEM DETAILS MODAL
 
     <div class="bg-slate-900 p-6 rounded-2xl w-full max-w-md border border-slate-700">
 
-        <h2 class="text-xl font-bold mb-6 text-white text-center">
+        <h2 class="text-xl font-bold mb-4 text-white text-center">
             Bestiário
         </h2>
 
+        <!-- BUSCADOR -->
+        <div class="mb-4">
+
+            <input
+                type="text"
+                id="monsterSearchInput"
+                placeholder="Buscar monstro..."
+                
+                oninput="filterPresetMonsters()"
+
+                class="w-full
+                       p-3
+                       rounded-xl
+                       bg-slate-800
+                       border
+                       border-slate-700
+                       text-white
+                       placeholder-slate-400
+                       outline-none
+                       focus:border-red-500
+                       transition-all"
+            >
+
+        </div>
+
+        <!-- LISTA -->
         <div
             id="presetMonsterList"
 
@@ -2018,6 +2066,8 @@ ITEM DETAILS MODAL
     </div>
 
 </div>
+
+
 
 <!-- ========================================= -->
 <!-- MODAL DESCRIÇÃO DE STATUS -->
