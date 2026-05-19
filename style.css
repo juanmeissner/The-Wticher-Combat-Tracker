@@ -364,3 +364,23 @@ INVENTÁRIO
         transform: translateY(0px);
     }
 }
+
+.monster-info-card {
+
+    background: rgb(30 41 59);
+
+    padding: 12px;
+
+    border-radius: 14px;
+
+    border: 1px solid rgb(51 65 85);
+}
+
+.monster-info-title {
+
+    font-size: 12px;
+
+    color: rgb(148 163 184);
+
+    margin-bottom: 4px;
+}
