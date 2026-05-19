@@ -2950,7 +2950,7 @@ const predefinedItems = [
         name: 'Penas',
         icon: 'https://static.divine-pride.net/images/items/item/7079.png',
         category: 'misc',
-        goldValue: 0,
+        goldValue: 1,
         description: 'Partes de animais',
         recipe: []
     },
@@ -2960,7 +2960,7 @@ const predefinedItems = [
         name: 'Couro Fortalecido',
         icon: 'https://static.divine-pride.net/images/items/item/1001158.png',
         category: 'misc',
-        goldValue: 0,
+        goldValue: 10,
         description: 'Partes de animais',
         recipe: []
     },
@@ -2970,7 +2970,7 @@ const predefinedItems = [
         name: 'Couro',
         icon: 'https://static.divine-pride.net/images/items/item/919.png',
         category: 'misc',
-        goldValue: 0,
+        goldValue: 3,
         description: 'Partes de animais',
         recipe: []
     },
@@ -2980,7 +2980,7 @@ const predefinedItems = [
         name: 'Couro Lyriano',
         icon: 'https://static.divine-pride.net/images/items/item/6603.png',
         category: 'misc',
-        goldValue: 0,
+        goldValue: 5,
         description: 'Partes de animais',
         recipe: []
     },
@@ -3000,7 +3000,7 @@ const predefinedItems = [
         name: 'Óleo Escurecedor',
         icon: 'https://static.divine-pride.net/images/items/item/6216.png',
         category: 'misc',
-        goldValue: 0,
+        goldValue: 4,
         description: 'Óleo',
         recipe: []
     },
@@ -3060,8 +3060,8 @@ const predefinedItems = [
         name: 'Pedra de Amolar',
         icon: 'https://static.divine-pride.net/images/items/item/7096.png',
         category: 'misc',
-        goldValue: 0,
-        description: 'Minério',
+        goldValue: 5,
+        description: 'Os próximos 5 ataques de armas que tenham lamina irão causar 1d6 adicional.',
         recipe: []
     },
     
@@ -3070,7 +3070,7 @@ const predefinedItems = [
         name: 'Ferro Negro',
         icon: 'https://static.divine-pride.net/images/items/item/7075.png',
         category: 'misc',
-        goldValue: 0,
+        goldValue: 50,
         description: 'Minério',
         recipe: []
     },
@@ -3080,7 +3080,7 @@ const predefinedItems = [
         name: 'Aço Negro',
         icon: 'https://static.divine-pride.net/images/items/item/6747.png',
         category: 'misc',
-        goldValue: 0,
+        goldValue: 100,
         description: 'Minério',
         recipe: []
     },
@@ -3090,7 +3090,7 @@ const predefinedItems = [
         name: 'Dimerítio',
         icon: 'https://static.divine-pride.net/images/items/item/7095.png',
         category: 'misc',
-        goldValue: 0,
+        goldValue: 50,
         description: 'Minério',
         recipe: []
     },
@@ -3100,7 +3100,7 @@ const predefinedItems = [
         name: 'Pedra Preciosa',
         icon: 'https://static.divine-pride.net/images/items/item/7974.png',
         category: 'misc',
-        goldValue: 0,
+        goldValue: 500,
         description: 'Minério',
         recipe: []
     },
@@ -3110,7 +3110,7 @@ const predefinedItems = [
         name: 'Minério Incandescente',
         icon: 'https://static.divine-pride.net/images/items/item/25272.png',
         category: 'misc',
-        goldValue: 0,
+        goldValue: 40,
         description: 'Minério',
         recipe: []
     },
@@ -3120,7 +3120,7 @@ const predefinedItems = [
         name: 'Ouro',
         icon: 'https://static.divine-pride.net/images/items/item/969.png',
         category: 'misc',
-        goldValue: 0,
+        goldValue: 100,
         description: 'Minério',
         recipe: []
     },
@@ -3130,7 +3130,7 @@ const predefinedItems = [
         name: 'Ferro',
         icon: 'https://static.divine-pride.net/images/items/item/998.png',
         category: 'misc',
-        goldValue: 0,
+        goldValue: 5,
         description: 'Minério',
         recipe: []
     },
@@ -3140,7 +3140,7 @@ const predefinedItems = [
         name: 'Dimerítio de Mahakam',
         icon: 'https://static.divine-pride.net/images/items/item/7075.png',
         category: 'misc',
-        goldValue: 0,
+        goldValue: 60,
         description: 'Minério',
         recipe: []
     },
@@ -3150,7 +3150,7 @@ const predefinedItems = [
         name: 'Aço de Mahakam',
         icon: 'https://static.divine-pride.net/images/items/item/1002.png',
         category: 'misc',
-        goldValue: 0,
+        goldValue: 20,
         description: 'Minério',
         recipe: []
     },
@@ -3160,7 +3160,7 @@ const predefinedItems = [
         name: 'Meteorito',
         icon: 'https://static.divine-pride.net/images/items/item/7232.png',
         category: 'misc',
-        goldValue: 0,
+        goldValue: 60,
         description: 'Minério',
         recipe: []
     },
@@ -3180,7 +3180,7 @@ const predefinedItems = [
         name: 'Prata',
         icon: 'https://static.divine-pride.net/images/items/item/7229.png',
         category: 'misc',
-        goldValue: 0,
+        goldValue: 30,
         description: 'Minério',
         recipe: []
     },
@@ -3190,7 +3190,7 @@ const predefinedItems = [
         name: 'Aço',
         icon: 'https://static.divine-pride.net/images/items/item/999.png',
         category: 'misc',
-        goldValue: 0,
+        goldValue: 8,
         description: 'Minério',
         recipe: []
     },
@@ -3210,7 +3210,7 @@ const predefinedItems = [
         name: 'Aço de Tretogor',
         icon: 'https://static.divine-pride.net/images/items/item/7524.png',
         category: 'misc',
-        goldValue: 0,
+        goldValue: 15,
         description: 'Minério',
         recipe: []
     },
@@ -3220,7 +3220,7 @@ const predefinedItems = [
         name: 'Pó Zerrikano',
         icon: 'https://static.divine-pride.net/images/items/item/7574.png',
         category: 'misc',
-        goldValue: 0,
+        goldValue: 3,
         description: 'Minério',
         recipe: []
     },
@@ -3230,7 +3230,7 @@ const predefinedItems = [
         name: 'Linho de Tecido',
         icon: 'https://static.divine-pride.net/images/items/item/1059.png',
         category: 'misc',
-        goldValue: 0,
+        goldValue: 2,
         description: 'Tecido',
         recipe: []
     },
@@ -3240,7 +3240,7 @@ const predefinedItems = [
         name: 'Madeira Endurecida',
         icon: 'https://static.divine-pride.net/images/items/item/7068.png',
         category: 'misc',
-        goldValue: 0,
+        goldValue: 2,
         description: 'Natureza',
         recipe: []
     },
@@ -3250,7 +3250,7 @@ const predefinedItems = [
         name: 'Linho',
         icon: 'https://static.divine-pride.net/images/items/item/7166.png',
         category: 'misc',
-        goldValue: 0,
+        goldValue: 2,
         description: 'Tecido',
         recipe: []
     },
@@ -3260,7 +3260,7 @@ const predefinedItems = [
         name: 'Linha',
         icon: 'https://static.divine-pride.net/images/items/item/7285.png',
         category: 'misc',
-        goldValue: 0,
+        goldValue: 2,
         description: 'Tecido',
         recipe: []
     },
@@ -3270,7 +3270,7 @@ const predefinedItems = [
         name: 'Água-forte',
         icon: 'https://static.divine-pride.net/images/items/item/6386.png',
         category: 'misc',
-        goldValue: 0,
+        goldValue: 2,
         description: 'Mineral / Alquímico',
         recipe: []
     },
@@ -3280,7 +3280,7 @@ const predefinedItems = [
         name: 'Água Ducal',
         icon: 'https://static.divine-pride.net/images/items/item/6386.png',
         category: 'misc',
-        goldValue: 0,
+        goldValue: 2,
         description: 'Mineral / Alquímico',
         recipe: []
     },
@@ -3290,7 +3290,7 @@ const predefinedItems = [
         name: 'Água Destilada',
         icon: 'https://static.divine-pride.net/images/items/item/1000552.png',
         category: 'misc',
-        goldValue: 0,
+        goldValue: 2,
         description: 'Mineral / Alquímico',
         recipe: []
     },
@@ -3300,7 +3300,7 @@ const predefinedItems = [
         name: 'Água Purificada',
         icon: 'https://static.divine-pride.net/images/items/item/1000552.png',
         category: 'misc',
-        goldValue: 0,
+        goldValue: 2,
         description: 'Mineral / Alquímico',
         recipe: []
     },
@@ -3310,7 +3310,7 @@ const predefinedItems = [
         name: 'Aconito',
         icon: 'https://static.divine-pride.net/images/items/item/7763.png',
         category: 'misc',
-        goldValue: 0,
+        goldValue: 2,
         description: 'Natureza',
         recipe: []
     },
@@ -3380,7 +3380,7 @@ const predefinedItems = [
         name: 'Enxofre',
         icon: 'https://static.divine-pride.net/images/items/item/25488.png',
         category: 'misc',
-        goldValue: 0,
+        goldValue: 1,
         description: 'Mineral / Alquímico',
         recipe: []
     },
@@ -3390,7 +3390,7 @@ const predefinedItems = [
         name: 'Essência de Luz',
         icon: 'https://static.divine-pride.net/images/items/item/7178.png',
         category: 'misc',
-        goldValue: 0,
+        goldValue: 5,
         description: 'Mineral / Alquímico',
         recipe: []
     },
@@ -3400,7 +3400,7 @@ const predefinedItems = [
         name: 'Espírito Anão (Álcool)',
         icon: 'https://static.divine-pride.net/images/items/item/7487.png',
         category: 'misc',
-        goldValue: 0,
+        goldValue: 2,
         description: 'Mineral / Alquímico',
         recipe: []
     },
@@ -3410,7 +3410,7 @@ const predefinedItems = [
         name: 'Extrato de Veneno',
         icon: 'https://static.divine-pride.net/images/items/item/7565.png',
         category: 'misc',
-        goldValue: 0,
+        goldValue: 1,
         description: 'Mineral / Alquímico',
         recipe: []
     },
@@ -3430,7 +3430,7 @@ const predefinedItems = [
         name: 'Folhas de Aloe',
         icon: 'https://static.divine-pride.net/images/items/item/704.png',
         category: 'misc',
-        goldValue: 0,
+        goldValue: 1,
         description: 'Natureza',
         recipe: []
     },
@@ -3440,7 +3440,7 @@ const predefinedItems = [
         name: 'Folhas de Bálisa',
         icon: 'https://static.divine-pride.net/images/items/item/7100.png',
         category: 'misc',
-        goldValue: 0,
+        goldValue: 1,
         description: 'Natureza',
         recipe: []
     },
@@ -3450,7 +3450,7 @@ const predefinedItems = [
         name: 'Fragmentos Lunares',
         icon: 'https://static.divine-pride.net/images/items/item/6362.png',
         category: 'misc',
-        goldValue: 0,
+        goldValue: 1,
         description: 'Mineral / Alquímico',
         recipe: []
     },
@@ -3460,7 +3460,7 @@ const predefinedItems = [
         name: 'Fruta de Bálisa',
         icon: 'https://static.divine-pride.net/images/items/item/6258.png',
         category: 'misc',
-        goldValue: 0,
+        goldValue: 1,
         description: 'Natureza',
         recipe: []
     },
@@ -3470,7 +3470,7 @@ const predefinedItems = [
         name: 'Fruta de Uva-Espim',
         icon: 'https://static.divine-pride.net/images/items/item/6417.png',
         category: 'misc',
-        goldValue: 0,
+        goldValue: 1,
         description: 'Natureza',
         recipe: []
     },
@@ -3490,7 +3490,7 @@ const predefinedItems = [
         name: 'Ginátia',
         icon: 'https://static.divine-pride.net/images/items/item/6563.png',
         category: 'misc',
-        goldValue: 0,
+        goldValue: 1,
         description: 'Natureza',
         recipe: []
     },
@@ -3500,7 +3500,7 @@ const predefinedItems = [
         name: 'Heléboro (Pétalas)',
         icon: 'https://static.divine-pride.net/images/items/item/7763.png',
         category: 'misc',
-        goldValue: 0,
+        goldValue: 1,
         description: 'Natureza',
         recipe: []
     },
@@ -3550,7 +3550,7 @@ const predefinedItems = [
         name: 'Mitro Branco',
         icon: 'https://static.divine-pride.net/images/items/item/25342.png',
         category: 'misc',
-        goldValue: 0,
+        goldValue: 1,
         description: 'Natureza',
         recipe: []
     },
@@ -3560,7 +3560,7 @@ const predefinedItems = [
         name: 'Mofo Verde',
         icon: 'https://static.divine-pride.net/images/items/item/7565.png',
         category: 'misc',
-        goldValue: 0,
+        goldValue: 1,
         description: 'Natureza',
         recipe: []
     },
@@ -3570,7 +3570,7 @@ const predefinedItems = [
         name: 'Olhos de Aracna',
         icon: 'https://static.divine-pride.net/images/items/item/7263.png',
         category: 'misc',
-        goldValue: 0,
+        goldValue: 3,
         description: 'Monstro',
         recipe: []
     },
@@ -3580,7 +3580,7 @@ const predefinedItems = [
         name: 'Olhos de Wyvern',
         icon: 'https://static.divine-pride.net/images/items/item/7337.png',
         category: 'misc',
-        goldValue: 0,
+        goldValue: 3,
         description: 'Monstro',
         recipe: []
     },
@@ -3590,7 +3590,7 @@ const predefinedItems = [
         name: 'Ovo de Wyvern',
         icon: 'https://static.divine-pride.net/images/items/item/6093.png',
         category: 'misc',
-        goldValue: 0,
+        goldValue: 1,
         description: 'Monstro',
         recipe: []
     },
@@ -3600,7 +3600,7 @@ const predefinedItems = [
         name: 'Pequena Cicuta',
         icon: 'https://static.divine-pride.net/images/items/item/7937.png',
         category: 'misc',
-        goldValue: 0,
+        goldValue: 1,
         description: 'Natureza',
         recipe: []
     },
@@ -3610,7 +3610,7 @@ const predefinedItems = [
         name: 'Pétalas de Ginatía',
         icon: 'https://static.divine-pride.net/images/items/item/25157.png',
         category: 'misc',
-        goldValue: 0,
+        goldValue: 1,
         description: 'Natureza',
         recipe: []
     },
@@ -3620,7 +3620,7 @@ const predefinedItems = [
         name: 'Pétalas de Heléboro',
         icon: 'https://static.divine-pride.net/images/items/item/25157.png',
         category: 'misc',
-        goldValue: 0,
+        goldValue: 1,
         description: 'Natureza',
         recipe: []
     },
@@ -3630,7 +3630,7 @@ const predefinedItems = [
         name: 'Pétalas de Mirto Branco',
         icon: 'https://static.divine-pride.net/images/items/item/25157.png',
         category: 'misc',
-        goldValue: 0,
+        goldValue: 1,
         description: 'Natureza',
         recipe: []
     },
@@ -3640,7 +3640,7 @@ const predefinedItems = [
         name: 'Pétalas de Verbena',
         icon: 'https://static.divine-pride.net/images/items/item/25157.png',
         category: 'misc',
-        goldValue: 0,
+        goldValue: 1,
         description: 'Natureza',
         recipe: []
     },
@@ -3650,7 +3650,7 @@ const predefinedItems = [
         name: 'Pó Espectral',
         icon: 'https://static.divine-pride.net/images/items/item/1057.png',
         category: 'misc',
-        goldValue: 0,
+        goldValue: 5,
         description: 'Mineral / Alquímico',
         recipe: []
     },
@@ -3660,7 +3660,7 @@ const predefinedItems = [
         name: 'Pó Infundido',
         icon: 'https://static.divine-pride.net/images/items/item/6247.png',
         category: 'misc',
-        goldValue: 0,
+        goldValue: 10,
         description: 'Mineral / Alquímico, um pó obtido de cristais preciosos',
         recipe: []
     },

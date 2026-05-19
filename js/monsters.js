@@ -561,10 +561,10 @@ function spawnPresetMonster(monsterId) {
     .join(' / '),
 
         armor: {
-            head: monster.armor.head,
-            torso: monster.armor.torso,
-            arm: monster.armor.arm,
-            leg: monster.armor.leg
+            head: monster.armor?.head ?? 0,
+            torso: monster.armor?.torso ?? 0,
+            arm: monster.armor?.arm ?? 0,
+            leg: monster.armor?.leg ?? 0
         },
 
         type: 'monster',
