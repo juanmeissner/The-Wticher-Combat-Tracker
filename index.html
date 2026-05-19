@@ -292,12 +292,36 @@
             return '#ef4444'; // red
         }
 
-        function showToast(message) {
-            const toast = document.getElementById('toast');
-            toast.innerText = message;
-            toast.classList.add('toast-show');
-            setTimeout(() => toast.classList.remove('toast-show'), 3000);
-        }
+function showToast(message) {
+
+    const container =
+        document.getElementById('toastContainer');
+
+    if (!container) return;
+
+    const toast =
+        document.createElement('div');
+
+    toast.className = 'toast';
+
+    toast.textContent = message;
+
+    container.appendChild(toast);
+
+    setTimeout(() => {
+
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateY(-10px)';
+        toast.style.transition = '0.2s';
+
+        setTimeout(() => {
+
+            toast.remove();
+
+        }, 200);
+
+    }, 2500);
+}
 
         function openModal(type) {
             const nameInput = document.getElementById('nameInp');
@@ -2036,6 +2060,8 @@ ITEM DETAILS MODAL
     </div>
 
 </div>
+
+<div id="toastContainer"></div>
 
 </body>
 </html>

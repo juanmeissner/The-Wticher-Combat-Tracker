@@ -986,8 +986,6 @@ const predefinedItems = [
     // =====================================
     // ARMAS
     // =====================================
-
-
     {
         id: 'flechadeferro',
         name: 'Flecha de Ferro',
@@ -3663,7 +3661,7 @@ const predefinedItems = [
         icon: 'https://static.divine-pride.net/images/items/item/6247.png',
         category: 'misc',
         goldValue: 0,
-        description: 'Mineral / Alquímico',
+        description: 'Mineral / Alquímico, um pó obtido de cristais preciosos',
         recipe: []
     },
 
@@ -3672,7 +3670,7 @@ const predefinedItems = [
         name: 'Pólvora',
         icon: 'https://static.divine-pride.net/images/items/item/7204.png',
         category: 'misc',
-        goldValue: 0,
+        goldValue: 10,
         description: 'Mineral / Alquímico',
         recipe: []
     }
