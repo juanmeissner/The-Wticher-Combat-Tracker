@@ -173,7 +173,74 @@ function filterPresetMonsters() {
     });
 }
 
-function showMonsterDetails(monsterId) {
+function toggleMonsterLore(type) {
+
+    const superstition =
+        document.getElementById('monsterLoreSuperstition');
+
+    const witcher =
+        document.getElementById('monsterLoreWitcher');
+
+    const btnSuperstition =
+        document.getElementById('btnLoreSuperstition');
+
+    const btnWitcher =
+        document.getElementById('btnLoreWitcher');
+
+    // ESCONDE TUDO
+
+    superstition.classList.add('hidden');
+    witcher.classList.add('hidden');
+
+    btnSuperstition.classList.remove(
+        'bg-red-700',
+        'text-white'
+    );
+
+    btnWitcher.classList.remove(
+        'bg-red-700',
+        'text-white'
+    );
+
+    // MOSTRA O ESCOLHIDO
+
+    if (type === 'superstition') {
+
+        superstition.classList.remove('hidden');
+
+        btnSuperstition.classList.add(
+            'bg-red-700',
+            'text-white'
+        );
+    }
+
+    if (type === 'witcher') {
+
+        witcher.classList.remove('hidden');
+
+        btnWitcher.classList.add(
+            'bg-red-700',
+            'text-white'
+        );
+    }
+}
+
+function openCombatMonsterInfo(combatantId) {
+
+    const combatant =
+        combatants.find(c => c.id === combatantId);
+
+    if (!combatant) return;
+
+    if (!combatant.presetMonsterId) return;
+
+    showMonsterDetails(
+        combatant.presetMonsterId,
+        true
+    );
+}
+
+function showMonsterDetails(monsterId, fromCombat = false) {
 
     const monster =
         monsterDatabase.find(m => m.id === monsterId);
@@ -187,12 +254,14 @@ function showMonsterDetails(monsterId) {
 
     content.innerHTML = `
 
-        <button
+    ${!fromCombat ? `
 
+        <button
+        
             onclick="
                 spawnPresetMonster('${monster.id}');
             "
-
+        
             class="w-full
                    p-4
                    rounded-xl
@@ -201,10 +270,13 @@ function showMonsterDetails(monsterId) {
                    font-bold
                    mb-4
                    transition-all">
-
+        
             ➕ Adicionar ao Combate
-
+        
         </button>
+        
+        ` : ''}
+
 
 <img
 
@@ -526,6 +598,110 @@ function showMonsterDetails(monsterId) {
             </div>
 
         </div>
+
+        ${monster.superstition || monster.witcherKnowledge ? `
+
+            <div class="mb-5">
+            
+                <div class="font-bold text-lg mb-3">
+            
+                    📖 Descrição
+            
+                </div>
+            
+                <div class="flex gap-2 mb-3">
+            
+                    ${monster.superstition ? `
+            
+                    <button
+            
+                        id="btnLoreSuperstition"
+            
+                        onclick="toggleMonsterLore('superstition')"
+            
+                        class="px-4
+                               py-2
+                               rounded-xl
+                               bg-slate-800
+                               hover:bg-red-700
+                               transition-all">
+            
+                        Superstição
+            
+                    </button>
+            
+                    ` : ''}
+            
+                    ${monster.witcherKnowledge ? `
+            
+                    <button
+            
+                        id="btnLoreWitcher"
+            
+                        onclick="toggleMonsterLore('witcher')"
+            
+                        class="px-4
+                               py-2
+                               rounded-xl
+                               bg-slate-800
+                               hover:bg-red-700
+                               transition-all">
+            
+                        Conhecimento Bruxo
+            
+                    </button>
+            
+                    ` : ''}
+            
+                </div>
+            
+                ${monster.superstition ? `
+            
+                <div
+            
+                    id="monsterLoreSuperstition"
+            
+                    class="hidden
+                           bg-slate-900/60
+                           border
+                           border-red-800/30
+                           rounded-2xl
+                           p-4
+                           whitespace-pre-line
+                           leading-relaxed">
+            
+                    ${monster.superstition}
+            
+                </div>
+            
+                ` : ''}
+            
+                ${monster.witcherKnowledge ? `
+            
+                <div
+            
+                    id="monsterLoreWitcher"
+            
+                    class="hidden
+                           bg-slate-900/60
+                           border
+                           border-cyan-800/30
+                           rounded-2xl
+                           p-4
+                           whitespace-pre-line
+                           leading-relaxed">
+            
+                    ${monster.witcherKnowledge}
+            
+                </div>
+            
+                ` : ''}
+            
+            </div>
+            
+            ` : ''}
+
+        
     `;
 
     document.getElementById(
@@ -534,6 +710,7 @@ function showMonsterDetails(monsterId) {
 }
 
 function spawnPresetMonster(monsterId) {
+    
 
     const monster =
         monsterDatabase.find(m => m.id === monsterId);
@@ -543,6 +720,8 @@ function spawnPresetMonster(monsterId) {
     const newMonster = {
 
         id: Date.now(),
+
+        presetMonsterId: monster.id,
 
         name: `${monster.name} ${monsterCounter}`,
 
@@ -845,7 +1024,16 @@ const monsterDatabase = [
     
         intelligence: 'Tão inteligente quanto um peixe',
     
-        organization: 'Grupos de 3 a 6'
+        organization: 'Grupos de 3 a 6',
+
+        superstition: `
+O povo comum não sabe muito sobre os afogadores. Contos de velhas esposas dizem que quando um filho da puta malvado morre e seu cadáver acaba em um rio ou lago, ele volta como um afogador. Afogadores são bestas estúpidas que vivem para afogar bastardos azarados e se alimentam de seus cadáveres. Eles não são a fera mais perigosa do mundo, mas eles se juntam e te atacam. Se você vir um afogado, provavelmente há mais dois ou três escondidos na água.
+        `,
+        
+        witcherKnowledge: `
+Na verdade, os afogadores não são malfeitores ressuscitados. A maioria das pessoas pensa assim, graças a histórias folclóricas e livros populares sobre o tema dos monstros. Afogadores, como todos os necrófagos, são criaturas de outro plano que vieram para este reino durante a Conjunção das Esferas muitos séculos atrás. Com nenhum nicho ecológico aqui, eles se tornaram uma praga sobre a terra. Afogadores preferem litoral, rios e áreas pantanosas. Eles são anfíbios e passam a maior parte do tempo na água. Quando eles saem, geralmente é para seguir seus estômagos: pegar algo perto da beira da água ou procurar comida em terra. Quando encontram algo para comer, saltam em uma enxurrada de garras, atacando em grupo e cercando sua presa. Um grande grupo de afogadores pode ser infernal para lidar. Eles dominam uma única pessoa atacando com força e de todas as direções. Eles são imunes a veneno devido às águas horríveis, turvas e tóxicas com que eles estão acostumados, e leva um pouco para desencorajá-los. No entanto, eles também são estupidamente burros. Os poucos estudos de afogadores concordam que eles são tão inteligentes quanto um peixe predatório. Eles agem completamente por instinto, não podem, de forma alguma, argumentar e são imunes a feitiços que os afetam mental ou emocionalmente. Isso significa que eles nunca formulam planos mais complexos do que “ataques” e podem se distrair com coisas suficientemente brilhantes, desde que não provem o sangue. Os afogadores também são altamente suscetíveis a fogo, é sua melhor arma. Sendo tremendamente burro, um afogador continuará a lutar enquanto estiver em chamas e não tentará se extinguir até quase estar morto (abaixo de 10 PV).
+        `,
+    
     },
     
     {
@@ -881,7 +1069,7 @@ const monsterDatabase = [
             'Saltar — Não precisa tomar impulso para saltar.',
             'Fúria — Abaixo de 10 PV regenera 3 PV por rodada e ganha ações agressivas.',
             'Visão Noturna — Ignora penalidades em pouca luz.',
-            'Selvagem — Para Consciência e Sobrevivência, possui INT 6.'
+            'Selvagem — Sempre que um Carniçal rolar um ataque ou esquiva com vantagem ganha 12 de bonus total.'
         ],
     
         attacks: [
@@ -921,7 +1109,15 @@ const monsterDatabase = [
     
         intelligence: 'Tão inteligente quanto um cachorro',
     
-        organization: 'Grupos de 3 a 6'
+        organization: 'Grupos de 3 a 6',
+
+        superstition: `
+Você vê muitos carniçais ao norte hoje em dia. Heh! Eu me lembro de quando você poderia passar a vida inteira sem ver um. Mas com todos os cadáveres apodrecendo nos campos e todo o sangue transbordando em rios e vales, carniçais estão aparecendo por toda parte. A maioria das pessoas presume que são cadáveres, transformados e reanimados por magia. Demônios podres que se alimentam dos mortos e atacam qualquer pessoa que se aproxime. Viajam em grupo e atacam como lobos, circulando suas presas, atacando e mantendo o alvo confuso.
+        `,
+        
+        witcherKnowledge: `
+Muito parecido com outros necrófagos, pessoas comuns acham que carniçais são cadáveres reanimados. Eles são na verdade de uma espécie de outra dimensão que age muito como outros animais. Carniçais são catadores que se alimentam de cadáveres deixados para trás em campos de batalha, apesar de atacarem presas frescas, se passarem perto. Você geralmente encontra carniçais em pequenos grupos que muitas vezes brigam por comida quando o perigo já passou. Quando lutar com carniçais, sempre fique de olho nas suas costas. Eles vão atacar juntos e tentar cercá-lo, desequilibrando os seus ataques para flanquear e voltar correndo. Tente atrair um carniçal por vez, para reduzir o número de carniçais atacando. Tenha em mente que carniçais podem saltar a partir de 5m de distância. Pequenos buracos, paredes baixas e similares são muito menos eficazes contra carniçais do que seus irmãos necrófagos lentos. Quando em combates a curta distância, um carniçal golpeia com suas garras, mas se ele agarrar um alvo (ou se o alvo estiver impedido por alguma razão) pode mordê-lo para causar um ferimento com sangramento. Se você derrubar um carniçal abaixo de 10 Pontos de Vida, ele ficará furioso. Nesta fúria o carniçal ataca e suas feridas se fecham rapidamente. Mate o carniçal rapidamente para evitar que ele regenere sua Vitalidade. Também é vital se reposicionar para que os carniçais não consigam se juntar e ganhar bônus no ataque. Se você está lutando em um grupo, fique de costas um para o outro para que os carniçais não te atinja facilmente por trás. Se você precisar atrair um grupo de carniçais de uma área, é melhor começar exumando todos os corpos enterrados. Uma vez exumados, os corpos devem ser movidos para afastar os carniçais.
+        `,
     },
     
     {
@@ -997,7 +1193,16 @@ const monsterDatabase = [
     
         intelligence: 'Nível humano',
     
-        organization: 'Solitário'
+        organization: 'Solitário',
+
+        superstition: `
+Quase nenhum outro monstro inspira tantas histórias quanto o Alpe. Este demônio súcubo pode se transformar em um cachorro preto ou em um sapo venenoso. Os contos contam que eles são lascivos e inclinada a seduzir jovens bonitos, esforçando-se para descrever seu charme e suas vozes belas e sedutoras, bem como sua aversão às virgens. Eles se movem sem barulho e não podem ser tocados pelo vento, nem pela luz solar, pois queima sua pele. Eles também têm uma aversão terrível a gatos.
+        `,
+        
+        witcherKnowledge: `
+As Alpor são vampiros que lembram bruxas na aparência. Eles são chamados de fantasmas por alguns, um nome que se ajusta bastante bem, pois, como fantasmas, eles assombram e atormentam os homens, tomando na forma de uma mulher, embora também possam aparecer como animais. Os Alpes são mais frequentemente encontrados rondando perto de aldeias, atacando à noite e são mais ativos quando a lua está cheia. A saliva dos Alpes é um anestésico poderoso e, quando aplicada a um homem adormecido, pode provocar pesadelos horríveis. Alguns sugerem que são a causa de lendas sobre homens que dormem saudáveis e são encontrados pela manhã brancos como a neve, sem uma gota de sangue nas veias. Em combate, os Alpes exibem velocidade sobrenatural e resistência incrível (até mesmo para os padrões dos vampiros). É preciso apontar a espada com grande precisão, pois os Alpes são inigualáveis na arte de evitar golpes. O Sinal Yrden é recomendado porque desacelera o Alp, enfraquecendo seu defesas. Outra estratégia é beber a poção Black Blood, pois os alpes sugam o sangue de suas vítimas para privá-las de forças e regenerar seus próprios poderes. Golden Oriole também pode ser inestimável no fornecimento de imunidade contra a saliva que induz o sono. Ao contrário das bruxas, os Alpes não podem ficar invisíveis, mas, como as bruxas, eles emitem um ruído estridente cuja onda de choque pode incapacitar. Seu maior trunfo é a agilidade e eles podem saltar com uma leveza misteriosa que parece beirar o poder do vôo. Quando na forma humana, eles se misturam facilmente com a comunidade circundante, o que os torna realmente muito perigosos e suas formas animais os ajudam a se misturar onde os humanos seriam muito visíveis.
+        `,
+
     },
     
     {
@@ -1069,7 +1274,16 @@ const monsterDatabase = [
     
         intelligence: 'Nível humano',
     
-        organization: 'Solitário'
+        organization: 'Solitário',
+
+        superstition: `
+
+        `,
+        
+        witcherKnowledge: `
+
+        `,
+
     },
     {
         id: 'werewolf',
@@ -1146,7 +1360,16 @@ const monsterDatabase = [
     
         intelligence: 'Nível humano',
     
-        organization: 'Solitário'
+        organization: 'Solitário',
+
+        superstition: `
+As lendas dizem que são como pessoas normais até o luar brilhar sobre eles e se transformarem em horríveis monstros irracionais. Eles não fazem nada além de comer carne e beber sangue a noite toda até o sol nascer, quando se transformam de volta. Pior de tudo, se você for mordido, você está fadado a se transformar. Algumas pessoas acham que você pode curar um lobisomem forçando o lobisomem a beber um chá de lobo três vezes por dia durante cinco dias. Outros acreditam que você pode curá-lo apenas exaurindo o lobisomem e depois repreendendo-o. Eu prefiro usar minha besta.
+        `,
+        
+        witcherKnowledge: `
+Os lobisomens são feras perigosas e horripilantes que podem permanecer adormecidas dentro de pessoas totalmente razoáveis. Essas feras enormes parecem um cruzamento entre humanos e lobos gigantescos. Eles são monstros impiedosos sem empatia e com uma poderosa sede de sangue. A pior parte dessas feras amaldiçoadas é que elas surgem de pessoas comuns. Lobisomens manifestam toda a crueldade e más intenções da pessoa amaldiçoada. Quando uma pessoa se transforma em um lobisomem, geralmente um processo iniciado pelo surgimento da lua, eles perdem todos os fragmentos de sua humanidade e são deixados apenas com sua inteligência e seus piores e mais viciosos impulsos. Estas bestas são muito difíceis de combater, devido à sua inteligência inata e habilidades regenerativas, que apenas uma bomba Pó de Lua pode parar. Felizmente, é necessária uma maldição para criar um lobisomem, ser mordido por um lobisomem significa apenas que você irá sangrar copiosamente. Se você se encontrar lutando contra um lobisomem, ignore todas as “curas” camponesas inúteis e encontre uma lâmina de prata. Concentrese em desviar dos ataques do lobisomem e contra-ataque com sua lâmina de prata ou feitiços mágicos. Correr de um lobisomem é desaconselhável, eles são muito rápidos e podem rastreá-lo através das condições mais adversas apenas pelo cheiro. Se um amigo sofreu de licantropia, é uma boa ideia amarrá-lo à noite até que você possa acabar com a maldição. Embora possa ser difícil determinar quais ações levaram a qualquer caso de licantropia, você pode restringi-lo. A licantropia é frequentemente uma punição por ações violentas e bestiais. Remover a maldição geralmente requer muita dor e perda pessoal.
+        `,
+
     },
     
     {
@@ -1216,7 +1439,16 @@ const monsterDatabase = [
     
         intelligence: 'Nível humano',
     
-        organization: 'Grupos de 3 a 6'
+        organization: 'Grupos de 3 a 6',
+
+        superstition: `
+
+        `,
+        
+        witcherKnowledge: `
+
+        `,
+
     },
     
     {
@@ -1296,7 +1528,15 @@ const monsterDatabase = [
     
         intelligence: 'Tão inteligente quanto um cachorro',
     
-        organization: 'Solitário'
+        organization: 'Solitário',
+
+        superstition: `
+
+        `,
+        
+        witcherKnowledge: `
+
+        `,
     },
     
     

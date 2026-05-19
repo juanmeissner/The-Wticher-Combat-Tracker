@@ -931,10 +931,75 @@ document.getElementById('conditionInfoModal').style.display =
                         <button onclick="cancelDeleteMode(event)" class="bg-slate-800 p-3 rounded-full text-slate-300">
                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
                         </button>
-                        <button onclick="editCombatant(event, ${c.id})" class="bg-blue-600 p-4 rounded-full text-white shadow-xl">
+                        ${c.presetMonsterId ? `
+
+                        <button
+
+                        ontouchstart="event.stopPropagation()"
+
+                        onmousedown="event.stopPropagation()"
+
+                        onclick="
+                            event.preventDefault();
+                            event.stopPropagation();
+
+                            openCombatMonsterInfo(${c.id});
+                        "
+
+                        class="bg-cyan-700
+                            p-4
+                            rounded-full
+                            text-white
+                            shadow-xl">
+
+                        <svg xmlns="http://www.w3.org/2000/svg"
+                            width="28"
+                            height="28"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2.5"
+                            stroke-linecap="round"
+                            stroke-linejoin="round">
+
+                            <path d="M12 17V11"/>
+
+                            <path d="M12 7h.01"/>
+
+                            <circle cx="12" cy="12" r="10"/>
+
+                        </svg>
+
+                    </button>
+
+                        ` : ''}
+                        
+                        <button
+
+    ontouchstart="event.stopPropagation()"
+
+    onmousedown="event.stopPropagation()"
+
+    onclick="
+        event.preventDefault();
+        event.stopPropagation();
+
+        editCombatant(event, ${c.id});
+    " class="bg-blue-600 p-4 rounded-full text-white shadow-xl">
                             <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
                         </button>
-                        <button onclick="removeCombatant(event, ${c.id})" class="bg-white p-4 rounded-full text-red-700 shadow-xl">
+                        <button
+
+    ontouchstart="event.stopPropagation()"
+
+    onmousedown="event.stopPropagation()"
+
+    onclick="
+        event.preventDefault();
+        event.stopPropagation();
+
+        removeCombatant(event, ${c.id});
+    " class="bg-white p-4 rounded-full text-red-700 shadow-xl">
                             <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18m-2 0v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6m3 0V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2m-6 9 6-6m-6 0 6 6"/></svg>
                         </button>
                     `;
