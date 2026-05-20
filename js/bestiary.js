@@ -1,17 +1,17 @@
 const monsterDatabase = [
 
     {
-        id: 'nilfgardian01',
+        id: 'nilfgaardianraso',
     
-        name: 'Soldado Nilfgard',
+        name: 'Soldado Raso Nilfgard',
     
         image: 'https://static.wikia.nocookie.net/witcher_gamepedia/images/6/69/Tw3_cardart_nilfgaard_black_archer_1.png/revision/latest/scale-to-width-down/290?cb=20150909164804',
     
-        hp: 40,
+        hp: 35,
     
         threat: 'Alta',
     
-        reward: '300 Coroas',
+        reward: '1 Coroas',
     
         st: 10,
     
@@ -25,23 +25,114 @@ const monsterDatabase = [
         },
     
         vulnerabilities: [
-            '',
-            '',
+            'Veneno do Enforcado',
+            'Sinal Axi',
             '',
             ''
         ],
     
         abilities: [
-            '',
-            '',
-            '',
+            `Soldados Treinados
+            Soldados são treinados combatentes. Eles podem usar ataques especiais gastando resistência. Eles também podem fazer Golpes Rápidos ou Golpes Fortes gastando 2 de resistência, conforme uma ação extra.   `
+        ],
+    
+        attacks: [
+            'Espada 5d6',
+            'Arco Longo 4d6',
             '',
             '',
             ''
         ],
     
-        attacks: [
+        loot: [
             '',
+            '',
+            ''
+        ],
+    
+        skills: [
+            'Curta Distância +8',
+    
+            'Brigar +8',
+    
+            'Esquivar/Escapar +7',
+
+            'Arco e Flecha +7',
+    
+            'Atletismo +7',
+    
+            'Consciência +10',
+    
+            'Furtividade +4',
+    
+            'Sobrevivência no Ermo +8',
+    
+            'Resistir a Magia +9',
+    
+            'Tolerância +7',
+    
+            'Coragem +7'
+        ],
+    
+        speed: '15m',
+    
+        height: '2.5m',
+    
+        weight: '80kg',
+    
+        habitat: 'Nilfgaard',
+    
+        intelligence: 'Nível Humano',
+    
+        organization: 'Em grupos pequenos, médios ou grandes',
+
+        superstition: `
+
+        `,
+        
+        witcherKnowledge: `
+
+        `,
+    },
+
+    {
+        id: 'nilfgaardianknight',
+    
+        name: 'Cavaleiro Nilfgardiano',
+    
+        image: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSgSaJGYPcZ5wjUnfsGaHQ6g5CNfapQYHIJlA&s',
+    
+        hp: 35,
+    
+        threat: 'Alta/Complexo',
+    
+        reward: '1 Coroas',
+    
+        st: 10,
+    
+        ca: 13,
+    
+        armor: {
+            head: 30,
+            torso: 30,
+            arm: 30,
+            leg: 30
+        },
+    
+        vulnerabilities: [
+            'Veneno do Enforcado',
+            'Sinal Axi',
+            'Golpe Forte',
+            ''
+        ],
+    
+        abilities: [
+            `Soldados Treinados
+            Soldados são treinados combatentes. Eles podem usar ataques especiais gastando resistência. Eles também podem fazer Golpes Rápidos ou Golpes Fortes gastando 2 de resistência, conforme uma ação extra.   `
+        ],
+    
+        attacks: [
+            'Espada 5d6',
             '',
             '',
             '',
@@ -55,9 +146,27 @@ const monsterDatabase = [
         ],
     
         skills: [
-            '',
-            '',
-            ''
+            'Curta Distância +12',
+    
+            'Brigar +12',
+    
+            'Esquivar/Escapar +10',
+
+            'Bloquear +11',
+    
+            'Atletismo +7',
+    
+            'Consciência +10',
+    
+            'Furtividade +4',
+    
+            'Sobrevivência no Ermo +8',
+    
+            'Resistir a Magia +9',
+    
+            'Tolerância +7',
+    
+            'Coragem +15'
         ],
     
         speed: '15m',
@@ -66,11 +175,114 @@ const monsterDatabase = [
     
         weight: '80kg',
     
-        habitat: '',
+        habitat: 'Nilfgaard',
     
-        intelligence: '',
+        intelligence: 'Nível Humano',
     
-        organization: ''
+        organization: 'Em grupos pequenos, médios ou grandes',
+
+        superstition: `
+Uma vanguarda da cavalaria pesada nilfgaardiana em plena carga é verdadeiramente aterrorizante e eles são alguns dos soldados mais emblemáticos dos exércitos do Império, mais do que páreo para a maioria dos oponentes. Punhal 1 1 Grevas Nilfgaardianas Os Cavaleiros do Império recebem algumas das melhores armaduras e armas produzidas pela humanidade no continente hoje, juntamente com as maiores montarias que Nilfgaard tem a oferecer. Machado Eles são verdadeiros soldados de elite e são usados com moderação no campo de batalha, reservados para quebrar posições-chave ou atacar alvos vitais. Semelhante ao resto da doutrina nilfgaardiana, eles favorecem armaduras e armas pesadas, usando uma abordagem agressiva que depende da força bruta para romper as linhas inimigas. A cavalaria mais leve também é usada, especialmente em manobras de flanco ou para assediar posições inimigas e geralmente é implantada em brigadas maiores do que os cavaleiros mais pesados.
+        `,
+        
+        witcherKnowledge: `
+Uma carga de cavalaria bem posicionada pode trazer a vitória da ruína. Porém, uma vanguarda comprometida pode ficar atolada e sobrecarregada se seu alvo não for escolhido com cuidado. As brigadas de cavalaria ligeira são os seus soldados mais responsivos e podem ser rapidamente mobilizadas para combater quaisquer eventos imprevistos, como emboscadas, ou para fornecer rapidamente apoio à pressão em batalhas campais.
+        `,
+    },
+
+    {
+        id: 'nilfgaardianinfantary',
+    
+        name: 'Infantaria Nilfgardiana',
+    
+        image: 'https://i.pinimg.com/236x/73/a8/d4/73a8d4c0c9cfbae946d78590494726b4.jpg',
+    
+        hp: 30,
+    
+        threat: 'Alta/Complexo',
+    
+        reward: '1 Coroas',
+    
+        st: 10,
+    
+        ca: 13,
+    
+        armor: {
+            head: 16,
+            torso: 20,
+            arm: 14,
+            leg: 14
+        },
+    
+        vulnerabilities: [
+            'Veneno do Enforcado',
+            'Sinal Axi',
+            'Golpe Forte',
+            ''
+        ],
+    
+        abilities: [
+            `Soldados Treinados
+            Soldados são treinados combatentes. Eles podem usar ataques especiais gastando resistência. Eles também podem fazer Golpes Rápidos ou Golpes Fortes gastando 2 de resistência, conforme uma ação extra.   `
+        ],
+    
+        attacks: [
+            'Espada 5d6',
+            'Besta 4d6+2',
+            '',
+            '',
+            ''
+        ],
+    
+        loot: [
+            '',
+            '',
+            ''
+        ],
+    
+        skills: [
+            'Curta Distância +10',
+    
+            'Brigar +10',
+    
+            'Esquivar/Escapar +8',
+
+            'Bloquear +10',
+    
+            'Atletismo +7',
+    
+            'Consciência +10',
+    
+            'Furtividade +4',
+    
+            'Sobrevivência no Ermo +8',
+    
+            'Resistir a Magia +9',
+    
+            'Tolerância +7',
+    
+            'Coragem +15'
+        ],
+    
+        speed: '15m',
+    
+        height: '2.5m',
+    
+        weight: '80kg',
+    
+        habitat: 'Nilfgaard',
+    
+        intelligence: 'Nível Humano',
+    
+        organization: 'Em grupos pequenos, médios ou grandes',
+
+        superstition: `
+A infantaria pesada é o núcleo da máquina de guerra do Império Nilfgaardiano e é uma das principais razões para o sucesso de seus exércitos (na maior parte) em todas as três Guerras do Norte. Os soldados da infantaria do Império são profissionais, apoiados por oficiais competentes treinados na Academia Militar Markus Braibant. Eles também são bem equipados e abastecidos com equipamentos padronizados produzidos por fábricas e enviados para o front em vastos trens de abastecimento. Tudo nas forças armadas nilfgaardianas gira em torno de disciplina e treinamento. Os membros da infantaria podem esperar ser bem apoiados e abastecidos e, por sua vez, devem seguir as ordens imediatamente e com precisão.
+`,
+        
+        witcherKnowledge: `
+O núcleo da infantaria *é* o exército do Império, esses soldados são o elemento mais importante do comandante e devem ser tratados como tal. Uma unidade nunca deve ser posicionada fora do alcance de meios de apoio, como unidades de cavalaria, batedores ou artilharia. 
+        `,
     },
 
     {
@@ -104,10 +316,10 @@ const monsterDatabase = [
         abilities: [
     
             `Grito Sônico
-            Um grifo pode dar a sua vez para soltar um grito que obriga qualquer um dentro de 10m a fazer um teste de resistência a Medo em -1.`,
+            Um grifo pode dar a sua vez para soltar um grito que obriga qualquer um dentro de 30m a fazer um teste de resistência a Medo ND: 14.`,
     
             `Investida
-            Se um alvo se move a mais de 10m de distância do grifo, ele pode investir e fazer um poderoso ataque de garra a -4, causando 10d6 de dano e jogando o alvo para trás 8 quadrados.`,
+            Se um alvo se move a mais de 30m de distância do grifo, ele pode investir e fazer um poderoso ataque, causando 10d6 de dano e jogando o alvo para trás 8 quadrados.`,
     
             `Selvagem
             Para os propósitos de Consciência e Sobrevivência no Ermo, o instinto lhe dá uma INT de 8.`,
@@ -139,16 +351,16 @@ const monsterDatabase = [
     
             'Pena de Grifo (1d10)',
     
-            'Ovo de Grifo (1d6 / 2)',
+            'Ovo de Grifo 1x (ND: 16)',
     
             'Pó Infundido (1d6 / 2)'
         ],
     
         skills: [
     
-            'Curta Distância +9',
+            'Curta Distância +10',
     
-            'Brigar +7',
+            'Brigar +10',
     
             'Esquivar/Escapar +7',
     
@@ -162,9 +374,9 @@ const monsterDatabase = [
     
             'Resistir a Magia +9',
     
-            'Tolerância +3',
+            'Tolerância +7',
     
-            'Coragem +10'
+            'Coragem +15'
         ],
     
         speed: `6 Terrestre
@@ -178,7 +390,15 @@ const monsterDatabase = [
     
         intelligence: 'Tão inteligente quanto um cachorro',
     
-        organization: 'Solitário ou em pares'
+        organization: 'Solitário ou em pares',
+
+        superstition: `
+Você pode imaginar um ser mais majestoso do que um grifo? Heh! Isso é um pensamento perigoso. A maioria dos nobres pensa em grifos como bestas majestosas que você coloca em tabardos e heráldica e tudo mais. Heh! Fazendeiros, por outro lado, morrem de medo deles. O que você vai fazer quando uma bola de pelo de 900 quilos, penas e garras pousar em seu campo e pegar sua vaca? Nada, não é? A maioria das pessoas comuns não fala muito sobre grifos. Para não atraí-los.
+        `,
+        
+        witcherKnowledge: `
+Grifos são tecnicamente criaturas muito simples. Eles operam muito como uma combinação entre os dois animais que os compõem: leões e águias. Infelizmente, combinar leões e águias cria um super predador. Grifos são rápidos no chão e rápidos no céu. Eles podem atravessar grandes áreas de terreno difícil voando sobre ele e avistar presas se escondendo, com os olhos de águia. Isso sem levar em conta como eles capturam alvos do tamanho de um cavalo e o soltam de 100 metros no ar. Felizmente, os grifos apenas atacam intrusos em seu território. O problema é que, com a guerra deixando cadáveres por todos os campos e vales abertos, os grifos estão movendo seus territórios das altas montanhas para os picos mais baixos. De repente, pequenas aldeias no sopé das montanhas são um território de grifo, mesmo sem perceber. Se você tiver que lutar contra um grifo, faça um favor e estoque munição de longo alcance e óleo de híbrido. Você precisará da munição porque os grifos gostam de atacar do ar. Um golpe direto com um virote de besta, lança, flecha ou outra arma de longo alcance força o grifo a se reajustar no ar. Se falhar, cairá no chão, sofrerá danos e será mais vulnerável. No chão você tem que tomar cuidado com as garras afiadas. Elas não apenas rasgam, mas deixam grandes ferimentos com sangramentos. Se você se distanciar demais de um grifo, ele encurtará essa distância com uma investida: um ataque tremendamente poderoso, mas impreciso, mais fácil de se esquivar do que os ataques de garras normais. Mas um golpe certeiro desse significa a morte para um homem comum. A última coisa a observar é o grito sônico do grifo. Falhe em resistir a isso e você será uma presa fácil.
+        `,
     },
 
     {
@@ -236,7 +456,7 @@ const monsterDatabase = [
             'Sobrevivência no Ermo +6',
             'Resistir a Magia +4',
             'Tolerância +6',
-            'Coragem +7'
+            'Coragem +15'
         ],
     
         speed: '6m',
@@ -312,16 +532,16 @@ Na verdade, os afogadores não são malfeitores ressuscitados. A maioria das pes
         ],
     
         skills: [
-            'Curta Distância +6',
-            'Brigar +6',
-            'Esquivar/Escapar +6',
+            'Curta Distância +8',
+            'Brigar +8',
+            'Esquivar/Escapar +8',
             'Atletismo +7',
             'Consciência +7',
             'Furtividade +4',
             'Sobrevivência no Ermo +6',
             'Resistir a Magia +4',
             'Tolerância +6',
-            'Coragem +7'
+            'Coragem +15'
         ],
     
         speed: '6m',
@@ -392,19 +612,19 @@ Muito parecido com outros necrófagos, pessoas comuns acham que carniçais são 
         ],
     
         skills: [
-            'Atletismo +10',
+            'Atletismo +12',
             'Conscientização +8',
-            'Briga +8',
+            'Briga +12',
             'Carisma +9',
             'Coragem +6',
             'Engano +10',
-            'Esquiva/Escapa +10',
+            'Esquivar/Escapar +12',
             'Percepção Humana +8',
             'Intimidar +4',
-            'Corpo a Corpo +7',
-            'Resistir à Coerção +8',
+            'Corpo a Corpo +12',
+            'Resistir à Coerção +9',
             'Resistir à Magia +9',
-            'Sedução +10',
+            'Sedução +12',
             'Furtividade +9'
         ],
     
@@ -476,8 +696,9 @@ As Alpor são vampiros que lembram bruxas na aparência. Eles são chamados de f
         ],
     
         skills: [
-            'Curta Distância +8',
-            'Brigar +6',
+            'Curta Distância +10',
+            'Brigar +10',
+            'Lançar Feitiços +12',
             'Esquivar/Escapar +8',
             'Atletismo +6',
             'Consciência +8',
@@ -502,11 +723,11 @@ As Alpor são vampiros que lembram bruxas na aparência. Eles são chamados de f
         organization: 'Solitário',
 
         superstition: `
-
+Honestamente, filhos da puta comuns não sabem muito sobre bruxas sepulcrais. Heh! Elas são pesadelos inteligentes o suficiente para conversar, montar armadilhas e atrair crianças. Ouvi dizer que bruxas são o que acontece quando um mago perde o controle. Heh! Duvido disso, mas pode ser ... quem sabe. As bruxas são um dos poucos monstros de que eu já ouvi falar que poderiam usar magia. Ou pelo menos algo assim.
         `,
         
         witcherKnowledge: `
-
+As Bruxas Sepulcrais são um dos poucos necrófagos totalmente sencientes, o que as torna muito perigosas. As bruxas sepulcrais não têm nada a ver com magos. Embora tenham magia, as bruxas sepulcrais são apenas mais uma raça necrófaga da Conjunção das Esferas. Curiosamente, as bruxas sepulcrais são exclusivamente femininas, uma bruxa macho nunca foi vista. A maioria dos livros afirma que as bruxas, como alguns monstros, roubam garotinhas de vilarejos para as transformarem em novas bruxas. Alguns, no entanto, sugerem que as bruxas não são realmente femininas como tais, mas hermafroditas. O que sabemos é que as bruxas são predadores de emboscada que vivem perto de cemitérios e outras fontes de cadáveres podres. Elas estão perfeitamente contentes em comer carniça, mas atacarão presas frescas se tiverem a chance. Quando no ataque, uma bruxa sepulcral vai encurtar a distância a uma velocidade tremenda e atacar com suas garras em forma de foice. Se o alvo recuar para se recuperar, a bruxa vai usar sua língua venenosa como um chicote farpado para enfraquecer a presa. A língua da bruxa pode ser cortada com um golpe bem-sucedido com uma arma branca. As formas mais seguras de atacar uma bruxa sepulcral são manter a distância ou estocar com óleo de necrófago e aproximar-se com uma magia de proteção ou com o Sinal de Quen. As Bruxas Sepulcrais podem ser raciocinais, mas são incrivelmente teimosas e propensas a atacar imediatamente. Se você precisa lutar contra uma bruxa em sua casa, verifique primeiro se há um círculo mágico da caveira ou outros necrófagos que estejam curvados à sua vontade. Lide com eles primeiro, se puder.
         `,
 
     },
@@ -562,9 +783,9 @@ As Alpor são vampiros que lembram bruxas na aparência. Eles são chamados de f
         ],
     
         skills: [
-            'Curta Distância +9',
-            'Brigar +8',
-            'Esquivar/Escapar +8',
+            'Curta Distância +12',
+            'Brigar +12',
+            'Esquivar/Escapar +12',
             'Atletismo +8',
             'Consciência +10',
             'Furtividade +9',
@@ -667,11 +888,11 @@ Os lobisomens são feras perigosas e horripilantes que podem permanecer adormeci
         organization: 'Grupos de 3 a 6',
 
         superstition: `
-
+Sereias são uma história triste. Costumavam ser mulheres bonitas com rabos como peixe e um interesse especial em marinheiros, heh! Porém, aquele tempo se passou. Hoje em dia, uma sereia prefere te esnobar do que beijar, é melhor manter isso em mente. Ninguém sabe por quê, mas provavelmente tem a ver com marinheiros raptando sereias para serem suas esposas. Hoje elas atraem as pessoas com suas músicas, e depois se transformam em monstros horríveis e rasgam a carne de seus ossos. Os marinheiros dizem que se você quer passar pelas sereias no mar, você deve amarrar-se ao mastro para impedir-se de saltar sobre a borda para ir até elas.
         `,
         
         witcherKnowledge: `
-
+Não se amarre ao mastro. Você vai ter uma morte horrível. Ao contrário da crença popular, as sereias não têm magia para obrigar os homens a pular na água e nadar até elas. Elas só podem esconder suas características horripilantes de peixe sob a pele de belas jovens e isso aparentemente é o suficiente para excitados marinheiros que estiveram no mar por mais de ano. Não, uma sereia atrai um navio para perto com um disfarce atraente e, em seguida, salta no ar em asas escamosas para atacar sua presa. Como você pode imaginar, se amarrar ao mastro pode ser uma má ideia. Uma sereia descerá do alto, balançando suas garras (ou a cauda se estiver confiante) antes de subir novamente. Algumas tentarão derrubá-lo na água, onde suas irmãs podem despedaçálo melhor. Infelizmente, as sereias no ar ou na água são muito rápidas e muito ágeis, tornando-as difíceis de capturar ou atacar. Felizmente você pode matar uma sereia no ar com um golpe de arma direto. Neste momento a sereia é incrivelmente vulnerável e geralmente pode ser eliminada por dois homens com armas resistentes. Tecnicamente, as sereias são inteligentes e capazes de pensar e serem diplomatas. Mesmo assim, elas não estão interessadas nisso, elas veem todas as não-sereias como presas. Não é totalmente inédito encontrar uma sereia disposta a falar com você. Nesse caso, seja muito cauteloso: pode estar tentando atraí-lo para uma armadilha. Ainda assim, contos de velhas esposas persistem que as sereias eram amigáveis. É difícil dizer se esses contos se referem às sereias que encontramos na costa agora ou a uma raça que (como muitas outras) foi eliminada nas inúmeras guerras raciais.
         `,
 
     },
@@ -710,7 +931,7 @@ Os lobisomens são feras perigosas e horripilantes que podem permanecer adormeci
             'Regeneração — Recupera 20 PV por rodada.',
             'Investida — Ataque devastador de chifres causando 10d6.',
             'Massa Maciça — Imune a Aard e efeitos de derrubar.',
-            'Hipnose — Inimigos sofrem penalidades por 5 rodadas.',
+            'Hipnose — Inimigos sofrem penalidades por 5 rodadas. (Resistir Magia ND: 18)',
             'Selvagem — INT equivalente a 8.',
             'Desvantagem para bloquear seus ataques.'
         ],
@@ -730,9 +951,11 @@ Os lobisomens são feras perigosas e horripilantes que podem permanecer adormeci
         ],
     
         skills: [
-            'Brigar +8',
-            'Curta Distância +9',
-            'Esquivar/Escapar +7',
+            'Brigar +12',
+            'Bloquear +12',
+            'Lançar Feitiços +12',
+            'Curta Distância +12',
+            'Esquivar/Escapar +8',
             'Atletismo +5',
             'Consciência +10',
             'Furtividade +1',
