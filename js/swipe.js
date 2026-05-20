@@ -19,7 +19,20 @@ document.addEventListener('touchend', e => {
     handleSwipe();
 });
 
+function isAnyModalOpen() {
+
+    const modals =
+        document.querySelectorAll('.modal');
+
+    return [...modals].some(modal =>
+        getComputedStyle(modal).display !== 'none'
+    );
+}
+
 function handleSwipe() {
+
+    // BLOQUEIA SWIPE COM MODAL ABERTO
+    if (isAnyModalOpen()) return;
 
     const distance =
         touchStartX - touchEndX;

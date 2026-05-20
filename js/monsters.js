@@ -762,6 +762,8 @@ function spawnPresetMonster(monsterId) {
 
     combatants.push(newMonster);
 
+    showToast(`👹 ${newMonster.name} foi adicionado ao combate!`);
+
     monsterCounter++;
 
     sortCombatants();

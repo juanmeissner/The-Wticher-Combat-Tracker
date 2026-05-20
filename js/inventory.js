@@ -356,12 +356,19 @@ function renderInventory() {
 
 function addItem(itemId) {
 
+    let itemName = '';
+    let quantity = 1;
+
     const existing =
         inventory.find(i => i.id === itemId);
 
     if (existing) {
 
         existing.quantity++;
+
+        itemName = existing.name;
+
+        quantity = existing.quantity;
 
     } else {
 
@@ -376,11 +383,19 @@ function addItem(itemId) {
 
             quantity: 1
         });
+
+        itemName = base.name;
+
+        quantity = 1;
     }
 
     saveInventory();
 
     renderInventory();
+
+    showToast(
+        `🎒 ${itemName} adicionado! (x${quantity})`
+    );
 }
 
 // =========================================
@@ -549,6 +564,8 @@ function renderInventoryItemsModal() {
                 Adicionar
 
             </span>
+
+
 
         </button>
         `;
