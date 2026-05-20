@@ -254,6 +254,22 @@
             list.addEventListener('mouseleave', handleCardPressEnd);
             list.addEventListener('touchend', handleCardPressEnd);
             list.addEventListener('click', handleListClick);
+
+            // FECHAR MENU AO CLICAR FORA
+            document.addEventListener('click', (e) => {
+
+                // Se não existe menu aberto
+                if (!deleteVisibleId) return;
+
+                // Se clicou dentro do card
+                if (e.target.closest('.combat-card')) return;
+
+                // Fecha o menu
+                deleteVisibleId = null;
+
+                renderList();
+
+            });
         };
 
         // Lógica de Eventos Delegados
