@@ -4,6 +4,14 @@ function handleItemTouchEnd(itemId) {
 
     cancelItemLongPress();
 
+    // IGNORA toque vindo dos botões + e -
+    if (ignoreNextInventoryTouch) {
+
+        ignoreNextInventoryTouch = false;
+
+        return;
+    }
+
     if (wasLongPress) return;
 
     selectInventoryItem(itemId);
@@ -48,9 +56,55 @@ function startItemLongPress(itemId) {
 
         wasLongPress = true;
 
+        // ITEM ESPECIAL
+        if (itemId === 'coroa') {
+
+            openCrownEditor();
+
+            return;
+        }
+
         showItemDetails(itemId);
 
     }, 500);
+}
+
+function openCrownEditor() {
+
+    const crown =
+        inventory.find(i => i.id === 'coroa');
+
+    if (!crown) return;
+
+    const currentValue =
+        crown.moneyValue || 0;
+
+    const newValue = prompt(
+        'Digite a quantidade de Coroas:',
+        currentValue
+    );
+
+    if (newValue === null) return;
+
+    const parsed =
+        parseInt(newValue);
+
+    if (isNaN(parsed) || parsed < 0) {
+
+        showToast('❌ Valor inválido');
+
+        return;
+    }
+
+    crown.moneyValue = parsed;
+
+    saveInventory();
+
+    renderInventory();
+
+    showToast(
+        `👑 Coroas atualizadas: ${parsed}`
+    );
 }
 
 function cancelItemLongPress() {
@@ -245,6 +299,7 @@ let currentInventoryFilter = 'usable';
 let inventory = [];
 let selectedInventoryItemId = null;
 let longPressTimer = null;
+let ignoreNextInventoryTouch = false;
 
 function addInventoryItemFromModal(itemId) {
 
@@ -266,9 +321,18 @@ function renderInventory() {
 
     container.innerHTML = '';
 
-    const filteredInventory = inventory.filter(
+    const filteredInventory = inventory
+    .filter(
         item => item.category === currentInventoryFilter
-    );
+    )
+    .sort((a, b) => {
+
+        // Coroa sempre primeiro
+        if (a.id === 'coroa') return -1;
+        if (b.id === 'coroa') return 1;
+
+        return 0;
+    });
 
     if (filteredInventory.length === 0) {
 
@@ -339,7 +403,10 @@ function renderInventory() {
                                 text-xl
                                 font-bold">
     
-                        x${item.quantity}
+                                ${item.id === 'coroa'
+                                    ? `💰 ${item.moneyValue ?? 0}`
+                                    : `x${item.quantity}`
+                                }
     
                     </div>
     
@@ -364,7 +431,15 @@ function addItem(itemId) {
 
     if (existing) {
 
-        existing.quantity++;
+        if (existing.id === 'coroa') {
+
+            existing.moneyValue =
+                (existing.moneyValue || 0) + 1;
+        
+        } else {
+        
+            existing.quantity++;
+        }
 
         itemName = existing.name;
 
@@ -380,8 +455,13 @@ function addItem(itemId) {
         inventory.push({
 
             ...base,
-
-            quantity: 1
+        
+            quantity: 1,
+        
+            moneyValue:
+                itemId === 'coroa'
+                    ? 0
+                    : undefined
         });
 
         itemName = base.name;
@@ -484,7 +564,8 @@ function renderInventoryItemsModal() {
 
     // filtra categoria + nome
     const filteredItems =
-        predefinedItems.filter(item => {
+    predefinedItems
+        .filter(item => {
 
             const sameCategory =
                 item.category === currentInventoryFilter;
@@ -495,7 +576,17 @@ function renderInventoryItemsModal() {
                     .includes(search);
 
             return sameCategory && matchesSearch;
+        })
+
+        .sort((a, b) => {
+
+            if (a.id === 'coroa') return -1;
+            if (b.id === 'coroa') return 1;
+
+            return 0;
         });
+
+        
 
     // vazio
     if (filteredItems.length === 0) {
@@ -608,6 +699,33 @@ function increaseSelectedItem() {
 
     if (!selectedInventoryItemId) return;
 
+    const item =
+        inventory.find(
+            i => i.id === selectedInventoryItemId
+        );
+
+    if (!item) return;
+
+    // =====================================
+    // COROA
+    // =====================================
+
+    if (item.id === 'coroa') {
+
+        item.moneyValue =
+            (item.moneyValue || 0) + 1;
+
+        saveInventory();
+
+        renderInventory();
+
+        return;
+    }
+
+    // =====================================
+    // ITENS NORMAIS
+    // =====================================
+
     addItem(selectedInventoryItemId);
 }
 
@@ -622,9 +740,33 @@ function decreaseSelectedItem() {
 
     if (!item) return;
 
+    // =====================================
+    // COROA
+    // =====================================
+
+    if (item.id === 'coroa') {
+
+        item.moneyValue =
+            (item.moneyValue || 0) - 1;
+
+        if (item.moneyValue < 0) {
+
+            item.moneyValue = 0;
+        }
+
+        saveInventory();
+
+        renderInventory();
+
+        return;
+    }
+
+    // =====================================
+    // ITENS NORMAIS
+    // =====================================
+
     item.quantity--;
 
-    // remove automaticamente
     if (item.quantity <= 0) {
 
         inventory =
@@ -655,6 +797,12 @@ let inventoryTouchUsed = false;
 
 function startInventoryIncreaseHold(event) {
 
+    event.stopPropagation();
+
+    ignoreNextInventoryTouch = true;
+
+    event.preventDefault();
+
     // evita mouse duplicado após touch
     if (event.type === 'mousedown' && inventoryTouchUsed) {
         return;
@@ -679,6 +827,12 @@ function startInventoryIncreaseHold(event) {
 }
 
 function endInventoryIncreaseHold(event) {
+
+    event.stopPropagation();
+
+    ignoreNextInventoryTouch = true;
+
+    event.preventDefault();
 
     if (event.type === 'mouseup' && inventoryTouchUsed) {
         return;
@@ -705,6 +859,12 @@ function endInventoryIncreaseHold(event) {
 
 function startInventoryDecreaseHold(event) {
 
+    event.stopPropagation();
+
+    ignoreNextInventoryTouch = true;
+
+    event.preventDefault();
+
     if (event.type === 'mousedown' && inventoryTouchUsed) {
         return;
     }
@@ -728,6 +888,12 @@ function startInventoryDecreaseHold(event) {
 }
 
 function endInventoryDecreaseHold(event) {
+
+    event.stopPropagation();
+
+    ignoreNextInventoryTouch = true;
+
+    event.preventDefault();
 
     if (event.type === 'mouseup' && inventoryTouchUsed) {
         return;

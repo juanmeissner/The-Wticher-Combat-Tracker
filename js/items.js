@@ -3439,6 +3439,16 @@ const predefinedItems = [
         goldValue: 10,
         description: 'Mineral / Alquímico',
         recipe: []
+    },
+
+    {
+        id: 'coroa',
+        name: 'Coroa',
+        icon: 'https://static.divine-pride.net/images/items/item/7683.png',
+        category: 'misc',
+        goldValue: 1,
+        description: 'Moeda local.',
+        recipe: []
     }
 
 ];

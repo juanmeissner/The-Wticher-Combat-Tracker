@@ -21,11 +21,49 @@ document.addEventListener('touchend', e => {
 
 function isAnyModalOpen() {
 
-    const modals =
-        document.querySelectorAll('.modal');
+    // =====================================
+    // INVENTÁRIO
+    // =====================================
 
-    return [...modals].some(modal =>
-        getComputedStyle(modal).display !== 'none'
+    const inventoryModalOpen =
+        !document
+            .getElementById('inventoryModal')
+            ?.classList.contains('hidden');
+
+    const itemDetailsModalOpen =
+        !document
+            .getElementById('itemDetailsModal')
+            ?.classList.contains('hidden');
+
+    // =====================================
+    // MONSTROS / COMBATE
+    // =====================================
+
+    const monsterChoiceOpen =
+        document
+            .getElementById('monsterChoiceModal')
+            ?.style.display === 'flex';
+
+    const monsterDetailsOpen =
+        document
+            .getElementById('monsterDetailsModal')
+            ?.style.display === 'flex';
+
+    const presetMonsterOpen =
+        document
+            .getElementById('presetMonsterModal')
+            ?.style.display === 'flex';
+
+    // =====================================
+    // RESULTADO
+    // =====================================
+
+    return (
+        inventoryModalOpen ||
+        itemDetailsModalOpen ||
+        monsterChoiceOpen ||
+        monsterDetailsOpen ||
+        presetMonsterOpen
     );
 }
 
