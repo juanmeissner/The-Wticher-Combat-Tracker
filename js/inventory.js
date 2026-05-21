@@ -118,6 +118,33 @@ function setInventoryFilter(category) {
 
     updateInventoryTabs();
 
+    // =====================================
+    // AUTO SELECIONA PRIMEIRO ITEM
+    // =====================================
+
+    const filteredItems = inventory
+        .filter(
+            item => item.category === currentInventoryFilter
+        )
+        .sort((a, b) => {
+
+            // Coroa sempre primeiro
+            if (a.id === 'coroa') return -1;
+            if (b.id === 'coroa') return 1;
+
+            return 0;
+        });
+
+    if (filteredItems.length > 0) {
+
+        selectedInventoryItemId =
+            filteredItems[0].id;
+
+    } else {
+
+        selectedInventoryItemId = null;
+    }
+
     renderInventory();
 }
 
@@ -421,7 +448,7 @@ function renderInventory() {
 // ADICIONAR ITEM
 // =========================================
 
-function addItem(itemId) {
+function addItem(itemId, showMessage = true) {
 
     let itemName = '';
     let quantity = 1;
@@ -435,15 +462,18 @@ function addItem(itemId) {
 
             existing.moneyValue =
                 (existing.moneyValue || 0) + 1;
-        
+
         } else {
-        
+
             existing.quantity++;
         }
 
         itemName = existing.name;
 
-        quantity = existing.quantity;
+        quantity =
+            existing.id === 'coroa'
+                ? existing.moneyValue
+                : existing.quantity;
 
     } else {
 
@@ -455,9 +485,9 @@ function addItem(itemId) {
         inventory.push({
 
             ...base,
-        
+
             quantity: 1,
-        
+
             moneyValue:
                 itemId === 'coroa'
                     ? 0
@@ -473,9 +503,12 @@ function addItem(itemId) {
 
     renderInventory();
 
-    showToast(
-        `🎒 ${itemName} adicionado! (x${quantity})`
-    );
+    if (showMessage) {
+
+        showToast(
+            `🎒 ${itemName} adicionado! (x${quantity})`
+        );
+    }
 }
 
 // =========================================
@@ -729,7 +762,7 @@ function increaseSelectedItem() {
     addItem(selectedInventoryItemId);
 }
 
-function decreaseSelectedItem() {
+function decreaseSelectedItem(showMessage = true) {
 
     if (!selectedInventoryItemId) return;
 
@@ -739,6 +772,8 @@ function decreaseSelectedItem() {
         );
 
     if (!item) return;
+
+    const itemName = item.name;
 
     // =====================================
     // COROA
@@ -757,6 +792,13 @@ function decreaseSelectedItem() {
         saveInventory();
 
         renderInventory();
+
+        if (showMessage) {
+
+            showToast(
+                `🗑️ ${itemName} removido!`
+            );
+        }
 
         return;
     }
@@ -780,6 +822,13 @@ function decreaseSelectedItem() {
     saveInventory();
 
     renderInventory();
+
+    if (showMessage) {
+
+        showToast(
+            `🗑️ ${itemName} removido!`
+        );
+    }
 }
 
 
@@ -818,10 +867,21 @@ function startInventoryIncreaseHold(event) {
 
         inventoryQuantityHold = true;
 
-        for (let i = 0; i < 10; i++) {
-
-            increaseSelectedItem();
-        }
+        const item =
+        inventory.find(
+            i => i.id === selectedInventoryItemId
+        );
+    
+    if (!item) return;
+    
+    for (let i = 0; i < 10; i++) {
+    
+        addItem(selectedInventoryItemId, false);
+    }
+    
+    showToast(
+        `🎒 ${item.name} adicionado x10!`
+    );
 
     }, 500);
 }
@@ -879,10 +939,23 @@ function startInventoryDecreaseHold(event) {
 
         inventoryQuantityHold = true;
 
-        for (let i = 0; i < 10; i++) {
-
-            decreaseSelectedItem();
-        }
+        const item =
+        inventory.find(
+            i => i.id === selectedInventoryItemId
+        );
+    
+    if (!item) return;
+    
+    const itemName = item.name;
+    
+    for (let i = 0; i < 10; i++) {
+    
+        decreaseSelectedItem(false);
+    }
+    
+    showToast(
+        `🗑️ ${itemName} removido x10!`
+    );
 
     }, 500);
 }
