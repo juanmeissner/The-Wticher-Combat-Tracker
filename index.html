@@ -39,11 +39,41 @@
             </div>
 
             <div class="flex-1">
-                <div class="flex justify-between items-center mb-2 px-1">
-                    <div class="text-lg text-slate-500 font-bold overflow-hidden whitespace-nowrap truncate mr-2">
-                        <span id="targetName" class="text-blue-400">Nenhum</span>
+                <div class="mb-2 px-1">
+
+                    <!-- ALVO -->
+                    <div class="w-full text-center mb-1">
+                
+                        <span
+                            id="targetName"
+                            class="block
+                                   text-sm
+                                   font-bold
+                                   text-blue-400
+                                   truncate
+                                   whitespace-nowrap
+                                   overflow-hidden">
+                
+                            Nenhum
+                
+                        </span>
+                
                     </div>
-                    <div class="text-lg font-mono font-bold text-slate-100 shrink-0" id="numpadDisplay">0</div>
+                
+                    <!-- DISPLAY -->
+                    <div
+                        id="numpadDisplay"
+                        class="text-3xl
+                               font-mono
+                               font-bold
+                               text-center
+                               text-slate-100
+                               leading-none">
+                
+                        0
+                
+                    </div>
+                
                 </div>
 
                 <div class="numpad-grid">
@@ -1012,7 +1042,22 @@ document.getElementById('conditionInfoModal').style.display =
                                 ${c.initiative}
                             </div>
                             <div class="flex flex-col items-start justify-start flex-1 min-w-0 leading-none">
-                                <h3 class="font-bold text-lg leading-none truncate mb-1 ${c.type === 'monster' ? 'text-red-400' : ''}">${c.name}</h3>
+                            <h3 class="
+                                font-bold
+                                leading-none
+                                truncate
+                                mb-1
+                                ${c.type === 'monster' ? 'text-red-400' : ''}
+                                ${c.name.length <= 10
+                                    ? 'text-lg'
+                                    : c.name.length <= 18
+                                        ? 'text-base'
+                                        : c.name.length <= 28
+                                            ? 'text-sm'
+                                            : 'text-xs'}
+                            ">
+                                ${c.name}
+                            </h3>
                         <p class="text-slate-300
                                 text-sm
                                 font-semibold
@@ -1025,16 +1070,15 @@ document.getElementById('conditionInfoModal').style.display =
                             </div>
                         </div>
                         <div class="flex items-start gap-2 shrink-0 self-start">
-                            <div class="status-container
-                                        grid
-                                        grid-cols-3
-                                        gap-1
-                                        justify-items-center
-                                        content-start
-                                        w-[72px]
-                                        min-h-[24px]
-                                        text-lg
-                                        shrink-0">
+                                        <div class="
+                                            status-container
+                                            flex
+                                            flex-wrap
+                                            justify-end
+                                            gap-1
+                                            w-[52px]
+                                            shrink-0
+                                        ">
 
                                 ${statusHtml}
 

@@ -384,3 +384,8 @@ INVENTÁRIO
 
     margin-bottom: 4px;
 }
+
+.combat-name{
+    font-size: clamp(0.85rem, 2vw, 1.1rem);
+    max-width: 100%;
+}

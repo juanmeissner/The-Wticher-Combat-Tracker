@@ -126,14 +126,7 @@ function setInventoryFilter(category) {
         .filter(
             item => item.category === currentInventoryFilter
         )
-        .sort((a, b) => {
-
-            // Coroa sempre primeiro
-            if (a.id === 'coroa') return -1;
-            if (b.id === 'coroa') return 1;
-
-            return 0;
-        });
+        .sort(sortInventoryItems);
 
     if (filteredItems.length > 0) {
 
@@ -352,14 +345,7 @@ function renderInventory() {
     .filter(
         item => item.category === currentInventoryFilter
     )
-    .sort((a, b) => {
-
-        // Coroa sempre primeiro
-        if (a.id === 'coroa') return -1;
-        if (b.id === 'coroa') return 1;
-
-        return 0;
-    });
+    .sort(sortInventoryItems);
 
     if (filteredInventory.length === 0) {
 
@@ -611,13 +597,7 @@ function renderInventoryItemsModal() {
             return sameCategory && matchesSearch;
         })
 
-        .sort((a, b) => {
-
-            if (a.id === 'coroa') return -1;
-            if (b.id === 'coroa') return 1;
-
-            return 0;
-        });
+        .sort(sortInventoryItems);
 
         
 
@@ -985,4 +965,25 @@ function endInventoryDecreaseHold(event) {
         inventoryTouchUsed = false;
 
     }, 50);
+}
+
+function sortInventoryItems(a, b) {
+
+    // 👑 Coroa sempre no topo
+    if (a.id === 'coroa') return -1;
+    if (b.id === 'coroa') return 1;
+
+    // quantidade da coroa usa moneyValue
+    const quantityA =
+        a.id === 'coroa'
+            ? (a.moneyValue || 0)
+            : (a.quantity || 0);
+
+    const quantityB =
+        b.id === 'coroa'
+            ? (b.moneyValue || 0)
+            : (b.quantity || 0);
+
+    // maior quantidade primeiro
+    return quantityB - quantityA;
 }
