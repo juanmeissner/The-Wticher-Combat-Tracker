@@ -1,7 +1,13 @@
 function openMonsterChoiceModal() {
 
-    document.getElementById('monsterChoiceModal').style.display =
-        'flex';
+    const modal =
+        document.getElementById(
+            'monsterChoiceModal'
+        );
+
+    modal.style.display = 'flex';
+
+    resetModalScroll('monsterChoiceModal');
 }
 
 // Renderiza emoji OU imagem automaticamente
@@ -73,9 +79,14 @@ function openPresetMonsterModal() {
 
     closeMonsterChoiceModal();
 
-    document.getElementById(
-        'presetMonsterModal'
-    ).style.display = 'flex';
+    const modal =
+        document.getElementById(
+            'presetMonsterModal'
+        );
+
+    modal.style.display = 'flex';
+
+    resetModalScroll('presetMonsterModal');
 
     document.getElementById(
         'monsterSearchInput'
@@ -589,7 +600,7 @@ function showMonsterDetails(monsterId, fromCombat = false) {
                                 p-2
                                 rounded-lg">
 
-                        🎯 ${skill}
+                        🔶 ${skill}
 
                     </div>
 
@@ -707,6 +718,8 @@ function showMonsterDetails(monsterId, fromCombat = false) {
     document.getElementById(
         'monsterDetailsModal'
     ).style.display = 'flex';
+
+    resetModalScroll('monsterDetailsModal');
 }
 
 function spawnPresetMonster(monsterId) {
@@ -773,4 +786,25 @@ function spawnPresetMonster(monsterId) {
     renderList(true);
 
     closePresetMonsterModal();
+}
+
+function resetModalScroll(modalId) {
+
+    const modal =
+        document.getElementById(modalId);
+
+    if (!modal) return;
+
+    modal.scrollTop = 0;
+
+    // procura conteúdo interno scrollável
+    const scrollables =
+        modal.querySelectorAll(
+            '.overflow-y-auto'
+        );
+
+    scrollables.forEach(el => {
+
+        el.scrollTop = 0;
+    });
 }
