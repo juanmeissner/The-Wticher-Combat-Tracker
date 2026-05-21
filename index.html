@@ -206,6 +206,12 @@
          // INICIALIZAÇÃO E DELEGAÇÃO DE EVENTOS
         window.onload = () => {
 
+            monsterCounter =
+            parseInt(localStorage.getItem('dnd_monsterCounter')) || 1;
+
+            playerCounter =
+            parseInt(localStorage.getItem('dnd_playerCounter')) || 1;
+
             loadInventory();
 
             renderInventory();
@@ -228,7 +234,7 @@
                         delete c.statusSpiral;
                     }
                 });
-                playerCounter = pCount + 1;
+                
                 if (lastP) 
                 lastPlayerData = {
                 hp: lastP.hpMax,
@@ -720,6 +726,8 @@ document.getElementById('conditionInfoModal').style.display =
         // =========================================
 
         localStorage.removeItem('dnd_players');
+        localStorage.removeItem('dnd_monsterCounter');
+        localStorage.removeItem('dnd_playerCounter');
 
         // =========================================
         // RESET TURNOS
@@ -735,7 +743,7 @@ document.getElementById('conditionInfoModal').style.display =
         // RESET CONTADORES
         // =========================================
 
-        monsterCounter = 1;
+        
         playerCounter = 1;
 
         // =========================================
@@ -1600,6 +1608,16 @@ if (index !== -1) {
         localStorage.setItem(
             'dnd_players',
             JSON.stringify(combatants)
+        );
+
+        localStorage.setItem(
+            'dnd_monsterCounter',
+            monsterCounter
+        );
+
+        localStorage.setItem(
+            'dnd_playerCounter',
+            playerCounter
         );
         }
 
