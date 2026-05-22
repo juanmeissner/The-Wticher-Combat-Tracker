@@ -685,20 +685,6 @@ const predefinedItems = [
     },
 
     {
-        id: 'podeprata',
-        name: 'Pó de Prata',
-        icon: 'https://static.divine-pride.net/images/items/item/22706.png',
-        category: 'usable',
-        goldValue: 0,
-        description: 'Bloqueia habilidades mágicas de inimigos (Elementais, Magos, Bruxas Sepulcrais) e fecha portais.',
-        recipe: [
-            'Prata',
-            'Pólvora',
-            'Pó de Dimerítio'
-        ]
-    },
-
-    {
         id: 'bafodedragao',
         name: 'Bafo de Dragão',
         icon: 'https://static.divine-pride.net/images/items/item/22702.png',
@@ -757,15 +743,15 @@ const predefinedItems = [
         name: 'Flecha de Ferro',
         icon: 'https://static.divine-pride.net/images/items/item/1750.png',
         category: 'equipment',
-        goldValue: 0.2,
+        goldValue: 5,
         type: 'weapon',
         weaponType: 'Flechas',
         damage: '0',
         bonus: ' ',
         effect: ' ',
-        description: 'Um Kit com 5 Flechas custa 1 Coroa',
+        description: 'Um Kit com 10 Flechas custa 1 Coroa',
         recipe: [
-            '',
+            '1x Ferro cria 10 Flechas',
             '',
             ''
         ]
@@ -776,15 +762,15 @@ const predefinedItems = [
         name: 'Flecha de Aço',
         icon: 'https://static.divine-pride.net/images/items/item/1753.png',
         category: 'equipment',
-        goldValue: 0.5,
+        goldValue: 30,
         type: 'weapon',
         weaponType: 'Flechas',
         damage: '1d6 de Dano Adicional',
         bonus: ' ',
         effect: ' ',
-        description: '2 Flechas por 1 Coroa.',
+        description: '10 Flechas por 30 Coroa.',
         recipe: [
-            '',
+            '1x Aço cria 10 Flechas',
             '',
             ''
         ]
@@ -795,15 +781,15 @@ const predefinedItems = [
         name: 'Flecha de Prata',
         icon: 'https://static.divine-pride.net/images/items/item/1751.png',
         category: 'equipment',
-        goldValue: 5,
+        goldValue: 60,
         type: 'weapon',
         weaponType: 'Flechas',
         damage: 'Dano de Prata',
         bonus: ' ',
         effect: 'Dano de Prata',
-        description: '10 Flechas por 50 Coroas.',
+        description: '10 Flechas por 60 Coroas.',
         recipe: [
-            '',
+            '1x Prata cria 10 Flechas',
             '',
             ''
         ]
@@ -833,7 +819,7 @@ const predefinedItems = [
         name: 'Espada de Prata de Bruxo',
         icon: 'https://static.divine-pride.net/images/items/item/1123.png',
         category: 'equipment',
-        goldValue: 800,
+        goldValue: 2300,
         type: 'weapon',
         weaponType: 'Esgrima',
         damage: '1d6',
@@ -841,7 +827,7 @@ const predefinedItems = [
         effect: '3d6 Dano de Prata',
         description: 'Espada de Duas Mãos',
         recipe: [
-            '',
+            '20x Prata',
             '',
             ''
         ]
@@ -860,7 +846,7 @@ const predefinedItems = [
         effect: ' ',
         description: 'Espada de Duas Mãos',
         recipe: [
-            '',
+            '5x Ferro ',
             '',
             ''
         ]
@@ -879,7 +865,7 @@ const predefinedItems = [
         effect: ' ',
         description: 'Espada de Uma Mão',
         recipe: [
-            '',
+            '10x Ferro',
             '',
             ''
         ]
@@ -898,7 +884,7 @@ const predefinedItems = [
         effect: ' ',
         description: 'Espada de Duas Mãos',
         recipe: [
-            '',
+            '13x Ferro',
             '',
             ''
         ]
@@ -917,7 +903,7 @@ const predefinedItems = [
         effect: ' ',
         description: 'Espada de Uma Mão',
         recipe: [
-            '',
+            '14x Ferro',
             '',
             ''
         ]
@@ -936,7 +922,7 @@ const predefinedItems = [
         effect: ' ',
         description: 'Espada de Uma Mão',
         recipe: [
-            '',
+            '17x Aço',
             '',
             ''
         ]
@@ -955,7 +941,7 @@ const predefinedItems = [
         effect: ' ',
         description: 'Espada de Uma Mão',
         recipe: [
-            '',
+            '5x Aço Negro',
             '',
             ''
         ]
@@ -974,7 +960,7 @@ const predefinedItems = [
         effect: 'Sangramento 25%',
         description: 'Espada de Uma Mão',
         recipe: [
-            '',
+            '6x Aço Negro',
             '',
             ''
         ]
@@ -993,7 +979,7 @@ const predefinedItems = [
         effect: 'Balanceada',
         description: 'Espada de Duas Mãos',
         recipe: [
-            '',
+            '7x Aço Negro',
             '',
             ''
         ]
@@ -1012,7 +998,7 @@ const predefinedItems = [
         effect: 'Sangramento 50%',
         description: 'Espada de Duas Mãos',
         recipe: [
-            '',
+            '8x Aço Negro',
             '',
             ''
         ]
@@ -1031,7 +1017,7 @@ const predefinedItems = [
         effect: '',
         description: 'Adaga',
         recipe: [
-            '',
+            '1x Ferro',
             '',
             ''
         ]
@@ -1050,7 +1036,7 @@ const predefinedItems = [
         effect: 'Porte Velado',
         description: 'Adaga',
         recipe: [
-            '',
+            '4x Aço',
             '',
             ''
         ]
@@ -1069,7 +1055,7 @@ const predefinedItems = [
         effect: 'Sangramento 25%',
         description: 'Adaga',
         recipe: [
-            '',
+            '2x Aço Negro',
             '',
             ''
         ]
@@ -1088,7 +1074,7 @@ const predefinedItems = [
         effect: 'Sangramento 25% / Perfura 4 de Armadura',
         description: 'Adaga',
         recipe: [
-            '',
+            '3x Aço Negro',
             '',
             ''
         ]
@@ -1107,7 +1093,7 @@ const predefinedItems = [
         effect: '',
         description: 'Machado de Uma Mão',
         recipe: [
-            '',
+            '13x Ferro',
             '',
             ''
         ]
@@ -1126,7 +1112,7 @@ const predefinedItems = [
         effect: '',
         description: 'Machado de Uma Mão',
         recipe: [
-            '',
+            '15x Aço',
             '',
             ''
         ]
@@ -1145,7 +1131,7 @@ const predefinedItems = [
         effect: 'Ablativa / Sangramento 25%',
         description: 'Machado de Duas Mãos',
         recipe: [
-            '',
+            '7x Aço Negro',
             '',
             ''
         ]
@@ -1164,7 +1150,7 @@ const predefinedItems = [
         effect: 'Adiciona a Soco',
         description: 'Soqueira',
         recipe: [
-            '',
+            '1x Ferro',
             '',
             ''
         ]
@@ -1183,7 +1169,7 @@ const predefinedItems = [
         effect: '',
         description: 'Maça de Uma Mão',
         recipe: [
-            '',
+            '13x Aço',
             '',
             ''
         ]
@@ -1202,7 +1188,7 @@ const predefinedItems = [
         effect: 'Atordoamento 25% / Meteorito',
         description: 'Martelo de Duas Mãos',
         recipe: [
-            '',
+            '9x Aço Negro',
             '',
             ''
         ]
@@ -1221,7 +1207,7 @@ const predefinedItems = [
         effect: '',
         description: 'Lança de Duas Mãos',
         recipe: [
-            '',
+            '15x Ferro',
             '',
             ''
         ]
@@ -1240,7 +1226,7 @@ const predefinedItems = [
         effect: '',
         description: 'Lança de Duas Mãos',
         recipe: [
-            '',
+            '12x Aço',
             '',
             ''
         ]
@@ -1259,7 +1245,7 @@ const predefinedItems = [
         effect: '',
         description: 'Lança de Duas Mãos',
         recipe: [
-            '',
+            '6x Aço Negro',
             '',
             ''
         ]
@@ -1278,7 +1264,7 @@ const predefinedItems = [
         effect: 'Foco 1',
         description: 'Cajado de Duas Mãos',
         recipe: [
-            '',
+            '12x Ferro',
             '',
             ''
         ]
@@ -1316,7 +1302,7 @@ const predefinedItems = [
         effect: 'Foco 2 / Atordoamento 50%',
         description: 'Cajado de Duas Mãos',
         recipe: [
-            '',
+            '9x Ferro Negro',
             '',
             ''
         ]
@@ -1327,7 +1313,7 @@ const predefinedItems = [
         name: 'Cajado de Cristal',
         icon: 'https://static.divine-pride.net/images/items/item/1472.png',
         category: 'equipment',
-        goldValue: 835,
+        goldValue: 2335,
         type: 'weapon',
         weaponType: 'Cajado/Lança',
         damage: '2d6+2',
@@ -1335,8 +1321,8 @@ const predefinedItems = [
         effect: 'Foco 3 / Foco Maior',
         description: 'Cajado de Duas Mãos',
         recipe: [
-            '',
-            '',
+            '7x Aço Negro',
+            '1x Cristal',
             ''
         ]
     },
@@ -2831,105 +2817,6 @@ const predefinedItems = [
         recipe: []
     },
     
-    {
-        id: 'ferronegro',
-        name: 'Ferro Negro',
-        icon: 'https://static.divine-pride.net/images/items/item/7075.png',
-        category: 'misc',
-        goldValue: 50,
-        description: 'Minério',
-        recipe: []
-    },
-    
-    {
-        id: 'aconegro',
-        name: 'Aço Negro',
-        icon: 'https://static.divine-pride.net/images/items/item/6747.png',
-        category: 'misc',
-        goldValue: 100,
-        description: 'Minério',
-        recipe: []
-    },
-    
-    {
-        id: 'dimeritio',
-        name: 'Dimerítio',
-        icon: 'https://static.divine-pride.net/images/items/item/7095.png',
-        category: 'misc',
-        goldValue: 50,
-        description: 'Minério',
-        recipe: []
-    },
-    
-    {
-        id: 'pedrapreciosa',
-        name: 'Pedra Preciosa',
-        icon: 'https://static.divine-pride.net/images/items/item/7974.png',
-        category: 'misc',
-        goldValue: 500,
-        description: 'Minério',
-        recipe: []
-    },
-    
-    {
-        id: 'minerioincandescente',
-        name: 'Minério Incandescente',
-        icon: 'https://static.divine-pride.net/images/items/item/25272.png',
-        category: 'misc',
-        goldValue: 40,
-        description: 'Minério',
-        recipe: []
-    },
-    
-    {
-        id: 'ouro',
-        name: 'Ouro',
-        icon: 'https://static.divine-pride.net/images/items/item/969.png',
-        category: 'misc',
-        goldValue: 100,
-        description: 'Minério',
-        recipe: []
-    },
-    
-    {
-        id: 'ferro',
-        name: 'Ferro',
-        icon: 'https://static.divine-pride.net/images/items/item/998.png',
-        category: 'misc',
-        goldValue: 5,
-        description: 'Minério',
-        recipe: []
-    },
-    
-    {
-        id: 'dimeritiodemahakam',
-        name: 'Dimerítio de Mahakam',
-        icon: 'https://static.divine-pride.net/images/items/item/7075.png',
-        category: 'misc',
-        goldValue: 60,
-        description: 'Minério',
-        recipe: []
-    },
-    
-    {
-        id: 'acodemahakam',
-        name: 'Aço de Mahakam',
-        icon: 'https://static.divine-pride.net/images/items/item/1002.png',
-        category: 'misc',
-        goldValue: 20,
-        description: 'Minério',
-        recipe: []
-    },
-    
-    {
-        id: 'meteorito',
-        name: 'Meteorito',
-        icon: 'https://static.divine-pride.net/images/items/item/7232.png',
-        category: 'misc',
-        goldValue: 60,
-        description: 'Minério',
-        recipe: []
-    },
     
     {
         id: 'argiladerio',
@@ -2942,26 +2829,6 @@ const predefinedItems = [
     },
     
     {
-        id: 'prata',
-        name: 'Prata',
-        icon: 'https://static.divine-pride.net/images/items/item/7229.png',
-        category: 'misc',
-        goldValue: 30,
-        description: 'Minério',
-        recipe: []
-    },
-    
-    {
-        id: 'aco',
-        name: 'Aço',
-        icon: 'https://static.divine-pride.net/images/items/item/999.png',
-        category: 'misc',
-        goldValue: 8,
-        description: 'Minério',
-        recipe: []
-    },
-    
-    {
         id: 'pedra',
         name: 'Pedra',
         icon: 'https://static.divine-pride.net/images/items/item/7049.png',
@@ -2970,17 +2837,7 @@ const predefinedItems = [
         description: 'Natureza',
         recipe: []
     },
-    
-    {
-        id: 'acodetretogor',
-        name: 'Aço de Tretogor',
-        icon: 'https://static.divine-pride.net/images/items/item/7524.png',
-        category: 'misc',
-        goldValue: 15,
-        description: 'Minério',
-        recipe: []
-    },
-    
+        
     {
         id: 'pozerrikano',
         name: 'Pó Zerrikano',
@@ -2996,7 +2853,7 @@ const predefinedItems = [
         name: 'Linho de Tecido',
         icon: 'https://static.divine-pride.net/images/items/item/1059.png',
         category: 'misc',
-        goldValue: 2,
+        goldValue: 3,
         description: 'Tecido',
         recipe: []
     },
@@ -3016,7 +2873,7 @@ const predefinedItems = [
         name: 'Linho',
         icon: 'https://static.divine-pride.net/images/items/item/7166.png',
         category: 'misc',
-        goldValue: 2,
+        goldValue: 4,
         description: 'Tecido',
         recipe: []
     },
@@ -3026,7 +2883,7 @@ const predefinedItems = [
         name: 'Linha',
         icon: 'https://static.divine-pride.net/images/items/item/7285.png',
         category: 'misc',
-        goldValue: 2,
+        goldValue: 1,
         description: 'Tecido',
         recipe: []
     },
@@ -3439,6 +3296,222 @@ const predefinedItems = [
         goldValue: 10,
         description: 'Mineral / Alquímico',
         recipe: []
+    },
+
+    {
+        id: 'carvao',
+        name: 'Carvão',
+        icon: 'https://static.divine-pride.net/images/items/item/1003.png',
+        category: 'misc',
+        goldValue: 1,
+        description: 'Ingrediente utilizado muito em forjas',
+        recipe: []
+    },
+
+    {
+        id: 'carvaonegro',
+        name: 'Carvão Negro',
+        icon: 'https://static.divine-pride.net/images/items/item/6251.png',
+        category: 'misc',
+        goldValue: 10,
+        description: 'Ingrediente utilizado muito em forjas',
+        recipe: []
+    },
+
+    // =====================================
+    // MINÉRIOS
+    // =====================================
+
+    {
+        id: 'mineriodeferro',
+        name: 'Minério de Ferro',
+        icon: 'https://static.divine-pride.net/images/items/item/1002.png',
+        category: 'misc',
+        goldValue: 10,
+        description: 'Minério',
+        recipe: []
+    },
+
+    {
+        id: 'ferro',
+        name: 'Ferro',
+        icon: 'https://static.divine-pride.net/images/items/item/998.png',
+        category: 'misc',
+        goldValue: 15,
+        description: 'Minério',
+        recipe: [
+            '1x Minério de Ferro'
+        ]
+    },
+
+    {
+        id: 'aco',
+        name: 'Aço',
+        icon: 'https://static.divine-pride.net/images/items/item/999.png',
+        category: 'misc',
+        goldValue: 25,
+        description: 'Minério',
+        recipe: [
+            '1x Minério de Ferro',
+            '1x Carvão'
+        ]
+    },
+
+    {
+        id: 'mineriodeferro',
+        name: 'Minério de Ferro Negro',
+        icon: 'https://static.divine-pride.net/images/items/item/757.png',
+        category: 'misc',
+        goldValue: 25,
+        description: 'Minério',
+        recipe: []
+    },
+
+    {
+        id: 'ferronegro',
+        name: 'Ferro Negro',
+        icon: 'https://static.divine-pride.net/images/items/item/7075.png',
+        category: 'misc',
+        goldValue: 50,
+        description: 'Minério',
+        recipe: [
+            '1x Minério de Ferro Negro'
+        ]
+    },
+    
+    {
+        id: 'aconegro',
+        name: 'Aço Negro',
+        icon: 'https://static.divine-pride.net/images/items/item/6747.png',
+        category: 'misc',
+        goldValue: 100,
+        description: 'Minério',
+        recipe: [
+            '1x Minério de Ferro Negro',
+            '1x Carvão'
+        ]
+    },
+
+    {
+        id: 'acodemahakam',
+        name: 'Aço de Mahakam',
+        icon: 'https://static.divine-pride.net/images/items/item/1002.png',
+        category: 'misc',
+        goldValue: 30,
+        description: 'Minério',
+        recipe: []
+    },
+
+    {
+        id: 'acodetretogor',
+        name: 'Aço de Tretogor',
+        icon: 'https://static.divine-pride.net/images/items/item/7524.png',
+        category: 'misc',
+        goldValue: 35,
+        description: 'Minério',
+        recipe: []
+    },
+    
+    {
+        id: 'dimeritio',
+        name: 'Dimerítio',
+        icon: 'https://static.divine-pride.net/images/items/item/7095.png',
+        category: 'misc',
+        goldValue: 100,
+        description: 'Minério',
+        recipe: []
+    },
+
+    {
+        id: 'dimeritiodemahakam',
+        name: 'Dimerítio de Mahakam',
+        icon: 'https://static.divine-pride.net/images/items/item/7075.png',
+        category: 'misc',
+        goldValue: 100,
+        description: 'Minério',
+        recipe: []
+    },
+    
+    {
+        id: 'pedrapreciosa',
+        name: 'Pedra Preciosa',
+        icon: 'https://static.divine-pride.net/images/items/item/7974.png',
+        category: 'misc',
+        goldValue: 1000,
+        description: 'Minério',
+        recipe: []
+    },
+
+    {
+        id: 'cristal',
+        name: 'Cristal',
+        icon: 'https://static.divine-pride.net/images/items/item/6623.png',
+        category: 'misc',
+        goldValue: 600,
+        description: 'Minério',
+        recipe: []
+    },
+    
+    {
+        id: 'minerioincandescente',
+        name: 'Minério Incandescente',
+        icon: 'https://static.divine-pride.net/images/items/item/25272.png',
+        category: 'misc',
+        goldValue: 40,
+        description: 'Minério',
+        recipe: []
+    },
+    
+    {
+        id: 'ouro',
+        name: 'Ouro',
+        icon: 'https://static.divine-pride.net/images/items/item/969.png',
+        category: 'misc',
+        goldValue: 500,
+        description: 'Minério',
+        recipe: []
+    },
+    
+    {
+        id: 'meteorito',
+        name: 'Meteorito',
+        icon: 'https://static.divine-pride.net/images/items/item/7232.png',
+        category: 'misc',
+        goldValue: 60,
+        description: 'Minério',
+        recipe: []
+    },
+
+    {
+        id: 'mineriodeprata',
+        name: 'Minério de Prata',
+        icon: 'https://static.divine-pride.net/images/items/item/1002.png',
+        category: 'misc',
+        goldValue: 30,
+        description: '1x Minério de Prata cria 1x Prata',
+        recipe: []
+    },
+
+    {
+        id: 'prata',
+        name: 'Prata',
+        icon: 'https://static.divine-pride.net/images/items/item/7229.png',
+        category: 'misc',
+        goldValue: 60,
+        description: 'Minério',
+        recipe: []
+    },
+
+    {
+        id: 'podeprata',
+        name: 'Pó de Prata',
+        icon: 'https://static.divine-pride.net/images/items/item/22706.png',
+        category: 'misc',
+        goldValue: 10,
+        description: 'Pó de prata que pode ser utilizado para diversas finalidades alquimicas.',
+        recipe: [
+            '1x Prata cria 6x Pó de Prata.'
+        ]
     },
 
     {
