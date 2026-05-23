@@ -175,7 +175,7 @@ APP SLIDE
 
     display: flex;
 
-    width: 200vw;
+    width: 300vw;
 
     height: 100vh;
 
@@ -183,7 +183,8 @@ APP SLIDE
 }
 
 #combatScreen,
-#inventoryScreen {
+#inventoryScreen,
+#skillsScreen {
 
     width: 100vw;
 
@@ -388,4 +389,128 @@ INVENTÁRIO
 .combat-name{
     font-size: clamp(0.85rem, 2vw, 1.1rem);
     max-width: 100%;
+}
+
+/* =========================================
+HABILIDADES
+========================================= */
+
+#abilitiesScreen {
+
+    background: #020617;
+
+    color: white;
+
+    width: 100vw;
+
+    height: 100vh;
+
+    flex-shrink: 0;
+
+    overflow-y: auto;
+}
+
+.abilities-header {
+
+    position: sticky;
+
+    top: 0;
+
+    z-index: 20;
+
+    background: #0f172a;
+
+    padding: 16px;
+
+    border-bottom: 1px solid #1e293b;
+}
+
+.abilities-actions {
+
+    display: flex;
+
+    gap: 12px;
+
+    margin-top: 14px;
+}
+
+.ability-action-btn {
+
+    flex: 1;
+
+    padding: 14px;
+
+    border-radius: 16px;
+
+    font-weight: bold;
+
+    color: white;
+}
+
+.abilities-list {
+
+    padding: 16px;
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 12px;
+}
+
+.ability-card {
+
+    background: rgba(15,23,42,0.8);
+
+    border: 1px solid #334155;
+
+    border-radius: 18px;
+
+    padding: 16px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    transition: all 0.2s;
+}
+
+.ability-card-selected {
+
+    border: 2px solid #38bdf8;
+}
+
+.ability-icon {
+
+    width: 42px;
+
+    height: 42px;
+
+    object-fit: contain;
+
+    font-size: 2rem;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+}
+
+.ability-card-active {
+
+    border: 2px solid #22c55e;
+
+    box-shadow:
+        0 0 12px rgba(34, 197, 94, 0.6),
+        0 0 25px rgba(34, 197, 94, 0.3);
+
+    background:
+        linear-gradient(
+            135deg,
+            rgba(34, 197, 94, 0.12),
+            rgba(15, 23, 42, 1)
+        );
 }

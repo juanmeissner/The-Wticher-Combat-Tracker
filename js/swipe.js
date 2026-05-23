@@ -5,6 +5,14 @@
 let touchStartX = 0;
 let touchEndX = 0;
 
+let currentScreenIndex = 0;
+
+const TOTAL_SCREENS = 3;
+
+// =========================================
+// TOUCH
+// =========================================
+
 document.addEventListener('touchstart', e => {
 
     touchStartX =
@@ -19,57 +27,21 @@ document.addEventListener('touchend', e => {
     handleSwipe();
 });
 
+// =========================================
+// MODAIS
+// =========================================
+
 function isAnyModalOpen() {
 
-    // =====================================
-    // INVENTÁRIO
-    // =====================================
-
-    const inventoryModalOpen =
-        !document
-            .getElementById('inventoryModal')
-            ?.classList.contains('hidden');
-
-    const itemDetailsModalOpen =
-        !document
-            .getElementById('itemDetailsModal')
-            ?.classList.contains('hidden');
-
-    // =====================================
-    // MONSTROS / COMBATE
-    // =====================================
-
-    const monsterChoiceOpen =
-        document
-            .getElementById('monsterChoiceModal')
-            ?.style.display === 'flex';
-
-    const monsterDetailsOpen =
-        document
-            .getElementById('monsterDetailsModal')
-            ?.style.display === 'flex';
-
-    const presetMonsterOpen =
-        document
-            .getElementById('presetMonsterModal')
-            ?.style.display === 'flex';
-
-    // =====================================
-    // RESULTADO
-    // =====================================
-
-    return (
-        inventoryModalOpen ||
-        itemDetailsModalOpen ||
-        monsterChoiceOpen ||
-        monsterDetailsOpen ||
-        presetMonsterOpen
-    );
+    return document.querySelector('.modal-open');
 }
+
+// =========================================
+// SWIPE
+// =========================================
 
 function handleSwipe() {
 
-    // BLOQUEIA SWIPE COM MODAL ABERTO
     if (isAnyModalOpen()) return;
 
     const distance =
@@ -78,26 +50,43 @@ function handleSwipe() {
     // esquerda
     if (distance > 80) {
 
-        showInventoryScreen();
+        nextScreen();
     }
 
     // direita
     if (distance < -80) {
 
-        showCombatScreen();
+        previousScreen();
     }
 }
 
-function showInventoryScreen() {
+// =========================================
+// NAVEGAÇÃO
+// =========================================
 
-    document.getElementById('appWrapper')
-        .style.transform =
-            'translateX(-100vw)';
+function nextScreen() {
+
+    if (currentScreenIndex >= TOTAL_SCREENS - 1)
+        return;
+
+    currentScreenIndex++;
+
+    updateScreenPosition();
 }
 
-function showCombatScreen() {
+function previousScreen() {
+
+    if (currentScreenIndex <= 0)
+        return;
+
+    currentScreenIndex--;
+
+    updateScreenPosition();
+}
+
+function updateScreenPosition() {
 
     document.getElementById('appWrapper')
         .style.transform =
-            'translateX(0)';
+            `translateX(-${currentScreenIndex * 100}vw)`;
 }

@@ -150,3 +150,4 @@ function editCombatant(event, id) {
     
     document.getElementById('entityModal').style.display = 'flex';
 }
+
