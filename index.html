@@ -594,12 +594,14 @@ ITEM DETAILS MODAL
             bg-black/70
             flex items-center justify-center">
 
-    <div class="bg-slate-900
-                w-[90%]
-                max-w-md
-                rounded-2xl
-                p-5
-                text-white">
+            <div class="bg-slate-900
+            w-full
+            max-w-md
+            max-h-[90vh]
+            rounded-2xl
+            p-5
+            text-white
+            overflow-y-auto">
 
         <div id="itemDetailsContent">
         </div>
@@ -1067,6 +1069,27 @@ ABILITIES MODAL
 
         </div>
 
+        <div class="mb-4">
+
+            <input
+                id="abilitiesSearchInput"
+                type="text"
+                placeholder="Buscar habilidade..."
+                oninput="renderAbilitiesModal()"
+        
+                class="w-full
+                       bg-slate-800
+                       border
+                       border-slate-700
+                       rounded-xl
+                       px-4
+                       py-3
+                       text-white
+                       outline-none
+                       focus:border-cyan-500">
+        
+        </div>
+
         <div id="abilitiesModalList"
 
              class="flex-1
@@ -1096,12 +1119,14 @@ ABILITY DETAILS MODAL
             justify-center
             p-4">
 
-    <div class="bg-slate-900
-                w-full
-                max-w-md
-                rounded-2xl
-                p-5
-                text-white">
+            <div class="bg-slate-900
+            w-full
+            max-w-md
+            max-h-[90vh]
+            rounded-2xl
+            p-5
+            text-white
+            overflow-y-auto">
 
         <div id="abilityDetailsContent">
         </div>

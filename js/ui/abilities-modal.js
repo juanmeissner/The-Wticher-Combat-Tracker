@@ -29,9 +29,45 @@ function renderAbilitiesModal() {
             'abilitiesModalList'
         );
 
+    const searchInput =
+        document.getElementById(
+            'abilitiesSearchInput'
+        );
+
+    const search =
+        searchInput
+            ? searchInput.value
+                .toLowerCase()
+                .trim()
+            : '';
+
     container.innerHTML = '';
 
-    predefinedAbilities.forEach(ability => {
+    const filteredAbilities =
+        predefinedAbilities.filter(
+            ability =>
+                ability.name
+                    .toLowerCase()
+                    .includes(search)
+        );
+
+    if (filteredAbilities.length === 0) {
+
+        container.innerHTML = `
+
+            <div class="text-center
+                        text-slate-500
+                        py-6">
+
+                Nenhuma habilidade encontrada
+
+            </div>
+        `;
+
+        return;
+    }
+
+    filteredAbilities.forEach(ability => {
 
         container.innerHTML += `
 
@@ -77,9 +113,7 @@ function renderAbilitiesModal() {
     
             <div class="text-cyan-400 font-bold">
     
-                ${getModifiedAbilityCost(
-                    ability.cost
-                )}
+                ${ability.cost}
     
             </div>
     
