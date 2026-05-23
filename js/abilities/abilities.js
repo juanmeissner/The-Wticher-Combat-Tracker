@@ -221,11 +221,15 @@ function formatAbilityDescription(text) {
 
     return text
 
-        .replace(/\.\s/g, '.<br>')
+        .replace(/\.\s/g, '.<br><br>')
 
         .replace(/\!\s/g, '!<br><br>')
 
-        .replace(/\?\s/g, '?<br><br>');
+        .replace(/\?\s/g, '?<br><br>')
+        
+        .replace(/\:\s/g, ':<br>')
+        
+        .replace(/\)\s/g, ')<br>');
 }
 
 function renderAbilityInfo(label, value) {

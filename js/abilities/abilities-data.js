@@ -4907,5 +4907,358 @@ const predefinedAbilities = [
         unlockCost: '1',
         cost: '12'
     },
+    // =====================================
+    // REGRAS
+    // =====================================
+    {
+        id: 'regra_ataque_por_tras',
+    
+        name: 'Regra: Ataque por trás',
+    
+        icon: '🗡️',
+    
+        shortDescription:
+            'Ataques furtivos pelas costas.',
+    
+        description:
+            `Ao realizar um ataque por trás do inimigo ele deverá realizar um teste de percepção para poder reagir.
+    
+    ND 12: Armas Grandes.
+    ND 15: Adagas e Armas Pequenas.
+    ND 16: Longa Distância.`,
+    
+        type: 'Regras',
+    
+        profession: 'Regras',
+    
+        category: 'Ação Principal',
+    
+        duration: '',
+    
+        defense: '',
+    
+        damage: '',
+    
+        consumption: '',
+    
+        range: '',
+    
+        action: 'Principal',
+    
+        cost: '',
+    
+        unlockCost: 0
+    },
+    
+    {
+        id: 'regra_empurrar',
+    
+        name: 'Regra: Empurrar',
+    
+        icon: '🛡️',
+    
+        shortDescription:
+            'Empurra inimigos usando Brigar.',
+    
+        description:
+            `Faça um teste de Brigar contra a Tolerância do alvo.
+
+    Se você conseguir passar irá empurrar o alvo pela quantidade de quadrados igual ao seu nível de Brigar.
+
+    Decida no dado se o alvo irá cair no chão com 1d10.`,
+    
+        type: 'Regras',
+    
+        profession: 'Regras',
+    
+        category: 'Bonus',
+    
+        duration: '',
+    
+        defense: '',
+    
+        damage: '',
+    
+        consumption: '',
+    
+        range: '',
+    
+        action: 'Bônus',
+    
+        cost: '',
+    
+        unlockCost: 0
+    },
+    
+    {
+        id: 'regra_ataque_rapido_forte',
+    
+        name: 'Regra: Ataque Rápido/Forte',
+    
+        icon: '⚔️',
+    
+        shortDescription:
+            'Golpes rápidos ou devastadores.',
+    
+        description:
+            `Consome seu turno inteiro.
+    (Ação Principal + Ação Bonûs + 2 EST)
+    
+    Rápido:
+    Realiza dois golpes com sua arma, uma rolagem para cada golpe.
+    
+    Forte:
+    Rola um dado de dano que é multiplicado contra o alvo (Chance de ultrapassar a armadura) ou rola 2d20 e soma o valor do segundo dado caso o inimigo tente bloquear.`,
+    
+        type: 'Regras',
+    
+        profession: 'Regras',
+    
+        category: 'Ação Principal',
+    
+        duration: '',
+    
+        defense: '',
+    
+        damage: '',
+    
+        consumption: '2 EST',
+    
+        range: '',
+    
+        action: 'Principal',
+    
+        cost: '',
+    
+        unlockCost: 0
+    },
+    
+    {
+        id: 'regra_modo_defesa',
+    
+        name: 'Regra: Modo Defesa',
+    
+        icon: '🛡️',
+    
+        shortDescription:
+            'Foco total em defesa.',
+    
+        description:
+            `Consome seu turno inteiro para ficar em modo de defesa e rolar Esquivar ou Defender com vantagem.
+    
+    Você poderá realizar apenas ações referentes à sua esquiva ou defesa.`,
+    
+        type: 'Regras',
+    
+        profession: 'Regras',
+    
+        category: 'Turno Inteiro',
+    
+        duration: '',
+    
+        defense: '',
+    
+        damage: '',
+    
+        consumption: '',
+    
+        range: '',
+    
+        action: 'Turno Inteiro',
+    
+        cost: '',
+    
+        unlockCost: 0
+    },
+    
+    {
+        id: 'regra_erguer_escudo',
+    
+        name: 'Regra: Erguer Escudo',
+    
+        icon: '🛡️',
+    
+        shortDescription:
+            'Bloqueios fortalecidos.',
+    
+        description:
+            `Ergue seu escudo.
+    
+    Enquanto com escudo erguido poderá rolar Bloquear com vantagem, porém todo ataque realizado será com desvantagem.`,
+    
+        type: 'Regras',
+    
+        profession: 'Regras',
+    
+        category: 'Ação Bonus',
+    
+        duration: '',
+    
+        defense: '',
+    
+        damage: '',
+    
+        consumption: '',
+    
+        range: '',
+    
+        action: 'Bônus',
+    
+        cost: '',
+    
+        unlockCost: 0
+    },
+    
+    {
+        id: 'regra_correr',
+    
+        name: 'Regra: Correr',
+    
+        icon: '🏃',
+    
+        shortDescription:
+            'Move-se rapidamente.',
+    
+        description:
+            `Consome sua ação principal para correr.
+    
+    Correr permite você se mover o dobro do seu movimento total.`,
+    
+        type: 'Regras',
+    
+        profession: 'Regras',
+    
+        category: 'Ação Principal',
+    
+        duration: '',
+    
+        defense: '',
+    
+        damage: '',
+    
+        consumption: '',
+    
+        range: '',
+    
+        action: 'Principal',
+    
+        cost: '',
+    
+        unlockCost: 0
+    },
+    
+    {
+        id: 'regra_mirar',
+    
+        name: 'Regra: Mirar',
+    
+        icon: '🎯',
+    
+        shortDescription:
+            'Ataques direcionados.',
+    
+        description:
+            `Você poderá escolher mirar em uma área do inimigo ao atacar com penalidades no CD:
+    
+    Cabeça 3x Dano (Penalidade de Mira -8)
+    Torso 1x Dano (Penalidade de Mira -5)
+    Braços e Pernas 0,5x Dano (Penalidade de Mira -1)`,
+    
+        type: 'Regras',
+    
+        profession: 'Regras',
+    
+        category: 'Ação Principal',
+    
+        duration: '',
+    
+        defense: '',
+    
+        damage: '',
+    
+        consumption: '',
+    
+        range: '',
+    
+        action: 'Principal',
+    
+        cost: '',
+    
+        unlockCost: 0
+    },
+    
+    {
+        id: 'regra_feridas_criticas',
+    
+        name: 'Regra: Feridas Críticas',
+    
+        icon: '🩸',
+    
+        shortDescription:
+            'Críticos causam ferimentos.',
+    
+        description:
+            `Se sua jogada de dano tiver uma rolagem crítica você irá causar um ferimento crítico no alvo.`,
+    
+        type: 'Regras',
+    
+        profession: 'Regras',
+    
+        category: '',
+    
+        duration: '',
+    
+        defense: '',
+    
+        damage: '',
+    
+        consumption: '',
+    
+        range: '',
+    
+        action: '',
+    
+        cost: '',
+    
+        unlockCost: 0
+    },
+    
+    {
+        id: 'regra_escapar',
+    
+        name: 'Regra: Escapar',
+    
+        icon: '💨',
+    
+        shortDescription:
+            'Escapa de cercos inimigos.',
+    
+        description:
+            `Consome sua ação bônus para escapar dos inimigos que te cercam.
+    
+    Deve ser feita uma jogada de DES contra a DES dos inimigos.`,
+    
+        type: 'Regras',
+    
+        profession: 'Regras',
+    
+        category: 'Ação Principal',
+    
+        duration: '',
+    
+        defense: '',
+    
+        damage: '',
+    
+        consumption: '',
+    
+        range: '',
+    
+        action: 'Principal',
+    
+        cost: '',
+    
+        unlockCost: 0
+    },
 
 ];
