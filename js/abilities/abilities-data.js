@@ -2855,312 +2855,6 @@ const predefinedAbilities = [
         description:
             'Confunde a mente do alvo, fazendo-o questionar memórias e informações até conseguir resistir com um teste abaixo da própria INT.'
     },
-    
-    {
-        id: 'ritual_de_limpeza',
-    
-        name: 'Ritual de Limpeza',
-    
-        icon: '🕯️',
-    
-        profession: 'Ritual',
-    
-        category: 'Iniciante',
-    
-        type: 'Ritual',
-    
-        duration: 'Imediata',
-    
-        defense: 'Nenhuma',
-    
-        damage: '',
-    
-        cost: '3',
-    
-        range: 'Toque',
-    
-        action: '',
-    
-        unlockCost: 1,
-    
-        shortDescription:
-            'Purifica doenças e venenos.',
-    
-        description:
-            'Remove venenos ou doenças do alvo através de um teste de Criar Ritual. Álcool e drogas possuem ND 10, venenos ND 15 e doenças graves ND 18.'
-    },
-    
-    {
-        id: 'mensagem_magica',
-    
-        name: 'Mensagem Mágica',
-    
-        icon: '🕯️',
-    
-        profession: 'Ritual',
-    
-        category: 'Iniciante',
-    
-        type: 'Ritual',
-    
-        duration: 'Permanente',
-    
-        defense: 'Nenhuma',
-    
-        damage: '',
-    
-        cost: '3',
-    
-        range: 'Ilimitado',
-    
-        action: '',
-    
-        unlockCost: 1,
-    
-        shortDescription:
-            'Armazena mensagens mágicas.',
-    
-        description:
-            'Grava uma mensagem mágica em uma pedra preciosa ou vidro marcado com sigilo. Ao ativar o gatilho definido, uma ilusão do conjurador transmite a mensagem.'
-    },
-    
-    {
-        id: 'ritual_de_vida',
-    
-        name: 'Ritual de Vida',
-    
-        icon: '🕯️',
-    
-        profession: 'Ritual',
-    
-        category: 'Iniciante',
-    
-        type: 'Ritual',
-    
-        duration: 'Única',
-    
-        defense: 'Nenhuma',
-    
-        damage: '',
-    
-        cost: '5',
-    
-        range: 'Círculo',
-    
-        action: '',
-    
-        unlockCost: 1,
-    
-        shortDescription:
-            'Cria círculo regenerativo.',
-    
-        description:
-            'Cria um círculo mágico que concede regeneração de 3 Pontos de Vida por turno por até 10 rodadas enquanto o alvo permanecer dentro da área.'
-    },
-    
-    {
-        id: 'ritual_de_magia',
-    
-        name: 'Ritual de Magia',
-    
-        icon: '🕯️',
-    
-        profession: 'Ritual',
-    
-        category: 'Iniciante',
-    
-        type: 'Ritual',
-    
-        duration: 'Única',
-    
-        defense: 'Nenhuma',
-    
-        damage: '',
-    
-        cost: '3',
-    
-        range: 'Círculo',
-    
-        action: '',
-    
-        unlockCost: 1,
-    
-        shortDescription:
-            'Amplifica poder mágico.',
-    
-        description:
-            'Cria um círculo mágico que aumenta a tolerância mágica e concede bônus à perícia Criar Ritual por 5 horas.'
-    },
-    
-    {
-        id: 'hidromancia',
-    
-        name: 'Hidromancia',
-    
-        icon: '🕯️',
-    
-        profession: 'Ritual',
-    
-        category: 'Iniciante',
-    
-        type: 'Ritual',
-    
-        duration: 'Ativo (2 Vigor)',
-    
-        defense: 'Nenhuma',
-    
-        damage: '',
-    
-        cost: '5',
-    
-        range: 'Visual',
-    
-        action: '',
-    
-        unlockCost: 1,
-    
-        shortDescription:
-            'Observa eventos pela água.',
-    
-        description:
-            'Permite observar eventos do passado ou presente através de uma porção de água. O ND varia conforme o tempo observado.'
-    },
-    
-    {
-        id: 'piromancia',
-    
-        name: 'Piromancia',
-    
-        icon: '🕯️',
-    
-        profession: 'Ritual',
-    
-        category: 'Iniciante',
-    
-        type: 'Ritual',
-    
-        duration: 'Ativo (4 Vigor)',
-    
-        defense: 'Nenhuma',
-    
-        damage: '',
-    
-        cost: '5',
-    
-        range: 'Visual',
-    
-        action: '',
-    
-        unlockCost: 1,
-    
-        shortDescription:
-            'Observa eventos nas chamas.',
-    
-        description:
-            'Permite visualizar eventos do passado ou presente através do fogo. Eventos recentes são vistos com maior precisão.'
-    },
-    
-    {
-        id: 'jarro_de_feiticos',
-    
-        name: 'Jarro de Feitiços',
-    
-        icon: '🕯️',
-    
-        profession: 'Ritual',
-    
-        category: 'Iniciante',
-    
-        type: 'Ritual',
-    
-        duration: 'Imediata',
-    
-        defense: 'Nenhuma',
-    
-        damage: 'Efeito variável conforme feitiço',
-    
-        cost: '5',
-    
-        range: 'Objeto',
-    
-        action: '',
-    
-        unlockCost: 1,
-    
-        shortDescription:
-            'Armazena feitiços em recipientes.',
-    
-        description:
-            'Cria um vórtice mágico dentro de um jarro de argila. Quando quebrado, libera um feitiço aleatório previamente definido no ritual.'
-    },
-    
-    {
-        id: 'sessao_espirita',
-    
-        name: 'Sessão Espírita',
-    
-        icon: '🕯️',
-    
-        profession: 'Ritual',
-    
-        category: 'Iniciante',
-    
-        type: 'Ritual',
-    
-        duration: 'Permanente',
-    
-        defense: 'Nenhuma',
-    
-        damage: '',
-    
-        cost: '5',
-    
-        range: '20m',
-    
-        action: '',
-    
-        unlockCost: 1,
-    
-        shortDescription:
-            'Invoca espíritos dos mortos.',
-    
-        description:
-            'Permite contato com o espírito de uma pessoa morta, que surge como um espectro consciente capaz de falar sobre memórias, emoções e identidade.'
-    },
-    
-    {
-        id: 'telecomunicacao',
-    
-        name: 'Telecomunicação',
-    
-        icon: '🕯️',
-    
-        profession: 'Ritual',
-    
-        category: 'Iniciante',
-    
-        type: 'Ritual',
-    
-        duration: '1 hora',
-    
-        defense: 'Nenhuma',
-    
-        damage: '',
-    
-        cost: '3',
-    
-        range: 'Ilimitado',
-    
-        action: '',
-    
-        unlockCost: 1,
-    
-        shortDescription:
-            'Comunicação mágica à distância.',
-    
-        description:
-            'Permite comunicação entre duas pessoas utilizando Telecomunicadores, desde que estejam no mesmo continente.'
-    },
 
     {
         id: 'tecnica_de_eilhart',
@@ -3909,108 +3603,6 @@ const predefinedAbilities = [
         description:
             'Cria uma luz sagrada que obriga o alvo a responder com sinceridade enquanto falhar em resistir.'
     },
-    
-    {
-        id: 'consagrar',
-    
-        name: 'Consagrar',
-    
-        icon: '📜',
-    
-        profession: 'Ritual',
-    
-        category: 'Profissional',
-    
-        type: 'Ritual',
-    
-        duration: 'Até ser desfeito',
-    
-        defense: 'Resistir a Magia',
-    
-        damage: '',
-    
-        cost: '12',
-    
-        range: 'Raio de 10m',
-    
-        action: 'Bonus',
-    
-        unlockCost: 2,
-    
-        shortDescription:
-            'Afasta monstros.',
-    
-        description:
-            'Cria um círculo mágico que impede monstros de entrarem caso falhem em Resistir a Magia.'
-    },
-    
-    {
-        id: 'barreira_magica',
-    
-        name: 'Barreira Mágica',
-    
-        icon: '📜',
-    
-        profession: 'Ritual',
-    
-        category: 'Profissional',
-    
-        type: 'Ritual',
-    
-        duration: 'Ativa (2 EST)',
-    
-        defense: 'Nenhuma',
-    
-        damage: '',
-    
-        cost: '10',
-    
-        range: 'Raio de 10m',
-    
-        action: 'Bonus',
-    
-        unlockCost: 2,
-    
-        shortDescription:
-            'Escudo ritualístico.',
-    
-        description:
-            'Cria uma barreira circular que absorve até 50 pontos de dano físico ou mágico.'
-    },
-    
-    {
-        id: 'oniromancia',
-    
-        name: 'Oniromancia',
-    
-        icon: '📜',
-    
-        profession: 'Ritual',
-    
-        category: 'Profissional',
-    
-        type: 'Ritual',
-    
-        duration: '10 rodadas',
-    
-        defense: 'Nenhuma',
-    
-        damage: '',
-    
-        cost: '8',
-    
-        range: 'Sonho compartilhado',
-    
-        action: 'Bonus',
-    
-        unlockCost: 2,
-    
-        shortDescription:
-            'Explora sonhos.',
-    
-        description:
-            'Permite acessar sonhos para descobrir segredos e verdades ocultas sobre eventos do passado e presente.'
-    },
 
     {
         id: 'comando_mental',
@@ -4487,108 +4079,6 @@ const predefinedAbilities = [
         description:
             'Permite obter uma resposta guiada por poder divino para uma pergunta. O feitiço não prevê o futuro e a dificuldade depende do quão secreta é a informação.'
     },
-    
-    {
-        id: 'compressao_de_artefato',
-    
-        name: 'Compressão de Artefato',
-    
-        icon: '📜',
-    
-        profession: 'Ritual',
-    
-        category: 'Mestre',
-    
-        type: 'Ritual',
-    
-        duration: 'Até ser revertido',
-    
-        defense: 'Tolerância',
-    
-        damage: '6d6',
-    
-        cost: '16',
-    
-        range: '10m',
-    
-        action: 'Bonus',
-    
-        unlockCost: 3,
-    
-        shortDescription:
-            'Comprime seres e objetos.',
-    
-        description:
-            'Comprime uma criatura ou objeto em um invólucro reduzido a 1/10 do tamanho original. O alvo permanece inconsciente enquanto durar o efeito. O processo é extremamente doloroso e pode causar alterações permanentes.'
-    },
-    
-    {
-        id: 'criar_golem',
-    
-        name: 'Criar Golem',
-    
-        icon: '📜',
-    
-        profession: 'Ritual',
-    
-        category: 'Mestre',
-    
-        type: 'Ritual',
-    
-        duration: 'Permanente',
-    
-        defense: 'Nenhuma',
-    
-        damage: '',
-    
-        cost: '15',
-    
-        range: 'Toque',
-    
-        action: 'Bonus',
-    
-        unlockCost: 3,
-    
-        shortDescription:
-            'Cria um golem permanente.',
-    
-        description:
-            'Cria um golem permanente que serve fielmente ao conjurador até sua destruição. O golem executa ordens simples e continua realizando sua última ordem indefinidamente.'
-    },
-    
-    {
-        id: 'ilusao_interativa',
-    
-        name: 'Ilusão Interativa',
-    
-        icon: '📜',
-    
-        profession: 'Ritual',
-    
-        category: 'Mestre',
-    
-        type: 'Ritual',
-    
-        duration: 'Foco ativo',
-    
-        defense: 'Resistir a Magia ou Tolerância',
-    
-        damage: '',
-    
-        cost: '12',
-    
-        range: 'Raio de 20m',
-    
-        action: 'Bonus',
-    
-        unlockCost: 3,
-    
-        shortDescription:
-            'Cria ilusões totalmente sensoriais.',
-    
-        description:
-            'Cria uma ilusão completa com elementos visuais, auditivos, olfativos e táteis. A ilusão parece totalmente real, permitindo interação física simulada. Criaturas afetadas devem resistir para não acreditarem nela.'
-    },
 
     {
         id: 'bencao_da_morte',
@@ -4794,6 +4284,811 @@ const predefinedAbilities = [
             'Você cria uma Chama Branca que ilumina uma área com luz ofuscante. Qualquer criatura que toque a chama é descongelada. A chama não pode ser apagada por água ou vento. Feitiços em área contra o conjurador sofrem penalidades dobradas.'
     },
 
+    // =====================================
+    // NOVOS FEITIÇOS
+    // =====================================
+
+    {
+        id: 'veu_de_tissaia',
+        name: 'Véu de Tissaia',
+        icon: '🫥',
+        shortDescription:
+            'Dobra a luz e oculta o alvo.',
+        description:
+            `Você dobra a luz ao redor do corpo de um alvo, tornando-o parcialmente invisível.
+    
+    Ataques contra o alvo sofrem -4 e testes de Percepção para detectá-lo recebem penalidade.
+    
+    Atacar ou lançar outro feitiço encerra o efeito.`,
+        type: 'Arcano',
+        profession: 'Mago',
+        category: 'Profissional',
+        duration: '2d10 rodadas',
+        defense: 'Nenhuma',
+        damage: '-',
+        cost: '10',
+        range: '8m',
+        action: 'Bonus',
+        unlockCost: 2
+    },
+    
+    {
+        id: 'prisao_prismatica',
+        name: 'Prisão Prismática',
+        icon: '🔷',
+        shortDescription:
+            'Aprisiona o alvo em energia mágica.',
+        description:
+            `Cria uma prisão de energia translúcida ao redor do alvo.
+    
+    Enquanto preso, o alvo não pode se mover nem usar ações físicas.
+    
+    Magias ainda podem ser usadas com penalidade de -4.
+    
+    A prisão possui 40 PV mágicos.`,
+        type: 'Arcano',
+        profession: 'Mago',
+        category: 'Mestre',
+        duration: '1d10 rodadas',
+        defense: 'Resistir a Magia',
+        damage: '-',
+        cost: '22',
+        range: '10m',
+        action: 'Principal',
+        unlockCost: 3
+    },
+    
+    {
+        id: 'eclipse_de_ban_ard',
+        name: 'Eclipse de Ban Ard',
+        icon: '🌑',
+        shortDescription:
+            'Uma escuridão mágica cobre a área.',
+        description:
+            `Uma escuridão mágica cobre um raio de 30m.
+    
+    Magias de fogo causam metade do dano e todas as criaturas sofrem -5 em Percepção.
+    
+    Criaturas afetadas por medo sofrem desvantagem em Resistir Coerção.`,
+        type: 'Arcano',
+        profession: 'Mago',
+        category: 'Mor',
+        duration: 'Ativo (6 EST)',
+        defense: 'Nenhuma',
+        damage: '-',
+        cost: '30',
+        range: '30m',
+        action: 'Principal',
+        unlockCost: 4
+    },
+    
+    {
+        id: 'correntes_de_brasa',
+        name: 'Correntes de Brasa',
+        icon: '⛓️',
+        shortDescription:
+            'Correntes flamejantes aprisionam o alvo.',
+        description:
+            `Correntes flamejantes prendem o alvo.
+    
+    Enquanto preso, sofre 2d6 de dano de fogo por rodada e fica Desequilibrado.`,
+        type: 'Fogo',
+        profession: 'Mago',
+        category: 'Profissional',
+        duration: '1d10 rodadas',
+        defense: 'Esquivar/Escapar',
+        damage: '2d6 por rodada',
+        cost: '10',
+        range: '8m',
+        action: 'Principal',
+        unlockCost: 2
+    },
+    
+    {
+        id: 'sol_de_aenye',
+        name: 'Sol de Aenye',
+        icon: '☀️',
+        shortDescription:
+            'Uma esfera solar destrói inimigos.',
+        description:
+            `Você cria uma esfera solar acima da área.
+    
+    Todos os inimigos em raio de 12m sofrem calor intenso, ficando Exaustos e recebendo 3d6 por rodada.`,
+        type: 'Fogo',
+        profession: 'Mago',
+        category: 'Mestre',
+        duration: 'Ativo (5 EST)',
+        defense: 'Resistir a Magia',
+        damage: '3d6',
+        cost: '22',
+        range: '20m',
+        action: 'Principal',
+        unlockCost: 3
+    },
+    
+    {
+        id: 'reflexo_congelado',
+        name: 'Reflexo Congelado',
+        icon: '🧊',
+        shortDescription:
+            'Cria um clone de gelo ilusório.',
+        description:
+            `Você cria um clone de gelo translúcido.
+    
+    O próximo ataque contra você atinge o clone automaticamente.`,
+        type: 'Água',
+        profession: 'Mago',
+        category: 'Profissional',
+        duration: 'Até ser atingido',
+        defense: 'Nenhuma',
+        damage: '',
+        cost: '8',
+        range: 'Si mesmo',
+        action: 'Bonus',
+        unlockCost: 2
+    },
+    
+    {
+        id: 'mare_abissal',
+        name: 'Maré Abissal',
+        icon: '🌊',
+        shortDescription:
+            'Uma onda negra explode pela área.',
+        description:
+            `Uma onda negra explode em raio de 15m.
+    
+    Alvos atingidos sofrem 6d6 de dano e devem passar em teste de Atletismo ou ficam caídos.`,
+        type: 'Água',
+        profession: 'Mago',
+        category: 'Mestre',
+        duration: 'Imediata',
+        defense: 'Esquivar',
+        damage: '6d6',
+        cost: '20',
+        range: '20m',
+        action: 'Principal',
+        unlockCost: 3
+    },
+    
+    {
+        id: 'muralha_espinhosa',
+        name: 'Muralha Espinhosa',
+        icon: '🌿',
+        shortDescription:
+            'Uma parede viva de espinhos.',
+        description:
+            `Cria uma parede viva de espinhos.
+    
+    Quem atravessar sofre 3d6 de dano e sangramento.`,
+        type: 'Terra',
+        profession: 'Druida',
+        category: 'Profissional',
+        duration: '2d10 rodadas',
+        defense: 'Atletismo',
+        damage: '3d6',
+        cost: '8',
+        range: '10m',
+        action: 'Hibrido',
+        unlockCost: 2
+    },
+    
+    {
+        id: 'ira_da_floresta',
+        name: 'Ira da Floresta',
+        icon: '🌳',
+        shortDescription:
+            'Raízes gigantes aprisionam inimigos.',
+        description:
+            `Raízes gigantescas emergem do solo em raio de 20m.
+    
+    Alvos presos sofrem 4d6 por rodada até escaparem.`,
+        type: 'Terra',
+        profession: 'Druida',
+        category: 'Mestre',
+        duration: 'Ativo (5 EST)',
+        defense: 'Escapar',
+        damage: '4d6',
+        cost: '20',
+        range: '20m',
+        action: 'Principal',
+        unlockCost: 3
+    },
+    
+    {
+        id: 'circulo_de_melitele',
+        name: 'Círculo de Melitele',
+        icon: '✨',
+        shortDescription:
+            'Área sagrada de proteção.',
+        description:
+            `Cria uma área sagrada que remove medo, intoxicação e concede +2 em Resistir a Magia.`,
+        type: 'Sagrado',
+        profession: 'Sacerdote',
+        category: 'Profissional',
+        duration: '2d10 rodadas',
+        defense: 'Nenhuma',
+        damage: '-',
+        cost: '6',
+        range: 'Raio de 8m',
+        action: 'Bonus',
+        unlockCost: 2
+    },
+    
+    {
+        id: 'julgamento_celestial',
+        name: 'Julgamento Celestial',
+        icon: '⚡',
+        shortDescription:
+            'Um feixe divino destrói o alvo.',
+        description:
+            `Um feixe divino cai sobre um alvo.
+    
+    Criaturas malignas ou amaldiçoadas sofrem dano dobrado.`,
+        type: 'Sagrado',
+        profession: 'Sacerdote',
+        category: 'Mor',
+        duration: 'Imediata',
+        defense: 'Resistir a Magia',
+        damage: '10d6',
+        cost: '30',
+        range: '20m',
+        action: 'Principal',
+        unlockCost: 4
+    },
+
+// =========================================
+// RITUAIS
+// =========================================
+
+    {
+        id: 'compressao_de_artefato',
+    
+        name: 'Compressão de Artefato',
+    
+        icon: '📜',
+    
+        profession: 'Ritual',
+    
+        category: 'Mestre',
+    
+        type: 'Ritual',
+    
+        duration: 'Até ser revertido',
+    
+        defense: 'Tolerância',
+    
+        damage: '6d6',
+    
+        cost: '16',
+    
+        range: '10m',
+    
+        action: 'Bonus',
+    
+        unlockCost: 3,
+    
+        shortDescription:
+            'Comprime seres e objetos.',
+    
+        description:
+            'Comprime uma criatura ou objeto em um invólucro reduzido a 1/10 do tamanho original. O alvo permanece inconsciente enquanto durar o efeito. O processo é extremamente doloroso e pode causar alterações permanentes.'
+    },
+    
+    {
+        id: 'criar_golem',
+    
+        name: 'Criar Golem',
+    
+        icon: '📜',
+    
+        profession: 'Ritual',
+    
+        category: 'Mestre',
+    
+        type: 'Ritual',
+    
+        duration: 'Permanente',
+    
+        defense: 'Nenhuma',
+    
+        damage: '',
+    
+        cost: '15',
+    
+        range: 'Toque',
+    
+        action: 'Bonus',
+    
+        unlockCost: 3,
+    
+        shortDescription:
+            'Cria um golem permanente.',
+    
+        description:
+            'Cria um golem permanente que serve fielmente ao conjurador até sua destruição. O golem executa ordens simples e continua realizando sua última ordem indefinidamente.'
+    },
+    
+    {
+        id: 'ilusao_interativa',
+    
+        name: 'Ilusão Interativa',
+    
+        icon: '📜',
+    
+        profession: 'Ritual',
+    
+        category: 'Mestre',
+    
+        type: 'Ritual',
+    
+        duration: 'Foco ativo',
+    
+        defense: 'Resistir a Magia ou Tolerância',
+    
+        damage: '',
+    
+        cost: '12',
+    
+        range: 'Raio de 20m',
+    
+        action: 'Bonus',
+    
+        unlockCost: 3,
+    
+        shortDescription:
+            'Cria ilusões totalmente sensoriais.',
+    
+        description:
+            'Cria uma ilusão completa com elementos visuais, auditivos, olfativos e táteis. A ilusão parece totalmente real, permitindo interação física simulada. Criaturas afetadas devem resistir para não acreditarem nela.'
+    },
+
+    {
+        id: 'consagrar',
+    
+        name: 'Consagrar',
+    
+        icon: '📜',
+    
+        profession: 'Ritual',
+    
+        category: 'Profissional',
+    
+        type: 'Ritual',
+    
+        duration: 'Até ser desfeito',
+    
+        defense: 'Resistir a Magia',
+    
+        damage: '',
+    
+        cost: '12',
+    
+        range: 'Raio de 10m',
+    
+        action: 'Bonus',
+    
+        unlockCost: 2,
+    
+        shortDescription:
+            'Afasta monstros.',
+    
+        description:
+            'Cria um círculo mágico que impede monstros de entrarem caso falhem em Resistir a Magia.'
+    },
+    
+    {
+        id: 'barreira_magica',
+    
+        name: 'Barreira Mágica',
+    
+        icon: '📜',
+    
+        profession: 'Ritual',
+    
+        category: 'Profissional',
+    
+        type: 'Ritual',
+    
+        duration: 'Ativa (2 EST)',
+    
+        defense: 'Nenhuma',
+    
+        damage: '',
+    
+        cost: '10',
+    
+        range: 'Raio de 10m',
+    
+        action: 'Bonus',
+    
+        unlockCost: 2,
+    
+        shortDescription:
+            'Escudo ritualístico.',
+    
+        description:
+            'Cria uma barreira circular que absorve até 50 pontos de dano físico ou mágico.'
+    },
+    
+    {
+        id: 'oniromancia',
+    
+        name: 'Oniromancia',
+    
+        icon: '📜',
+    
+        profession: 'Ritual',
+    
+        category: 'Profissional',
+    
+        type: 'Ritual',
+    
+        duration: '10 rodadas',
+    
+        defense: 'Nenhuma',
+    
+        damage: '',
+    
+        cost: '8',
+    
+        range: 'Sonho compartilhado',
+    
+        action: 'Bonus',
+    
+        unlockCost: 2,
+    
+        shortDescription:
+            'Explora sonhos.',
+    
+        description:
+            'Permite acessar sonhos para descobrir segredos e verdades ocultas sobre eventos do passado e presente.'
+    },
+
+    {
+        id: 'ritual_de_limpeza',
+    
+        name: 'Ritual de Limpeza',
+    
+        icon: '🕯️',
+    
+        profession: 'Ritual',
+    
+        category: 'Iniciante',
+    
+        type: 'Ritual',
+    
+        duration: 'Imediata',
+    
+        defense: 'Nenhuma',
+    
+        damage: '',
+    
+        cost: '3',
+    
+        range: 'Toque',
+    
+        action: '',
+    
+        unlockCost: 1,
+    
+        shortDescription:
+            'Purifica doenças e venenos.',
+    
+        description:
+            'Remove venenos ou doenças do alvo através de um teste de Criar Ritual. Álcool e drogas possuem ND 10, venenos ND 15 e doenças graves ND 18.'
+    },
+    
+    {
+        id: 'mensagem_magica',
+    
+        name: 'Mensagem Mágica',
+    
+        icon: '🕯️',
+    
+        profession: 'Ritual',
+    
+        category: 'Iniciante',
+    
+        type: 'Ritual',
+    
+        duration: 'Permanente',
+    
+        defense: 'Nenhuma',
+    
+        damage: '',
+    
+        cost: '3',
+    
+        range: 'Ilimitado',
+    
+        action: '',
+    
+        unlockCost: 1,
+    
+        shortDescription:
+            'Armazena mensagens mágicas.',
+    
+        description:
+            'Grava uma mensagem mágica em uma pedra preciosa ou vidro marcado com sigilo. Ao ativar o gatilho definido, uma ilusão do conjurador transmite a mensagem.'
+    },
+    
+    {
+        id: 'ritual_de_vida',
+    
+        name: 'Ritual de Vida',
+    
+        icon: '🕯️',
+    
+        profession: 'Ritual',
+    
+        category: 'Iniciante',
+    
+        type: 'Ritual',
+    
+        duration: 'Única',
+    
+        defense: 'Nenhuma',
+    
+        damage: '',
+    
+        cost: '5',
+    
+        range: 'Círculo',
+    
+        action: '',
+    
+        unlockCost: 1,
+    
+        shortDescription:
+            'Cria círculo regenerativo.',
+    
+        description:
+            'Cria um círculo mágico que concede regeneração de 3 Pontos de Vida por turno por até 10 rodadas enquanto o alvo permanecer dentro da área.'
+    },
+    
+    {
+        id: 'ritual_de_magia',
+    
+        name: 'Ritual de Magia',
+    
+        icon: '🕯️',
+    
+        profession: 'Ritual',
+    
+        category: 'Iniciante',
+    
+        type: 'Ritual',
+    
+        duration: 'Única',
+    
+        defense: 'Nenhuma',
+    
+        damage: '',
+    
+        cost: '3',
+    
+        range: 'Círculo',
+    
+        action: '',
+    
+        unlockCost: 1,
+    
+        shortDescription:
+            'Amplifica poder mágico.',
+    
+        description:
+            'Cria um círculo mágico que aumenta a tolerância mágica e concede bônus à perícia Criar Ritual por 5 horas.'
+    },
+    
+    {
+        id: 'hidromancia',
+    
+        name: 'Hidromancia',
+    
+        icon: '🕯️',
+    
+        profession: 'Ritual',
+    
+        category: 'Iniciante',
+    
+        type: 'Ritual',
+    
+        duration: 'Ativo (2 Vigor)',
+    
+        defense: 'Nenhuma',
+    
+        damage: '',
+    
+        cost: '5',
+    
+        range: 'Visual',
+    
+        action: '',
+    
+        unlockCost: 1,
+    
+        shortDescription:
+            'Observa eventos pela água.',
+    
+        description:
+            'Permite observar eventos do passado ou presente através de uma porção de água. O ND varia conforme o tempo observado.'
+    },
+    
+    {
+        id: 'piromancia',
+    
+        name: 'Piromancia',
+    
+        icon: '🕯️',
+    
+        profession: 'Ritual',
+    
+        category: 'Iniciante',
+    
+        type: 'Ritual',
+    
+        duration: 'Ativo (4 Vigor)',
+    
+        defense: 'Nenhuma',
+    
+        damage: '',
+    
+        cost: '5',
+    
+        range: 'Visual',
+    
+        action: '',
+    
+        unlockCost: 1,
+    
+        shortDescription:
+            'Observa eventos nas chamas.',
+    
+        description:
+            'Permite visualizar eventos do passado ou presente através do fogo. Eventos recentes são vistos com maior precisão.'
+    },
+    
+    {
+        id: 'jarro_de_feiticos',
+    
+        name: 'Jarro de Feitiços',
+    
+        icon: '🕯️',
+    
+        profession: 'Ritual',
+    
+        category: 'Iniciante',
+    
+        type: 'Ritual',
+    
+        duration: 'Imediata',
+    
+        defense: 'Nenhuma',
+    
+        damage: 'Efeito variável conforme feitiço',
+    
+        cost: '5',
+    
+        range: 'Objeto',
+    
+        action: '',
+    
+        unlockCost: 1,
+    
+        shortDescription:
+            'Armazena feitiços em recipientes.',
+    
+        description:
+            'Cria um vórtice mágico dentro de um jarro de argila. Quando quebrado, libera um feitiço aleatório previamente definido no ritual.'
+    },
+    
+    {
+        id: 'sessao_espirita',
+    
+        name: 'Sessão Espírita',
+    
+        icon: '🕯️',
+    
+        profession: 'Ritual',
+    
+        category: 'Iniciante',
+    
+        type: 'Ritual',
+    
+        duration: 'Permanente',
+    
+        defense: 'Nenhuma',
+    
+        damage: '',
+    
+        cost: '5',
+    
+        range: '20m',
+    
+        action: '',
+    
+        unlockCost: 1,
+    
+        shortDescription:
+            'Invoca espíritos dos mortos.',
+    
+        description:
+            'Permite contato com o espírito de uma pessoa morta, que surge como um espectro consciente capaz de falar sobre memórias, emoções e identidade.'
+    },
+    
+    {
+        id: 'telecomunicacao',
+    
+        name: 'Telecomunicação',
+    
+        icon: '🕯️',
+    
+        profession: 'Ritual',
+    
+        category: 'Iniciante',
+    
+        type: 'Ritual',
+    
+        duration: '1 hora',
+    
+        defense: 'Nenhuma',
+    
+        damage: '',
+    
+        cost: '3',
+    
+        range: 'Ilimitado',
+    
+        action: '',
+    
+        unlockCost: 1,
+    
+        shortDescription:
+            'Comunicação mágica à distância.',
+    
+        description:
+            'Permite comunicação entre duas pessoas utilizando Telecomunicadores, desde que estejam no mesmo continente.'
+    },
+
+    {
+        id: 'ritual_lua_rubra',
+        name: 'Ritual da Lua Rubra',
+        icon: '🌕',
+        category: 'Ritual',
+        profession: 'Ritual',
+        type: 'Ritual',
+        shortDescription:
+            'Fortalece magia de sangue, maldições e necromancia.',
+
+        description: `
+    Durante uma noite inteira, todos dentro do círculo ganham vantagem em magias de sangue, maldições e necromancia.
+
+    Ritual: O Ritual da Lua Rubra só pode ser realizado durante noites de lua avermelhada, eclipses ou sob céus marcados por névoa carmesim.
+
+    O conjurador deve desenhar um círculo ritualístico de aproximadamente vinte metros usando mistura de cinzas, vinho escuro e sangue animal. Velas vermelhas são posicionadas ao redor do círculo em intervalos regulares.
+
+    No centro da área é colocado um recipiente de prata ou pedra contendo brasas acesas e ervas queimadas lentamente. Todos os participantes devem permanecer dentro do círculo durante o ritual.
+
+    Enquanto a lua estiver visível, o conjurador entoa cânticos antigos e oferece pequenas quantidades de sangue às brasas ritualísticas. Quanto mais intensa a fumaça rubra formada, mais forte se torna o efeito.
+
+    Durante o ritual, qualquer magia ligada à morte, sangue ou maldição reage de maneira anormal, fazendo símbolos brilharem e sombras se moverem de forma irregular.
+
+    Ao amanhecer, as velas se apagam sozinhas e o círculo perde lentamente sua força.
+    `,
+
+        duration: '1 noite',
+        defense: 'Nenhuma',
+        damage: '',
+        cost: '12',
+        range: 'Círculo de 20m',
+        action: 'Ritual',
+        unlockCost: '3'
+    },
+
+// =========================================
+// HEXES
+// =========================================
+
     {
         id: 'hex_das_sombras',
         name: 'Hex das Sombras',
@@ -4801,16 +5096,33 @@ const predefinedAbilities = [
         category: 'Hex',
         type: 'Hex',
         profession: 'Hex',
-        description: 'A Hex das Sombras cria sussurros nas sombras e silhuetas em esquinas. O alvo deve realizar testes aleatórios de Consciência, sempre com a sensação de estar sendo observado. Esses testes nunca revelam a verdade, apenas visões distorcidas.\n\nPerigo: baixo.\n\nPara se livrar, o alvo deve trazer uma tigela de água limpa, um galho de mirto branco e um pote de tinta, lavar o galho sob a lua crescente e mergulhá-lo na tinta enquanto respira fundo.',
+        description: `
+        A Hex das Sombras cria sussurros nas sombras e silhuetas em esquinas. O alvo deve realizar testes aleatórios de Consciência, sempre com a sensação de estar sendo observado. Esses testes nunca revelam a verdade, apenas visões distorcidas.
+        
+        Perigo: Baixo.
+        
+        Ritual: O conjurador deve recolher fuligem de velas apagadas, poeira retirada de cantos escuros e água deixada em repouso durante toda a noite.
+        
+        O ritual é realizado em um ambiente pouco iluminado, onde sombras naturais possam se formar livremente. A água é colocada em uma tigela negra enquanto a fuligem é espalhada lentamente ao redor dela em forma circular.
+        
+        O conjurador então apaga uma vela com os dedos molhados e começa a sussurrar palavras desconexas sem nunca elevar a voz. Durante o ritual, não se deve olhar diretamente para nenhum canto escuro do ambiente.
+        
+        Enquanto os sussurros continuam, o nome do alvo é repetido entre pausas longas até que as sombras pareçam se mover sozinhas.
+        
+        Ao final, a água ritualística é derramada sobre o próprio chão e a última vela é apagada sem sopro. Quando o ambiente permanecer completamente silencioso por alguns segundos, o Hex desperta.
+        
+        Quebra: O alvo deve trazer uma tigela de água limpa, um galho de mirto branco e um pote de tinta. O galho deve ser lavado sob a lua crescente e mergulhado lentamente na tinta enquanto o alvo respira profundamente sem falar.
+        
+        Depois disso, o galho é queimado e as cinzas devem ser lançadas em água corrente antes do próximo amanhecer.
+        `,
         shortDescription: 'Sussurros e paranoia constante',
         duration: 'Indeterminada',
         defense: 'Consciência',
         damage: 'Nenhum',
-        consumption: '4',
+        cost: '4',
         range: '10m',
         action: 'Hex',
-        unlockCost: '1',
-        cost: '4'
+        unlockCost: '1'
     },
     
     {
@@ -4820,16 +5132,33 @@ const predefinedAbilities = [
         category: 'Hex',
         type: 'Hex',
         profession: 'Hex',
-        description: 'O Eterno Comichão causa pústulas inflamadas e irritação constante, perturbando órgãos genitais e o ânus do alvo. O efeito causa desconforto contínuo e penalidades cumulativas.\n\nPerigo: baixo.\n\nPara se livrar, o alvo deve usar um cogumelo skinner, pequena cianita e briônia, acender uma fogueira e aplicar as ervas enquanto palavras mágicas são recitadas.',
+        description: `
+        O Eterno Comichão causa pústulas inflamadas e irritação constante, perturbando órgãos genitais e o ânus do alvo. O efeito causa desconforto contínuo e penalidades cumulativas.
+        
+        Perigo: Baixo.
+        
+        Ritual: O conjurador deve reunir pele ressecada de animal, ervas irritantes secas e um pequeno recipiente contendo água parada ou suor coletado após esforço físico intenso.
+        
+        Os ingredientes são esmagados juntos até formarem uma pasta áspera e escura. O ritual deve acontecer próximo de calor intenso, brasas ou fogueiras pequenas.
+        
+        Enquanto mistura a substância, o conjurador utiliza um galho seco ou os próprios dedos para desenhar círculos irregulares no chão enquanto murmura palavras rápidas e repetitivas sem interromper o ritmo.
+        
+        O nome do alvo é dito entre as repetições até que a mistura comece a liberar cheiro forte e desagradável.
+        
+        Ao final, parte da pasta é lançada ao fogo e o restante enterrado em solo úmido. Quando a fumaça da queima causar irritação nos olhos do conjurador, o Hex desperta.
+        
+        Quebra: Para se livrar da maldição, o alvo deve usar um cogumelo skinner, pequena cianita e briônia, acender uma fogueira e aplicar as ervas sobre o corpo enquanto palavras mágicas são recitadas lentamente.
+        
+        Após isso, as cinzas das ervas devem ser lavadas em água corrente antes do nascer do sol seguinte.
+        `,
         shortDescription: 'Irritação constante e pústulas',
         duration: 'Até ser curado',
         defense: 'Nenhuma',
         damage: 'Nenhum',
-        consumption: '4',
+        cost: '4',
         range: '10m',
         action: 'Hex',
-        unlockCost: '1',
-        cost: '4'
+        unlockCost: '1'
     },
     
     {
@@ -4839,7 +5168,25 @@ const predefinedAbilities = [
         category: 'Hex',
         type: 'Hex',
         profession: 'Hex',
-        description: 'A Sorte do Capeta atormenta o alvo com momentos extremos de sorte e azar. Em situações de alto estresse, o alvo deve realizar teste de Resistir Coerção com ND maior ou igual a 15, caso contrário sofre consequências aleatórias.\n\nPerigo: médio.\n\nPara se livrar, o alvo deve martelar um prego prateado em madeira por duas horas, untá-lo com óleo de vinagre, fixar o prego no cabelo, botar fogo nos cabelos e respirar profundamente.',
+        description: `
+        A Sorte do Capeta atormenta o alvo com momentos extremos de sorte e azar. Em situações de alto estresse, o alvo deve realizar teste de Resistir Coerção com ND maior ou igual a 15, caso contrário sofre consequências aleatórias.
+        
+        Perigo: Médio.
+        
+        Ritual: O conjurador deve reunir moedas antigas, ossos pequenos de animais de azar e um objeto ligado a jogos ou apostas, como dados, cartas ou peças marcadas.
+        
+        O ritual é realizado sobre uma mesa coberta por pano escuro. As moedas são lançadas repetidamente enquanto velas vermelhas e negras queimam ao redor do círculo ritualístico.
+        
+        Cada vez que uma moeda cai, o conjurador murmura o nome do alvo e marca símbolos tortos sobre a mesa usando carvão ou vinho escuro.
+        
+        Os dados ou peças são então jogados dentro do círculo até que um resultado considerado “ruim” apareça três vezes consecutivas.
+        
+        Ao final, uma moeda é aquecida diretamente na chama e pressionada contra a palma da mão do conjurador até deixar marca. Quando o cheiro de metal queimado preencher o ambiente, o Hex desperta.
+        
+        Quebra: Para se livrar da maldição, o alvo deve martelar um prego prateado em madeira por duas horas, untá-lo com óleo de vinagre, fixar o prego nos cabelos, atear fogo nos próprios fios e respirar profundamente sem demonstrar medo.
+        
+        Após o ritual, o prego deve ser enterrado em uma encruzilhada antes do próximo amanhecer.
+        `,
         shortDescription: 'Azar e sorte extremos',
         duration: '1 semana',
         defense: 'Resistir Coerção',
@@ -4847,8 +5194,7 @@ const predefinedAbilities = [
         consumption: '8',
         range: '10m',
         action: 'Hex',
-        unlockCost: '1',
-        cost: '8'
+        unlockCost: '1'
     },
     
     {
@@ -4858,16 +5204,37 @@ const predefinedAbilities = [
         category: 'Hex',
         type: 'Hex',
         profession: 'Hex',
-        description: 'O Pesadelo força o alvo a reviver o mesmo sonho aterrador todas as noites. O alvo deve realizar teste de Resistir Coerção contra ND igual à jogada de Criar Hex feita contra ele. Em falha, não recupera PV ou EST durante a noite e perde metade da Estamina se dormir menos de 4 horas.\n\nPerigo: médio.\n\nPara se livrar, o alvo deve juntar velas, ossos de besta e minério incandescente, realizando um ritual noturno completo.',
+        description: `
+        O Pesadelo força o alvo a reviver o mesmo sonho aterrador todas as noites. O alvo deve realizar teste de Resistir Coerção contra ND igual à jogada de Criar Hex feita contra ele. Em falha, não recupera PV ou EST durante a noite e perde metade da Estamina se dormir menos de 4 horas.
+        
+        Perigo: Médio.
+        
+        Ritual: O conjurador deve obter algo ligado ao sono do alvo, como um travesseiro usado, fios de cabelo retirados durante o descanso ou tecido de roupas de dormir.
+        
+        O ritual ocorre durante a madrugada em um ambiente silencioso iluminado apenas por velas escuras. Ossos pequenos de animais noturnos são organizados em círculo ao redor do objeto do alvo.
+        
+        Enquanto as velas queimam lentamente, o conjurador espalha cinzas sobre o chão e recita frases fragmentadas sem jamais repetir a mesma entonação duas vezes.
+        
+        O objeto do alvo é colocado no centro do círculo enquanto minério aquecido ou pedras quentes são mergulhados em água fria, produzindo vapor espesso que deve preencher o ambiente.
+        
+        Durante o ritual, o conjurador deve permanecer acordado o tempo inteiro sem piscar por longos períodos, encarando diretamente a fumaça até sentir tontura ou exaustão.
+        
+        Ao final, uma das velas é apagada dentro da água ritualística e os ossos são enterrados próximos de um local onde pessoas dormem. Quando o último som do ambiente desaparecer por alguns instantes, o Hex desperta.
+        
+        Quebra: Para se livrar da maldição, o alvo deve reunir velas, ossos de besta e minério incandescente para realizar um ritual noturno completo.
+        
+        As velas devem permanecer acesas até o amanhecer enquanto os ossos são queimados lentamente junto do minério aquecido. Durante o processo, o alvo deve permanecer acordado e recitar o próprio nome sempre que sentir medo ou sono.
+        
+        Ao nascer do sol, as cinzas restantes devem ser lançadas em água corrente sem olhar para trás.
+        `,
         shortDescription: 'Sonhos aterradores recorrentes',
         duration: 'Até ser quebrado',
         defense: 'Resistir Coerção',
         damage: 'Nenhum',
-        consumption: '8',
+        cost: '8',
         range: '10m',
         action: 'Hex',
-        unlockCost: '1',
-        cost: '8'
+        unlockCost: '1'
     },
     
     {
@@ -4877,16 +5244,37 @@ const predefinedAbilities = [
         category: 'Hex',
         type: 'Hex',
         profession: 'Hex',
-        description: 'O Beijo da Pesta retira a habilidade do alvo de combater doenças. Ao contato com pessoa doente, há 75% de chance de adoecer. O cheiro do alvo torna-se levemente nauseante. Para resistir, deve passar em teste de Tolerância ND 16 ou ficar com náuseas.\n\nPerigo: alto.\n\nPara se livrar, o alvo deve juntar argila de rio, carvão e pó infundido, criar um totem e passar por uma série de palavras mágicas e rituais até o efeito cessar.',
+        description: `
+        O Pesadelo força o alvo a reviver o mesmo sonho aterrador todas as noites. O alvo deve realizar teste de Resistir Coerção contra ND igual à jogada de Criar Hex feita contra ele. Em falha, não recupera PV ou EST durante a noite e perde metade da Estamina se dormir menos de 4 horas.
+        
+        Perigo: Médio.
+        
+        Ritual: O conjurador deve obter algo ligado ao sono do alvo, como um travesseiro usado, fios de cabelo retirados durante o descanso ou tecido de roupas de dormir.
+        
+        O ritual ocorre durante a madrugada em um ambiente silencioso iluminado apenas por velas escuras. Ossos pequenos de animais noturnos são organizados em círculo ao redor do objeto do alvo.
+        
+        Enquanto as velas queimam lentamente, o conjurador espalha cinzas sobre o chão e recita frases fragmentadas sem jamais repetir a mesma entonação duas vezes.
+        
+        O objeto do alvo é colocado no centro do círculo enquanto minério aquecido ou pedras quentes são mergulhados em água fria, produzindo vapor espesso que deve preencher o ambiente.
+        
+        Durante o ritual, o conjurador deve permanecer acordado o tempo inteiro sem piscar por longos períodos, encarando diretamente a fumaça até sentir tontura ou exaustão.
+        
+        Ao final, uma das velas é apagada dentro da água ritualística e os ossos são enterrados próximos de um local onde pessoas dormem. Quando o último som do ambiente desaparecer por alguns instantes, o Hex desperta.
+        
+        Quebra: Para se livrar da maldição, o alvo deve reunir velas, ossos de besta e minério incandescente para realizar um ritual noturno completo.
+        
+        As velas devem permanecer acesas até o amanhecer enquanto os ossos são queimados lentamente junto do minério aquecido. Durante o processo, o alvo deve permanecer acordado e recitar o próprio nome sempre que sentir medo ou sono.
+        
+        Ao nascer do sol, as cinzas restantes devem ser lançadas em água corrente sem olhar para trás.
+        `,
         shortDescription: 'Maldição ligada a doenças',
         duration: 'Até ser curado',
         defense: 'Tolerância',
         damage: 'Nenhum',
-        consumption: '12',
+        cost: '12',
         range: '10m',
         action: 'Hex',
-        unlockCost: '1',
-        cost: '12'
+        unlockCost: '1'
     },
     
     {
@@ -4896,267 +5284,555 @@ const predefinedAbilities = [
         category: 'Hex',
         type: 'Hex',
         profession: 'Hex',
-        description: 'A Hex da Besta faz com que animais hostilizem o alvo. Animais agem de forma agressiva, impondo -3 em Conduzir Animal. Criaturas a até 10m têm 50% de chance de atacar.\n\nPerigo: alto.\n\nPara se livrar, o alvo deve coletar visco, fosforo, unidades de óleo de corvo e calêndula, sacrificar um animal, enrolar o corpo em visco e realizar oferenda ritualística ao pôr do sol.',
+        description: `
+        A Hex da Besta faz com que animais hostilizem o alvo. Animais agem de forma agressiva, impondo -3 em Conduzir Animal. Criaturas a até 10m têm 50% de chance de atacar.
+        
+        Perigo: Alto.
+        
+        Ritual: O conjurador deve reunir pelos de predadores, dentes quebrados de animal, sangue fresco e galhos retirados de uma floresta densa ou local selvagem.
+        
+        O ritual acontece ao entardecer, preferencialmente próximo de mata fechada ou trilhas usadas por animais. Um círculo irregular é desenhado no chão usando sangue misturado com terra úmida.
+        
+        Os dentes e pelos são colocados em pequenos montes ao redor do círculo enquanto o conjurador imita sons animalescos de forma lenta e abafada.
+        
+        O nome do alvo é repetido entre rosnados e respirações profundas até que os animais próximos demonstrem inquietação ou silêncio repentino tome conta do ambiente.
+        
+        Durante o ritual, o conjurador deve permanecer descalço e manter as mãos sujas de terra e sangue até o final.
+        
+        Ao concluir, os restos do ritual são enterrados parcialmente e uma parte do sangue é lançada em direção à mata. Quando algum animal responder ao ritual com grito, uivo ou movimento brusco, o Hex desperta.
+        
+        Quebra: Para se livrar da maldição, o alvo deve coletar visco, fósforo, unidades de óleo de corvo e calêndula, sacrificar um animal, enrolar o corpo em visco e realizar uma oferenda ritualística ao pôr do sol.
+        
+        Após o ritual, os restos da oferenda devem ser deixados na floresta sem jamais serem recuperados ou observados novamente.
+        `,
         shortDescription: 'Animais tornam-se agressivos',
         duration: 'Até ser quebrado',
         defense: 'Nenhuma',
         damage: 'Nenhum',
-        consumption: '12',
         range: '10m',
         action: 'Hex',
         unlockCost: '1',
         cost: '12'
     },
+
+    {
+        id: 'lingua_cinzas',
+        name: 'Língua de Cinzas',
+        icon: '🩸',
+        category: 'Hex',
+        type: 'Hex',
+        profession: 'Hex',
+        shortDescription:
+            'Mentiras fazem a boca do alvo sangrar.',
+
+        description:
+        `
+        Toda vez que o alvo mentir, sua boca sangra e sua voz falha. Após três mentiras, ele perde temporariamente a capacidade de falar.
+
+        Perigo: Alto.
+
+        Quebra: O alvo deve escrever sua pior mentira em um pergaminho ungido e queimá-lo em uma fogueira ritual.
+
+        Ritual: O conjurador precisa obter algo que tenha tocado a boca do alvo: um copo usado, sangue, saliva, bituca de cigarro ou até restos de comida.
+
+        À meia-noite, ele desenha um símbolo espiral com cinzas e óleo queimado sobre uma pedra lisa. O objeto do alvo é colocado no centro enquanto palavras antigas são sussurradas sem interromper a respiração.
+
+        Ao final, o conjurador queima um pedaço de pergaminho contendo três mentiras escritas. Quando as cinzas são sopradas ao vento, o Hex é lançado.
+        `,
+        duration: 'Até ser quebrado',
+        defense: 'Resistir Coerção',
+        damage: '',
+        cost: '10',
+        range: '10m',
+        action: 'Hex',
+        unlockCost: '1'
+    },
+
+    {
+        id: 'hex_corvo_faminto',
+        name: 'Hex do Corvo Faminto',
+        icon: '🐦',
+        category: 'Hex',
+        type: 'Hex',
+        profession: 'Hex',
+        shortDescription:
+            'Corvos perseguem e sabotam o alvo.',
+        description: `
+        Corvos começam a seguir o alvo constantemente. Em momentos críticos, há 30% de chance dos corvos atrapalharem ações, revelarem furtividade ou atacarem os olhos.
+            
+        Perigo: Médio.
+            
+        Quebra: O alvo deve alimentar um corvo branco durante três amanheceres consecutivos.
+            
+        Ritual: O conjurador deve reunir três penas de corvo encontradas naturalmente, um pedaço de carne crua e um pequeno espelho rachado.
+            
+        Durante o pôr do sol, as penas são queimadas lentamente enquanto o nome do alvo é repetido para o reflexo do espelho. A carne é deixada em uma encruzilhada como oferenda.
+            
+        Quando o primeiro corvo se alimentar da oferenda, o Hex desperta e passa a perseguir o alvo.
+        `,
+        duration: '2 semanas',
+        defense: 'Nenhuma',
+        damage: '',
+        cost: '8',
+        range: '10m',
+        action: 'Hex',
+        unlockCost: '1'
+    },
+
+    {
+        id: 'hex_lingua_costurada',
+        name: 'Língua Costurada',
+        icon: '🪡',
+        category: 'Hex',
+        profession: 'Hex',
+        type: 'Hex',
+        shortDescription:
+            'O alvo perde a capacidade de falar corretamente.',
+            description: `
+            A Língua Costurada faz com que o alvo sinta a própria boca sendo fechada por fios invisíveis. Sempre que tentar falar, deverá passar em um teste de Resistir Coerção ND 14. Em falha, só consegue emitir sussurros incompreensíveis e não pode lançar feitiços verbais.
+            
+            Ritual: O conjurador precisa obter algo ligado à voz do alvo: um fio de cabelo, um objeto frequentemente usado próximo ao rosto ou algo contendo saliva.
+            
+            Durante a madrugada, uma pequena boneca de pano é criada representando o alvo. A boca da boneca é costurada lentamente com linha preta enquanto o nome verdadeiro do alvo é repetido em voz baixa.
+            
+            A cada ponto costurado, o conjurador deve permanecer em silêncio absoluto por alguns segundos. Caso interrompa o silêncio, o ritual falha.
+            
+            Ao finalizar o último ponto, a linha restante é queimada numa vela branca apagada com os dedos, selando o Hex.
+            
+            Quebra: Para desfazer a maldição, o alvo deve cortar os fios da boneca ritualística ou criar uma nova boneca representando a si mesmo. A nova boneca deve ter a boca aberta manualmente com uma lâmina de prata enquanto palavras de libertação são pronunciadas diante de uma fogueira acesa com ervas purificadoras.
+            `,
+        duration: '1d10 horas',
+        defense: 'Resistir Coerção',
+        damage: '',
+        cost: '6',
+        range: '10m',
+        action: 'Bonus',
+        unlockCost: '1'
+    },
+
+    {
+        id: 'hex_passos_vazios',
+        name: 'Passos Vazios',
+        icon: '👣',
+        category: 'Hex',
+        profession: 'Hex',
+        type: 'Hex',
+        shortDescription:
+            'O alvo sente o chão desaparecer sob seus pés.',
+            description: `
+            Passos Vazios atormenta o alvo com a sensação constante de cair no vazio. Sempre que correr, esquivar ou saltar, deve fazer um teste de Coragem ND 15. Em falha, perde a ação por hesitação e fica Desequilibrado.
+            
+            Ritual: O conjurador deve recolher terra de um precipício, ponte quebrada ou local onde alguém tenha morrido em queda. A terra é colocada dentro de um pequeno saco preto junto com unhas queimadas e pedras rachadas.
+            
+            Durante o ritual, o conjurador desenha um círculo irregular no chão usando giz branco misturado com cinzas. Em seguida, caminha em círculos descalço enquanto repete o nome do alvo sem parar ou coloca um objeto ou algo do alvo dentro do circulo.
+            
+            Ao final, o saco é enterrado de cabeça para baixo no centro de onde foi feito o circulo. Quando o vento apagar as velas usadas no ritual, o Hex desperta.
+            
+            Quebra: Para quebrar a maldição, o alvo deve atravessar uma ponte ou caminho elevado sem demonstrar medo, carregando nos pés sal grosso e ramos de alecrim amarrados por linha vermelha.
+            
+            Ao alcançar o outro lado, deve jogar os ramos em água corrente e permanecer alguns minutos sem olhar para trás.
+            `,
+        duration: 'Até ser quebrado',
+        defense: 'Coragem',
+        damage: '',
+        cost: '8',
+        range: '12m',
+        action: 'Bonus',
+        unlockCost: '1'
+    },
+
+    {
+        id: 'hex_olho_quebrado',
+        name: 'Olho Quebrado',
+        icon: '👁️',
+        category: 'Hex',
+        profession: 'Hex',
+        type: 'Hex',
+        shortDescription:
+            'Distorce completamente a percepção visual do alvo.',
+            description: `
+            O Olho Quebrado faz rostos parecerem monstruosos e distâncias se tornarem irreais. O alvo sofre -4 em Percepção e ataques à distância. Toda rodada existe 25% de chance do alvo enxergar aliados como inimigos por alguns segundos.
+            
+            Ritual: O conjurador precisa de um espelho rachado, água parada recolhida durante a noite e um objeto pessoal do alvo que tenha sido visto frequentemente por ele.
+            
+            O espelho é colocado sobre o chão enquanto a água é derramada lentamente sobre sua superfície quebrada. O reflexo deformado deve permanecer visível durante todo o ritual.
+            
+            Enquanto observa o reflexo distorcido, o conjurador gira o objeto do alvo em círculos lentos e recita palavras fragmentadas sem repetir nenhuma frase da mesma forma.
+            
+            Ao final, o espelho é quebrado completamente com a mão envolta em pano preto. Quando o último fragmento perde o reflexo da luz, o Hex desperta.
+            
+            Quebra: Para desfazer a maldição, o alvo deve encarar o próprio reflexo em água corrente durante o nascer do sol enquanto segura um espelho intacto atrás da cabeça.
+            
+            Após isso, o espelho usado no ritual deve ser enterrado longe de qualquer habitação antes da próxima noite.
+            `,
+        duration: '2d10 rodadas',
+        defense: 'Resistir Coerção',
+        damage: '',
+        cost: '10',
+        range: '10m',
+        action: 'Bonus',
+        unlockCost: '1'
+    },
+
+    {
+        id: 'hex_coracao_covarde',
+        name: 'Coração Covarde',
+        icon: '🫀',
+        category: 'Hex',
+        profession: 'Hex',
+        type: 'Hex',
+        shortDescription:
+            'Enfraquece a coragem do alvo.',
+            description: `
+            O Coração Covarde faz o alvo sentir um terror irracional da morte. Sempre que sofrer dano ou testemunhar algo assustador, deve realizar um teste de Coragem ND 20 ou ficará Atordoado por 1 rodada e tentará fugir da ameaça.
+            
+            Ritual: O conjurador deve conseguir algo ligado ao medo do alvo: relatos sobre seus traumas, sangue derramado em batalha ou um objeto associado a uma experiência aterradora.
+            
+            Durante a noite, um pequeno coração feito de cera negra é moldado manualmente e colocado dentro de um recipiente cercado por espinhos secos.
+            
+            Enquanto segura o coração artificial, o conjurador recita lentamente descrições de mortes violentas e medos antigos até que a vela principal do ritual comece a oscilar.
+            
+            Ao final, o coração de cera é perfurado com uma agulha enferrujada e enterrado sob terra fria. Quando o vento apagar as velas restantes, o Hex desperta.
+            
+            Quebra: Para quebrar a maldição, o alvo deve enfrentar voluntariamente uma situação de grande medo sem fugir dela.
+            
+            Após sobreviver ao desafio, deve queimar um símbolo representando seu maior temor enquanto permanece cercado por luz forte ou fogo contínuo até as cinzas esfriarem completamente.
+            `,
+        duration: '1d10 rodadas',
+        defense: 'Coragem',
+        damage: '',
+        cost: '10',
+        range: '8m',
+        action: 'Bonus',
+        unlockCost: '1'
+    },
+
+    {
+        id: 'hex_fome_negra',
+        name: 'Fome Negra',
+        icon: '🍖',
+        category: 'Hex',
+        profession: 'Hex',
+        type: 'Hex',
+        shortDescription:
+            'O alvo sente uma fome sobrenatural incessante.',
+            description: `
+            A Fome Negra drena lentamente as forças do alvo. A cada 2 rodadas perde 2 EST enquanto estiver sem comer algo imediatamente. Mesmo após se alimentar, a sensação retorna em poucos minutos.
+            
+            Ritual: O conjurador deve obter restos de comida estragada, ossos roídos por animais famintos ou carne deixada apodrecendo por pelo menos uma noite.
+            
+            Os restos são colocados dentro de uma tigela de barro junto com carvão esmagado e ervas amargas. Durante o ritual, o conjurador permanece em jejum absoluto.
+            
+            Enquanto mistura os ingredientes com as mãos nuas, o nome do alvo é repetido entre respirações lentas e profundas. A mistura deve permanecer próxima de uma chama fraca sem cozinhar completamente.
+            
+            Ao final, parte da comida ritualística é enterrada e o restante queimado lentamente. Quando o cheiro da fumaça desaparecer, o Hex desperta.
+            
+            Quebra: Para quebrar a maldição, o alvo deve preparar uma refeição completa sem provar nenhum ingrediente durante o preparo.
+            
+            A comida deve ser compartilhada com pessoas famintas, viajantes ou desconhecidos necessitados antes do nascer do sol seguinte, o alvo não pode se alimentar. Após a última pessoa comer, o alvo deve lavar as mãos em água corrente misturada com sal e hortelã, caso o alvo não tenha se alimentado durante o processo a maldição é quebrada.
+            `,
+        duration: 'Até ser curado',
+        defense: 'Tolerância',
+        damage: '',
+        cost: '12',
+        range: '10m',
+        action: 'Bonus',
+        unlockCost: '1'
+    },
+
+    {
+        id: 'hex_murmurios_da_floresta',
+        name: 'Murmúrios da Floresta',
+        icon: '🌲',
+        category: 'Hex',
+        profession: 'Hex',
+        type: 'Hex',
+        shortDescription:
+            'Vozes invisíveis perseguem o alvo.',
+            description: `
+            O alvo escuta constantemente vozes vindas da mata ou das sombras. Sempre que descansar deve fazer um teste de Resistir Coerção ND 15. Em falha, não recupera EST naquela noite.
+            
+            Ritual: O conjurador deve recolher folhas secas de uma floresta antiga, musgo retirado de pedras úmidas e pequenos galhos encontrados naturalmente quebrados no chão.
+            
+            Os materiais são colocados em círculo ao redor de uma vela verde apagada. O ritual deve ocorrer próximo de árvores ou em local onde o vento possa ser ouvido claramente.
+            
+            Enquanto o vento atravessa os galhos, o conjurador sussurra frases incompletas e nomes esquecidos sem nunca repetir a mesma sequência de palavras.
+            
+            Durante o ritual, ninguém além do conjurador pode falar. Caso outro som humano interrompa os sussurros, o ritual perde força e deve ser reiniciado.
+            
+            Ao final, as folhas são queimadas lentamente até que apenas fumaça fina permaneça no ar. Quando a fumaça desaparecer completamente, o Hex desperta.
+            
+            Quebra: Para quebrar a maldição, o alvo deve passar uma noite inteira em silêncio absoluto diante de uma fogueira feita com madeira seca e ervas calmantes.
+            
+            Antes do amanhecer, deve enterrar as cinzas da fogueira ao pé de uma árvore viva e deixar uma oferenda simples para os espíritos da mata, como pão, leite ou mel.
+            `,
+        duration: '1 semana',
+        defense: 'Resistir Coerção',
+        damage: '',
+        cost: '8',
+        range: '15m',
+        action: 'Bonus',
+        unlockCost: '1'
+    },
+
+    {
+        id: 'hex_reflexo_morto',
+        name: 'Reflexo Morto',
+        icon: '🪞',
+        category: 'Hex',
+        profession: 'Hex',
+        type: 'Hex',
+        shortDescription:
+            'O reflexo do alvo desaparece.',
+            description: `
+            O Reflexo Morto remove qualquer reflexo do alvo em espelhos, água ou metal polido. Animais ficam inquietos perto da vítima e criaturas sobrenaturais reconhecem imediatamente que ela está amaldiçoada.
+            
+            Ritual: O conjurador deve obter um fragmento de espelho quebrado, água parada recolhida à meia-noite e algo que tenha pertencido intimamente ao alvo, como joias, roupas usadas ou fios de cabelo.
+            
+            O espelho é colocado dentro de uma tigela rasa cheia de água escura enquanto velas negras são acesas ao redor em número ímpar.
+            
+            Durante o ritual, o conjurador evita olhar diretamente para o próprio reflexo e recita palavras antigas enquanto mergulha lentamente o objeto do alvo na água.
+            
+            Em seguida, o fragmento do espelho é virado para baixo até que nenhum reflexo permaneça visível em sua superfície.
+            
+            Ao final, a água é derramada em solo seco e o espelho é enterrado em um local onde ninguém veja o céu diretamente. Quando o ritual termina, o reflexo do alvo desaparece.
+            
+            Quebra: Para quebrar a maldição, o alvo deve permanecer diante de um espelho intacto durante o nascer do sol enquanto segura uma vela branca acesa.
+            
+            Outra pessoa deve derramar água corrente sobre as mãos do alvo enquanto seu nome completo é pronunciado três vezes sem interrupção.
+            
+            Após isso, o espelho utilizado deve ser coberto por um pano claro durante uma noite inteira antes de voltar a ser usado.
+            `,
+        duration: 'Até ser quebrado',
+        defense: 'Nenhuma',
+        damage: '',
+        cost: '6',
+        range: 'Toque',
+        action: 'Bonus',
+        unlockCost: '1'
+    },
+
+    {
+        id: 'hex_sede_cinzas',
+        name: 'Sede de Cinzas',
+        icon: '🔥',
+        category: 'Hex',
+        profession: 'Hex',
+        type: 'Hex',
+        shortDescription:
+            'A água nunca sacia o alvo.',
+            description: `
+            A Sede de Cinzas faz toda bebida parecer poeira quente. O alvo dobra o consumo necessário de água e sofre -2 em testes físicos após algumas horas sem beber grandes quantidades.
+            
+            Ritual: O conjurador deve reunir cinzas de madeira queimada, areia seca e água retirada de um recipiente abandonado ao sol durante o dia inteiro.
+            
+            As cinzas são espalhadas em círculo enquanto uma tigela de barro é colocada no centro contendo a água aquecida. O ritual deve ser realizado em local abafado ou próximo de fogo constante.
+            
+            Durante a invocação, o conjurador mistura lentamente a água com os dedos até que ela fique turva e escura, recitando palavras ásperas sem jamais parar para respirar profundamente.
+            
+            O nome do alvo é pronunciado sempre que uma pitada de cinzas é lançada na tigela. Quando toda a água evaporar parcialmente pelo calor da chama, o Hex desperta.
+            
+            Quebra: Para quebrar a maldição, o alvo deve beber água corrente diretamente de uma fonte natural ao nascer do sol durante três manhãs consecutivas.
+            
+            Após cada vez, deve lavar o rosto e as mãos usando folhas frescas de hortelã ou ervas aromáticas. No último dia, as roupas usadas durante a maldição devem ser queimadas junto com um punhado de sal grosso.
+            `,
+        duration: '3 dias',
+        defense: 'Tolerância',
+        damage: '',
+        cost: '8',
+        range: '10m',
+        action: 'Bonus',
+        unlockCost: '1'
+    },
+    
+    {
+        id: 'hex_espelho_partido',
+        name: 'Hex do Espelho Partido',
+        icon: '🪞',
+        shortDescription:
+            'Reflexos distorcidos enlouquecem o alvo.',
+            description: `
+            O alvo começa a enxergar versões distorcidas de si mesmo refletidas em superfícies.
+            
+            Sempre que falhar em teste de Consciência, sofre -2 em ações pela rodada.
+            
+            Perigo: Médio.
+            
+            Ritual: O conjurador deve obter um fragmento de espelho quebrado, água parada recolhida durante a madrugada e algo que tenha pertencido diretamente ao alvo, como um fio de cabelo, acessório ou pedaço de roupa.
+            
+            O ritual deve ocorrer em um cômodo escuro iluminado apenas por velas fracas. Os fragmentos de espelho são organizados em círculo ao redor de uma tigela de água negra.
+            
+            Enquanto encara os reflexos fragmentados, o conjurador pinga gotas da água sobre cada pedaço de espelho enquanto sussurra o nome do alvo repetidamente em voz baixa.
+            
+            O objeto ligado ao alvo é então colocado no centro da tigela e coberto pelos cacos restantes até que nenhum reflexo fique completo.
+            
+            Ao final, uma das velas deve ser apagada com os dedos molhados na água ritualística. Quando o último reflexo desaparecer da superfície da água, o Hex desperta.
+            
+            Quebra: Para se livrar da maldição, o alvo deve quebrar sete espelhos diferentes sob chuva corrente e enterrar os cacos em solo virgem antes do próximo amanhecer.
+            `,
+        type: 'Hex',
+        profession: 'Hex',
+        category: 'Hex',
+        duration: '1 semana',
+        defense: 'Consciência',
+        damage: '',
+        cost: '8',
+        range: '10m',
+        action: 'Hex',
+        cost: '1',
+        unlockCost: 1
+    },
+
     // =====================================
     // REGRAS
     // =====================================
     {
         id: 'regra_ataque_por_tras',
-    
         name: 'Regra: Ataque por trás',
-    
         icon: '🗡️',
-    
         shortDescription:
             'Ataques furtivos pelas costas.',
-    
         description:
             `Ao realizar um ataque por trás do inimigo ele deverá realizar um teste de percepção para poder reagir.
     
     ND 12: Armas Grandes.
     ND 15: Adagas e Armas Pequenas.
     ND 16: Longa Distância.`,
-    
         type: 'Regras',
-    
         profession: 'Regras',
-    
         category: 'Ação Principal',
-    
         duration: '',
-    
         defense: '',
-    
         damage: '',
-    
-        consumption: '',
-    
         range: '',
-    
         action: 'Principal',
-    
         cost: '',
-    
         unlockCost: 0
     },
     
     {
         id: 'regra_empurrar',
-    
         name: 'Regra: Empurrar',
-    
         icon: '🛡️',
-    
         shortDescription:
             'Empurra inimigos usando Brigar.',
-    
         description:
-            `Faça um teste de Brigar contra a Tolerância do alvo.
+            `Faça um teste de Brigar contra a Físico do alvo.
 
     Se você conseguir passar irá empurrar o alvo pela quantidade de quadrados igual ao seu nível de Brigar.
 
-    Decida no dado se o alvo irá cair no chão com 1d10.`,
-    
+    Decida no dado se o alvo irá sofrer Caído.`,
         type: 'Regras',
-    
         profession: 'Regras',
-    
         category: 'Bonus',
-    
         duration: '',
-    
         defense: '',
-    
         damage: '',
-    
-        consumption: '',
-    
         range: '',
-    
         action: 'Bônus',
-    
         cost: '',
-    
         unlockCost: 0
     },
     
     {
         id: 'regra_ataque_rapido_forte',
-    
         name: 'Regra: Ataque Rápido/Forte',
-    
         icon: '⚔️',
-    
         shortDescription:
             'Golpes rápidos ou devastadores.',
-    
         description:
-            `Consome seu turno inteiro.
-    (Ação Principal + Ação Bonûs + 2 EST)
+            `Consome sua ação principal.
+    (Ação Principal + 2 EST)
     
     Rápido:
-    Realiza dois golpes com sua arma, uma rolagem para cada golpe.
+    Realiza dois golpes com sua arma, uma rolagem para cada golpe. (+2 de Bonus contra esquivar.)
     
     Forte:
-    Rola um dado de dano que é multiplicado contra o alvo (Chance de ultrapassar a armadura) ou rola 2d20 e soma o valor do segundo dado caso o inimigo tente bloquear.`,
-    
+    Rola um dado de dano que é multiplicado contra o alvo (Chance de ultrapassar a armadura) (+2 de Bonus contra bloquear.)`,
         type: 'Regras',
-    
         profession: 'Regras',
-    
         category: 'Ação Principal',
-    
         duration: '',
-    
         defense: '',
-    
         damage: '',
-    
-        consumption: '2 EST',
-    
         range: '',
-    
         action: 'Principal',
-    
-        cost: '',
-    
+        cost: '2',
         unlockCost: 0
     },
     
     {
         id: 'regra_modo_defesa',
-    
         name: 'Regra: Modo Defesa',
-    
         icon: '🛡️',
-    
         shortDescription:
             'Foco total em defesa.',
-    
         description:
             `Consome seu turno inteiro para ficar em modo de defesa e rolar Esquivar ou Defender com vantagem.
     
     Você poderá realizar apenas ações referentes à sua esquiva ou defesa.`,
-    
         type: 'Regras',
-    
         profession: 'Regras',
-    
         category: 'Turno Inteiro',
-    
         duration: '',
-    
         defense: '',
-    
         damage: '',
-    
-        consumption: '',
-    
         range: '',
-    
         action: 'Turno Inteiro',
-    
         cost: '',
-    
         unlockCost: 0
     },
     
     {
         id: 'regra_erguer_escudo',
-    
         name: 'Regra: Erguer Escudo',
-    
         icon: '🛡️',
-    
         shortDescription:
             'Bloqueios fortalecidos.',
-    
         description:
             `Ergue seu escudo.
     
     Enquanto com escudo erguido poderá rolar Bloquear com vantagem, porém todo ataque realizado será com desvantagem.`,
-    
         type: 'Regras',
-    
         profession: 'Regras',
-    
         category: 'Ação Bonus',
-    
         duration: '',
-    
         defense: '',
-    
         damage: '',
-    
-        consumption: '',
-    
         range: '',
-    
         action: 'Bônus',
-    
         cost: '',
-    
         unlockCost: 0
     },
     
     {
         id: 'regra_correr',
-    
         name: 'Regra: Correr',
-    
         icon: '🏃',
-    
         shortDescription:
             'Move-se rapidamente.',
-    
         description:
-            `Consome sua ação principal para correr.
+            `Consome seu turno inteiro para correr.
     
     Correr permite você se mover o dobro do seu movimento total.`,
-    
         type: 'Regras',
-    
         profession: 'Regras',
-    
         category: 'Ação Principal',
-    
         duration: '',
-    
         defense: '',
-    
         damage: '',
-    
-        consumption: '',
-    
         range: '',
-    
         action: 'Principal',
-    
         cost: '',
-    
         unlockCost: 0
     },
     
     {
         id: 'regra_mirar',
-    
         name: 'Regra: Mirar',
-    
         icon: '🎯',
-    
         shortDescription:
             'Ataques direcionados.',
-    
         description:
             `Você poderá escolher mirar em uma área do inimigo ao atacar com penalidades no CD:
     
@@ -5165,99 +5841,57 @@ const predefinedAbilities = [
     Braços e Pernas 0,5x Dano (Penalidade de Mira -1)`,
     
         type: 'Regras',
-    
         profession: 'Regras',
-    
         category: 'Ação Principal',
-    
         duration: '',
-    
         defense: '',
-    
         damage: '',
-    
-        consumption: '',
-    
         range: '',
-    
         action: 'Principal',
-    
         cost: '',
-    
         unlockCost: 0
     },
     
     {
         id: 'regra_feridas_criticas',
-    
         name: 'Regra: Feridas Críticas',
-    
         icon: '🩸',
-    
         shortDescription:
             'Críticos causam ferimentos.',
-    
         description:
             `Se sua jogada de dano tiver uma rolagem crítica você irá causar um ferimento crítico no alvo.`,
-    
         type: 'Regras',
-    
         profession: 'Regras',
-    
         category: '',
-    
         duration: '',
-    
         defense: '',
-    
         damage: '',
-    
-        consumption: '',
-    
         range: '',
-    
         action: '',
-    
         cost: '',
-    
         unlockCost: 0
     },
     
     {
         id: 'regra_escapar',
-    
         name: 'Regra: Escapar',
-    
         icon: '💨',
-    
         shortDescription:
             'Escapa de cercos inimigos.',
-    
         description:
             `Consome sua ação bônus para escapar dos inimigos que te cercam.
     
-    Deve ser feita uma jogada de DES contra a DES dos inimigos.`,
+    Deve ser feita uma jogada de Atletismo contra Atletismo dos inimigos.`,
     
         type: 'Regras',
-    
         profession: 'Regras',
-    
         category: 'Ação Principal',
-    
         duration: '',
-    
         defense: '',
-    
         damage: '',
-    
-        consumption: '',
-    
         range: '',
-    
         action: 'Principal',
-    
         cost: '',
-    
         unlockCost: 0
     },
 
