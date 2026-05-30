@@ -1092,6 +1092,108 @@ Não se amarre ao mastro. Você vai ter uma morte horrível. Ao contrário da cr
     
         `,
     },
+
+    {
+        id: 'leshen',
+    
+        name: 'Leshen',
+    
+        image: 'https://archive.org/download/leshen-fanart-by-ivan-roujev./tumblr_0daf3456809020e4351e142fed930c33_b193cd11_2048.jpg',
+    
+        hp: 90,
+    
+        threat: 'Duro / Difícil',
+    
+        reward: '1750 Coroas',
+    
+        st: 37,
+    
+        ca: 14,
+    
+        armor: {
+            head: 5,
+            torso: 5,
+            arm: 5,
+            leg: 5
+        },
+    
+        vulnerabilities: [
+            'Óleo de Relíquia',
+            'Diméritio',
+            'Fogo',
+            'Yrden'
+        ],
+    
+        abilities: [
+            'Forma de Fumaça (D) — Pode se tornar incorpóreo e ignorar um ataque corpo a corpo por turno.',
+            'Raízes Emaranhadas (D) — Cria raízes em até 10m que imobilizam alvos. Escapar exige teste de Esquivar/Escapar.',
+            'Assassinato de Corvos (D) — Invoca um enxame de corvos em área de 5m que causa dano por rodada ignorando armadura.',
+            'Totens (MAX. 5) — Rola 1d4, Pode criar totens que aumentam sua armadura e poder regenerativo, regenera 10 HP por totem e ganha 5 de armadura extra.',
+            'Líder do Bosque — Pode comandar lobos, ursos e nekkers próximos.',
+            'Espírito da Floresta — Imune a sangramento e veneno.',
+            'Vínculo Vital —  Em alguns casos os Leshen marcam uma pessoa que mora perto de seu território. Enquanto a pessoa marcada estiver viva, o Leshen pode renascer continuamente a partir de raízes e corvos caso seja derrotado em batalha..'
+        ],
+    
+        attacks: [
+            'Garras 6d6+2',
+            'Forma de Fumaça',
+            'Raízes Emaranhadas',
+            'Assassinato de Corvos',
+            'Totens',
+            'Líder do Bosque'
+        ],
+    
+        loot: [
+            'Ingredientes Vegetais (1d10)',
+            'Ossos da Besta (1d10)',
+            'Poeira Infundida (1d6)'
+        ],
+    
+        skills: [
+            'Atletismo +12',
+            'Concentração +14',
+            'Briga +14',
+            'Esquiva/Escapar +15',
+            'Resistência +10',
+            'Corpo a Corpo +9',
+            'Resistir à Magia +10',
+            'Feitiço +8',
+            'Furtividade +7',
+            'Sobrevivência na Natureza +10'
+        ],
+    
+        speed: '5m',
+    
+        height: '4 metros',
+    
+        weight: '250kg',
+    
+        habitat: 'Florestas profundas e natureza selvagem intocada',
+    
+        intelligence: 'Desconhecida, possivelmente mais inteligente que humanos',
+    
+        organization: 'Solitário',
+    
+        superstition: `
+    
+        O Senhor da Floresta é um deus antigo que comanda todos os animais e pássaros da floresta. Seu nome não deve ser pronunciado em voz alta, pois ele escuta. Os mais velhos afirmam que seus olhos observam através das árvores e que sua ira pode secar plantações inteiras.
+    
+        Onde um Leshen habita, a floresta deixa de pertencer aos homens.
+    
+        `,
+    
+        witcherKnowledge: `
+    
+        Leshens habitam florestas densas e primitivas. São criaturas extremamente territoriais e capazes de manipular a própria floresta para caçar invasores. Embora possuam forma física, demonstram inteligência incomum e parecem compreender estratégias complexas.
+    
+        Eles controlam corvos, animais selvagens e raízes vivas. Sua presença costuma ser marcada por totens feitos de ossos, madeira e pedras, espalhados por seu território.
+    
+        Diméritio reduz significativamente seus poderes mágicos. Fogo também é eficaz contra eles. Bruxos experientes procuram destruir seus totens antes de enfrentar a criatura diretamente.
+    
+        Apesar de seu tamanho, Leshens movem-se silenciosamente entre as árvores e são capazes de desaparecer em meio à névoa e à vegetação.
+    
+        `,
+    },
     
     
     ];
