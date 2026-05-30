@@ -160,7 +160,7 @@ const conditionDescriptions = {
     
     '💫': {
         title: 'Atordoado',
-        desc: 'O personagem perde a próxima ação e não pode realizar defesa ou esquiva até o fim do prÃ³ximo turno.'
+        desc: 'O personagem perde a próxima ação e não pode realizar defesa ou esquiva até o fim do próximo turno.'
     },
     
     '🩸': {

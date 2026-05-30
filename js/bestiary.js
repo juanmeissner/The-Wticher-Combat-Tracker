@@ -406,7 +406,7 @@ Grifos são tecnicamente criaturas muito simples. Eles operam muito como uma com
     
         name: 'Afogador',
     
-        image: 'https://cdna.artstation.com/p/assets/images/images/062/193/626/large/anton-golubev-42.jpg?1682557062',
+        image: '',
     
         hp: 25,
     
@@ -486,7 +486,7 @@ Na verdade, os afogadores não são malfeitores ressuscitados. A maioria das pes
     
         name: 'Carniçal',
     
-        image: 'https://static.wikia.nocookie.net/witcher/images/1/18/Gwent_cardart_monsters_ghoul.jpg/revision/latest?cb=20180608165847',
+        image: '',
     
         hp: 35,
     
@@ -570,7 +570,7 @@ Muito parecido com outros necrófagos, pessoas comuns acham que carniçais são 
     
         name: 'Alpor / Lâmia',
     
-        image: 'https://static.wikia.nocookie.net/thewitcher/images/1/12/B3.jpg/revision/latest/scale-to-width-down/230?cb=20160615121658&path-prefix=pt-br',
+        image: '',
     
         hp: 70,
     
@@ -655,7 +655,7 @@ As Alpor são vampiros que lembram bruxas na aparência. Eles são chamados de f
     
         name: 'Bruxa Sepulcral',
     
-        image: 'https://static.wikia.nocookie.net/witcher/images/d/d7/Gwent_cardart_monsters_mourntart.jpg/revision/latest?cb=20190523045637',
+        image: '',
     
         hp: 60,
     
@@ -984,6 +984,112 @@ Não se amarre ao mastro. Você vai ter uma morte horrível. Ao contrário da cr
         
         witcherKnowledge: `
 
+        `,
+    },
+
+    {
+        id: 'umbrenato',
+    
+        name: 'Umbrenato',
+    
+        image: '',
+    
+        hp: 180,
+    
+        threat: 'Difícil / Mortal',
+    
+        reward: '400 Coroas',
+    
+        st: 28,
+    
+        ca: 17,
+    
+        armor: {
+            head: 12,
+            torso: 14,
+            arm: 10,
+            leg: 10
+        },
+    
+        vulnerabilities: [
+            'Óleo de Amaldiçoado',
+            'Fogo',
+            'Yrden'
+        ],
+    
+        abilities: [
+            'Nascimento Profano — Surge quando uma mulher grávida sofre violência extrema e morre sem receber sepultamento adequado junto de seu filho.',
+            'Névoa Uterina — Como ação, expele uma névoa densa pela boca e pelo cordão umbilical. Criaturas a até 20m sofrem -4 em Consciência, Percepção, e Perícias relacionadas á batalha.',
+            'Sufocamento — Criaturas vivas dentro da névoa devem passar em Tolerância (ND 16) ou ficam Atordoados com a Névoa.',
+            'Grito do Não-Nascido — Um grito que mistura o choro de um bebê e o desespero de uma mulher moribunda. Coragem (ND 18) ou a vítima fica Amedrontada por 1d6 rodadas.',
+            'Predador Noturno — Recebe +3 em Furtividade e Consciência durante a noite.',
+            'Ódio Herdado — Contra homens recebe +2d6 de dano em todos os ataques.'
+        ],
+    
+        attacks: [
+            'Garras 6d6',
+            'Mordida 7d6 Sangramento (ND 16)',
+            'Cordão Umbilical 2d6 Agarrar (Alcance 8m)',
+            'Dilacerar 8d6 (alvo agarrado)',
+            'Grito do Não-Nascido',
+            'Névoa Uterina'
+        ],
+    
+        loot: [
+            'Cordão Umbilical Amaldiçoado (1)',
+            'Essência Espectral (1d6)',
+            'Sangue Profano (1d6)',
+            'Mutagênico Vermelho (1d6/2)'
+        ],
+    
+        skills: [
+            'Brigar +14',
+            'Bloquear +12',
+            'Esquivar/Escapar +12',
+            'Atletismo +12',
+            'Consciência +14',
+            'Furtividade +14',
+            'Sobrevivência no Ermo +10',
+            'Resistir a Magia +15',
+            'Tolerância +14',
+            'Coragem +14',
+            'Físico +14'
+        ],
+    
+        speed: '10m',
+    
+        height: '3 metros',
+    
+        weight: '800kg',
+    
+        habitat: 'Cemitérios abandonados, campos de batalha, florestas e locais de tragédias',
+    
+        intelligence: 'Tão inteligente quanto um lobo',
+    
+        organization: 'Solitário',
+    
+        superstition: `
+    
+        "Dizem que quando uma mulher grávida é enterrada sem nome e sem oração, algo continua crescendo debaixo da terra."
+    
+        Camponeses contam histórias de uma criatura que vaga por estradas envolta em névoa. Alguns juram ouvir um bebê chorando antes de desaparecerem. Outros dizem que a criatura caça homens violentos e estupradores, deixando apenas pedaços dos corpos para trás.
+    
+        Muitos acreditam que a névoa do Umbrenato é o último suspiro da mãe que nunca encontrou descanso.
+    
+        `,
+    
+        witcherKnowledge: `
+    
+        Umbrenatos são amaldiçoados extremamente raros, nascidos da combinação de morte violenta, sofrimento e sepultamento inadequado. Apesar de sua aparência monstruosa, eles não são simples necrófagos. Possuem um instinto sobrenatural guiado pela dor e pelo ressentimento herdado de sua origem.
+    
+        A característica mais perigosa da criatura é o cordão umbilical mutado que emerge de seu abdômen. A extremidade desenvolve uma boca própria repleta de dentes, capaz de agarrar presas a vários metros de distância e arrastá-las para perto.
+    
+        Seu grito causa terror até mesmo em veteranos de guerra, enquanto a névoa que expele pode sufocar grupos inteiros de viajantes.
+    
+        Yrden enfraquece a névoa e reduz sua velocidade. Fogo provoca dor extrema na criatura e impede que regenere tecidos danificados.
+    
+        A única forma garantida de impedir o retorno de um Umbrenato é localizar os restos mortais da mãe e da criança e conceder-lhes um funeral apropriado.
+    
         `,
     },
     

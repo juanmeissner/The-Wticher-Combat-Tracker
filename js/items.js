@@ -342,7 +342,7 @@ const predefinedItems = [
         icon: 'https://static.divine-pride.net/images/items/item/12245.png',
         category: 'usable',
         goldValue: 0,
-        description: '1d6 em todos os sentidos, Reflexo, Defesa, Audição, Percepção, Esquiva, Atletismo, Acrobacias, Habilidades com armas como Esgrima etc...',
+        description: '1d6 em todos os sentidos, Reflexo, Defesa, Audição, Percepção, Esquiva, Atletismo, Acrobacias, Lançar Feitiços, Habilidades com armas como Esgrima etc...',
         recipe: [
             'Mitro Branco',
             'Água Destilada',
@@ -427,7 +427,7 @@ const predefinedItems = [
         icon: 'https://static.divine-pride.net/images/items/item/12121.png',
         category: 'usable',
         goldValue: 0,
-        description: 'Recebe +1d6 em Lançar Feitiços, Hexes e Criar Ritual.',
+        description: 'Sempre que usar um sinal o sinal terá efeito como se tivesse gasto 1d6 pontos em EST extra, podendo ultrapassar os limites dos poderes dos sinais.',
         recipe: [
             'Água Destilada',
             'Pó Infundido',

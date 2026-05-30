@@ -31,6 +31,18 @@ function renderIcon(icon) {
     return `<span>${icon}</span>`;
 }
 
+function getMonsterImage(monster) {
+
+    if (
+        monster.image &&
+        monster.image.trim() !== ''
+    ) {
+        return monster.image;
+    }
+
+    return `img/monsters/${monster.id}.png`;
+}
+
 
 // ÍCONES GLOBAIS DO SISTEMA
 const UI_ICONS = {
@@ -144,7 +156,7 @@ function filterPresetMonsters() {
     
                 <img
     
-                    src="${monster.image}"
+                    src="${getMonsterImage(monster)}"
     
                     class="w-20
                            h-20
@@ -291,7 +303,7 @@ function showMonsterDetails(monsterId, fromCombat = false) {
 
 <img
 
-    src="${monster.image}"
+    src="${getMonsterImage(monster)}"
 
     class="w-full
            h-72

@@ -133,7 +133,7 @@ const predefinedAbilities = [
             'Círculo mágico de contenção.',
 
         description:
-            'Yrden cria um círculo mágico grande no chão à sua volta. Qualquer coisa que pisar dentro do círculo sofre uma negativa em Destreza e Esquiva igual ao número de EST gasto até deixar o círculo. Qualquer criatura incorpórea que entrar no círculo se torna corpórea.'
+            'Yrden cria um círculo mágico grande no chão à sua volta. Qualquer coisa que pisar dentro do círculo sofre uma negativa em Destreza e Esquiva igual ao número de EST gasto até deixar o círculo. Qualquer criatura incorpórea que entrar no círculo se torna corpórea, alternativamente pode usar Yrden em um objeto sólido, dando ao mesmo resistência contra inimigos.'
     },
 
     {
@@ -337,7 +337,7 @@ const predefinedAbilities = [
             'Rajadas de pedras afiadas.',
     
         description:
-            'Cenlly Graig arremessa pedras afiadas contra o oponente. A cada 1 ponto obtido acima do valor de Esquivar/Bloquear do alvo (máximo 5), você realiza uma rajada causando 2d6 de dano cada e possui uma chance única de 10% de causar sangramento. Cada rajada conta como um ataque separado ao determinar local e dano causado.'
+            'Cenlly Graig arremessa pedras afiadas contra o oponente. A cada 1 ponto obtido acima do valor de Esquivar/Bloquear do alvo (máximo 5), você realiza uma rajada causando 2d6 de dano cada e possui uma chance única de 10% de causar sangramento. Cada rajada conta como um ataque separado ao determinar local e dano causado e consome 1 ST extra por hit.'
     },
     
     {
@@ -1989,7 +1989,7 @@ const predefinedAbilities = [
     
         defense: 'Esquivar / Bloquear',
     
-        damage: '1d6 * Resultado',
+        damage: '2d6 * Resultado (Maximo 5)',
     
         cost: '10',
     
@@ -2003,7 +2003,7 @@ const predefinedAbilities = [
             'Rajadas congelantes.',
     
         description:
-            'Criado por Carys de Cintra, este feitiço lança rajadas de gelo em alta velocidade. Para cada ponto acima da defesa do alvo (máximo 10), causa 1d6 de dano e possui 10% de chance de congelamento. Cada rajada é tratada como ataque separado.'
+            'Criado por Carys de Cintra, este feitiço lança rajadas de gelo em alta velocidade. Para cada ponto acima da defesa do alvo (máximo 5), causa 2d6 de dano e possui 10% de chance de congelamento. Cada rajada é tratada como ataque separado e consome 1 de EST por HIT.'
     },
     
     {
@@ -3349,7 +3349,7 @@ const predefinedAbilities = [
     
         defense: '',
     
-        damage: '3d6',
+        damage: '5d6',
     
         cost: '15',
     
@@ -3363,7 +3363,7 @@ const predefinedAbilities = [
             'Tempestade congelante.',
     
         description:
-            'Cria uma tempestade de granizo em grande área. Alvos devem resistir ou sofrem 3d6 de dano por rodada.'
+            'Cria uma tempestade de granizo em grande área. Alvos devem resistir ou sofrem 5d6 de dano por rodada, em cada alvo deve rolar o local de acerto.'
     },
     
     {
