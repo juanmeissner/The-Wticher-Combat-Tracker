@@ -6,7 +6,7 @@
         pressTimer = setTimeout(() => {
             deleteVisibleId = id;
             renderList();
-        }, 1000); 
+        }, 300); 
     }
 
     function handleCardPressEnd() {
@@ -35,7 +35,7 @@
         endCombatPressTimer = window.setTimeout(() => {
             didEndCombatLongPress = true;
             hardResetCombat();
-        }, 1000); 
+        }, 500); 
     }
 
     function cancelEndCombatPress(event) {
@@ -47,7 +47,7 @@
         initPressTimer = window.setTimeout(() => {
             didInitLongPress = true;
             rollMonsterInitiatives();
-        }, 1000);
+        }, 500);
     }
 
     function cancelInitPress(event) {

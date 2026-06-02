@@ -84,7 +84,7 @@ const predefinedItems = [
         icon: 'https://static.divine-pride.net/images/items/item/12424.png',
         category: 'usable',
         goldValue: 0,
-        description: 'Explode ao contato com o ar, causando 2d6 de dano num raio de 4m, os alvos terão que passar em um teste de tolerância para não incendiar.',
+        description: 'Explode ao contato com o ar, causando 3d6 de dano num raio de 4m, e causando 3 de dano em armaduras, os alvos terão que passar em um teste de tolerância para não incendiar.',
         recipe: [
             'Fósforo',
             'Fragmentos Lunares',
@@ -312,7 +312,7 @@ const predefinedItems = [
         icon: 'https://static.divine-pride.net/images/items/item/102455.png',
         category: 'usable',
         goldValue: 0,
-        description: 'Explode e incendeia tudo que tocar; causa 8d6 de dano de explosão e incendeia por 1d10 turnos. Espalha-se em um círculo de 5m ao ser arremessado; pode ampliar o efeito se usado com algo inflamável.',
+        description: 'Explode e incendeia tudo que tocar; causa 8d6 de dano de explosão e incendeia por 1d10 turnos, causa 8 de dano em armadura. Espalha-se em um círculo de 5m ao ser arremessado; pode ampliar o efeito se usado com algo inflamável.',
         recipe: [
             'Polvora',
             'Óleo Escurecedor',
@@ -719,7 +719,7 @@ const predefinedItems = [
         icon: 'https://static.divine-pride.net/images/items/item/22707.png',
         category: 'usable',
         goldValue: 0,
-        description: 'Cega inimigos temporariamente, facilitando o combate.',
+        description: 'Causa dano físico em área; ideal para destruir ninhos de monstros ou grupos de inimigos, causa um dano de 5d6 e dano de 5 em armaduras, role o local do dano.',
         recipe: [
             'Álcool Anão',
             'Salitre',
@@ -843,7 +843,7 @@ const predefinedItems = [
         weaponType: 'Esgrima',
         damage: '2d6+2',
         bonus: ' ',
-        effect: ' ',
+        effect: 'Sangramento 20%',
         description: 'Espada de Duas Mãos',
         recipe: [
             '5x Ferro ',
@@ -862,7 +862,7 @@ const predefinedItems = [
         weaponType: 'Esgrima',
         damage: '2d6+4',
         bonus: ' ',
-        effect: ' ',
+        effect: 'Sangramento 20%',
         description: 'Espada de Uma Mão',
         recipe: [
             '10x Ferro',
@@ -881,7 +881,7 @@ const predefinedItems = [
         weaponType: 'Esgrima',
         damage: '3d6+2',
         bonus: ' ',
-        effect: ' ',
+        effect: 'Sangramento 30%',
         description: 'Espada de Duas Mãos',
         recipe: [
             '13x Ferro',
@@ -900,7 +900,7 @@ const predefinedItems = [
         weaponType: 'Esgrima',
         damage: '3d6+2',
         bonus: ' ',
-        effect: ' ',
+        effect: 'Sangramento 30%',
         description: 'Espada de Uma Mão',
         recipe: [
             '14x Ferro',
@@ -919,7 +919,7 @@ const predefinedItems = [
         weaponType: 'Esgrima',
         damage: '4d6+4',
         bonus: '2',
-        effect: ' ',
+        effect: 'Sangramento 40%',
         description: 'Espada de Uma Mão',
         recipe: [
             '17x Aço',
@@ -938,7 +938,7 @@ const predefinedItems = [
         weaponType: 'Esgrima',
         damage: '5d6',
         bonus: '1',
-        effect: ' ',
+        effect: 'Sangramento 50%',
         description: 'Espada de Uma Mão',
         recipe: [
             '5x Aço Negro',
@@ -957,7 +957,7 @@ const predefinedItems = [
         weaponType: 'Esgrima',
         damage: '5d6',
         bonus: '',
-        effect: 'Sangramento 25%',
+        effect: 'Sangramento 50%',
         description: 'Espada de Uma Mão',
         recipe: [
             '6x Aço Negro',
@@ -976,7 +976,7 @@ const predefinedItems = [
         weaponType: 'Esgrima',
         damage: '5d6+4',
         bonus: '',
-        effect: 'Balanceada',
+        effect: 'Sangramento 50% / Balanceada',
         description: 'Espada de Duas Mãos',
         recipe: [
             '7x Aço Negro',
@@ -995,7 +995,7 @@ const predefinedItems = [
         weaponType: 'Esgrima',
         damage: '6d6',
         bonus: '',
-        effect: 'Sangramento 50%',
+        effect: 'Sangramento 70%',
         description: 'Espada de Duas Mãos',
         recipe: [
             '8x Aço Negro',
@@ -1014,7 +1014,7 @@ const predefinedItems = [
         weaponType: 'Lâminas Curtas',
         damage: '1d6+2',
         bonus: '',
-        effect: '',
+        effect: 'Crítico +1',
         description: 'Adaga',
         recipe: [
             '1x Ferro',
@@ -1033,7 +1033,7 @@ const predefinedItems = [
         weaponType: 'Lâminas Curtas',
         damage: '1d6',
         bonus: '2',
-        effect: 'Porte Velado',
+        effect: 'Crítico +1 / Porte Velado',
         description: 'Adaga',
         recipe: [
             '4x Aço',
@@ -1052,7 +1052,7 @@ const predefinedItems = [
         weaponType: 'Lâminas Curtas',
         damage: '2d6+2',
         bonus: '1',
-        effect: 'Sangramento 25%',
+        effect: 'Crítico +2 / Sangramento 25%',
         description: 'Adaga',
         recipe: [
             '2x Aço Negro',
@@ -1071,7 +1071,7 @@ const predefinedItems = [
         weaponType: 'Lâminas Curtas',
         damage: '2d6+2',
         bonus: '2',
-        effect: 'Sangramento 25% / Perfura 4 de Armadura',
+        effect: 'Crítico +2 / Perfura 2 de Armadura',
         description: 'Adaga',
         recipe: [
             '3x Aço Negro',
@@ -1090,7 +1090,7 @@ const predefinedItems = [
         weaponType: 'Esgrima',
         damage: '2d6+1',
         bonus: '',
-        effect: '',
+        effect: 'Sangramento 20%',
         description: 'Machado de Uma Mão',
         recipe: [
             '13x Ferro',
@@ -1109,7 +1109,7 @@ const predefinedItems = [
         weaponType: 'Esgrima',
         damage: '5d6',
         bonus: '',
-        effect: '',
+        effect: 'Sangramento 50%',
         description: 'Machado de Uma Mão',
         recipe: [
             '15x Aço',
@@ -1128,7 +1128,7 @@ const predefinedItems = [
         weaponType: 'Esgrima',
         damage: '6d6',
         bonus: '',
-        effect: 'Ablativa / Sangramento 25%',
+        effect: 'Sangramento 60% / Perfura Armadura 6',
         description: 'Machado de Duas Mãos',
         recipe: [
             '7x Aço Negro',
@@ -1166,7 +1166,7 @@ const predefinedItems = [
         weaponType: 'Brigar',
         damage: '5d6',
         bonus: '',
-        effect: '',
+        effect: 'Perfura Armadura 5 / Atordoamento 30%',
         description: 'Maça de Uma Mão',
         recipe: [
             '13x Aço',
@@ -1185,7 +1185,7 @@ const predefinedItems = [
         weaponType: 'Brigar',
         damage: '6d6+2',
         bonus: '',
-        effect: 'Atordoamento 25% / Meteorito',
+        effect: 'Perfura Armadura 6 / Atordoamento 50%',
         description: 'Martelo de Duas Mãos',
         recipe: [
             '9x Aço Negro',
@@ -1204,7 +1204,7 @@ const predefinedItems = [
         weaponType: 'Cajado/Lança',
         damage: '3d6',
         bonus: '1',
-        effect: '',
+        effect: 'Perfura Armadura 3',
         description: 'Lança de Duas Mãos',
         recipe: [
             '15x Ferro',
@@ -1223,7 +1223,7 @@ const predefinedItems = [
         weaponType: 'Cajado/Lança',
         damage: '4d6+2',
         bonus: '',
-        effect: '',
+        effect: 'Perfura Armadura 4',
         description: 'Lança de Duas Mãos',
         recipe: [
             '12x Aço',
@@ -1242,7 +1242,7 @@ const predefinedItems = [
         weaponType: 'Cajado/Lança',
         damage: '6d6+3',
         bonus: '',
-        effect: '',
+        effect: 'Perfura Armadura 6',
         description: 'Lança de Duas Mãos',
         recipe: [
             '6x Aço Negro',
