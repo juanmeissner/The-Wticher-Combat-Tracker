@@ -4,15 +4,11 @@
 
 
 html, body {
-    padding: 0;
-    margin: 0;
-    
-    padding-top: env(safe-area-inset-top);
-    padding-bottom: env(safe-area-inset-bottom);
     font-family: 'Inter', sans-serif;
     background-color: #0f172a;
     color: #f1f5f9;
     overscroll-behavior-y: none;
+    height: 100vh;
     height: 100dvh;
     overflow: hidden;
     user-select: none;
@@ -153,7 +149,7 @@ TELA COMBATE
 
     flex-direction: column;
 
-    height: 100dvh;
+    height: 100vh;
 }
 
 .combat-list {
@@ -181,7 +177,7 @@ APP SLIDE
 
     width: 300vw;
 
-    height: 100dvh;
+    height: 100vh;
 
     transition: transform 0.35s ease;
 }
@@ -192,7 +188,7 @@ APP SLIDE
 
     width: 100vw;
 
-    height: 100dvh;
+    height: 100vh;
 
     flex-shrink: 0;
 
@@ -214,7 +210,7 @@ INVENTÁRIO
 
     position: sticky;
 
-    top: env(safe-area-inset-top);
+    top: 0;
 
     z-index: 20;
 
@@ -326,11 +322,7 @@ INVENTÁRIO
 
 #toastContainer {
     position: fixed;
-    top:
-        calc(
-            env(safe-area-inset-top)
-            + 10px
-        );
+    top: 20px;
     left: 50%;
     transform: translateX(-50%);
     z-index: 999999;
@@ -411,7 +403,7 @@ HABILIDADES
 
     width: 100vw;
 
-    height: 100dvh;
+    height: 100vh;
 
     flex-shrink: 0;
 
@@ -422,7 +414,7 @@ HABILIDADES
 
     position: sticky;
 
-    top: env(safe-area-inset-top);
+    top: 0;
 
     z-index: 20;
 
@@ -521,24 +513,4 @@ HABILIDADES
             rgba(34, 197, 94, 0.12),
             rgba(15, 23, 42, 1)
         );
-}
-
-footer {
-    padding-bottom:
-        calc(
-            16px +
-            env(safe-area-inset-bottom)
-        );
-}
-
-:root {
-    --safe-top: env(safe-area-inset-top);
-    --safe-bottom: env(safe-area-inset-bottom);
-}
-
-#combatScreen,
-#inventoryScreen,
-#abilitiesScreen {
-    padding-top: var(--safe-top);
-    padding-bottom: var(--safe-bottom);
 }
