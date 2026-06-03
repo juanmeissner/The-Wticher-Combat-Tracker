@@ -10,10 +10,7 @@
 
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
 
-.inventory-header,
-.abilities-header {
-    padding-top: calc(16px + var(--safe-top));
-}
+
 
 #combatControls {
     padding-bottom: calc(16px + var(--safe-bottom));
@@ -37,9 +34,6 @@ html, body {
     overflow-y: auto;
     scroll-behavior: smooth;
     overscroll-behavior-y: contain;
-    padding-top: calc(
-        env(safe-area-inset-top) + 12px
-    );
 }
 
 .card-selected {
@@ -86,21 +80,24 @@ html, body {
     display: none;
     position: fixed;
     inset: 0;
+
     background: rgba(0,0,0,0.8);
-    
+
     justify-content: center;
-    z-index: 50;
-    padding: 20px;
 
     align-items: center;
-    padding-top: var(--safe-top);
-    padding-bottom: var(--safe-bottom);
+
+    z-index: 50;
+
+    padding-left: 20px;
+    padding-right: 20px;
+
+    padding-top: calc(env(safe-area-inset-top) + 24px);
+
+    padding-bottom: calc(env(safe-area-inset-bottom) + 20px);
 }
 
-.modal,
-[class*="modal-open"] {
-    padding-top: calc(env(safe-area-inset-top) + 24px);
-}
+
 
 input {
     background: #1e293b;
@@ -200,8 +197,6 @@ APP SLIDE
 
 #appWrapper {
 
-    padding-top: var(--safe-top);
-    padding-bottom: var(--safe-bottom);
     box-sizing: border-box;
 
     display: flex;
