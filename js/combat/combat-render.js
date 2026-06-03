@@ -33,15 +33,30 @@
             const card = document.createElement('div');
             card.id = `card-${c.id}`;
             
-            const opacityClass = isEliminated
-    ? 'opacity-50 grayscale'
-    : (c.type === 'monster'
-    ? 'bg-red-600/50'
-    : 'bg-emerald-950/40');
-            card.className = `combat-card border border-slate-700 p-0 rounded-2xl cursor-pointer transition-all relative overflow-hidden
-                ${selectedId === c.id ? 'card-selected' : ''} 
+            const opacityClass =
+            isEliminated
+                ? 'opacity-50 grayscale'
+                : '';
+        
+        const typeClass =
+            c.type === 'monster'
+                ? 'combat-card-monster'
+                : 'combat-card-player';
+                card.className = `
+                combat-card
+                ${typeClass}
+                border
+                border-slate-700
+                p-0
+                rounded-2xl
+                cursor-pointer
+                transition-all
+                relative
+                overflow-hidden
+                ${selectedId === c.id ? 'card-selected' : ''}
                 ${activeTurnId === c.id && !isEliminated ? 'active-turn' : ''}
-                ${opacityClass}`;
+                ${opacityClass}
+                `;
 
             const pct = Math.max(0, Math.min(100, (c.hpCurrent / c.hpMax) * 100));
             const hpBarColor = getHPColor(pct);
@@ -136,13 +151,18 @@
             });
 
             if (c.statusBrain) {
-                statusHtml += `<span class="status-icon">🧠</span>`;
+                statusHtml += `<span class="status-icon">${icon}</span>`;
             }
 
             let hpDisplayHtml = `
-                <div class="hp-text text-xl font-bold leading-none ${hpColor}">${c.hpCurrent}/${c.hpMax}</div>
-                <div class="text-[10px] uppercase text-slate-500 font-bold tracking-wider leading-none mt-1">HP</div>
-            `;
+            <div class="hp-text text-xl font-bold leading-none ${hpColor}">
+                ${c.hpCurrent}/${c.hpMax}
+            </div>
+        
+            <div class="text-[10px] uppercase text-red-500 font-bold tracking-wider leading-none mt-1">
+                HP
+            </div>
+        `;
             if (isDeadMonster) {
                 hpDisplayHtml = `<div class="hp-text text-3xl leading-none pt-1">💀</div>`;
             } else if (isDeadPlayer) {
@@ -210,28 +230,29 @@
                             ${statusHtml}
 
                         </div>
-    <div class="flex flex-col
-        items-end
-        justify-center
-        text-right
-        min-w-[72px]
-        shrink-0">
+<div class="
+    flex flex-col
+    items-center
+    justify-center
+    min-w-[78px]
+    shrink-0
+">
 
     <div class="hp-container text-center">
-    ${hpDisplayHtml}
+        ${hpDisplayHtml}
     </div>
 
-    <div class="mt-1 st-container">
-    <div class="text-sm font-bold leading-none text-cyan-400">
-        ${c.stCurrent ?? 0}/${c.stMax ?? 0}
+    <div class="mt-2 st-container text-center">
+        <div class="text-xl font-bold leading-none text-cyan-400">
+            ${c.stCurrent ?? 0}/${c.stMax ?? 0}
+        </div>
+
+        <div class="text-[10px] uppercase text-cyan-500 font-bold tracking-wider leading-none mt-1">
+            ST
+        </div>
     </div>
 
-    <div class="text-[10px] uppercase text-cyan-600 font-bold tracking-wider leading-none mt-1 text-center">
-        ST
-    </div>
-    </div>
-
-    </div>
+</div>
                     </div>
                 </div>
             `;
@@ -307,7 +328,7 @@
             ${c.hpCurrent}/${c.hpMax}
         </div>
 
-        <div class="text-[10px] uppercase text-slate-500 font-bold tracking-wider leading-none mt-1">
+        <div class="text-[10px] uppercase text-red-500 font-bold tracking-wider leading-none mt-1">
             HP
         </div>
     `;
@@ -352,17 +373,16 @@
         card.classList.remove('bg-slate-800/80', 'active-turn');
     } else {
         card.classList.remove(
-        'opacity-50',
-        'grayscale',
-        'bg-slate-800/80',
-        'bg-red-600/50',
-        'bg-emerald-950/40'
+            'opacity-50',
+            'grayscale',
+            'combat-card-player',
+            'combat-card-monster'
         );
 
         card.classList.add(
-        c.type === 'monster'
-        ? 'bg-red-600/50'
-        : 'bg-emerald-950/40'
+            c.type === 'monster'
+                ? 'combat-card-monster'
+                : 'combat-card-player'
         );
                 if (activeTurnId === c.id) card.classList.add('active-turn');
             }
