@@ -87,10 +87,19 @@ html, body {
     position: fixed;
     inset: 0;
     background: rgba(0,0,0,0.8);
-    align-items: center;
+    
     justify-content: center;
     z-index: 50;
     padding: 20px;
+
+    align-items: center;
+    padding-top: var(--safe-top);
+    padding-bottom: var(--safe-bottom);
+}
+
+.modal,
+[class*="modal-open"] {
+    padding-top: calc(env(safe-area-inset-top) + 24px);
 }
 
 input {
@@ -190,6 +199,10 @@ APP SLIDE
 ========================================= */
 
 #appWrapper {
+
+    padding-top: var(--safe-top);
+    padding-bottom: var(--safe-bottom);
+    box-sizing: border-box;
 
     display: flex;
 
