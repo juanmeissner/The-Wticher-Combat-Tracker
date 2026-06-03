@@ -330,6 +330,29 @@
 
     <script>
 
+        const isIOS =
+            /iPad|iPhone|iPod/.test(navigator.userAgent)
+            || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+        if (isIOS) {
+            document.documentElement.classList.add('ios');
+        }
+
+        function updateIOSViewport() {
+
+        const vh = window.innerHeight * 0.01;
+
+        document.documentElement.style.setProperty(
+            '--real-vh',
+            `${vh}px`
+        );
+        }
+
+        updateIOSViewport();
+
+        window.addEventListener('resize', updateIOSViewport);
+        window.addEventListener('orientationchange', updateIOSViewport);
+
 
         let pressTimer;
         let startY = 0; // Para ignorar scrolls na delegação
