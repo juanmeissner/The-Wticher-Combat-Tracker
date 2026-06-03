@@ -3,6 +3,11 @@
     --safe-bottom: env(safe-area-inset-bottom, 0px);
 }
 
+.ios-modal {
+    padding-top: calc(var(--safe-top) + 12px);
+    padding-bottom: calc(var(--safe-bottom) + 12px);
+}
+
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
 
 .inventory-header,
@@ -32,6 +37,9 @@ html, body {
     overflow-y: auto;
     scroll-behavior: smooth;
     overscroll-behavior-y: contain;
+    padding-top: calc(
+        env(safe-area-inset-top) + 12px
+    );
 }
 
 .card-selected {
@@ -544,31 +552,4 @@ footer {
 
     background:
         #0f172a;
-}
-
-body::before {
-    content: '';
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-
-    height: 60px;
-
-    background: rgba(255,0,0,0.2);
-
-    z-index: 999999;
-}
-body::after {
-    content: '';
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-
-    height: 40px;
-
-    background: rgba(0,255,0,0.2);
-
-    z-index: 999999;
 }
