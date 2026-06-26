@@ -904,7 +904,7 @@ Não se amarre ao mastro. Você vai ter uma morte horrível. Ao contrário da cr
     
         image: 'https://static.wikia.nocookie.net/witcher/images/e/eb/Gwent_cardart_monsters_fiend.jpg/revision/latest?cb=20190922191145',
     
-        hp: 110,
+        hp: 150,
     
         threat: 'Difícil / Perigoso',
     
@@ -951,7 +951,7 @@ Não se amarre ao mastro. Você vai ter uma morte horrível. Ao contrário da cr
         ],
     
         skills: [
-            'Brigar +12',
+            'Brigar +14',
             'Bloquear +12',
             'Lançar Feitiços +12',
             'Curta Distância +12',
@@ -1194,6 +1194,849 @@ Não se amarre ao mastro. Você vai ter uma morte horrível. Ao contrário da cr
     
         `,
     },
+
+    {
+        id: 'nevoloso',
     
+        name: 'Nevoloso',
+    
+        image: 'https://static.wikia.nocookie.net/witcher/images/c/c6/Gwent_cardart_monsters_foglet.jpg/revision/latest?cb=20180608203520',
+    
+        hp: 55,
+    
+        threat: 'Médio / Complexo',
+    
+        reward: '420 Coroas',
+    
+        st: 12,
+    
+        ca: 14,
+    
+        armor: {
+            head: 0,
+            torso: 0,
+            arm: 0,
+            leg: 0
+        },
+    
+        vulnerabilities: [
+            'Óleo de Necrófago',
+            'Pó de Lua',
+            'Aard',
+            'Quen'
+        ],
+    
+        abilities: [
+    
+            'Corpo Nebuloso (D) — Enquanto existir névoa na área, ataques à distância contra o Nevoloso sofrem -5 para acertar.',
+    
+            'Desaparecer na Névoa (D) — Uma vez por turno pode se tornar invisível até realizar um ataque ou até o início de seu próximo turno.',
+    
+            'Invocar Névoa (D) — Cria uma área de névoa com 15 metros de raio durante 3 rodadas. Criaturas dentro da área sofrem -5 em Percepção, Esquivar e Bloqueio.',
+    
+            'Imagem Nebulosa (D) — Ao ser atacado dentro da névoa, role 1d6. Com resultado 5 ou 6 o ataque atinge apenas uma ilusão.',
+    
+            'Predador Silencioso — Recebe +4 em Furtividade enquanto estiver em áreas úmidas, neblina ou durante a noite.',
+    
+            'Movimento Fantasma — Ignora terreno difícil causado por lama, água rasa, vegetação ou ruínas.'
+        ],
+    
+        attacks: [
+    
+            'Garras 4d6+2',
+    
+            'Investida Nebulosa 5d6',
+    
+            'Emboscada da Névoa 4d6+4',
+    
+            'Desorientação (D) — O alvo deve passar em teste de Resistir à Magia ou sofre -2 em ataques até o próximo turno.',
+    
+            'Invocar Névoa',
+    
+            'Desaparecer na Névoa'
+        ],
+    
+        loot: [
+    
+            'Olhos de Nevoloso (1d4)',
+    
+            'Mutagênico de Necrófago (1d2)',
+    
+            'Poeira Infundida (1d4)',
+    
+            'Ingredientes de Monstro (1d6)'
+        ],
+    
+        skills: [
+    
+            'Atletismo +15',
+    
+            'Briga +15',
+    
+            'Esquiva/Escapar +15',
+    
+            'Furtividade +18',
+    
+            'Percepção +12',
+    
+            'Resistência +7',
+    
+            'Corpo a Corpo +15',
+    
+            'Resistir à Magia +8',
+    
+            'Sobrevivência na Natureza +14'
+        ],
+    
+        speed: '15m',
+    
+        height: '2 metros',
+    
+        weight: '95kg',
+    
+        habitat: 'Pântanos, margens de rios, vales úmidos, florestas enevoadas e regiões costeiras.',
+    
+        intelligence: 'Animal Astuto',
+    
+        organization: 'Solitário ou Pequenos Bandos',
+    
+        superstition: `
+    
+        Quando a névoa surge sem aviso e o vento para completamente, os camponeses sabem que algo os observa. Dizem que os Nevolosos escondem-se dentro da própria névoa, caminhando entre os vivos sem serem vistos.
+    
+        Muitos viajantes juram ter ouvido vozes familiares chamando seus nomes pouco antes de desaparecerem. Outros contam histórias sobre luzes estranhas surgindo entre os pântanos durante a madrugada.
+    
+        Os mais velhos ensinam que nunca se deve seguir sons ou sombras dentro da neblina. Se a névoa vier até você, corra. Se ela vier contra o vento, reze.
+    
+        `,
+    
+        witcherKnowledge: `
+    
+        Nevolosos são necrófagos que utilizam névoa como arma e abrigo. Diferentemente de outros devoradores de cadáveres, preferem caçar presas vivas através de emboscadas e ataques rápidos.
+    
+        Sua principal vantagem é a capacidade de desaparecer completamente dentro da névoa, criando ilusões e confundindo suas vítimas antes do ataque fatal. Muitos combatentes acreditam estar enfrentando diversos monstros quando, na verdade, existe apenas um único Nevoloso escondido nas sombras.
+    
+        O Sinal Aard é particularmente eficaz contra essas criaturas, dispersando a névoa e interrompendo suas tentativas de ocultação. Óleo de Necrófago também aumenta significativamente as chances de sobrevivência durante o combate.
+    
+        Bruxos experientes evitam lutar em áreas cobertas por neblina. Forçar o Nevoloso a combater em terreno aberto costuma ser a melhor estratégia para eliminar a criatura antes que ela transforme a batalha em um jogo de caça e perseguição.
+    
+        `
+    },
+
+    {
+        id: 'basilisk',
+    
+        name: 'Basilisco',
+    
+        image: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTLn0ST8q40Xr2OdTdAYrEfjT49PuyqXdBWNcRXy2fXeXhj0fh7AONPec8&s=10',
+    
+        hp: 150,
+    
+        threat: 'Difícil',
+    
+        reward: '1400 Coroas',
+    
+        st: 32,
+    
+        ca: 13,
+    
+        armor: {
+            head: 5,
+            torso: 5,
+            arm: 5,
+            leg: 5
+        },
+    
+        vulnerabilities: [
+            'Óleo de Draconídeo',
+            'Aard',
+            'Igni',
+            'Bomba Dançarina Estelar'
+        ],
+    
+        abilities: [
+            'Veneno Mortal (D) — Sempre que causar dano com mordida ou garras, o alvo deve realizar teste de Resistência. Falha causa Envenenamento Grave, sofrendo 2d6 de dano por turno durante 3 rodadas.',
+            'Asas Cortantes (D) — Com um poderoso bater de asas, atinge todas as criaturas em até 4m. Causa 4d6 de dano e empurra 2m.',
+            'Mergulho Predatório (D) — Caso esteja voando, pode avançar até 12m em linha reta e realizar um ataque com vantagem.',
+            'Sopro Tóxico (D) — Expele uma nuvem venenosa em cone de 5m. Alvos na área sofrem 5d6 de dano tóxico e podem ficar Envenenados.',
+            'Predador Aéreo — Enquanto estiver voando, recebe +2 em Esquiva.',
+            'Escamas Dracônicas — Recebe metade do dano causado por venenos e doenças.',
+            'Instinto Territorial — Torna-se mais agressivo quando reduzido abaixo de metade da vida, recebendo +2 em ataques.'
+        ],
+    
+        attacks: [
+            'Mordida 6d6',
+            'Garras 5d6',
+            'Asas Cortantes 4d6',
+            'Mergulho Predatório 5d6',
+            'Sopro Tóxico 5d6'
+        ],
+    
+        loot: [
+            'Glândulas de Veneno (1d6)',
+            'Escamas de Basilisco (1d10)',
+            'Olhos de Draconídeo (1d4)',
+            'Couro de Basilisco (1d6)'
+        ],
+    
+        skills: [
+            'Atletismo +14',
+            'Briga +14',
+            'Esquiva/Escapar +13',
+            'Resistência +10',
+            'Corpo a Corpo +11',
+            'Furtividade +7',
+            'Percepção +12',
+            'Sobrevivência na Natureza +12',
+            'Intimidação +14'
+        ],
+    
+        speed: '15m (12m voando)',
+    
+        height: '3 metros',
+    
+        weight: '450kg',
+    
+        habitat: 'Montanhas, regiões rochosas, ruínas antigas e desertos',
+    
+        intelligence: 'Animal',
+    
+        organization: 'Solitário',
+    
+        superstition: `
+    
+        Dizem que o olhar de um basilisco transforma homens em pedra e que seu veneno é capaz de matar antes mesmo da vítima tocar o chão.
+    
+        Camponeses contam histórias de cavaleiros inteiros desaparecendo em cavernas infestadas pela criatura. Alguns acreditam que seu sangue pode dissolver aço e que nenhuma armadura é capaz de protegê-los de sua mordida.
+    
+        Muitos confundem basiliscos com cocatrizes, mas os sobreviventes juram que um verdadeiro basilisco é muito maior, mais cruel e infinitamente mais venenoso.
+    
+        `,
+    
+        witcherKnowledge: `
+    
+        Basiliscos pertencem à categoria dos draconídeos e figuram entre os predadores mais perigosos encontrados por bruxos.
+    
+        Apesar das inúmeras lendas, eles não transformam vítimas em pedra. Seu verdadeiro perigo reside no veneno extremamente potente presente em suas presas, saliva e glândulas tóxicas.
+    
+        São criaturas territoriais que normalmente estabelecem ninhos em cavernas, penhascos ou ruínas afastadas. Utilizam o voo para atacar de surpresa e frequentemente mergulham sobre a presa antes de desferir golpes fatais.
+    
+        O Sinal Aard pode derrubá-los quando estão voando, criando oportunidades para ataques corpo a corpo. Igni também é eficaz, pois suas membranas alares queimam facilmente.
+    
+        Mesmo um bruxo experiente deve evitar confrontar um basilisco em terreno aberto, onde a criatura pode explorar plenamente sua mobilidade aérea.
+    
+        `,
+    },
+
+    {
+        id: 'bullvore',
+    
+        name: 'Tourovor',
+    
+        image: 'https://static.wikia.nocookie.net/witcher/images/7/77/TWRPG_cardart_bullvore.png/revision/latest?cb=20200723145340',
+    
+        hp: 95,
+    
+        threat: 'Difícil',
+    
+        reward: '1800 Coroas',
+    
+        st: 42,
+    
+        ca: 15,
+    
+        armor: {
+            head: 20,
+            torso: 7,
+            arm: 5,
+            leg: 5
+        },
+    
+        vulnerabilities: [
+            'Óleo de Ogroide',
+            'Sangramento',
+            'Axii',
+            'Armadilhas'
+        ],
+    
+        abilities: [
+            'Investida Brutal (D) — Corre até 10m em linha reta e desfere um impacto devastador. Alvos atingidos sofrem 8d6 de dano adicional e devem realizar teste de Resistência ou ficam Caídos.',
+            'Pisotear (D) — Contra alvos caídos ou menores, realiza um ataque esmagador que ignora armadura.',
+            'Fúria Territorial — Quando reduzido abaixo de metade do HP, recebe +5 em ataques corpo a corpo e +2m de deslocamento.',
+            'Quebra-Linhas — Pode atravessar obstáculos frágeis, carroças, cercas e barricadas leves sem reduzir movimento.',
+            'Predador de Estradas — Recebe vantagem em testes de Percepção para detectar presas em estradas, trilhas e campos abertos.',
+            'Massa Colossal — Não pode ser empurrado ou derrubado por criaturas menores que ele.'
+        ],
+    
+        attacks: [
+            'Chifres 6d6+4',
+            'Mordida 5d6+2',
+            'Pisotear 4d6',
+            'Investida Brutal 8d6'
+        ],
+    
+        loot: [
+            'Couro Grosso (1d6)',
+            'Carne de Monstro (1d6)',
+            'Essência Monstruosa (1d4)',
+            'Dentes Grandes (1d6)',
+            'Olho de Monstro (1d4)'
+        ],
+    
+        skills: [
+            'Atletismo +12',
+            'Briga +15',
+            'Corpo a Corpo +15',
+            'Resistência +14',
+            'Percepção +8',
+            'Sobrevivência na Natureza +8',
+            'Intimidação +10',
+            'Esquiva/Escapar +6'
+        ],
+    
+        speed: '8m',
+    
+        height: '4 metros',
+    
+        weight: '800kg',
+    
+        habitat: 'Montanhas, campos abertos, estradas isoladas e regiões selvagens',
+    
+        intelligence: 'Animal',
+    
+        organization: 'Solitário',
+    
+        superstition: `
+    
+        Camponeses contam histórias sobre um demônio com corpo de touro e presas de fera que destrói carroças inteiras apenas por diversão. Muitos acreditam que bullvores surgem onde o sangue de guerreiros e animais se mistura após grandes batalhas.
+    
+        Mercadores costumam pendurar sinos de prata em suas carroças, acreditando que o som afasta a criatura. Infelizmente, a maioria dos sobreviventes afirma que o som apenas anuncia sua chegada.
+    
+        Quando um bullvore escolhe uma estrada como território, viajar por ela torna-se uma aposta entre lucro e sobrevivência.
+    
+        `,
+    
+        witcherKnowledge: `
+    
+        Bullvores pertencem à família dos ogroides e combinam características bovinas com traços predatórios extremamente agressivos. Possuem musculatura colossal, pele espessa e chifres capazes de atravessar armaduras e partir ossos com facilidade.
+    
+        Apesar de sua aparência brutal, não são criaturas irracionais. Demonstram comportamento territorial bem definido e costumam patrulhar áreas específicas durante anos. Atacam qualquer intruso que considerem uma ameaça ou competição por alimento.
+    
+        Sua principal arma é a investida. Bruxos experientes evitam enfrentá-los em terreno aberto, preferindo florestas densas, desfiladeiros ou locais onde sua velocidade possa ser limitada.
+    
+        Axii pode confundir momentaneamente a criatura, enquanto sangramentos prolongados costumam ser eficazes devido ao enorme esforço físico que ela emprega durante o combate. Mesmo assim, enfrentar um bullvore sem preparação adequada é considerado extremamente perigoso.
+    
+        `,
+    },
+
+    {
+        id: 'kikimore',
+    
+        name: 'Kikimore',
+    
+        image: 'https://static.wikia.nocookie.net/witcher/images/3/36/Gwent_cardart_monsters_kikimore_stalker.png/revision/latest?cb=20230413150507',
+    
+        hp: 45,
+    
+        threat: 'Médio',
+    
+        reward: '650 Coroas',
+    
+        st: 20,
+    
+        ca: 13,
+    
+        armor: {
+            head: 3,
+            torso: 4,
+            arm: 3,
+            leg: 3
+        },
+    
+        vulnerabilities: [
+            'Óleo de Insetoide',
+            'Aard',
+            'Igni'
+        ],
+    
+        abilities: [
+            'Escalada Aracnídea (D) — Pode mover-se por paredes, tetos e superfícies íngremes sem testes.',
+            'Salto Predatório (D) — Pode saltar até 15m e realizar imediatamente um ataque de garras.',
+            'Veneno Paralisante (D) — Alvos atingidos por mordida devem realizar teste de Resistência. Em falha recebem Veneno e Atordoado até superar o teste de Resistência.',
+            'Instinto de Enxame — Quando houver outras Kikimores em combate, recebe +2 em ataques para cada aliada adjacente ao alvo (máximo +6).',
+            'Exoesqueleto Quitinoso — Sua carapaça reduz parcialmente dano cortante e perfurante.',
+            'Sentidos Vibracionais — Detecta criaturas através de vibrações do solo, ignorando escuridão e camuflagem comum.',
+            'Postura Insetoide — Não pode ser derrubada facilmente. Recebe vantagem contra efeitos de empurrão e queda.'
+        ],
+    
+        attacks: [
+            'Garras 5d6+2',
+            'Mordida 4d6+1',
+            'Salto Predatório 6d6',
+            'Veneno Paralisante'
+        ],
+    
+        loot: [
+            'Quitina de Kikimore (1d6)',
+            'Olhos de Monstro (1d4)',
+            'Veneno de Insetoide (1d4)',
+            'Essência de Monstro (1d2)'
+        ],
+    
+        skills: [
+            'Atletismo +8',
+            'Briga +15',
+            'Esquiva/Escapar +15',
+            'Furtividade +11',
+            'Percepção +9',
+            'Resistência +8',
+            'Corpo a Corpo +9',
+            'Sobrevivência na Natureza +7'
+        ],
+    
+        speed: '8m',
+    
+        height: '1,5 metros',
+    
+        weight: '80kg',
+    
+        habitat: 'Pântanos, cavernas, ruínas abandonadas e colmeias subterrâneas',
+    
+        intelligence: 'Animal',
+    
+        organization: 'Enxame',
+    
+        superstition: `
+    
+        Camponeses afirmam que quando as kikimores surgem, a terra fica amaldiçoada.
+    
+        Dizem que elas emergem das profundezas durante noites sem lua para arrastar viajantes para seus ninhos subterrâneos. Muitos acreditam que os túneis escavados por essas criaturas levam diretamente ao submundo.
+    
+        Em aldeias isoladas, encontrar uma carapaça vazia de kikimore perto de casa é considerado um sinal de morte iminente.
+    
+        `,
+    
+        witcherKnowledge: `
+    
+        Kikimores são insetoides agressivos que vivem em colônias organizadas. Embora indivíduos isolados representem ameaça moderada, tornam-se extremamente perigosos quando combatem em grupo.
+    
+        Sua anatomia lembra uma mistura de aranha e formiga, protegida por uma resistente carapaça quitinosa. Movem-se com rapidez surpreendente e são capazes de escalar praticamente qualquer superfície.
+    
+        Muitas espécies produzem toxinas capazes de enfraquecer ou paralisar presas. Bruxos costumam utilizar Óleo de Insetoide para atravessar suas defesas naturais.
+    
+        Aard pode desequilibrá-las devido à estrutura de suas múltiplas pernas, enquanto Igni é particularmente eficaz contra seus corpos leves e relativamente secos.
+    
+        Ninhos de kikimores podem abrigar dezenas ou até centenas de indivíduos, incluindo operárias, guerreiras e rainhas gigantescas. Quando uma colônia atinge grande tamanho, pode devastar regiões inteiras e tornar estradas intransitáveis.
+    
+        `,
+    },
+    
+    {
+        id: 'manticore',
+    
+        name: 'Manticora',
+    
+        image: 'https://static.wikia.nocookie.net/witcher/images/6/6c/Gwent_cardart_monsters_manticore_combined.jpg/revision/latest/scale-to-width-down/1000?cb=20181025002800',
+    
+        hp: 95,
+    
+        threat: 'Difícil',
+    
+        reward: '1800 Coroas',
+    
+        st: 40,
+    
+        ca: 15,
+    
+        armor: {
+            head: 4,
+            torso: 5,
+            arm: 3,
+            leg: 4
+        },
+    
+        vulnerabilities: [
+            'Óleo de Besta',
+            'Yrden',
+            'Quen',
+            'Sangramento'
+        ],
+    
+        abilities: [
+            'Ferrão Venenoso (D) — Ataque com a cauda que aplica veneno mortal e dano de 4d6. O alvo sofre 2d6 de dano adicional por rodada durante 1d4 rodadas.',
+            'Investida Aérea (D) — Mergulha dos céus em alta velocidade causando 6d6 de dano. Caso erre, fica vulnerável até seu próximo turno.',
+            'Dilacerar (D) — Contra alvos caídos ou imobilizados, realiza um ataque brutal com garras causando dano dobrado.',
+            'Salto Predatório — Pode percorrer até 15m instantaneamente para alcançar um alvo.',
+            'Predador Supremo — Imune a medo natural e intimidação de origem não mágica.',
+            'Veneno de Bohun Upas — Seu veneno é considerado um dos mais letais do Continente. Resistir exige teste de Resistência com Desvantagem.'
+        ],
+    
+        attacks: [
+            'Garras 6d6+2',
+            'Mordida 5d6',
+            'Ferrão Venenoso 4d6',
+            'Investida Aérea 5d6',
+            'Dilacerar 6d6 * 2'
+        ],
+    
+        loot: [
+            'Veneno de Manticora (1d4)',
+            'Garras de Manticora (1d6)',
+            'Couro de Monstro (1d6)',
+            'Olhos de Monstro (1d4)',
+            'Mutagênico Vermelho (5%)'
+        ],
+    
+        skills: [
+            'Atletismo +12',
+            'Briga +14',
+            'Corpo a Corpo +14',
+            'Esquiva/Escapar +15',
+            'Percepção +12',
+            'Furtividade +8',
+            'Resistência +10',
+            'Sobrevivência na Natureza +9'
+        ],
+    
+        speed: '10m / Voo 16m',
+    
+        height: '2,5 metros',
+    
+        weight: '500kg',
+    
+        habitat: 'Montanhas, cavernas elevadas e regiões selvagens isoladas',
+    
+        intelligence: 'Animal',
+    
+        organization: 'Solitária',
+    
+        superstition: `
+    
+        Muitos camponeses acreditam que uma Manticora é a encarnação da fome. Dizem que quando ela estabelece um território, pessoas desaparecem sem deixar rastros e rebanhos inteiros são encontrados dilacerados.
+    
+        Alguns afirmam que seu ferrão carrega um veneno tão terrível que a vítima continua sofrendo mesmo após sobreviver ao ataque. Em regiões montanhosas, ouvir o bater de asas durante a noite é considerado um presságio de morte.
+    
+        `,
+    
+        witcherKnowledge: `
+    
+        A Manticora é uma das bestas mais antigas e perigosas conhecidas pelos bruxos. Possui corpo semelhante ao de um leão gigantesco, asas membranosas de morcego e uma longa cauda terminada em um ferrão venenoso.
+    
+        Diferente de grifos ou wyverns, sua principal arma não é apenas sua força física, mas a combinação de mobilidade aérea e venenos extremamente potentes. Seu ferrão contém toxinas capazes de matar homens em poucas horas.
+    
+        Manticores costumam atacar sozinhas e preferem emboscadas vindas do céu. Um mergulho bem executado pode partir ossos ou matar instantaneamente um alvo desprevenido.
+    
+        Bruxos recomendam utilizar Yrden para limitar sua mobilidade e forçá-la ao combate terrestre. Quen é extremamente valioso para sobreviver aos ataques de mergulho e ao ferrão venenoso.
+    
+        Mesmo entre monstros voadores, poucas criaturas são tão temidas quanto uma Manticora adulta.
+    
+        `,
+    },
+
+    {
+        id: 'rotfiend',
+    
+        name: 'Rotífero',
+    
+        image: 'https://static.wikia.nocookie.net/witcher/images/6/61/Tw3_journal_rotfiend.png/revision/latest?cb=20160507155715',
+    
+        hp: 28,
+    
+        threat: 'Fácil / Médio',
+    
+        reward: '320 Coroas',
+    
+        st: 10,
+    
+        ca: 10,
+    
+        armor: {
+            head: 0,
+            torso: 0,
+            arm: 0,
+            leg: 0
+        },
+    
+        vulnerabilities: [
+            'Óleo de Necrófago',
+            'Igni',
+            'Aard',
+            'Fogo'
+        ],
+    
+        abilities: [
+            'Explosão Cadavérica (D) — Ao atingir 0 HP, explode em um raio de 3m causando 8d6 de dano tóxico e de fogo. Armadura protege normalmente.',
+            'Reação em Cadeia — A explosão pode detonar outros Rotíferos próximos que também estejam morrendo.',
+            'Corpo Putrefato — Imune a sangramento.',
+            'Carne Corrompida — Imune a venenos.',
+            'Frenesi Final — Quando fica abaixo de 25% do HP recebe +2 em ataques corpo a corpo.',
+            'Salto Predatório — Pode avançar até 8m e realizar um ataque no mesmo turno.',
+            'Escavador de Cadáveres — Pode cavar rapidamente em solo macio para escapar ou emboscar presas.'
+        ],
+    
+        attacks: [
+            'Garras e Mordidas 3d6',
+            'Salto Predatório',
+            'Explosão Cadavérica 8d6'
+        ],
+    
+        loot: [
+            'Sangue de Rotífero (1d6)',
+            'Dentes de Necrófago (1d6)',
+            'Pele de Necrófago (1d4)',
+            'Língua de Rotífero (1d4)',
+            'Olhos de Necrófago (1d4)'
+        ],
+    
+        skills: [
+            'Atletismo +5',
+            'Briga +12',
+            'Esquiva/Escapar +12',
+            'Resistência +7',
+            'Corpo a Corpo +7',
+            'Furtividade +4',
+            'Sobrevivência na Natureza +4'
+        ],
+    
+        speed: '6m',
+    
+        height: '1,7 metros',
+    
+        weight: '70kg',
+    
+        habitat: 'Campos de batalha, cemitérios, vilarejos assolados por doenças, fossas comuns e áreas infestadas por cadáveres',
+    
+        intelligence: 'Animal',
+    
+        organization: 'Matilhas (3–12)',
+    
+        superstition: `
+    
+        Dizem que quando a guerra permanece por tempo demais em uma região, os mortos recusam-se a descansar. Seus corpos incham sob a terra até que finalmente retornam à superfície.
+    
+        Os camponeses acreditam que o fedor de carne podre carregado pelo vento durante a noite é sinal de que Rotíferos estão próximos. Muitos juram que ouviram seus estômagos borbulhando na escuridão antes de um ataque.
+    
+        Alguns coveiros supersticiosos queimam os cadáveres antes do enterro, pois acreditam que qualquer corpo abandonado por muito tempo pode acabar alimentando uma dessas criaturas.
+    
+        `,
+    
+        witcherKnowledge: `
+    
+        Rotíferos são necrófagos extremamente comuns em regiões devastadas por guerras, epidemias ou fome. Alimentam-se principalmente de cadáveres, mas atacam criaturas vivas sem hesitação quando surge uma oportunidade.
+    
+        Seu corpo encontra-se em avançado estado de decomposição, inchado por gases tóxicos e inflamáveis produzidos pela putrefação. Essa característica torna a criatura perigosa mesmo após a morte.
+    
+        Bruxos experientes mantêm distância quando um Rotífero está prestes a morrer, pois sua explosão final pode ser tão letal quanto suas garras. Em grupos, essa característica frequentemente desencadeia reações em cadeia devastadoras.
+    
+        Apesar da aparência lenta e desajeitada, são surpreendentemente rápidos e capazes de perseguir cavalos por curtas distâncias. Costumam atacar em bandos, cercando vítimas antes de dilacerá-las.
+    
+        Óleo de Necrófago aumenta significativamente a eficiência contra essas criaturas. Igni pode ser utilizado para detonar indivíduos à distância ou impedir que se aproximem do grupo.
+    
+        `,
+    },
+
+    {
+        id: 'draugir',
+    
+        name: 'Draugir',
+    
+        image: 'https://static.wikia.nocookie.net/witcher/images/d/d1/Gwent_cardart_monsters_draugir.jpg/revision/latest?cb=20180511142743',
+    
+        hp: 85,
+    
+        threat: 'Médio / Difícil',
+    
+        reward: '1250 Coroas',
+    
+        st: 28,
+    
+        ca: 13,
+    
+        armor: {
+            head: 12,
+            torso: 12,
+            arm: 12,
+            leg: 12
+        },
+    
+        vulnerabilities: [
+            'Óleo de Espectro',
+            'Espada de Prata',
+            'Fogo'
+        ],
+    
+        abilities: [
+            'Soldado Espectral — Imune a medo, intimidação, sangramento e dor.',
+            'Escudo de Guerra (D) — Enquanto estiver empunhando o escudo recebe +3 CA contra ataques frontais.',
+            'Investida do Condenado (D) — Corre até 6m em linha reta causando 4d6+2 e derrubando o alvo caso ele falhe em teste de Atletismo.',
+            'Contra-Ataque Letal (D) — Quando bloqueia um ataque corpo a corpo pode imediatamente realizar um ataque de espada.',
+            'Disciplina Militar — Nunca sofre penalidades por moral e jamais foge de combate.',
+            'Chamado do Draug — Caso um Draug esteja presente, recebe +2 em ataques e resistência.',
+            'Corpo de Restos Mortais — Criado a partir de armaduras, ossos e almas amaldiçoadas. Imune a venenos.'
+        ],
+    
+        attacks: [
+            'Espada de Guerra 6d6+2',
+            'Investida do Condenado 5d6',
+            'Escudo de Guerra',
+            'Contra-Ataque Letal'
+        ],
+    
+        loot: [
+            'Fragmento de Armadura de Draugir (1d4)',
+            'Minério de Meteorito (1d3)'
+        ],
+    
+        skills: [
+            'Atletismo +8',
+            'Briga +14',
+            'Corpo a Corpo +12',
+            'Esquiva/Escapar +5',
+            'Resistência +10',
+            'Intimidação +8',
+            'Resistir à Magia +8',
+            'Percepção +6'
+        ],
+    
+        speed: '4m',
+    
+        height: '2,2 metros',
+    
+        weight: '180kg',
+    
+        habitat: 'Campos de batalha amaldiçoados, cemitérios de guerra e locais marcados por massacres',
+    
+        intelligence: 'Humana residual',
+    
+        organization: 'Grupo militar ou destacamento espectral',
+    
+        superstition: `
+    
+        Dizem que quando uma batalha foi sangrenta demais para ser esquecida, os soldados mortos recusam-se a descansar.
+    
+        Nas noites de neblina, é possível ouvir o som de armaduras marchando onde não existe exército algum. Alguns afirmam que os draugires continuam lutando guerras encerradas há décadas, obedecendo ordens de comandantes mortos.
+    
+        Quando os tambores invisíveis ecoam através da névoa, os camponeses sabem que é hora de abandonar a estrada.
+    
+        `,
+    
+        witcherKnowledge: `
+    
+        Draugires são espectros guerreiros criados a partir de soldados mortos em batalhas particularmente brutais. Seus corpos são compostos por restos de armaduras, ossos, armas quebradas e almas condenadas, unidos pela vontade sobrenatural de um Draug ou por maldições ligadas ao campo de batalha. :contentReference[oaicite:0]{index=0}
+    
+        Diferente de espectros comuns, eles mantêm treinamento militar, disciplina e habilidade marcial adquiridos em vida. Lutam utilizando espadas, escudos pesados e formações de combate, tornando-os adversários perigosos mesmo para guerreiros experientes. :contentReference[oaicite:1]{index=1}
+    
+        Sua armadura espectral é extremamente resistente. Bruxos costumam forçá-los a expor suas defesas antes de atacar pontos vulneráveis. Investidas são particularmente perigosas, mas deixam brechas momentâneas após sua execução.
+    
+        Óleo de Espectro aumenta significativamente a eficácia da espada de prata contra essas criaturas. Fogo também pode enfraquecê-las, enquanto venenos e efeitos de sangramento são completamente inúteis.
+    
+        Embora lentos, draugires são soldados perfeitos: não sentem medo, não recuam e continuam lutando até serem destruídos por completo.
+    
+        `,
+    },
+
+    {
+        id: 'katakan',
+    
+        name: 'Katakan',
+    
+        image: 'https://static.wikia.nocookie.net/witcher/images/a/ac/Gwent_cardart_monsters_katakan.jpg/revision/latest/scale-to-width-down/180?cb=20190312205718',
+    
+        hp: 95,
+    
+        threat: 'Difícil / Mortal',
+    
+        reward: '2400 Coroas',
+    
+        st: 42,
+    
+        ca: 15,
+    
+        armor: {
+            head: 2,
+            torso: 2,
+            arm: 2,
+            leg: 2
+        },
+    
+        vulnerabilities: [
+            'Óleo de Vampiro',
+            'Yrden',
+            'Igni',
+            'Luz Solar'
+        ],
+    
+        abilities: [
+            'Invisibilidade Predatória (D) — Torna-se invisível até realizar um ataque. Apenas sua sombra denuncia sua posição. Enquanto invisível recebe +4 em Esquiva.',
+            'Regeneração Vampírica — Recupera 10 HP no início do turno caso não tenha sofrido dano de fogo desde seu último turno.',
+            'Ecolocalização — Ignora penalidades por escuridão, fumaça ou invisibilidade e nunca pode ser surpreendido por criaturas que emitam sons.',
+            'Salto Caçador (D) — Salta até 10m e realiza imediatamente um ataque de Garras ou Mordida.',
+            'Sede de Sangue — Sempre que causar dano com Mordida recupera metade do dano causado em HP.',
+            'Velocidade Sobrenatural — Pode realizar uma ação de movimento adicional uma vez por rodada.',
+            'Predador Noturno — Durante combates noturnos recebe +2 em todos os testes ofensivos e sua Regeneração Vampírica aumenta para 15 HP.'
+        ],
+    
+        attacks: [
+            'Garras 6d6+4 (Sangramento 50%)',
+            'Mordida 7d6 (Sangramento 100%)',
+            'Salto Caçador',
+            'Invisibilidade Predatória'
+        ],
+    
+        loot: [
+            'Presa de Vampiro (1d4)',
+            'Sangue de Vampiro (1d4)',
+            'Mutagênico de Katakan (1)',
+            'Essência Monstruosa (1d6)',
+            'Poeira Infundida (1d6)'
+        ],
+    
+        skills: [
+            'Atletismo +15',
+            'Concentração +10',
+            'Briga +15',
+            'Esquiva/Escapar +16',
+            'Resistência +12',
+            'Corpo a Corpo +15',
+            'Resistir à Magia +11',
+            'Intimidação +10',
+            'Furtividade +16',
+            'Percepção +15'
+        ],
+    
+        speed: '9m',
+    
+        height: '2,2 metros',
+    
+        weight: '115kg',
+    
+        habitat: 'Ruínas, cavernas, criptas, cidades durante a noite e esgotos',
+    
+        intelligence: 'Muito Alta',
+    
+        organization: 'Solitário',
+    
+        superstition: `
+    
+        Ouvi muitos contos de vampiros enquanto viajava pelo continente.As lendas dizem que um vampiro pode se transformar em um morcego ou lobo ou coisa parecida.Pode voar sem asas, curar qualquer ferida e quebrar aço com as garras.Heh!Eu ouço que katakans gostam de seduzir mulheres bonitas com suas habilidades de metamorfose e depois bebem seu sangue.
+        Soa como uma verdadeira caralhada de problemas que eu gostaria de evitar, mas se você precisar, mantenha uma cabeça de alho cortada na mão, bem como um símbolo sagrado de seu deus escolhido e uma estaca para enfiar através do coração da besta para matá - lo para sempre.A propósito, acontece que eu vendo todos esses itens a preços razoáveis.
+        `,
+    
+        witcherKnowledge: `
+    
+De todas as famílias de monstros, a diferença de poder do menor ao maior é a mais impressionante em vampiros.
+Vampiros menores são rápidos e ágeis, mais fortes que o homem comum, furtivos como uma sombra e cruéis em seus ataques. Mas eles são animalescos, geralmente menos do que totalmente conscientes.
+No oposto do espectro, o poder de um nosferatu é tão vasto que é quase incomparável.
+Os katakans são um ponto intermediário na família de vampiros entre vampiros bestiais inferiores e os poderosos e brilhantes vampiros superiores.
+Katakans são criaturas inteligentes, muitas vezes mais do que a média humana. Eles são altamente mágicos, capazes de se esconder de todas as formas de escaneamento mágico, incluindo medalhões de bruxo e outras formas, e podem se comunicar com presas telepaticamente. Eles não podem tomar forma alguma além da deles.
+Em combate, eles são furtivos, escondendo-se por trás da invisibilidade mágica enquanto enlouquecem sua presa com táticas telepáticas de medo.
+Katakans são difíceis de matar, regenerando-se da maioria das feridas muito rapidamente e dançando em torno dos ataques com sua velocidade superior.
+Eles ainda são mais animalescos do que seus primos mais poderosos e são propensos a lamber o sangue dos paralelepípedos após eviscerarem suas presas com suas garras.
+Proteções popularmente conhecidas não funcionam em um katakan. A maioria provavelmente irá apenas irritá-lo, exceto pela estaca no coração.
+Ao lutar contra um katakan, o fogo é a sua melhor arma, pois são muito inflamáveis. O sangue negro também pode ser bastante útil se o katakan tentar morder e se alimentar de você.
+Alternativamente, lembre-se de que qualquer droga ou quantidade de álcool em seu sangue afetará um vampiro que te morde.
+
+        `,
+    },
     
     ];

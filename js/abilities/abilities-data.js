@@ -1,4 +1,4 @@
-const predefinedAbilities = [
+﻿const predefinedAbilities = [
 
     {
         id: 'igni',
