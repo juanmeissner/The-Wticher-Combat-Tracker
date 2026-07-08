@@ -90,3 +90,25 @@ function updateScreenPosition() {
         .style.transform =
             `translateX(-${currentScreenIndex * 100}vw)`;
 }
+
+function setDesktopTab(tab){
+
+    document
+        .querySelectorAll(".desktop-navigation button")
+        .forEach(b=>b.classList.remove("active"));
+
+    document
+        .querySelector(`#desktopNavigation [data-tab="${tab}"]`)
+        ?.classList.add("active");
+
+}
+
+function showSection(sectionId){
+
+    document.getElementById("combatScreen").style.display = "none";
+    document.getElementById("inventoryScreen").style.display = "none";
+    document.getElementById("abilitiesScreen").style.display = "none";
+
+    document.getElementById(sectionId).style.display = "block";
+
+}

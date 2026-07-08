@@ -55,19 +55,19 @@ const UI_ICONS = {
     },
 
     details: {
-        height: '📏',
-        weight: '⚖️',
+        height: '📝',
+        weight: '⚖',
         habitat: '🌲',
         intelligence: '🧠',
         organization: '👥',
         speed: '💨'
     },
 
-    vulnerability: '☠️',
+    vulnerability: '☠',
 
     ability: '✨',
 
-    attack: '⚔️',
+    attack: '⚔',
 
     loot: '💰',
 
@@ -324,11 +324,11 @@ function showMonsterDetails(monsterId, fromCombat = false) {
             <div class="flex flex-wrap items-center gap-3 mb-4 text-sm font-medium">
 
                 <span class="text-red-400">
-                    ❤️ HP ${monster.hp}
+                    ❤ HP ${monster.hp}
                 </span>
 
                 <span class="text-white">
-                    ☠️ ${monster.threat}
+                    ☠ ${monster.threat}
                 </span>
 
                 <span class="text-yellow-400">
@@ -556,7 +556,7 @@ function showMonsterDetails(monsterId, fromCombat = false) {
                                     p-3
                                     rounded-xl">
 
-                            ⚔️ ${a}
+                            ⚔ ${a}
 
                         </div>
 
@@ -776,6 +776,8 @@ function spawnPresetMonster(monsterId) {
         statusBrain: false,
 
         conditions: [],
+
+        effects: [],
 
         deathSaves: {
             success: 0,

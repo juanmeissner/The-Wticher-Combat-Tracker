@@ -95,11 +95,16 @@
 
         unlockCost: 0,
 
+        active: 10,
+
+        stack: 100,
+        augment: "buff",
+
         shortDescription:
-            'Escudo protetor.',
+            'Escudo mágico com 5 pontos de vida por EST gasto.',
 
         description:
-            'A habilidade Quen cria um escudo protetor com 5 Pontos de Vida por ponto de Estamina gasto. Este escudo absorve todo o dano, tanto letal quanto não-letal, até esgotar seus PV. Se o escudo for destruído, o dano restante atinge o usuário normalmente, afetando sua armadura e resistências antes de reduzir seus PV ou EST. Quen protege contra ataques e feitiços que podem ser bloqueados, mas não é eficaz contra envenenamento, doenças ou sufocamento. O usuário não pode lançar Quen novamente até que o escudo atual se esgote ou sua duração termine.'
+            'A habilidade Quen cria um escudo protetor com 5 Pontos de Vida por ponto de Estamina gasto. Este escudo absorve todo o dano, tanto letal quanto não-letal, até esgotar seus PV. Se o escudo for destruído, o dano restante não atinge o usuário normalmente, o escudo mágico é capaz de mitigar o dano. Quen protege contra ataques e feitiços que podem ser bloqueados, mas não é eficaz contra envenenamento, doenças ou sufocamento. O usuário não pode lançar Quen novamente até que o escudo atual se esgote ou sua duração termine.'
     },
 
     {
@@ -129,8 +134,13 @@
 
         unlockCost: 0,
 
+        active: 6,
+
+        stack: 15,
+        augment: "buff",
+
         shortDescription:
-            'Círculo mágico de contenção.',
+            'Círculo mágico que reduz destreza e esquiva de inimigos dentro igual ao valor de EST gasto para conjura-lo.',
 
         description:
             'Yrden cria um círculo mágico grande no chão à sua volta. Qualquer coisa que pisar dentro do círculo sofre uma negativa em Destreza e Esquiva igual ao número de EST gasto até deixar o círculo. Qualquer criatura incorpórea que entrar no círculo se torna corpórea, alternativamente pode usar Yrden em um objeto sólido, dando ao mesmo resistência contra inimigos.'
@@ -163,8 +173,13 @@
 
         unlockCost: 0,
 
+        active: 0,
+
+        stack: 15,
+        augment: "buff",
+
         shortDescription:
-            'Atordoamento mental.',
+            'Atordoa o alvo até ele passar em um teste de resistência com -1, cada 2 pontos gastos de EST o atordoamento fica mais dificil em 1 ponto.',
 
         description:
             'Axii atordoa o oponente até que ele consiga fazer um teste de resistência a Atordoamento em -1. Por cada 2 pontos de EST adicionais gastos depois de 1, o teste de resistência a Atordoamento fica mais difícil em 1 ponto.'
@@ -265,11 +280,16 @@
 
         unlockCost: 0,
 
+        active: 15,
+
+        stack: 150,
+        augment: "buff",
+
         shortDescription:
-            'Escudo expandido.',
+            'Escudo com 10 de HP por EST gasto, ao ser destruido empurra os inimigos 2 quadrados e causa 1d6 de dano.',
 
         description:
-            'Quen cria um escudo luminoso ao redor do usuário com 10 pontos de vida por ponto de EST gasto. Para manter o escudo ativo nas rodadas seguintes é necessário gastar a mesma quantidade de EST. O escudo protege o usuário e pode incluir uma pessoa próxima. Enquanto ativo, bloqueia qualquer coisa tangível. O usuário deve se mover lentamente, sem correr. Quando o escudo se esgota ou é destruído, tudo ao redor é empurrado 2 metros e sofre 1d6 de dano.'
+            'Quen cria um escudo luminoso ao redor do usuário com 10 pontos de vida por ponto de EST gasto. O escudo protege o usuário e pode incluir uma pessoa próxima. Enquanto ativo, bloqueia qualquer coisa tangível. O usuário deve se mover lentamente, sem correr. Quando o escudo se esgota ou é destruído, tudo ao redor é empurrado 2 metros e sofre 1d6 de dano.'
     },
 
     {
@@ -299,8 +319,13 @@
 
         unlockCost: 0,
 
+        active: 0,
+
+        stack: 15,
+        augment: "buff",
+
         shortDescription:
-            'Controle mental.',
+            'Controle mental por rodadas igual aos pontos de EST gastos, necessário Resistir Magia.',
 
         description:
             'Axii controla a mente de um oponente, tornando-o aliado por um número de rodadas igual aos pontos de EST gastos. A cada rodada o alvo pode fazer um teste de Resistir Magia contra o teste de Lançar Feitiços do usuário para tentar se libertar.'
@@ -366,9 +391,14 @@
         action: 'Principal',
     
         unlockCost: 1,
+
+        active: 0,
+
+        stack: 20,
+        augment: "buff",
     
         shortDescription:
-            'Estalagmite perfurante.',
+            'Estalagmite permanece até ser destruido 20 de HP.',
     
         description:
             'O Espinho de Barro cria uma estalagmite para perfurar o alvo. O espinho provoca 5d6 de dano e permanece até ser destruído. Pode ser destruído com 20 pontos de dano.'
@@ -400,9 +430,14 @@
         action: 'Bonus',
     
         unlockCost: 1,
+
+        active: 0,
+
+        stack: 1,
+        augment: "control",
     
         shortDescription:
-            'Raízes aprisionam o alvo.',
+            'Raízes de 15 de vida aprisionam o alvo, pode escapar se conseguir passar no teste de Esquivar/Escapar.',
     
         description:
             'A Prisão de Talfryn aprisiona o alvo com raízes resistentes. As raízes suportam até 15 pontos de dano antes de se romperem. Para escapar, o alvo deve realizar um teste de Esquivar/Escapar contra um ND igual ao teste original de Lançar Feitiços.'
@@ -529,7 +564,7 @@
     
         damage: '',
     
-        cost: '6',
+        cost: '15',
     
         range: 'Contato',
     
@@ -604,9 +639,14 @@
         action: 'Bonus',
     
         unlockCost: 1,
-    
+
+        active: 0,
+
+        stack: 1,
+        augment: "buff",
+        
         shortDescription:
-            'Comunicação mental à distância.',
+            'Comunicação mental à distância que ignora barreiras idiomáticas.',
     
         description:
             'A Telepatia permite se comunicar mentalmente com outra pessoa enquanto o feitiço durar. A comunicação ignora barreiras idiomáticas.'
@@ -672,9 +712,14 @@
         action: 'Bonus',
     
         unlockCost: 1,
+
+        active: 0,
+
+        stack: 1,
+        augment: "control",
     
         shortDescription:
-            'Controla emoções do alvo.',
+            'Controla emoções do alvo, ódio, amor, depressão, euforia.',
     
         description:
             'Permite forçar o alvo a sentir ódio, amor, depressão ou euforia enquanto o feitiço durar.'
@@ -706,9 +751,14 @@
         action: 'Bonus',
     
         unlockCost: 1,
+
+        active: 0,
+
+        stack: 1,
+        augment: "buff",
     
         shortDescription:
-            'Determina direções instantaneamente.',
+            'Determina direções instantaneamente se já tiver sido visitado ou localiza o norte.',
     
         description:
             'Permite determinar instantaneamente a direção de um lugar já visitado ou localizar o Norte.'
@@ -740,9 +790,14 @@
         action: 'Bonus',
     
         unlockCost: 1,
+
+        active: 0,
+
+        stack: 1,
+        augment: "buff",
     
         shortDescription:
-            'Ilusão de beleza encantadora.',
+            'Ilusão de beleza encantadora, +3 Sedução, Carisma, Liderança.',
     
         description:
             'Cria uma ilusão ao redor do conjurador tornando-o extremamente belo. Enquanto ativo, concede +3 em Sedução, Carisma e Liderança.'
@@ -808,6 +863,11 @@
         action: 'Bonus',
     
         unlockCost: 1,
+
+        active: 0,
+
+        stack: 1,
+        augment: "debuff",
     
         shortDescription:
             'Cega o alvo com pó mágico.',
@@ -842,9 +902,14 @@
         action: 'Bonus',
     
         unlockCost: 1,
+
+        active: 0,
+
+        stack: 10,
+        augment: "buff",
     
         shortDescription:
-            'Cria cópias ilusórias.',
+            'Cria 1d10 cópias ilusórias para confundir os inimigos.',
     
         description:
             'Cria 1d10 cópias ilusórias do conjurador. As cópias são intangíveis, controladas mentalmente e não exigem ações para serem manipuladas.'
@@ -944,9 +1009,14 @@
         action: 'Bonus',
     
         unlockCost: 1,
+
+        active: 0,
+
+        stack: 1,
+        augment: "debuff",
     
         shortDescription:
-            'Ilusão que prejudica aparência.',
+            'Ilusão que prejudica aparência do alvo com -3 Sedução, Carisma e Liderança.',
     
         description:
             'Cria uma pequena ilusão perceptível em um alvo, tornando-o pouco atraente. O alvo sofre -3 em Sedução, Carisma e Liderança.'
@@ -978,9 +1048,14 @@
         action: 'Bonus',
     
         unlockCost: 1,
+
+        active: 10,
+
+        stack: 1,
+        augment: "control",
     
         shortDescription:
-            'Agulhas mágicas torturantes.',
+            'Agulhas mágicas torturantes que permitem usar Lançar Feitiços para Interrogar o alvo.',
     
         description:
             'Convoca agulhas mágicas que torturam o alvo continuamente. Enquanto ativo, permite usar Conjuração de Feitiços no lugar de Intimidação para interrogar o alvo.'
@@ -1012,9 +1087,14 @@
         action: 'Bonus',
     
         unlockCost: 1,
+
+        active: 10,
+
+        stack: 1,
+        augment: "debuff",
     
         shortDescription:
-            'Impede o alvo de falar.',
+            'Impede o alvo de falar e conjurar magias.',
     
         description:
             'Sela magicamente os lábios do alvo e paralisa sua língua, impedindo-o de falar e dificultando conjurações mágicas.'
@@ -1046,12 +1126,17 @@
         action: 'Bonus',
     
         unlockCost: 1,
+
+        active: 0,
+
+        stack: 1,
+        augment: "control",
     
         shortDescription:
-            'Oculta objetos com ilusões.',
+            'Oculta objetos com ilusões ou altera sua aparencia em uma área de 3x3 quadrados.',
     
         description:
-            'Cria uma ilusão visual em uma área de 2 metros cúbicos para ocultar ou alterar a aparência de itens.'
+            'Cria uma ilusão visual em uma área de 3x3 quadrados cúbicos para ocultar ou alterar a aparência de itens.'
     },
     
     {
@@ -1080,6 +1165,11 @@
         action: 'Bonus',
     
         unlockCost: 1,
+
+        active: 0,
+
+        stack: 1,
+        augment: "control",
     
         shortDescription:
             'Reativa portais fechados.',
@@ -1216,12 +1306,17 @@
         action: 'Principal',
     
         unlockCost: 1,
+
+        active: 0,
+
+        stack: 20,
+        augment: "control",
     
         shortDescription:
-            'Manipula e intensifica fogo.',
+            'Manipula e intensifica fogo em 2 quadrados por rodada.',
     
         description:
-            'Permite controlar fogo existente, espalhando-o em até 2 metros por rodada. Fogo baixo causa 1d6 ao redor e 2d6 no centro. Fogo alto causa 2d6 ao redor e 3d6 no centro, exigindo testes de Lançar Feitiço para manutenção.'
+            'Permite controlar fogo existente, espalhando-o em até 2 quadrados por rodada. Fogo baixo causa 1d6 ao redor e 2d6 no centro. Fogo alto causa 2d6 ao redor e 3d6 no centro, exigindo testes de Lançar Feitiço para manutenção.'
     },
     
     {
@@ -1284,9 +1379,14 @@
         action: 'Principal',
     
         unlockCost: 1,
+
+        active: 0,
+
+        stack: 1,
+        augment: "control",
     
         shortDescription:
-            'Superaquece metais.',
+            'Superaquece objetos metalicos, força o alvo a largar, ou aquece a lamina de aliados para causar dano extra de 2d6.',
     
         description:
             'Superaquece itens metálicos forçando o alvo a largá-los ou sofrer 2d6 de dano. Também pode encantar armas para causar +2d6 de dano e 50% de chance de incendiar.'
@@ -1352,9 +1452,14 @@
         action: 'Bonus',
     
         unlockCost: 1,
+
+        active: 5,
+
+        stack: 1,
+        augment: "buff",
     
         shortDescription:
-            'Aura luminosa protetora.',
+            'Área de luz que permite realizar teste de esquiva com vantagem.',
     
         description:
             'Cria uma área de luz intensa ao redor do conjurador. Qualquer alvo dentro da luz realiza testes de esquiva com vantagem.'
@@ -1454,6 +1559,11 @@
         action: 'Hibrido',
     
         unlockCost: 1,
+
+        active: 0,
+
+        stack: 1,
+        augment: "control",
     
         shortDescription:
             'Manipula objetos à distância.',
@@ -1475,7 +1585,7 @@
     
         type: 'Ar',
     
-        duration: '1d10 Rodadas',
+        duration: '10 Rodadas',
     
         defense: 'Nenhuma',
     
@@ -1488,9 +1598,14 @@
         action: 'Principal',
     
         unlockCost: 1,
+
+        active: 10,
+
+        stack: 1,
+        augment: "control",
     
         shortDescription:
-            'Eletricidade em área.',
+            'Eletricidade em área que causa 2d6 de dano em inimigos que usam metal.',
     
         description:
             'Infunde eletricidade em uma área ao redor do conjurador. Alvos usando metal sofrem 2d6 por rodada, enquanto os demais sofrem 1d6.'
@@ -1522,6 +1637,11 @@
         action: 'Bonus',
     
         unlockCost: 1,
+
+        active: 0,
+
+        stack: 1,
+        augment: "control",
     
         shortDescription:
             'Neutraliza clima extremo.',
@@ -1556,9 +1676,14 @@
         action: 'Bonus',
     
         unlockCost: 1,
+
+        active: 0,
+
+        stack: 1,
+        augment: "control",
     
         shortDescription:
-            'Purifica o ar.',
+            'Purifica o ar de fumaça, veneno.',
     
         description:
             'Remove fumaça, venenos e poluentes do ar em uma área ao redor do conjurador enquanto o feitiço durar.'
@@ -1624,6 +1749,11 @@
         action: 'Bonus',
     
         unlockCost: 1,
+
+        active: 0,
+
+        stack: 1,
+        augment: "control",
     
         shortDescription:
             'Cria ar respirável.',
@@ -1658,6 +1788,11 @@
         action: 'Bonus',
     
         unlockCost: 1,
+
+        active: 0,
+
+        stack: 1,
+        augment: "control",
     
         shortDescription:
             'Permite planar.',
@@ -1726,12 +1861,17 @@
         action: 'Bonus',
     
         unlockCost: 1,
+
+        active: 0,
+
+        stack: 1,
+        augment: "control",
     
         shortDescription:
             'Revela invisibilidade.',
     
         description:
-            'Levanta poeira em uma grande área revelando criaturas invisíveis e anulando seus benefícios de invisibilidade.'
+            'Levanta poeira mágica em uma grande área revelando criaturas invisíveis e anulando seus benefícios de invisibilidade.'
     },
 
     {
@@ -1747,7 +1887,7 @@
     
         type: 'Água',
     
-        duration: '1d10 Rodadas',
+        duration: '10 Rodadas',
     
         defense: 'Esquivar',
     
@@ -1760,9 +1900,14 @@
         action: 'Bonus',
     
         unlockCost: 1,
+
+        active: 10,
+
+        stack: 1,
+        augment: "debuff",
     
         shortDescription:
-            'Prende o alvo em gelo.',
+            'Prende o alvo em gelo e o congela.',
     
         description:
             'Rhewi cria uma camada grossa de gelo em volta do alvo para prendê-lo enquanto durar o feitiço. O alvo é considerado congelado. Se usado em um alvo não vivo, o alvo não pode ser manipulado ou movido, causando 1d6 de dano de gelo por turno.'
@@ -1781,7 +1926,7 @@
     
         type: 'Água',
     
-        duration: '1d10 Rodadas',
+        duration: 'Indeterminado',
     
         defense: '',
     
@@ -1794,6 +1939,11 @@
         action: 'Bonus',
     
         unlockCost: 1,
+
+        active: 0,
+
+        stack: 1,
+        augment: "control",
     
         shortDescription:
             'Purifica água.',
@@ -1815,7 +1965,7 @@
     
         type: 'Água',
     
-        duration: '2d10 Rodadas',
+        duration: '20 Rodadas',
     
         defense: '',
     
@@ -1828,9 +1978,14 @@
         action: 'Bonus',
     
         unlockCost: 1,
+
+        active: 20,
+
+        stack: 1,
+        augment: "control",
     
         shortDescription:
-            'Cria área escorregadia.',
+            'Cria área escorregadia em um raio de 8 metros, teste de atletismo para não cair.',
     
         description:
             'O chão de gelo cria uma área congelada com raio de 8 metros. Qualquer criatura que atravessar a área deve fazer um teste de Atletismo contra seu teste de Lançar Feitiços ou cair.'
@@ -1849,7 +2004,7 @@
     
         type: 'Água',
     
-        duration: '2d10 Rodadas',
+        duration: '20 Rodadas',
     
         defense: '',
     
@@ -1862,6 +2017,11 @@
         action: 'Bonus',
     
         unlockCost: 1,
+
+        active: 20,
+
+        stack: 1,
+        augment: "control",
     
         shortDescription:
             'Cria chuva intensa.',
@@ -1883,7 +2043,7 @@
     
         type: 'Água',
     
-        duration: '2d10 Rodadas',
+        duration: '20 Rodadas',
     
         defense: '',
     
@@ -1896,12 +2056,17 @@
         action: 'Bonus',
     
         unlockCost: 1,
+
+        active: 20,
+
+        stack: 1,
+        augment: "control",
     
         shortDescription:
-            'Cria névoa densa.',
+            'Cria névoa densa, reduz Percepção e Esquiva de inimigos, aliados rolam Furtividade com vantagem.',
     
         description:
-            'Criada por Dormyn de Gemmera, esta névoa cobre uma área com raio de 10 metros, reduzindo Percepção em -3 e limitando a visão a 4 metros.'
+            'Criada por Dormyn de Gemmera, esta névoa cobre uma área com raio de 20 metros, reduzindo Percepção, Esquiva em -5 e limitando a visão a 4 metros, aliados rolam Furtividade com vantagem.'
     },
     
     {
@@ -1917,7 +2082,7 @@
     
         type: 'Água',
     
-        duration: '2d10 Rodadas',
+        duration: '20 Rodadas',
     
         defense: '',
     
@@ -1930,9 +2095,14 @@
         action: 'Bonus',
     
         unlockCost: 1,
+
+        active: 20,
+
+        stack: 1,
+        augment: "control",
     
         shortDescription:
-            'Cria redemoinho mortal.',
+            'Cria redemoinho mortal de água.',
     
         description:
             'A Maldição de Sedna cria um poderoso redemoinho numa área de 6x6 quadrados. Criaturas próximas devem testar Nadar contra seu teste de Lançar Feitiços ou serão puxadas para baixo da água e começarão a sufocar.'
@@ -1951,7 +2121,7 @@
     
         type: 'Água',
     
-        duration: '2d10 Rodadas',
+        duration: '20 Rodadas',
     
         defense: '',
     
@@ -1964,6 +2134,11 @@
         action: 'Bonus',
     
         unlockCost: 1,
+
+        active: 20,
+
+        stack: 1,
+        augment: "control",
     
         shortDescription:
             'Manipula correntes de água.',
@@ -2053,7 +2228,7 @@
     
         type: 'Terra',
     
-        duration: '1d10 Rodadas',
+        duration: '10 Rodadas',
     
         defense: 'Resistir Magia',
     
@@ -2066,9 +2241,14 @@
         action: 'Bonus',
     
         unlockCost: 1,
+
+        active: 10,
+
+        stack: 1,
+        augment: "control",
     
         shortDescription:
-            'Enfurece criaturas.',
+            'Enfurece animais ou monstros á atacar um alvo escolhido.',
     
         description:
             'Sangue Ferver faz um animal ou monstro não senciente entrar em fúria contra um alvo escolhido, atacando-o até o fim da duração.'
@@ -2100,81 +2280,19 @@
         action: 'Bonus',
     
         unlockCost: 1,
+
+        active: 0,
+
+        stack: 1,
+        augment: "control",
     
         shortDescription:
             'Acalma animais.',
     
         description:
-            'Concede +3 em Conduzir Animal. Também pode acalmar animais caso o teste de Lançar Feitiços supere Resistir Magia x3 do alvo.'
+            'Concede +3 em Natureza e Sobrevivência em relação á animais. Também pode acalmar animais caso o teste de Lançar Feitiços supere Resistir Magia do alvo.'
     },
-    
-    {
-        id: 'visao_da_natureza',
-    
-        name: 'Visão da Natureza',
-    
-        icon: '🌿',
-    
-        profession: 'Druida',
-    
-        category: 'Iniciante',
-    
-        type: 'Terra',
-    
-        duration: 'Imediata',
-    
-        defense: '',
-    
-        damage: '',
-    
-        cost: '6',
-    
-        range: 'Si mesmo',
-    
-        action: 'Bonus',
-    
-        unlockCost: 1,
-    
-        shortDescription:
-            'Detecta criaturas sobrenaturais.',
-    
-        description:
-            'Permite enxergar criaturas não naturais a até 50 quadrados, inclusive através de obstáculos. Elas aparecem como versões luminosas.'
-    },
-    
-    {
-        id: 'doenca_amaldicoada',
-    
-        name: 'Doença Amaldiçoada',
-    
-        icon: '🌿',
-    
-        profession: 'Druida',
-    
-        category: 'Iniciante',
-    
-        type: 'Terra',
-    
-        duration: 'Imediata',
-    
-        defense: 'Resistir Magia',
-    
-        damage: '',
-    
-        cost: 'Variável',
-    
-        range: '8 quadrados',
-    
-        action: 'Bonus',
-    
-        unlockCost: 1,
-    
-        shortDescription:
-            'Infecta o alvo.',
-    
-        description:
-            'A doença amaldiçoada causa efeitos diferentes conforme a quantidade de EST usada. 2 EST causa desequilíbrio, 4 EST provoca atordoamento e 6 EST aplica uma doença devastadora tratada como veneno.'
-    },
+
     
     {
         id: 'dadiva_da_natureza',
@@ -2236,9 +2354,14 @@
         action: 'Bonus',
     
         unlockCost: 1,
+
+        active: 0,
+
+        stack: 1,
+        augment: "control",
     
         shortDescription:
-            'Oculta área natural.',
+            'Oculta área natural e dá +5 em Furtividade naquela área.',
     
         description:
             'Cobre uma área com galhos e folhagem, concedendo +5 em Furtividade. Quem estiver dentro fica imóvel. A vegetação pode ser destruída com 10 pontos de dano.'
@@ -2270,46 +2393,17 @@
         action: 'Bonus',
     
         unlockCost: 1,
+
+        active: 0,
+
+        stack: 1,
+        augment: "buff",
     
         shortDescription:
             'Concede bônus em ações.',
     
         description:
             'A bênção da boa fortuna concede bônus em rolagens igual à metade do valor obtido acima do ND da jogada, até o máximo de 5.'
-    },
-    
-    {
-        id: 'luz_sagrada',
-    
-        name: 'Luz Sagrada',
-    
-        icon: '✨',
-    
-        profession: 'Clérigo',
-    
-        category: 'Iniciante',
-    
-        type: 'Sagrado',
-    
-        duration: '3d10 Rodadas',
-    
-        defense: '',
-    
-        damage: '',
-    
-        cost: '1',
-    
-        range: 'Si mesmo',
-    
-        action: 'Bonus',
-    
-        unlockCost: 1,
-    
-        shortDescription:
-            'Cria luz divina.',
-    
-        description:
-            'A luz sagrada ilumina a área ao redor como uma tocha, sem produzir calor ou fogo.'
     },
     
     {
@@ -2359,7 +2453,7 @@
     
         type: 'Sagrado',
     
-        duration: '2d10 Rodadas',
+        duration: '20 Rodadas',
     
         defense: '',
     
@@ -2372,9 +2466,14 @@
         action: 'Bonus',
     
         unlockCost: 1,
+
+        active: 20,
+
+        stack: 1,
+        augment: "buff",
     
         shortDescription:
-            'Aumenta carisma.',
+            'Aumenta Carisma e Sedução em +3.',
     
         description:
             'Concede +3 em Carisma e Sedução ao alvo pela duração da invocação.'
@@ -2415,74 +2514,6 @@
     },
     
     {
-        id: 'teia_de_mentiras',
-    
-        name: 'Teia de Mentiras',
-    
-        icon: '✨',
-    
-        profession: 'Clérigo',
-    
-        category: 'Iniciante',
-    
-        type: 'Sagrado',
-    
-        duration: 'Resistir Magia',
-    
-        defense: 'Resistir Magia',
-    
-        damage: '',
-    
-        cost: '3',
-    
-        range: '8 quadrados',
-    
-        action: 'Bonus',
-    
-        unlockCost: 1,
-    
-        shortDescription:
-            'Confunde a mente do alvo.',
-    
-        description:
-            'Teia de Mentiras faz o alvo questionar informações e memórias, deixando-o atordoado até conseguir uma jogada abaixo de sua INT.'
-    },
-
-    {
-        id: 'sangue_ferver',
-    
-        name: 'Sangue Ferver',
-    
-        icon: '🌿',
-    
-        profession: 'Druida',
-    
-        category: 'Iniciante',
-    
-        type: 'Terra',
-    
-        duration: 'Aleatório (1d10 rodadas)',
-    
-        defense: 'VONTx3 da criatura',
-    
-        damage: 'Nenhum',
-    
-        cost: '3',
-    
-        range: '8m',
-    
-        action: '',
-    
-        unlockCost: 1,
-    
-        shortDescription:
-            'Enfurece criaturas.',
-    
-        description:
-            'Faz com que um monstro não-senciente dentro do alcance entre em frenesi e ataque um alvo escolhido até a duração terminar.'
-    },
-    
-    {
         id: 'doenca_amaldicoada',
     
         name: 'Doença Amaldiçoada',
@@ -2508,46 +2539,17 @@
         action: '',
     
         unlockCost: 1,
+
+        active: 0,
+
+        stack: 6,
+        augment: "buff",
     
         shortDescription:
-            'Aplica doenças progressivas.',
+            'Doenças progressivas.',
     
         description:
             'Causa uma doença progressiva conforme os pontos de EST gastos: 2 pontos causam tosse e desequilíbrio; 4 pontos deixam o alvo violentamente doente e Atordoado; 6 pontos aplicam uma doença devastadora tratada como veneno.'
-    },
-    
-    {
-        id: 'amigo_das_criaturas_selvagens',
-    
-        name: 'Amigo das Criaturas Selvagens',
-    
-        icon: '🌿',
-    
-        profession: 'Druida',
-    
-        category: 'Iniciante',
-    
-        type: 'Terra',
-    
-        duration: '16 horas',
-    
-        defense: 'VONTx3 da criatura',
-    
-        damage: 'Nenhum',
-    
-        cost: '1',
-    
-        range: '5m ou si mesmo',
-    
-        action: '',
-    
-        unlockCost: 1,
-    
-        shortDescription:
-            'Acalma e compreende animais.',
-    
-        description:
-            'Concede +3 em Conduzir Animal e permite acalmar um animal caso a jogada de Lançar Feitiços supere a VONTx3 da criatura.'
     },
     
     {
@@ -2610,80 +2612,17 @@
         action: '',
     
         unlockCost: 1,
+
+        active: 0,
+
+        stack: 1,
+        augment: "control",
     
         shortDescription:
-            'Detecta criaturas sobrenaturais.',
+            'Detecta criaturas sobrenaturais em até 50 metros.',
     
         description:
             'Permite ver criaturas não naturais até 50 metros, mesmo através de obstáculos. Monstros aparecem como versões luminosas de si mesmos.'
-    },
-    
-    {
-        id: 'sigilo_do_recondito',
-    
-        name: 'Sigilo do Recôndito',
-    
-        icon: '🌿',
-    
-        profession: 'Druida',
-    
-        category: 'Iniciante',
-    
-        type: 'Terra',
-    
-        duration: 'Até ser desfeito',
-    
-        defense: 'Nenhuma',
-    
-        damage: 'Nenhum',
-    
-        cost: '2',
-    
-        range: 'Si mesmo',
-    
-        action: '',
-    
-        unlockCost: 1,
-    
-        shortDescription:
-            'Cria camuflagem natural.',
-    
-        description:
-            'Cobre uma área de 3 metros com galhos, folhagem e elementos naturais, concedendo +5 em Furtividade. A área perde o efeito se for revelada ou sofrer 10 pontos de dano.'
-    },
-    
-    {
-        id: 'bencao_da_boa_fortuna',
-    
-        name: 'Bênção da Boa Fortuna',
-    
-        icon: '✨',
-    
-        profession: 'Sacerdote',
-    
-        category: 'Iniciante',
-    
-        type: 'Sagrado',
-    
-        duration: 'Até gastar',
-    
-        defense: 'ND:12',
-    
-        damage: '',
-    
-        cost: '1',
-    
-        range: '10m',
-    
-        action: '',
-    
-        unlockCost: 1,
-    
-        shortDescription:
-            'Concede pontos de sorte.',
-    
-        description:
-            'Concede ao alvo pontos de SORTE iguais à metade do valor obtido acima da ND da jogada, até o máximo de 5.'
     },
     
     {
@@ -2721,40 +2660,6 @@
     },
     
     {
-        id: 'aguas_da_clareza',
-    
-        name: 'Águas da Clareza',
-    
-        icon: '✨',
-    
-        profession: 'Sacerdote',
-    
-        category: 'Iniciante',
-    
-        type: 'Sagrado',
-    
-        duration: 'Imediata',
-    
-        defense: 'Resistir a Magia',
-    
-        damage: '',
-    
-        cost: '1',
-    
-        range: '5m',
-    
-        action: '',
-    
-        unlockCost: 1,
-    
-        shortDescription:
-            'Remove intoxicação.',
-    
-        description:
-            'Remove imediatamente intoxicação e efeitos químicos negativos do alvo.'
-    },
-    
-    {
         id: 'bencao_do_amor',
     
         name: 'Bênção do Amor',
@@ -2789,40 +2694,6 @@
     },
     
     {
-        id: 'camaras_do_conhecimento',
-    
-        name: 'Câmaras do Conhecimento',
-    
-        icon: '✨',
-    
-        profession: 'Sacerdote',
-    
-        category: 'Iniciante',
-    
-        type: 'Sagrado',
-    
-        duration: 'Imediata',
-    
-        defense: 'Nenhuma',
-    
-        damage: '',
-    
-        cost: '3',
-    
-        range: 'Si mesmo',
-    
-        action: '',
-    
-        unlockCost: 1,
-    
-        shortDescription:
-            'Acessa memórias profundas.',
-    
-        description:
-            'Permite acessar conhecimentos e memórias armazenadas na mente como se estivessem sendo vividas novamente.'
-    },
-    
-    {
         id: 'teia_de_mentiras',
     
         name: 'Teia de Mentiras',
@@ -2848,6 +2719,11 @@
         action: '',
     
         unlockCost: 1,
+
+        active: 0,
+
+        stack: 1,
+        augment: "debuff",
     
         shortDescription:
             'Confunde a mente do alvo.',
@@ -2903,7 +2779,7 @@
     
         type: 'Arcano',
     
-        duration: '3d10 rodadas',
+        duration: '20 rodadas',
     
         defense: 'Resistir Magia',
     
@@ -2916,9 +2792,14 @@
         action: 'Bonus',
     
         unlockCost: 2,
+
+        active: 20,
+
+        stack: 1,
+        augment: "control",
     
         shortDescription:
-            'Cria ilusões visuais.',
+            'Cria ilusões visuais até o alvo Resistir magia.',
     
         description:
             'Permite criar qualquer ilusão visual dentro do alcance. Quem falhar em Resistir a Magia vê a ilusão e acredita nela. A ilusão não pode ser tocada, cheirada ou escutada.'
@@ -3005,7 +2886,7 @@
     
         type: 'Terra',
     
-        duration: '2d10 rodadas',
+        duration: '20 rodadas',
     
         defense: '',
     
@@ -3018,12 +2899,17 @@
         action: 'Bonus',
     
         unlockCost: 2,
+
+        active: 20,
+
+        stack: 1,
+        augment: "control",
     
         shortDescription:
-            'Magnetiza metais.',
+            'Magnetiza metais em um objeto metálico encantado.',
     
         description:
-            'Descoberta por Elgan de Verden, esta magia magnetiza um objeto metálico. Qualquer metal a até 2 metros é atraído e grudado nele. É necessário um teste de Físico ND:18 para remover os objetos presos.'
+            'Descoberta por Elgan de Verden, esta magia magnetiza um objeto metálico. Qualquer metal a até 10 metros é atraído e grudado nele. É necessário um teste de Físico ND:18 para remover os objetos presos.'
     },
     
     {
@@ -3052,12 +2938,17 @@
         action: 'Hibrido',
     
         unlockCost: 2,
+
+        active: 0,
+
+        stack: 30,
+        augment: "buff",
     
         shortDescription:
-            'Cria uma parede de pedra.',
+            'Cria uma parede de pedra de 3 Quadros com 2 metros de altura e 30 pontos de Armadura.',
     
         description:
-            'Cria uma parede de pedra de 2x3 metros com 30 pontos de PP em qualquer local dentro do alcance. A parede permanece até ser destruída. Pode ser usada como reação.'
+            'Cria uma parede de pedra de 3x2 metros com 30 pontos de PP em qualquer local dentro do alcance. A parede permanece até ser destruída. Pode ser usada como reação.'
     },
     
     {
@@ -3073,7 +2964,7 @@
     
         type: 'Terra',
     
-        duration: '1d10 rodadas',
+        duration: '10 rodadas',
     
         defense: 'Esquivar',
     
@@ -3086,12 +2977,17 @@
         action: 'Bonus',
     
         unlockCost: 2,
+        
+        active: 10,
+
+        stack: 1,
+        augment: "control",
     
         shortDescription:
-            'Destrói e abala o terreno.',
+            'Destrói e abala o terreno, criaturas podem afundar no solo.',
     
         description:
-            'Faz o chão tremer em um raio de 8 metros, criando terreno acidentado que reduz Reflexo em -2 e MA em -3. Criaturas podem afundar no solo e sufocar até escaparem com Atletismo.'
+            'Faz o chão tremer em um raio de 8 metros, criando terreno acidentado que reduz Esquivar em -3. Criaturas podem afundar no solo e sufocar até escaparem com Atletismo.'
     },
     
     {
@@ -3154,9 +3050,14 @@
         action: 'Bonus',
     
         unlockCost: 2,
+
+        active: 0,
+
+        stack: 1,
+        augment: "control",
     
         shortDescription:
-            'Barreira de vento.',
+            'Barreira de vento em um raio de 3x3 Quadrados que bloqueia ataques á distância.',
     
         description:
             'Cria uma barreira de vento em um raio de 3 metros que bloqueia projéteis e ataques à distância. Projéteis bloqueados são arremessados aleatoriamente.'
@@ -3188,9 +3089,14 @@
         action: 'Principal',
     
         unlockCost: 2,
+
+        active: 0,
+
+        stack: 1,
+        augment: "debuff",
     
         shortDescription:
-            'Asfixia o alvo.',
+            'Asfixia o alvo com 1d10 de dano por turno e causando desequilibrio.',
     
         description:
             'Sufoca o alvo causando 1d10 de dano por turno. Enquanto sufoca, o alvo fica desequilibrado. O efeito termina se o conjurador perder a concentração.'
@@ -3209,7 +3115,7 @@
     
         type: 'Fogo',
     
-        duration: '',
+        duration: '10 Rodadas',
     
         defense: '',
     
@@ -3222,9 +3128,14 @@
         action: 'Bonus',
     
         unlockCost: 2,
+
+        active: 10,
+
+        stack: 1,
+        augment: "control",
     
         shortDescription:
-            'Escudo mágico flamejante.',
+            'Escudo mágico flamejante que bloqueia feitiços de água e impede de criaturas atravessar.',
     
         description:
             'Cria um escudo de fogo mágico que bloqueia feitiços de água e destrói projéteis. Criaturas vivas não conseguem atravessar a área protegida.'
@@ -3256,9 +3167,14 @@
         action: 'Principal',
     
         unlockCost: 2,
+
+        active: 0,
+
+        stack: 1,
+        augment: "control",
     
         shortDescription:
-            'Tornado de fogo destrutivo.',
+            'Tornado de fogo destrutivo que causa 8d6 de dano e 50% de chance de incendiar.',
     
         description:
             'Cria um tornado flamejante móvel. Alvos atingidos sofrem 8d6 de dano e possuem 50% de chance de incendiar.'
@@ -3277,7 +3193,7 @@
     
         type: 'Fogo',
     
-        duration: '2d10',
+        duration: '10',
     
         defense: '',
     
@@ -3290,9 +3206,14 @@
         action: 'Principal',
     
         unlockCost: 2,
+
+        active: 10,
+
+        stack: 20,
+        augment: "buff",
     
         shortDescription:
-            'Serpentes de fogo mágico.',
+            'Serpentes de fogo mágico que causam 1d6 de dano.',
     
         description:
             'Cria serpentes de fogo que agarram o alvo, causando dano contínuo e incêndio até que ele escape.'
@@ -3358,9 +3279,14 @@
         action: 'Principal',
     
         unlockCost: 2,
+
+        active: 0,
+
+        stack: 1,
+        augment: "control",
     
         shortDescription:
-            'Tempestade congelante.',
+            'Tempestade de granizos que causa 5d6 de dano com local de acerto.',
     
         description:
             'Cria uma tempestade de granizo em grande área. Alvos devem resistir ou sofrem 5d6 de dano por rodada, em cada alvo deve rolar o local de acerto.'
@@ -3426,9 +3352,14 @@
         action: 'Bonus',
     
         unlockCost: 2,
+
+        active: 0,
+
+        stack: 1,
+        augment: "buff",
     
         shortDescription:
-            'Acelera a regeneração.',
+            'Acelera a regeneração com 3 HP por turno.',
     
         description:
             'Acelera a cura natural do alvo, restaurando 3 pontos de vida por rodada e ajudando na recuperação de ferimentos críticos.'
@@ -3447,25 +3378,30 @@
     
         type: 'Terra',
     
-        duration: '2d6 rodadas',
+        duration: '10 rodadas',
     
         defense: 'Resistir a Magia',
     
         damage: 'Nenhum',
     
-        cost: '6',
+        cost: '6 por turno',
     
         range: '5m',
     
         action: 'Bonus',
     
         unlockCost: 2,
+
+        active: 10,
+
+        stack: 1,
+        augment: "buff",
     
         shortDescription:
-            'Conecta ao poder primal.',
+            'Concede +5 em rolagem corpo a corpo e +6 no dano fisico e consome 6 EST por turno.',
     
         description:
-            'Conecta o alvo ao poder primal, concedendo +2 em dano corpo a corpo e penalidade de -2 em INT.'
+            'Conecta o alvo ao poder primal, concedendo +5 em rolagens de dano corpo a corpo e +6 no dano físico.'
     },
     
     {
@@ -3494,9 +3430,14 @@
         action: 'Bonus',
     
         unlockCost: 2,
+
+        active: 0,
+
+        stack: 1,
+        augment: "control",
     
         shortDescription:
-            'Enxerga energia vital.',
+            'Enxerga energia vital, ve a vida dos inimigos gastando 2 EST por turno.',
     
         description:
             'Permite visualizar a energia vital dos alvos, revelando pontos de vida restantes e ferimentos críticos.'
@@ -3528,9 +3469,14 @@
         action: 'Principal',
     
         unlockCost: 2,
+
+        active: 0,
+
+        stack: 1,
+        augment: "control",
     
         shortDescription:
-            'Chamas sagradas.',
+            'Chamas sagradas causam 3d6 de dano e estado Em Chamas.',
     
         description:
             'Incendeia o alvo com fogo sagrado, causando 3d6 de dano e mantendo o alvo em chamas.'
@@ -3549,7 +3495,7 @@
     
         type: 'Sagrado',
     
-        duration: 'Imediata',
+        duration: 'Até ser consumido',
     
         defense: 'Nenhuma',
     
@@ -3562,9 +3508,14 @@
         action: 'Bonus',
     
         unlockCost: 2,
+
+        active: 0,
+
+        stack: 1,
+        augment: "buff",
     
         shortDescription:
-            'Refaz resistência mágica.',
+            'Permite realizar teste extra de Resistir Magia.',
     
         description:
             'Envolve o alvo com energia sagrada permitindo um novo teste contra um feitiço ativo.'
@@ -3596,9 +3547,14 @@
         action: 'Bonus',
     
         unlockCost: 2,
+
+        active: 0,
+
+        stack: 1,
+        augment: "control",
     
         shortDescription:
-            'Força a verdade.',
+            'Força a verdade caso falhar em resistir magia.',
     
         description:
             'Cria uma luz sagrada que obriga o alvo a responder com sinceridade enquanto falhar em resistir.'
@@ -3630,9 +3586,14 @@
         action: 'Bonus',
     
         unlockCost: 3,
+
+        active: 0,
+
+        stack: 5,
+        augment: "buff",
     
         shortDescription:
-            'Implanta ordens irresistíveis.',
+            'Implanta ordens irresistíveis na mente do alvo, ele recebe +5 em Resistir Magia se for uma ordem que jamais faria.',
     
         description:
             'Permite plantar uma ordem na mente de um alvo. Esse comando deve ser executado perfeitamente pelo alvo. Se o comando for algo que a pessoa nunca faria, ela recebe +5 no teste de Resistir a Magia.'
@@ -3664,9 +3625,14 @@
         action: 'Bonus',
     
         unlockCost: 3,
+
+        active: 0,
+
+        stack: 1,
+        augment: "control",
     
         shortDescription:
-            'Abre portais dimensionais.',
+            'Abre portais dimensionais consumindo 6 EST por turno.',
     
         description:
             'Cria um portal flutuante de 1m por 2m até 10m de você. Atravessar o portal permite se teletransportar para qualquer lugar lembrado. O portal pode transportar qualquer coisa que caiba nele. Encerrar o portal enquanto algo estiver parcialmente dentro corta o alvo ao meio, causando desmembramento equivalente a um Ferimento Crítico. Também pode ser usado para locais desconhecidos, como Teletransporte.'
@@ -3698,9 +3664,14 @@
         action: 'Bonus',
     
         unlockCost: 3,
+
+        active: 0,
+
+        stack: 1,
+        augment: "buff",
     
         shortDescription:
-            'Transforma o conjurador em animal.',
+            'Assume forma de Serpente, Gato, Passáro ou Canídeo.',
     
         description:
             'Permite assumir a forma de uma serpente, gato, pássaro ou cachorro. Enquanto transformado, você utiliza as estatísticas físicas do animal escolhido. Todos os itens carregados são transformados junto. O feitiço deve ser lançado novamente para retornar à forma humana.'
@@ -3725,7 +3696,7 @@
     
         damage: '',
     
-        cost: '30',
+        cost: '50',
     
         range: 'Metal',
     
@@ -3766,9 +3737,14 @@
         action: 'Principal',
     
         unlockCost: 3,
+
+        active: 0,
+
+        stack: 1,
+        augment: "control",
     
         shortDescription:
-            'Cria um tornado devastador.',
+            'Cria um tornado devastador que causa 1d6 de dano por distância que arremessa o alvo, Lançar Feitiços X Defesa do alvo, ativo por 6 EST.',
     
         description:
             'Cria um tornado com raio de 8m que redireciona projéteis e ataques à distância. O tornado funciona como Zéfiro contra qualquer alvo até 2 quadrados de distância, arremessando inimigos conforme o resultado acima da defesa. O dano causado é de 1d6 para cada quadrado que o alvo for lançado.'
@@ -3800,12 +3776,17 @@
         action: 'Principal',
     
         unlockCost: 3,
+
+        active: 0,
+
+        stack: 1,
+        augment: "control",
     
         shortDescription:
-            'Invoca uma tempestade elétrica.',
+            'Tempestade elétrica com chance de 50% de atingir alvos na área com dano de 8d6, 70% chance de Em Chamas, ativo por 6 EST.',
     
         description:
-            'Cria uma tempestade de raios em um raio de 12 metros. Qualquer criatura na área possui 35% de chance de ser atingida por um raio. Caso falhe na defesa, sofre 8d6 de dano no tronco e possui 75% de chance de ser incendiada.'
+            'Cria uma tempestade de raios em um raio de 12 metros. Qualquer criatura na área possui 50% de chance de ser atingida por um raio. Caso falhe na defesa, sofre 8d6 de dano no tronco e possui 70% de chance de ser incendiada.'
     },
     
     {
@@ -3825,7 +3806,7 @@
     
         defense: 'Esquivar',
     
-        damage: '8d6',
+        damage: '10d6',
     
         cost: '25',
     
@@ -3839,7 +3820,7 @@
             'Faz chover bolas de fogo.',
     
         description:
-            'Permite invocar uma chuva de bolas de fogo sobre uma área gigantesca. Alvos na área possuem 70% de chance de serem atingidos. Caso falhem na defesa, sofrem 8d6 de dano em uma parte aleatória do corpo e têm 70% de chance de serem incendiados.'
+            'Permite invocar uma chuva de bolas de fogo sobre uma área gigantesca. Alvos na área possuem 70% de chance de serem atingidos. Caso falhem na defesa, sofrem 10d6 de dano em uma parte aleatória do corpo e têm 70% de chance de serem incendiados.'
     },
     
     {
@@ -3857,7 +3838,7 @@
     
         duration: 'Imediata',
     
-        defense: 'Esquivar ou Bloquear',
+        defense: 'Esquivar',
     
         damage: '10d6',
     
@@ -3870,7 +3851,7 @@
         unlockCost: 3,
     
         shortDescription:
-            'Dispara um raio solar devastador.',
+            'Dispara um raio solar devastador em uma grande área.',
     
         description:
             'Cria um raio de luz cegante que provoca 10d6 de dano. O feitiço destrói praticamente qualquer bloqueio, podendo apenas ser refletido por superfícies reflexivas. O raio refletido segue em direção aleatória. Em locais sem luz solar direta, o dano é reduzido pela metade.'
@@ -3900,11 +3881,16 @@
         range: '20 quadrados',
     
         action: 'Bonus',
+
+        active: 0,
+
+        stack: 1,
+        augment: "control",
     
         unlockCost: 3,
     
         shortDescription:
-            'Separa grandes massas de água.',
+            'Separa grandes massas de água, ativo por 6 EST.',
     
         description:
             'Permite abrir uma área gigantesca dentro de um corpo d’água, empurrando toda a água e criaturas para os lados. Você pode atravessar livremente a abertura sem desfazer o efeito. A área pode ser criada em qualquer orientação, inclusive vertical.'
@@ -3957,7 +3943,7 @@
     
         type: 'Terra',
     
-        duration: '1d10 rodadas',
+        duration: '20 rodadas',
     
         defense: 'Nenhuma',
     
@@ -3970,9 +3956,14 @@
         action: 'Bonus',
     
         unlockCost: 3,
+
+        active: 20,
+
+        stack: 5,
+        augment: "control",
     
         shortDescription:
-            'Cria um golem natural.',
+            'Cria um golem natural através de uma árvore.',
     
         description:
             'Transforma uma árvore próxima em um golem obediente durante a duração do feitiço. Quando o efeito termina, o golem volta a ser árvore. Caso destruído, gera 2d10 unidades de madeira.'
@@ -4004,9 +3995,14 @@
         action: 'Bonus',
     
         unlockCost: 3,
+
+        active: 0,
+
+        stack: 1,
+        augment: "control",
     
         shortDescription:
-            'Controla o clima da região.',
+            'Controla o clima da região, ativo 5 EST.',
     
         description:
             'Permite alterar o clima para céu limpo, chuva, ventania, tempestade ou outras condições. Ventania aplica –2 DES em ataques à distância e tempestades possuem chance de atingir criaturas com raios.'
@@ -4025,7 +4021,7 @@
     
         type: 'Sagrado',
     
-        duration: '1 rodada',
+        duration: 'Ativo 5 EST',
     
         defense: 'Nenhuma',
     
@@ -4038,6 +4034,11 @@
         action: 'Bonus',
     
         unlockCost: 3,
+
+        active: 0,
+
+        stack: 1,
+        augment: "control",
     
         shortDescription:
             'Abre um portal sagrado.',
@@ -4072,9 +4073,14 @@
         action: 'Bonus',
     
         unlockCost: 3,
+
+        active: 0,
+
+        stack: 1,
+        augment: "control",
     
         shortDescription:
-            'Recebe respostas divinas.',
+            'Recebe respostas divinas, Ativo 5 EST.',
     
         description:
             'Permite obter uma resposta guiada por poder divino para uma pergunta. O feitiço não prevê o futuro e a dificuldade depende do quão secreta é a informação.'
@@ -4140,6 +4146,11 @@
         action: 'Bonus',
     
         unlockCost: 4,
+
+        active: 0,
+
+        stack: 1,
+        augment: "buff",
     
         shortDescription:
             'Sono restaurador divino.',
@@ -4174,9 +4185,14 @@
         action: 'Principal',
     
         unlockCost: 4,
+
+        active: 0,
+
+        stack: 1,
+        augment: "control",
     
         shortDescription:
-            'Incendeia com fogo sagrado.',
+            'Incendeia com fogo sagrado que causam o dobro de dano e não pode ser apagado facilmente.',
     
         description:
             'Com o poder do Fogo Eterno, o alvo explode em chamas brancas brilhantes com tons vermelhos. O fogo causa o dobro do dano normal de fogo e não pode ser apagado exceto por magia ou submersão completa em água por 3 rodadas.'
@@ -4195,7 +4211,7 @@
     
         type: 'Sagrado',
     
-        duration: '1 hora',
+        duration: '60 Turnos',
     
         defense: 'Nenhuma',
     
@@ -4208,12 +4224,17 @@
         action: 'Bonus',
     
         unlockCost: 4,
+
+        active: 60,
+
+        stack: 1,
+        augment: "control",
     
         shortDescription:
             'Manipula a providência divina.',
     
         description:
-            'Com o poder de Kreve, o Pai Todo-Poderoso, você invoca providência divina. Durante a duração, pode gastar pontos de SORTE equivalentes à sua perícia em Lançar Feitiços vezes 3 para aumentar jogadas próprias ou conceder bônus e penalidades em jogadas de criaturas até 10m.'
+            'Com o poder de Kreve, o Pai Todo-Poderoso, você invoca providência divina. Durante a duração, pode gastar pontos de EST equivalentes à sua perícia em Lançar Feitiços vezes 3 para aumentar jogadas próprias ou conceder bônus e penalidades em jogadas de criaturas até 10m.'
     },
     
     {
@@ -4242,9 +4263,14 @@
         action: 'Bonus',
     
         unlockCost: 4,
+
+        active: 20,
+
+        stack: 25,
+        augment: "buff",
     
         shortDescription:
-            'Concede vitalidade divina.',
+            'Concede vitalidade divina +25 HP.',
     
         description:
             'Você invoca o espírito de Freya, criando um brilho em um raio de 20m. Alvos escolhidos recebem +25 Pontos de Vida enquanto permanecerem dentro da área iluminada. Ao sair da área, o efeito desaparece.'
@@ -4263,7 +4289,7 @@
     
         type: 'Sagrado',
     
-        duration: '1 hora',
+        duration: '60 Turnos',
     
         defense: 'Resistir a Magia',
     
@@ -4276,12 +4302,17 @@
         action: 'Bonus',
     
         unlockCost: 4,
+
+        active: 60,
+
+        stack: 1,
+        augment: "buff",
     
         shortDescription:
-            'Invoca fogo sagrado imortal.',
+            'Invoca fogo sagrado imortal, feitiços contra o conjurador sofrem desvantagem.',
     
         description:
-            'Você cria uma Chama Branca que ilumina uma área com luz ofuscante. Qualquer criatura que toque a chama é descongelada. A chama não pode ser apagada por água ou vento. Feitiços em área contra o conjurador sofrem penalidades dobradas.'
+            'Você cria uma Chama Branca que ilumina uma área com luz ofuscante. Qualquer criatura que toque a chama é descongelada. A chama não pode ser apagada por água ou vento. Feitiços em área contra o conjurador sofrem desvantagem.'
     },
 
     // =====================================
@@ -4303,13 +4334,16 @@
         type: 'Arcano',
         profession: 'Mago',
         category: 'Profissional',
-        duration: '2d10 rodadas',
+        duration: '10 rodadas',
         defense: 'Nenhuma',
         damage: '-',
         cost: '10',
         range: '8m',
         action: 'Bonus',
-        unlockCost: 2
+        unlockCost: 2,
+        stack: 1,
+        augment: "buff",
+        active: 10
     },
     
     {
@@ -4317,7 +4351,7 @@
         name: 'Prisão Prismática',
         icon: '🔷',
         shortDescription:
-            'Aprisiona o alvo em energia mágica.',
+            'Aprisiona o alvo em energia mágica que não pode mover nem usar ação física, magias tem penalidade de -4, prisão tem 40 de HP.',
         description:
             `Cria uma prisão de energia translúcida ao redor do alvo.
     
@@ -4329,13 +4363,16 @@
         type: 'Arcano',
         profession: 'Mago',
         category: 'Mestre',
-        duration: '1d10 rodadas',
+        duration: '10 rodadas',
         defense: 'Resistir a Magia',
         damage: '-',
         cost: '22',
         range: '10m',
         action: 'Principal',
-        unlockCost: 3
+        unlockCost: 3,
+        stack: 40,
+        augment: "buff",
+        active: 10
     },
     
     {
@@ -4343,7 +4380,7 @@
         name: 'Eclipse de Ban Ard',
         icon: '🌑',
         shortDescription:
-            'Uma escuridão mágica cobre a área.',
+            'Uma escuridão mágica cobre a área, magia de fogo causa metade do dano, todas criaturas recebem -5 em percepção, quem estiver com medo sofre desvantagem em Resistir Coerção.',
         description:
             `Uma escuridão mágica cobre um raio de 30m.
     
@@ -4359,7 +4396,10 @@
         cost: '30',
         range: '30m',
         action: 'Principal',
-        unlockCost: 4
+        unlockCost: 4,
+        stack: 1,
+        augment: "control",
+        active: 0
     },
     
     {
@@ -4375,13 +4415,16 @@
         type: 'Fogo',
         profession: 'Mago',
         category: 'Profissional',
-        duration: '1d10 rodadas',
+        duration: '10 rodadas',
         defense: 'Esquivar/Escapar',
         damage: '2d6 por rodada',
         cost: '10',
         range: '8m',
         action: 'Principal',
-        unlockCost: 2
+        unlockCost: 2,
+        stack: 5,
+        augment: "control",
+        active: 10
     },
     
     {
@@ -4403,7 +4446,10 @@
         cost: '22',
         range: '20m',
         action: 'Principal',
-        unlockCost: 3
+        unlockCost: 3,
+        stack: 1,
+        augment: "control",
+        active: 0
     },
     
     {
@@ -4425,7 +4471,10 @@
         cost: '8',
         range: 'Si mesmo',
         action: 'Bonus',
-        unlockCost: 2
+        unlockCost: 2,
+        stack: 1,
+        augment: "control",
+        active: 0
     },
     
     {
@@ -4455,21 +4504,24 @@
         name: 'Muralha Espinhosa',
         icon: '🌿',
         shortDescription:
-            'Uma parede viva de espinhos.',
+            'Uma parede viva de espinhos 6x3 , atravessar causa 3d6 de dano e sangramento.',
         description:
-            `Cria uma parede viva de espinhos.
+            `Cria uma parede viva de espinhos de 6x3 com 30 de HP .
     
     Quem atravessar sofre 3d6 de dano e sangramento.`,
         type: 'Terra',
         profession: 'Druida',
         category: 'Profissional',
-        duration: '2d10 rodadas',
+        duration: '10 rodadas',
         defense: 'Atletismo',
         damage: '3d6',
         cost: '8',
         range: '10m',
         action: 'Hibrido',
-        unlockCost: 2
+        unlockCost: 2,
+        stack: 30,
+        augment: "control",
+        active: 10
     },
     
     {
@@ -4491,7 +4543,10 @@
         cost: '20',
         range: '20m',
         action: 'Principal',
-        unlockCost: 3
+        unlockCost: 3,
+        stack: 1,
+        augment: "control",
+        active: 0
     },
     
     {
@@ -4505,13 +4560,16 @@
         type: 'Sagrado',
         profession: 'Sacerdote',
         category: 'Profissional',
-        duration: '2d10 rodadas',
+        duration: '15 rodadas',
         defense: 'Nenhuma',
         damage: '-',
         cost: '6',
         range: 'Raio de 8m',
         action: 'Bonus',
-        unlockCost: 2
+        unlockCost: 2,
+        stack: 1,
+        augment: "control",
+        active: 15
     },
     
     {

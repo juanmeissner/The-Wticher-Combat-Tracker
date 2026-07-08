@@ -41,7 +41,11 @@ const predefinedItems = [
         name: 'Adesivo Alquímico',
         icon: 'https://static.divine-pride.net/images/items/item/12475.png',
         category: 'usable',
+        active: 0,
+        stack: 1,
+        augment: "debuff",
         goldValue: 0,
+        shortDescription: 'Fica grudado até passar em teste Físico de ND: 16',
         description: 'Gruda objetos e pessoas após 2 rodadas. Para separar, é necessário teste de Físico ND:16. Arremessável..',
         recipe: [
             'Visco',
@@ -97,7 +101,11 @@ const predefinedItems = [
         name: 'Clorofórmio',
         icon: 'https://static.divine-pride.net/images/items/item/103649.png',
         category: 'usable',
+        active: 0,
+        stack: 1,
+        augment: "debuff",
         goldValue: 0,
+        shortDescription: 'Induz inconsciência por respiração. Teste de resistência a Desmaiado ND 18 com penalidade de -2',
         description: 'Induz inconsciência por respiração. Teste de resistência a Desmaiado ND 18 com penalidade de -2.',
         recipe: [
             'Água Destilada',
@@ -111,8 +119,12 @@ const predefinedItems = [
         name: 'Pó de Coagulação',
         icon: 'https://static.divine-pride.net/images/items/item/14614.png',
         category: 'usable',
+        active: 10,
+        stack: 1,
+        augment: "buff",
         goldValue: 0,
-        description: 'Estanca sangramentos por 2d10 rodadas. Após o tempo, o ferimento volta a sangrar.',
+        shortDescription: 'Estanca sangramentos por 10 rodadas. Após o tempo, o ferimento volta a sangrar.',
+        description: 'Estanca sangramentos por 10 rodadas. Após o tempo, o ferimento volta a sangrar.',
         recipe: [
             'Folhas de Bálisa',
             'Mofo Verde',
@@ -125,8 +137,12 @@ const predefinedItems = [
         name: 'Fissstech',
         icon: 'https://static.divine-pride.net/images/items/item/22545.png',
         category: 'usable',
+        active: 15,
+        stack: 1,
+        augment: "buff",
         goldValue: 0,
-        description: 'Provoca transe eufórico. Serve como anestésico, irá receber apenas metade do dano ao usar e não sofre penalidades relacionadas á dor. Altamente viciante (teste de Resistência ND:20 após cada uso).',
+        shortDescription: 'Transe eufórico por 15 turnos, recebe apenas metade do ano e não sente dor',
+        description: 'Provoca transe eufórico por 15 turnos. Serve como anestésico, irá receber apenas metade do dano ao usar e não sofre penalidades relacionadas á dor. Altamente viciante (teste de Resistência ND:20 após cada uso).',
         recipe: [
             '?',
             '?',
@@ -139,7 +155,11 @@ const predefinedItems = [
         name: 'Alucinógeno',
         icon: 'https://static.divine-pride.net/images/items/item/12419.png',
         category: 'usable',
+        active: 0,
+        stack: 1,
+        augment: "debuff",
         goldValue: 0,
+        shortDescription: 'Alucinações até passar em teste de resistência ND 18',
         description: 'Causa alucinações até o alvo passar em um teste de resistência ND 18. Pode ser jogado ou dissolvido em bebida.',
         recipe: [
             'Seiva Branca',
@@ -167,8 +187,12 @@ const predefinedItems = [
         name: 'Ervas Entorpecentes',
         icon: 'https://static.divine-pride.net/images/items/item/11551.png',
         category: 'usable',
+        active: 20,
+        stack: 1,
+        augment: "buff",
         goldValue: 0,
-        description: 'Aplicadas em ferimentos, aliviam a dor, reduzindo negativos de ferimentos críticos e de estado próximo da morte em 2. Dura 2d10 rodadas.',
+        shortDescription: 'Alivia a dor e reduz negativo de ferimentos críticos e estado próximo da morte em 2',
+        description: 'Aplicadas em ferimentos, aliviam a dor, reduzindo negativos de ferimentos críticos e de estado próximo da morte em 2. Dura 20 rodadas.',
         recipe: [
             'Quelidônia',
             'Fruta de Uva-Espim',
@@ -182,7 +206,11 @@ const predefinedItems = [
         name: 'Elixir de Pantagran',
         icon: 'https://static.divine-pride.net/images/items/item/22612.png',
         category: 'usable',
+        active: 120,
+        stack: 1,
+        augment: "debuff",
         goldValue: 0,
+        shortDescription: 'Provoca alegria delirante por 2 horas. Usuário sofre -2 em Resistir Coerção.',
         description: 'Provoca alegria delirante por 2 horas. Usuário sofre -2 em Resistir Coerção.',
         recipe: [
             'Essência de Luz',
@@ -196,8 +224,12 @@ const predefinedItems = [
         name: 'Poção de Perfume',
         icon: 'https://static.divine-pride.net/images/items/item/12131.png',
         category: 'usable',
+        active: 0,
+        stack: 1,
+        augment: "debuff",
         goldValue: 0,
-        description: 'Teste de Tolerância ND:16. Fracasso causa intoxicação por 1d10 horas.',
+        shortDescription: 'Teste de Tolerância ND:19. Fracasso causa intoxicação por 1d10 horas.',
+        description: 'Teste de Tolerância ND:19. Fracasso causa intoxicação por 1d10 horas.',
         recipe: [
             'Folhas de Aloe',
             'Pétalas de Verbena',
@@ -212,7 +244,7 @@ const predefinedItems = [
         icon: 'https://static.divine-pride.net/images/items/item/12418.png',
         category: 'usable',
         goldValue: 0,
-        description: 'Líquido que torna comidas e bebidas mais apetitosas e realça o cheiro. Aumenta o ND de detectar veneno para 20.',
+        description: 'Líquido que torna comidas e bebidas mais apetitosas e realça o cheiro. Aumenta o ND de detectar veneno para 24.',
         recipe: [
             'Folhas de Bálisa',
             'Fruta de Bálisa',
@@ -226,8 +258,12 @@ const predefinedItems = [
         name: 'Inflamador',
         icon: 'https://static.divine-pride.net/images/items/item/23077.png',
         category: 'usable',
+        active: 0,
+        stack: 1,
+        augment: "debuff",
         goldValue: 0,
-        description: 'Torna alvos extremamente inflamáveis. 50% de chance de incendiar ao contato com faíscas.',
+        shortDescription: 'Torna alvos extremamente inflamáveis. 50% de chance de incendiar ao contato com faíscas dano de fogo causa o dobro.',
+        description: 'Torna alvos extremamente inflamáveis. 50% de chance de incendiar ao contato com faíscas dano de fogo causa o dobro.',
         recipe: [
             'Óleo Escurecedor',
             'Fósforo',
@@ -254,7 +290,11 @@ const predefinedItems = [
         name: 'Fluido Esterilizante',
         icon: 'https://static.divine-pride.net/images/items/item/11517.png',
         category: 'usable',
+        active: 20,
+        stack: 1,
+        augment: "buff",
         goldValue: 0,
+        shortDescription: 'Aumenta a cura de ferimentos e reduz o tempo de recuperação.',
         description: 'Aumenta a cura de ferimentos e reduz o tempo de recuperação.',
         recipe: [
             'Água Ducal',
@@ -268,7 +308,11 @@ const predefinedItems = [
         name: 'Sopro de Súcubo',
         icon: 'https://static.divine-pride.net/images/items/item/23547.png',
         category: 'usable',
+        active: 30,
+        stack: 1,
+        augment: "control",
         goldValue: 0,
+        shortDescription: 'Recebe +2 em Sedução na pele; -5 na Resistência a Sedução na bebida.',
         description: 'Recebe +2 em Sedução na pele; -5 na Resistência a Sedução na bebida.',
         recipe: [
             'Essência de Luz',
@@ -283,7 +327,11 @@ const predefinedItems = [
         name: 'Lágrimas de Talgar',
         icon: 'https://static.divine-pride.net/images/items/item/11517.png',
         category: 'usable',
+        active: 0,
+        stack: 1,
+        augment: "control",
         goldValue: 0,
+        shortDescription: 'Congela imediatamente alvos atingidos. Itens congelados sofrem o dobro de dano de ablação.',
         description: 'Congela imediatamente alvos atingidos. Itens congelados sofrem o dobro de dano de ablação.',
         recipe: [
             'Fragmentos Lunares',
@@ -326,7 +374,11 @@ const predefinedItems = [
         name: 'Sangue Preto',
         icon: 'https://static.divine-pride.net/images/items/item/23078.png',
         category: 'usable',
+        active: 20,
+        stack: 1,
+        augment: "buff",
         goldValue: 0,
+        shortDescription: 'Envenena criaturas vampíricas e necrófagas que o beberem, 1d6 de dano por rodada até um teste de Tolerância; impede cura natural e exige teste de resistência a cada turno para não ficar atordoado (ND 20).',
         description: 'O sangue do bruxo envenena criaturas vampíricas e necrófagas que o beberem, causando 1d6 de dano por rodada até um teste de Tolerância; impede cura natural e exige teste de resistência a cada turno para não ficar atordoado (ND 20).',
         recipe: [
             'Verbena',
@@ -341,7 +393,11 @@ const predefinedItems = [
         name: 'Nevasca',
         icon: 'https://static.divine-pride.net/images/items/item/12245.png',
         category: 'usable',
+        active: 10,
+        stack: 1,
+        augment: "buff",
         goldValue: 0,
+        shortDescription: '1d6 em todos os sentidos, Reflexo, Defesa, Audição, Percepção, Esquiva, Atletismo, Acrobacias, Lançar Feitiços, Habilidades com armas como Esgrima etc...',
         description: '1d6 em todos os sentidos, Reflexo, Defesa, Audição, Percepção, Esquiva, Atletismo, Acrobacias, Lançar Feitiços, Habilidades com armas como Esgrima etc...',
         recipe: [
             'Mitro Branco',
@@ -356,7 +412,11 @@ const predefinedItems = [
         name: 'Gato',
         icon: 'https://static.divine-pride.net/images/items/item/503.png',
         category: 'usable',
+        active: 20,
+        stack: 1,
+        augment: "buff",
         goldValue: 0,
+        shortDescription: 'Nenhuma penalidade por escuridão ou pouca luz; não pode ser hipnotizado; +5 contra ilusões.',
         description: 'Nenhuma penalidade por escuridão ou pouca luz; não pode ser hipnotizado; +5 contra ilusões.',
         recipe: [
             'Fruta de Uva-Espim',
@@ -370,8 +430,12 @@ const predefinedItems = [
         name: 'Lua Cheia',
         icon: 'https://static.divine-pride.net/images/items/item/546.png',
         category: 'usable',
+        active: 20,
+        stack: 30,
+        augment: "buff",
         goldValue: 0,
-        description: 'Role 1d8. Fornece +10 PV mais o resultado do dado em PV temporários até o fim da duração. Não acumula.',
+        shortDescription: 'Role 1d20. Fornece +10 PV mais o resultado do dado em PV temporários até o fim da duração. Não acumula.',
+        description: 'Role 1d20. Fornece +10 PV mais o resultado do dado em PV temporários até o fim da duração. Não acumula.',
         recipe: [
             'Água Destilada',
             'Aconito',
@@ -384,7 +448,11 @@ const predefinedItems = [
         name: 'Papa-figo',
         icon: 'https://static.divine-pride.net/images/items/item/12119.png',
         category: 'usable',
+        active: 20,
+        stack: 1,
+        augment: "buff",
         goldValue: 0,
+        shortDescription: 'Fornece imunidade a venenos e neutraliza quaisquer poções no sistema.',
         description: 'Fornece imunidade a venenos e neutraliza quaisquer poções no sistema.',
         recipe: [
             'Água Destilada',
@@ -398,7 +466,11 @@ const predefinedItems = [
         name: 'Baleia Assassina',
         icon: 'https://static.divine-pride.net/images/items/item/12118.png',
         category: 'usable',
+        active: 30,
+        stack: 1,
+        augment: "buff",
         goldValue: 0,
+        shortDescription: 'Aumenta em 50% a habilidade de segurar a respiração e nega penalidades de visão subaquática.',
         description: 'Aumenta em 50% a habilidade de segurar a respiração e nega penalidades de visão subaquática.',
         recipe: [
             'Água Destilada',
@@ -412,7 +484,11 @@ const predefinedItems = [
         name: 'Bosque de Maribor',
         icon: 'https://static.divine-pride.net/images/items/item/12120.png',
         category: 'usable',
+        active: 10,
+        stack: 1,
+        augment: "buff",
         goldValue: 0,
+        shortDescription: 'Toda vez que ganhar um dado de adrenalina, adicione um dado extra.',
         description: 'Toda vez que ganhar um dado de adrenalina, adicione um dado extra.',
         recipe: [
             'Água Destilada',
@@ -426,8 +502,12 @@ const predefinedItems = [
         name: 'Filtro de Petri',
         icon: 'https://static.divine-pride.net/images/items/item/12121.png',
         category: 'usable',
+        active: 5,
+        stack: 6,
+        augment: "buff",
         goldValue: 0,
-        description: 'Sempre que usar um sinal o sinal terá efeito como se tivesse gasto 1d6 pontos em EST extra, podendo ultrapassar os limites dos poderes dos sinais.',
+        shortDescription: 'Role 1d6 e acrescente no EST gasto do sinal, pode ultrapassar os limites dos poderes dos sinais, dura 5 turnos.',
+        description: 'Sempre que usar um sinal o sinal terá efeito como se tivesse gasto 1d6 pontos em EST extra, podendo ultrapassar os limites dos poderes dos sinais, dura 5 turnos.',
         recipe: [
             'Água Destilada',
             'Pó Infundido',
@@ -440,7 +520,11 @@ const predefinedItems = [
         name: 'Andorinha',
         icon: 'https://static.divine-pride.net/images/items/item/505.png',
         category: 'usable',
+        active: 20,
+        stack: 1,
+        augment: "buff",
         goldValue: 0,
+        shortDescription: 'Regenera 1d6 PV por rodada. Em rodadas em que for atacado, não regenera. Não acumula.',
         description: 'Regenera 1d6 PV por rodada. Em rodadas em que for atacado, não regenera. Não acumula.',
         recipe: [
             'Água Destilada',
@@ -454,7 +538,11 @@ const predefinedItems = [
         name: 'Coruja-do-mato',
         icon: 'https://static.divine-pride.net/images/items/item/11504.png',
         category: 'usable',
+        active: 20,
+        stack: 1,
+        augment: "buff",
         goldValue: 0,
+        shortDescription: 'A cada turno recupera 1d6 de EST.',
         description: 'A cada turno recupera 1d6 de EST.',
         recipe: [
             'Água Destilada',
@@ -468,8 +556,12 @@ const predefinedItems = [
         name: 'Trovoada',
         icon: 'https://static.divine-pride.net/images/items/item/11548.png',
         category: 'usable',
+        active: 5,
+        stack: 1,
+        augment: "buff",
         goldValue: 0,
-        description: 'Role 1d6+3 de dano adicional em ataques físicos.',
+        shortDescription: 'Recebe bonus crítico +2 em Ataque, Esquiva e Bloqueio.',
+        description: 'Recebe bonus crítico +2 em Ataque, Esquiva e Bloqueio.',
         recipe: [
             'Água Destilada',
             'Garra de Carníçal',
@@ -497,7 +589,11 @@ const predefinedItems = [
         name: 'Óleo de fera',
         icon: 'https://static.divine-pride.net/images/items/item/14535.png',
         category: 'usable',
+        active: 20,
+        stack: 1,
+        augment: "buff",
         goldValue: 0,
+        shortDescription: 'Ganha +12 de dano contra feras',
         description: 'Ganha +12 de dano contra feras',
         recipe: [
             'Sebo',
@@ -511,7 +607,11 @@ const predefinedItems = [
         name: 'Óleo de amaldiçoado',
         icon: 'https://static.divine-pride.net/images/items/item/14535.png',
         category: 'usable',
+        active: 20,
+        stack: 1,
+        augment: "buff",
         goldValue: 0,
+        shortDescription: 'Ganha +12 de dano contra amaldiçoados',
         description: 'Ganha +12 de dano contra amaldiçoados',
         recipe: [
             'Verbena',
@@ -526,7 +626,11 @@ const predefinedItems = [
         name: 'Óleo de draconídeo',
         icon: 'https://static.divine-pride.net/images/items/item/14535.png',
         category: 'usable',
+        active: 20,
+        stack: 1,
+        augment: "buff",
         goldValue: 0,
+        shortDescription: 'Ganha +12 de dano contra draconídeos',
         description: 'Ganha +12 de dano contra draconídeos',
         recipe: [
             'Olhos de Wyvern',
@@ -540,7 +644,11 @@ const predefinedItems = [
         name: 'Óleo de elemental',
         icon: 'https://static.divine-pride.net/images/items/item/14535.png',
         category: 'usable',
+        active: 20,
+        stack: 1,
+        augment: "buff",
         goldValue: 0,
+        shortDescription: 'Ganha +12 de dano contra elemental',
         description: 'Ganha +12 de dano contra elemental',
         recipe: [
             'Coração de Golem',
@@ -553,7 +661,11 @@ const predefinedItems = [
         name: 'Veneno do Enforcado',
         icon: 'https://static.divine-pride.net/images/items/item/14535.png',
         category: 'usable',
+        active: 20,
+        stack: 1,
+        augment: "buff",
         goldValue: 0,
+        shortDescription: 'Ganha +12 de dano contra humanoides',
         description: 'Ganha +12 de dano contra humanoides',
         recipe: [
             'Pequena Cicuta',
@@ -566,7 +678,11 @@ const predefinedItems = [
         name: 'Óleo de híbrido',
         icon: 'https://static.divine-pride.net/images/items/item/14535.png',
         category: 'usable',
+        active: 20,
+        stack: 1,
+        augment: "buff",
         goldValue: 0,
+        shortDescription: 'Ganha +12 de dano contra híbrido',
         description: 'Ganha +12 de dano contra híbrido',
         recipe: [
             'Sempre-viva Anã',
@@ -579,7 +695,11 @@ const predefinedItems = [
         name: 'Óleo de insetoide',
         icon: 'https://static.divine-pride.net/images/items/item/14535.png',
         category: 'usable',
+        active: 20,
+        stack: 1,
+        augment: "buff",
         goldValue: 0,
+        shortDescription: 'Ganha +12 de dano contra insetoides',
         description: 'Ganha +12 de dano contra insetoides',
         recipe: [
             'Veneno de Aracna',
@@ -594,7 +714,11 @@ const predefinedItems = [
         name: 'Óleo de necrófago',
         icon: 'https://static.divine-pride.net/images/items/item/14535.png',
         category: 'usable',
+        active: 20,
+        stack: 1,
+        augment: "buff",
         goldValue: 0,
+        shortDescription: 'Ganha +12 de dano contra necrófago',
         description: 'Ganha +12 de dano contra necrófago',
         recipe: [
             'Extrato de Veneno',
@@ -607,7 +731,11 @@ const predefinedItems = [
         name: 'Óleo de ogroide',
         icon: 'https://static.divine-pride.net/images/items/item/14535.png',
         category: 'usable',
+        active: 20,
+        stack: 1,
+        augment: "buff",
         goldValue: 0,
+        shortDescription: 'Ganha +12 de dano contra ogroides',
         description: 'Ganha +12 de dano contra ogroides',
         recipe: [
             'Bosta de Demônio',
@@ -620,7 +748,11 @@ const predefinedItems = [
         name: 'Óleo de relicto',
         icon: 'https://static.divine-pride.net/images/items/item/14535.png',
         category: 'usable',
+        active: 20,
+        stack: 1,
+        augment: "buff",
         goldValue: 0,
+        shortDescription: 'Ganha +12 de dano contra relicto',
         description: 'Ganha +12 de dano contra relicto',
         recipe: [
             'Ginátia',
@@ -633,7 +765,11 @@ const predefinedItems = [
         name: 'Óleo de espectro',
         icon: 'https://static.divine-pride.net/images/items/item/14535.png',
         category: 'usable',
+        active: 20,
+        stack: 1,
+        augment: "buff",
         goldValue: 0,
+        shortDescription: 'Ganha +12 de dano contra espectro',
         description: 'Ganha +12 de dano contra espectro',
         recipe: [
             'Pó de Prata',
@@ -646,7 +782,11 @@ const predefinedItems = [
         name: 'Óleo de vampiro',
         icon: 'https://static.divine-pride.net/images/items/item/14535.png',
         category: 'usable',
+        active: 20,
+        stack: 1,
+        augment: "buff",
         goldValue: 0,
+        shortDescription: 'Ganha +12 de dano contra vampiro',
         description: 'Ganha +12 de dano contra vampiro',
         recipe: [
             'Verbena',
@@ -661,7 +801,11 @@ const predefinedItems = [
         name: 'Pó de Lua',
         icon: 'https://static.divine-pride.net/images/items/item/22703.png',
         category: 'usable',
+        active: 5,
+        stack: 1,
+        augment: "debuff",
         goldValue: 0,
+        shortDescription: 'Impede que inimigos se tornem intangíveis ou invisíveis, impede regeneração de vida de vampiros e lobisomens.',
         description: 'Impede que inimigos se tornem intangíveis ou invisíveis; útil contra Espectros e outras aparições, impede regeneração de vida de vampiros e lobisomens.',
         recipe: [
             'Álcool Anão',
@@ -675,7 +819,11 @@ const predefinedItems = [
         name: 'Pó de Dimerítio',
         icon: 'https://static.divine-pride.net/images/items/item/22706.png',
         category: 'usable',
+        active: 5,
+        stack: 1,
+        augment: "debuff",
         goldValue: 0,
+        shortDescription: 'Bloqueia habilidades mágicas de inimigos e fecha portais.',
         description: 'Bloqueia habilidades mágicas de inimigos (Elementais, Magos, Bruxas Sepulcrais) e fecha portais.',
         recipe: [
             'Álcool Anão',
@@ -689,7 +837,11 @@ const predefinedItems = [
         name: 'Bafo de Dragão',
         icon: 'https://static.divine-pride.net/images/items/item/22702.png',
         category: 'usable',
+        active: 3,
+        stack: 1,
+        augment: "control",
         goldValue: 0,
+        shortDescription: 'Cria fumaça inflamável que causa dano extra com Fogo (Igni).',
         description: 'Cria fumaça inflamável que causa dano extra com Fogo (Igni).',
         recipe: [
             'Álcool Anão',
@@ -704,7 +856,11 @@ const predefinedItems = [
         name: 'Samun',
         icon: 'https://static.divine-pride.net/images/items/item/22705.png',
         category: 'usable',
+        active: 5,
+        stack: 1,
+        augment: "debuff",
         goldValue: 0,
+        shortDescription: 'Cega inimigos temporariamente, facilitando o combate.',
         description: 'Cega inimigos temporariamente, facilitando o combate.',
         recipe: [
             'Álcool Anão',
@@ -730,6 +886,94 @@ const predefinedItems = [
     },
 
 
+    // =====================================
+    // OBJETOS MÁGICOS
+    // =====================================
+
+    /*
+    {
+        id: 'medalhaodaprotecao',
+        name: 'Medalhão do Proteção',
+        icon: 'https://static.divine-pride.net/images/items/item/2601.png',
+        category: 'usable',
+        goldValue: 0,
+        description: 'Enquanto estiver sendo usado, reduz pela metade todos os efeitos de maldições ativas sobre o portador. Não remove a maldição, apenas a enfraquece.'
+    },
+
+    {
+        id: 'aneldeobsidiana',
+        name: 'Anel de Obsidiana Negra',
+        icon: 'https://static.divine-pride.net/images/items/item/2615.png',
+        category: 'usable',
+        goldValue: 0,
+        description: 'Permite enxergar espectros, fantasmas e criaturas invisíveis durante 10 minutos. Pode ser utilizado uma vez á cada 1 hora.'
+    },
+
+    {
+    id: 'espelhoquebrado',
+    name: 'Espelho Quebrado de Lara',
+    icon: 'https://static.divine-pride.net/images/items/item/7308.png',
+    category: 'usable',
+    goldValue: 0,
+    description: 'Reflete a verdadeira aparência de qualquer criatura metamórfica, doppler, vampiro superior ou ser ocultando sua identidade através de magia.'
+    },
+
+    {
+    id: 'velaexorcista',
+    name: 'Vela Exorcista',
+    icon: 'https://static.divine-pride.net/images/items/item/7135.png',
+    category: 'usable',
+    goldValue: 0,
+    description: 'Quando acesa durante um ritual, reduz drasticamente a influência de espíritos hostis. Espectros sofrem desvantagem em testes para possuir ou amaldiçoar criaturas.'
+    },
+
+    {
+    id: 'correntedelunaprata',
+    name: 'Corrente da Lua Prateada',
+    icon: 'https://static.divine-pride.net/images/items/item/2614.png',
+    category: 'usable',
+    goldValue: 0,
+    description: 'Quando utilizada para prender uma criatura amaldiçoada, impede transformações, teletransporte ou fuga mágica.'
+    },
+
+    {
+    id: 'agulhadestino',
+    name: 'Agulha do Destino',
+    icon: 'https://static.divine-pride.net/images/items/item/1201.png',
+    category: 'usable',
+    goldValue: 0,
+    description: 'Quando mergulhada em sangue, aponta constantemente para a criatura da qual aquele sangue foi retirado.'
+    },
+
+    {
+    id: 'braceletedeselo',
+    name: 'Bracelete de Selo',
+    icon: 'https://static.divine-pride.net/images/items/item/2629.png',
+    category: 'usable',
+    goldValue: 0,
+    description: 'Impede que o usuário seja transformado em licantropo, striga ou qualquer outra criatura através de maldição enquanto estiver equipado.'
+    },
+
+    {
+    id: 'moedadojuramento',
+    name: 'Moeda do Juramento',
+    icon: 'https://static.divine-pride.net/images/items/item/7539.png',
+    category: 'usable',
+    goldValue: 0,
+    description: 'Quando duas pessoas seguram a moeda enquanto fazem um juramento, ambas sabem instantaneamente caso uma delas quebre sua palavra.'
+    },
+
+    {
+    id: 'sinodeferrofrio',
+    name: 'Sino de Ferro Frio',
+    icon: 'https://static.divine-pride.net/images/items/item/7157.png',
+    category: 'usable',
+    goldValue: 0,
+    description: 'Seu toque afasta espectros menores, aparições e almas inquietas por alguns minutos.'
+    },
+
+
+    */
     // =====================================
     // EQUIPAMENTOS
     // =====================================

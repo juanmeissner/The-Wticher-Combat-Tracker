@@ -13,6 +13,8 @@ let abilityWasLongPress = false;
 let expandedMagic = 0;
 
 function renderAbilities() {
+    
+
 
     const container =
         document.getElementById('abilitiesList');
@@ -103,7 +105,7 @@ function addAbility(abilityId) {
 
     if (exists) {
 
-        showToast('⚠️ Habilidade já adicionada');
+        showToast('⚠ Habilidade já adicionada');
 
         return;
     }
@@ -150,7 +152,7 @@ function removeSelectedAbility() {
 
     updateAbilitiesHeader();
 
-    showToast('🗑️ Habilidade removida');
+    showToast('🗑 Habilidade removida');
 }
 
 function selectAbility(id) {
@@ -213,6 +215,8 @@ window.addEventListener('load', () => {
     renderAbilities();
 
     updateAbilitiesHeader();
+
+
 });
 
 function formatAbilityDescription(text) {

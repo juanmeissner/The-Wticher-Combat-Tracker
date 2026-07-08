@@ -62,7 +62,8 @@ function saveEntity() {
             head: armorHead,
             torso: armorTorso,
             arm: armorArm,
-            leg: armorLeg
+            leg: armorLeg,
+            effects: []
         };
             
             if (combatants[index].type === 'player') savePlayersToStorage();
@@ -92,7 +93,8 @@ function saveEntity() {
             head: armorHead,
             torso: armorTorso,
             arm: armorArm,
-            leg: armorLeg
+            leg: armorLeg,
+            effects: []
             },
             type: modalType,
             statusBrain: false,

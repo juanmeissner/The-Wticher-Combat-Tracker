@@ -1100,7 +1100,7 @@ Não se amarre ao mastro. Você vai ter uma morte horrível. Ao contrário da cr
     
         image: 'https://archive.org/download/leshen-fanart-by-ivan-roujev./tumblr_0daf3456809020e4351e142fed930c33_b193cd11_2048.jpg',
     
-        hp: 90,
+        hp: 150,
     
         threat: 'Duro / Difícil',
     
@@ -1125,7 +1125,7 @@ Não se amarre ao mastro. Você vai ter uma morte horrível. Ao contrário da cr
         ],
     
         abilities: [
-            'Forma de Fumaça (D) — Pode se tornar incorpóreo e ignorar um ataque corpo a corpo por turno.',
+            'Forma de Fumaça (D) — Pode se tornar incorpóreo e ignorar ataque corpo a corpo.',
             'Raízes Emaranhadas (D) — Cria raízes em até 10m que imobilizam alvos. Escapar exige teste de Esquivar/Escapar.',
             'Assassinato de Corvos (D) — Invoca um enxame de corvos em área de 5m que causa dano por rodada ignorando armadura.',
             'Totens (MAX. 5) — Rola 1d4, Pode criar totens que aumentam sua armadura e poder regenerativo, regenera 10 HP por totem e ganha 5 de armadura extra.',
@@ -1138,7 +1138,7 @@ Não se amarre ao mastro. Você vai ter uma morte horrível. Ao contrário da cr
             'Garras 6d6+2',
             'Forma de Fumaça',
             'Raízes Emaranhadas',
-            'Assassinato de Corvos',
+            'Assassinato de Corvos 3d6',
             'Totens',
             'Líder do Bosque'
         ],
@@ -1152,8 +1152,8 @@ Não se amarre ao mastro. Você vai ter uma morte horrível. Ao contrário da cr
         skills: [
             'Atletismo +12',
             'Concentração +14',
-            'Briga +14',
-            'Esquiva/Escapar +15',
+            'Briga +16',
+            'Esquiva/Escapar +16',
             'Resistência +10',
             'Corpo a Corpo +9',
             'Resistir à Magia +10',

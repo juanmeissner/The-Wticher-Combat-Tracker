@@ -30,7 +30,7 @@ function cancelDeleteMode(event) {
 }
 
 function toggleBrainStatus() {
-    if (!selectedId) { showToast('⚠️ Selecione um alvo!'); return; }
+    if (!selectedId) { showToast('⚠︝ Selecione um alvo!'); return; }
     const index = combatants.findIndex(c => c.id === selectedId);
     if (index !== -1) {
         combatants[index].statusBrain = !combatants[index].statusBrain;
@@ -51,7 +51,8 @@ function endCombat() {
         c.initiative = 0;
         c.hpCurrent = c.hpMax; 
         c.statusBrain = false; 
-        c.conditions = []; 
+        c.conditions = [];
+        c.effects = [];
         c.deathSaves = { success: 0, failures: 0 };
         c.stabilized = false;
     });

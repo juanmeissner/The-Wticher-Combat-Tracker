@@ -13,17 +13,35 @@
     <link rel="apple-touch-icon" href="https://raw.githubusercontent.com/juanmeissner/The-Wticher-Combat-Tracker/refs/heads/main/image.png">
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
 
 </head>
+
+<div class="desktop-navigation">
+
+    <button onclick="showSection('combatScreen')">
+        ⚔ Combate
+    </button>
+
+    <button onclick="showSection('inventoryScreen')">
+        🎒 Itens
+    </button>
+
+    <button onclick="showSection('abilitiesScreen')">
+        ✨ Habilidades
+    </button>
+
+</div>
+
 <body class="flex flex-col"> <div id="appWrapper">
 
     <section id="combatScreen">
 
     <div id="toast">🧠 Teste de Concentração!</div>
 
-    <main class="combat-list p-4 space-y-3" id="combatList"></main>
+    <main id="combatList" class="combat-list p-4 space-y-3"></main>
 
-    <footer class="bg-slate-900 border-t border-slate-800 py-4 px-0 shrink-0 relative z-30">
+    <footer id="combatControls" class="bg-slate-900 border-t border-slate-800 py-4 px-0 shrink-0 z-30">
         <div class="max-w-xl mx-auto flex gap-4">
             
             <div class="flex flex-col gap-2 w-24 shrink-0 justify-between py-1">
@@ -37,7 +55,7 @@
                     <button onclick="endCombat()" onmousedown="startEndCombatPress(event)" onmouseup="cancelEndCombatPress(event)" onmouseleave="cancelEndCombatPress(event)" ontouchstart="startEndCombatPress(event)" ontouchend="cancelEndCombatPress(event)" class="btn-control hover:bg-red-600/50 border-red-900/50" title="Terminar Combate (Segure 3s para apagar tudo)">❌</button>
                     <button onclick="nextTurn()" class="btn-control hover:bg-amber-900/40 border-amber-900/50" title="Próximo">⏩</button>
                     <button onclick="openConditionMenu()" class="btn-control hover:bg-slate-700" title="Condições">🌀</button>
-                    <button onclick="toggleBrainStatus()" class="btn-control hover:bg-slate-700" title="Concentração (🧠)">🧠</button>
+                    <button onclick="openEffectModal()" class="btn-control hover:bg-slate-700" title="Efeitos (✨)">✨</button>
                 </div>
             </div>
 
@@ -242,6 +260,15 @@
 
 </button>
 
+<!-- EXCEL EXPORT -->
+<button
+    id="exportAbilitiesBtn"
+    onclick="exportAbilitiesToExcel()"
+    class="hidden lg:flex bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg font-semibold"
+>
+    📊 Exportar
+</button>
+
 <!-- UNLOCK -->
 <div class="flex
             items-center
@@ -322,10 +349,12 @@
     <script src="js/ui/condition-modal.js"></script>
     <script src="js/combat/damage-modal.js"></script>
     <script src="js/combat/concentration.js"></script>
+    <script src="js/combat/combat-effects.js"></script>
 
     <script src="js/abilities/abilities-data.js"></script>
     <script src="js/abilities/abilities.js"></script>
     <script src="js/ui/abilities-modal.js"></script>
+    <script src="js/abilities/abilities-export.js"></script>
 
 
     <script>
@@ -395,7 +424,40 @@
                         pCount++;
                         lastP = c;
                     }
-                    if (!c.conditions) c.conditions = [];
+                    if (c.conditions && c.conditions.length > 0) {
+
+if (!c.effects)
+    c.effects = [];
+
+c.conditions.forEach(icon => {
+
+    if (!c.effects.some(e =>
+
+        e.type === 'condition' &&
+        e.id === icon
+
+    )) {
+
+        const info = conditionDescriptions[icon];
+
+        c.effects.push({
+
+            id: icon,
+
+            type: 'condition',
+
+            remainingTurns: info?.active ?? 0
+
+        });
+
+    }
+
+});
+
+delete c.conditions;
+
+}
+                    if (!c.effects) c.effects = [];
                     if (!c.deathSaves) c.deathSaves = { success: 0, failures: 0 };
                     if (c.stabilized === undefined) c.stabilized = false;
                     // Migrar dados antigos
@@ -1265,6 +1327,59 @@ ABILITY DETAILS MODAL
                    rounded-xl
                    py-3
                    font-bold">
+
+            Fechar
+
+        </button>
+
+    </div>
+
+</div>
+
+
+<!-- ================================= -->
+<!-- MODAL EFEITOS -->
+<!-- ================================= -->
+
+<div id="effectModal" class="modal">
+
+    <div class="ios-modal bg-slate-900 rounded-2xl p-5 w-full max-w-xl">
+
+        <h2 class="text-xl font-bold mb-4">
+            Efeitos Ativos
+        </h2>
+
+        <div class="flex gap-2 mb-4">
+
+            <button
+                class="flex-1 bg-indigo-600 rounded-xl p-3"
+                onclick="showEffectList('ability')">
+
+                Magias
+
+            </button>
+
+            <button
+                class="flex-1 bg-emerald-600 rounded-xl p-3"
+                onclick="showEffectList('item')">
+
+                Itens
+
+            </button>
+
+        </div>
+
+        <div
+            id="effectList"
+            class="flex flex-col gap-2 max-h-[60vh] overflow-y-auto">
+
+        </div>
+
+        <button
+
+            class="w-full mt-4 bg-red-700 rounded-xl p-3"
+
+            onclick="closeEffectModal()">
 
             Fechar
 

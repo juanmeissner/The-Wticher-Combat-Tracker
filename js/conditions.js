@@ -53,8 +53,12 @@ el.style.transform = `translate(${x}px, ${y}px)`;
 const c = combatants.find(comp => comp.id === selectedId);
 
 const isActive =
-Array.isArray(c.conditions) &&
-c.conditions.includes(cond.icon);
+(c.effects || []).some(e =>
+
+    e.type === 'condition' &&
+    e.id === cond.icon
+
+);
 
 const bgClass = isActive
 ? 'bg-blue-600 border-blue-400'
@@ -94,90 +98,192 @@ function closeConditionMenu(e, force = false) {
 }
 
 function toggleCondition(icon) {
-    if (!selectedId) return;
-    const index = combatants.findIndex(c => c.id === selectedId);
-    if (index !== -1) {
-        if (!combatants[index].conditions) combatants[index].conditions = [];
-        
-        const condIndex = combatants[index].conditions.indexOf(icon);
-        if (condIndex !== -1) {
-            combatants[index].conditions.splice(condIndex, 1);
-        } else {
-            combatants[index].conditions.push(icon);
-        }
-        
-        savePlayersToStorage();
-        updateCardTargeted(combatants[index]);
-        document.getElementById('circularMenu').style.display = 'none';
 
-        setTimeout(() => {
-            openConditionMenu();
-        }, 0);
+    if (!selectedId) return;
+
+    const combatant =
+        combatants.find(c => c.id === selectedId);
+
+    if (!combatant) return;
+
+    if (!combatant.effects)
+        combatant.effects = [];
+
+    const effectIndex =
+        combatant.effects.findIndex(e =>
+
+            e.type === 'condition' &&
+            e.id === icon
+
+        );
+
+    if (effectIndex !== -1) {
+
+        combatant.effects.splice(effectIndex, 1);
+
+    } else {
+
+        const info = conditionDescriptions[icon];
+
+        combatant.effects.push({
+
+            id: icon,
+        
+            type: "condition",
+        
+            name: info.title,
+        
+            remainingTurns: info.active,
+        
+            initialTurns: info.active,
+        
+            stacks: 1,
+        
+            maxStacks: info.stack,
+        
+            augment: info.augment
+        
+        });
+
     }
+
+    savePlayersToStorage();
+
+    updateCardTargeted(combatant);
+
+    document.getElementById('circularMenu').style.display = 'none';
+
+    setTimeout(() => {
+
+        openConditionMenu();
+
+    }, 0);
+
 }
 
 const conditionDescriptions = {
 
     '😍': {
         title: 'Enfeitiçado',
+        active: 0,
+        stack: 1,
+        augment: "debuff",
         desc: 'A criatura fica encantada e não pode atacar quem a enfeitiçou.'
     },
     
     '😱': {
         title: 'Medo',
+        active: 0,
+        stack: 1,
+        augment: "debuff",
         desc: 'Movimento reduzido pela metade, se falhar em teste de Coragem irá ficar paralisado durante o turno inteiro.'
     },
     
     '🚫': {
         title: 'Incapacitado',
+        active: 0,
+        stack: 1,
+        augment: "condition",
         desc: 'O alvo ficará desmaiado até passar em um teste de resistência ND 18.'
     },
     
     '👻': {
-        title: 'Invisé­vel',
+        title: 'Invisí­vel',
+        active: 0,
+        stack: 1,
+        augment: "buff",
         desc: 'Dí­ficil de detectar visualmente e recebe vantagens apropriadas.'
     },
     
     '🐍': {
         title: 'Envenenado',
+        active: 0,
+        stack: 1,
+        augment: "debuff",
         desc: 'Sofre 1d6 de dano por turno e -2 em testes físicos. Pode fazer um teste de resistência ao fim de cada turno para encerrar o efeito.												'
     },
     
     '🧎': {
         title: 'Caí­do',
+        active: 0,
+        stack: 1,
+        augment: "debuff",
         desc: 'Sofre desvantagem em ataques corpo a corpo, ataques contra ele tem vantagem, e levantar-se consome uma ação, pode esquivar ou bloquear.'
     },
     
     '😮': {
         title: 'Exausto',
+        active: 0,
+        stack: 1,
+        augment: "debuff",
         desc: 'A criatura sofre penalidades fí­sica progressivas.'
     },
     
     '🔥': {
         title: 'Em Chamas',
+        active: 0,
+        stack: 10,
+        augment: "debuff",
         desc: 'Sofre 1d6 de dano por turno até apagar o fogo (ação completa ou teste apropriado). Testes físicos sofrem -2 enquanto estiver em chamas.'
     },
     
     '💫': {
         title: 'Atordoado',
+        active: 1,
+        stack: 1,
+        augment: "debuff",
         desc: 'O personagem perde a próxima ação e não pode realizar defesa ou esquiva até o fim do próximo turno.'
     },
     
     '🩸': {
         title: 'Sangrando',
+        active: 0,
+        stack: 10,
+        augment: "debuff",
         desc: 'Sofre 1d6 de dano por turno até receber primeiros socorros ou ser curado. O efeito acumula se reaplicado.'
     },
     
     '🧊': {
         title: 'Congelado',
+        active: 0,
+        stack: 1,
+        augment: "debuff",
         desc: 'Movimento reduzido pela metade e desvantagem em ações físicas. Se falhar em um teste de resistência, fica Atordoado por 1 turno.'
     },
     
     '⚖️': {
         title: 'Desequilibrado',
+        active: 0,
+        stack: 1,
+        augment: "debuff",
         desc: 'Sofre -2 em ataques e defesas e não pode realizar reações até o próximo turno.'
     }
     };
+
+    function getConditionEffect(icon) {
+
+        const data = conditionDescriptions[icon];
+    
+        if (!data)
+            return null;
+    
+        return {
+    
+            id: icon,
+    
+            type: 'condition',
+    
+            icon: icon,
+    
+            name: data.title,
+    
+            shortDescription: data.desc,
+    
+            remainingTurns: 0
+    
+        };
+    
+    }
 
     window.openConditionMenu = openConditionMenu;
     window.closeConditionMenu = closeConditionMenu;

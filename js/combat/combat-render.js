@@ -150,10 +150,6 @@
                 statusHtml += `<span class="status-icon">${icon}</span>`;
             });
 
-            if (c.statusBrain) {
-                statusHtml += `<span class="status-icon">${icon}</span>`;
-            }
-
             let hpDisplayHtml = `
             <div class="hp-text text-xl font-bold leading-none ${hpColor}">
                 ${c.hpCurrent}/${c.hpMax}
@@ -256,7 +252,60 @@
                     </div>
                 </div>
             `;
-            container.appendChild(card);
+            const wrapper = document.createElement('div');
+
+            wrapper.className = "combat-wrapper";
+            
+            wrapper.appendChild(card);
+
+            card.addEventListener('click', () => {
+
+                // continua sendo o alvo selecionado
+                selectedId = c.id;
+            
+                // abre/fecha o painel de efeitos
+                if (expandedEffectsCombatantId === c.id) {
+            
+                    expandedEffectsCombatantId = null;
+            
+                } else {
+            
+                    expandedEffectsCombatantId = c.id;
+            
+                }
+            
+                renderList(false);
+            
+            });
+            
+            const showEffects =
+
+            c.effects &&
+            c.effects.length > 0 &&
+        
+            (
+        
+                activeTurnId === c.id ||
+        
+                expandedEffectsCombatantId === c.id
+        
+            );
+            
+            if (showEffects) {
+            
+                const effectsContainer = document.createElement('div');
+            
+                effectsContainer.className = "effects-container";
+            
+                effectsContainer.id = `effects-${c.id}`;
+            
+                effectsContainer.innerHTML = renderEffects(c);
+            
+                wrapper.appendChild(effectsContainer);
+            
+            }
+            
+            container.appendChild(wrapper);
         });
 
         document.getElementById('roundCounter').innerText = round;
@@ -265,6 +314,555 @@
             if (activeCard) activeCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
     }
+
+        function getEffectData(effect) {
+
+            if (effect.type === 'ability')
+                return predefinedAbilities.find(a => a.id === effect.id);
+        
+            if (effect.type === 'item')
+                return predefinedItems.find(i => i.id === effect.id);
+        
+            if (effect.type === 'condition')
+                return getConditionEffect(effect.id);
+        
+            return null;
+        
+        }
+
+        function getConditionEffect(icon){
+
+            const data = conditionDescriptions[icon];
+        
+            if(!data)
+                return null;
+        
+            return{
+
+                id: icon,
+            
+                type:"condition",
+            
+                icon: icon,
+            
+                name:data.title,
+            
+                shortDescription:data.desc,
+            
+                active:data.active,
+            
+                stack:data.stack,
+            
+                augment:data.augment
+            
+            };
+        
+        }
+
+    function renderEffects(c) {
+
+        const allEffects = c.effects || [];
+        
+        return allEffects.map(effect => {
+
+            const data = getEffectData(effect);
+            const augment = data.augment || "default";
+
+            const borderClass = {
+                buff: "effect-border-buff",
+                debuff: "effect-border-debuff",
+                control: "effect-border-control",
+                condition: "effect-border-condition",
+                default: "effect-border-default"
+            }[augment];
+
+            const editing =
+
+            selectedEffect.combatantId === c.id &&
+            selectedEffect.effectId === effect.id &&
+            selectedEffect.type === effect.type;
+        
+            const canStack = (data.stack ?? 1) >= 2;
+        
+            if (!data)
+                return '';
+        
+            return `
+        
+<div
+
+    class="effect-card ${borderClass} ${
+        selectedEffect.combatantId === c.id &&
+        selectedEffect.effectId === effect.id &&
+        selectedEffect.type === effect.type
+            ? 'effect-selected'
+            : ''
+    }"
+
+    onclick="
+        event.stopPropagation();
+        selectEffect(${c.id},'${effect.id}','${effect.type}');
+    "
+
+>
+        
+<div class="flex justify-between items-start gap-3">
+
+    <div class="flex items-center gap-2 flex-1 min-w-0">
+
+        <div class="effect-icon">
+
+            ${
+                data.icon
+                    ? data.icon.startsWith('http')
+                        ? `<img src="${data.icon}" class="w-8 h-8 object-contain">`
+                        : data.icon
+                    : '?'
+            }
+
+        </div>
+
+<div>
+
+    <div class="effect-title">
+
+        ${data.name}
+
+    </div>
+
+
+
+</div>
+
+    </div>
+
+    ${
+
+        editing
+        
+        ?
+        
+        `
+        
+        <button
+        
+            class="effect-remove-btn"
+        
+            onclick="
+                event.stopPropagation();
+                removeEffect(${c.id},'${effect.type}','${effect.id}');
+            "
+        
+        >
+        
+            ✕
+        
+        </button>
+        
+        `
+        
+        :
+        
+        ''
+        
+        }
+
+</div>
+        
+                <div class="effect-description">
+
+                    ${data.shortDescription}
+
+                </div>
+
+                ${
+
+                    editing
+                    
+                    ?
+                    
+                    `
+                    
+                    <div class="effect-duration">
+                    
+                        <div class="text-xs text-slate-400 font-semibold mb-1">
+                    
+                            ⏳ Duração
+                    
+                        </div>
+                    
+                        <button
+                    
+                            class="effect-duration-btn"
+                    
+                            onclick="
+                    
+                                event.stopPropagation();
+                    
+                                decreaseEffectTurn(${c.id},'${effect.type}','${effect.id}');
+                    
+                            "
+                    
+                        >
+                    
+                            −
+                    
+                        </button>
+                    
+                        <div
+                    
+                            class="effect-duration-value"
+                    
+                            onclick="
+                    
+                                event.stopPropagation();
+                    
+                                editEffectTurn(${c.id},'${effect.type}','${effect.id}');
+                    
+                            "
+                    
+                        >
+                    
+                            ${
+                    
+                                effect.remainingTurns===0
+                    
+                                ? "∞ Permanente"
+                    
+                                : effect.remainingTurns+" Rodadas"
+                    
+                            }
+                    
+                        </div>
+                    
+                        <button
+                    
+                            class="effect-duration-btn"
+                    
+                            onclick="
+                    
+                                event.stopPropagation();
+                    
+                                increaseEffectTurn(${c.id},'${effect.type}','${effect.id}');
+                    
+                            "
+                    
+                        >
+                    
+                            +
+                    
+                        </button>
+                    
+                    </div>
+                    
+                    ${
+                    
+                    canStack
+                    
+                    ?
+                    
+                    `
+                    
+                    <div class="effect-duration mt-3">
+                    
+                        <div class="text-xs text-slate-400 font-semibold mb-1">
+                    
+                            🗂️ Stack
+                    
+                        </div>
+                    
+                        <button
+                    
+                            class="effect-duration-btn"
+                    
+                            onclick="
+                    
+                                event.stopPropagation();
+                    
+                                decreaseEffectStack(${c.id},'${effect.type}','${effect.id}');
+                    
+                            "
+                    
+                        >
+                    
+                            −
+                    
+                        </button>
+                    
+                        <div
+                    
+                            class="effect-duration-value"
+                    
+                            onclick="
+                    
+                                event.stopPropagation();
+                    
+                                editEffectStack(${c.id},'${effect.type}','${effect.id}');
+                    
+                            "
+                    
+                            title="Clique para editar"
+                    
+                        >
+                    
+                            x${effect.stacks ?? 1}
+                    
+                        </div>
+                    
+                        <button
+                    
+                            class="effect-duration-btn"
+                    
+                            onclick="
+                    
+                                event.stopPropagation();
+                    
+                                increaseEffectStack(${c.id},'${effect.type}','${effect.id}');
+                    
+                            "
+                    
+                        >
+                    
+                            +
+                    
+                        </button>
+                    
+                    </div>
+                    
+                    `
+                    
+                    :
+                    
+                    ''
+                    
+                    }
+                    
+                    `
+                    
+                    :
+                    
+                    `
+                    
+                    <div class="effect-duration-static">
+                    
+                        <div>
+                    
+                            ⏳
+                    
+                            ${
+                    
+                                effect.remainingTurns===0
+                    
+                                ? "∞ Permanente"
+                    
+                                : effect.remainingTurns+" Rodadas"
+                    
+                            }
+                    
+                        </div>
+                    
+                        ${
+                    
+                        canStack
+                    
+                        ?
+                    
+                        `
+                    
+                        <div class="mt-1">
+                    
+                            🗂️ x${effect.stacks ?? 1}
+                    
+                        </div>
+                    
+                        `
+                    
+                        :
+                    
+                        ''
+                    
+                        }
+                    
+                    </div>
+                    
+                    `
+                    
+                    }
+        
+                </div>
+        
+            `;
+        
+        }).join('');
+    }
+
+    function getEffectCategory(augment){
+
+        switch(augment){
+    
+            case "buff":
+    
+                return {
+    
+                    label:"BUFF",
+    
+                    className:"effect-augment-buff"
+    
+                };
+    
+            case "debuff":
+    
+                return {
+    
+                    label:"DEBUFF",
+    
+                    className:"effect-augment-debuff"
+    
+                };
+    
+            case "control":
+    
+                return {
+    
+                    label:"CONTROL",
+    
+                    className:"effect-augment-control"
+    
+                };
+    
+            case "condition":
+    
+                return {
+    
+                    label:"CONDITION",
+    
+                    className:"effect-augment-condition"
+    
+                };
+    
+            default:
+    
+                return {
+    
+                    label:"",
+    
+                    className:""
+    
+                };
+    
+        }
+    
+    }
+
+    function editEffectTurn(combatantId,type,id){
+
+        const combatant =
+            combatants.find(c=>c.id===combatantId);
+    
+        if(!combatant) return;
+    
+        const effect =
+            combatant.effects.find(e=>
+    
+                e.id===id &&
+                e.type===type
+    
+            );
+    
+        if(!effect) return;
+    
+        const value = prompt(
+    
+            "Nova duração em rodadas (0 = Permanente)",
+    
+            effect.remainingTurns
+    
+        );
+    
+        if(value===null) return;
+    
+        let turns = parseInt(value);
+    
+        if(isNaN(turns))
+            return;
+    
+        turns = Math.max(0,turns);
+    
+        effect.remainingTurns = turns;
+    
+        savePlayersToStorage();
+    
+        renderList(false);
+    
+    }
+
+    function editEffectStack(combatantId,type,id){
+
+        const combatant =
+            combatants.find(c=>c.id===combatantId);
+    
+        if(!combatant) return;
+    
+        const effect =
+            combatant.effects.find(e=>
+    
+                e.id===id &&
+                e.type===type
+    
+            );
+    
+        if(!effect) return;
+    
+        const data = getEffectData(effect);
+    
+        const value = prompt(
+    
+            "Quantidade de Stacks",
+    
+            effect.stacks ?? 1
+    
+        );
+    
+        if(value===null) return;
+    
+        let stack = parseInt(value);
+    
+        if(isNaN(stack))
+            return;
+    
+        stack = Math.max(1,stack);
+    
+        if(data.stack>0)
+            stack = Math.min(stack,data.stack);
+    
+        effect.stacks = stack;
+    
+        savePlayersToStorage();
+    
+        renderList(false);
+    
+    }
+
+    
+
+    function toggleEffects(combatantId){
+
+        if(expandedEffectsCombatantId === combatantId){
+    
+            expandedEffectsCombatantId = null;
+    
+        }else{
+    
+            expandedEffectsCombatantId = combatantId;
+    
+        }
+    
+        renderList(false);
+    
+    }
+    
+    window.toggleEffects = toggleEffects;
+    
 
     function updateCardTargeted(c) {
     const card = document.getElementById(`card-${c.id}`);
@@ -337,7 +935,13 @@
 
     const statusContainer = card.querySelector('.status-container');
     if (statusContainer) {
-        let allStatuses = [...(c.conditions || [])];
+        let allStatuses =
+
+        (c.effects || [])
+        
+            .filter(e => e.type === 'condition')
+        
+            .map(e => e.id);
 
     if (c.statusBrain)
         allStatuses.push('🧠');
@@ -367,6 +971,41 @@
             </div>
         `;
     }
+
+    const oldContainer = document.getElementById(`effects-${c.id}`);
+
+    const shouldShow =
+    activeTurnId === c.id &&
+    c.effects &&
+    c.effects.length > 0;
+
+if (shouldShow) {
+
+    if (oldContainer) {
+
+        oldContainer.innerHTML = renderEffects(c);
+
+    } else {
+
+        const wrapper = card.parentElement;
+
+        const div = document.createElement('div');
+
+        div.className = "effects-container";
+
+        div.id = `effects-${c.id}`;
+
+        div.innerHTML = renderEffects(c);
+
+        wrapper.appendChild(div);
+
+    }
+
+} else {
+
+    oldContainer?.remove();
+
+}
 
     if (isEliminated) {
         card.classList.add('opacity-50', 'grayscale');
@@ -421,3 +1060,43 @@
         window.renderList = renderList;
         window.updateCardTargeted = updateCardTargeted;
         window.selectCombatant = selectCombatant;
+
+        function selectEffect(combatantId, effectId, type){
+
+            const alreadySelected =
+        
+                selectedEffect.combatantId === combatantId &&
+                selectedEffect.effectId === effectId &&
+                selectedEffect.type === type;
+        
+            if(alreadySelected){
+        
+                selectedEffect = {
+        
+                    combatantId: null,
+        
+                    effectId: null,
+        
+                    type: null
+        
+                };
+        
+            }else{
+        
+                selectedEffect = {
+        
+                    combatantId,
+        
+                    effectId,
+        
+                    type
+        
+                };
+        
+            }
+        
+            renderList(false);
+        
+        }
+        
+        window.selectEffect = selectEffect;
