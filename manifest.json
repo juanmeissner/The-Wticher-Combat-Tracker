@@ -2,20 +2,16 @@
   "name": "The Witcher TRPG",
   "short_name": "The Witcher TRPG",
   "start_url": "./index.html",
-  "display": "fullscreen",
+  "scope": "./",
+  "display": "standalone",
   "background_color": "#0f172a",
   "theme_color": "#0f172a",
-  "orientation": "portrait",
   "icons": [
     {
-      "src": "https://raw.githubusercontent.com/juanmeissner/The-Wticher-Combat-Tracker/refs/heads/main/image.png",
-      "sizes": "192x192",
-      "type": "image/png"
-    },
-    {
-      "src": "https://raw.githubusercontent.com/juanmeissner/The-Wticher-Combat-Tracker/refs/heads/main/image.png",
+      "src": "image.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any"
     }
   ]
 }

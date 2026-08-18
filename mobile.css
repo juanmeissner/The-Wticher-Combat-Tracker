@@ -1,0 +1,382 @@
+/* Camada de layout responsivo — mantém style.css legado intacto. */
+:root {
+    --app-navigation-height: calc(56px + var(--safe-top));
+}
+
+html,
+body {
+    height: 100vh;
+    height: 100dvh;
+}
+
+.mobile-navigation {
+    display: flex;
+    flex: 0 0 var(--app-navigation-height);
+    align-items: end;
+    gap: 8px;
+    padding: calc(8px + var(--safe-top)) 12px 8px;
+    background: #0f172a;
+    border-bottom: 1px solid #334155;
+    z-index: 1001;
+}
+
+.mobile-navigation button {
+    flex: 1;
+    min-height: 40px;
+    border-radius: 10px;
+    color: #cbd5e1;
+    font-size: .75rem;
+    font-weight: 700;
+}
+
+.mobile-navigation button.active {
+    background: #0ea5e9;
+    color: #fff;
+}
+
+.inventory-actions,
+.abilities-actions {
+    flex-wrap: wrap;
+}
+
+.inventory-action-btn,
+.ability-action-btn {
+    min-width: 64px;
+}
+
+#appWrapper {
+    height: calc(100vh - var(--app-navigation-height));
+    height: calc(100dvh - var(--app-navigation-height));
+}
+
+#combatScreen,
+#inventoryScreen,
+#abilitiesScreen {
+    height: 100%;
+}
+
+/* O appWrapper é transformado ao trocar de aba. Em vez de usar fixed,
+   o painel fica ancorado exclusivamente ao painel de Combate. */
+#combatScreen {
+    position: relative;
+    overflow: hidden;
+}
+
+#combatList {
+    padding-bottom: calc(340px + var(--safe-bottom));
+}
+
+#combatControls {
+    position: absolute;
+    left: 0;
+    bottom: calc(12px + var(--safe-bottom));
+    width: 100%;
+    transform: none;
+    border-radius: 18px;
+    box-shadow: 0 12px 35px rgba(0, 0, 0, .45);
+    z-index: 1000;
+}
+
+/* Todos os modais devem ficar acima da barra de navegação e respeitar
+   os recortes do dispositivo. Os seletores cobrem os modais legados e
+   os modais criados com classes utilitárias. */
+.modal,
+[id$="Modal"],
+#circularMenu {
+    z-index: 2000 !important;
+}
+
+.modal,
+[id$="Modal"] {
+    padding-top: max(16px, calc(var(--safe-top) + 12px)) !important;
+    padding-bottom: max(16px, calc(var(--safe-bottom) + 12px)) !important;
+    padding-left: 16px;
+    padding-right: 16px;
+}
+
+#inventoryModal,
+#abilitiesModal {
+    align-items: center !important;
+}
+
+.modal > div,
+[id$="Modal"] > div {
+    max-height: calc(100dvh - var(--safe-top) - var(--safe-bottom) - 32px);
+}
+
+@media (max-width: 1023px) {
+    .modal > div,
+    [id$="Modal"] > div {
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+}
+
+/* Recursos de sessão: uma faixa curta no combate e ferramentas agrupadas
+   em um único modal, sem adicionar painéis permanentes à tela. */
+.session-status-bar {
+    position: sticky;
+    top: 0;
+    z-index: 25;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 44px;
+    gap: 8px;
+    margin-bottom: 10px;
+    padding: 6px 8px 6px 10px;
+    border: 1px solid rgba(56, 189, 248, .35);
+    border-radius: 12px;
+    background: rgba(15, 23, 42, .96);
+    box-shadow: 0 6px 18px rgba(2, 6, 23, .3);
+}
+
+.session-turn-summary {
+    display: flex;
+    align-items: center;
+    min-width: 0;
+    gap: 6px;
+    color: #e2e8f0;
+    font-size: .8rem;
+    font-weight: 700;
+}
+
+.session-round {
+    flex: 0 0 auto;
+    padding: 3px 6px;
+    border-radius: 6px;
+    background: #0ea5e9;
+    color: #fff;
+    font-size: .7rem;
+}
+
+.session-turn-name,
+.session-next {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.session-turn-name {
+    max-width: 110px;
+}
+
+.session-next {
+    max-width: 84px;
+    color: #94a3b8;
+    font-size: .72rem;
+}
+
+.session-status-actions {
+    display: flex;
+    flex: 0 0 auto;
+    gap: 4px;
+}
+
+.session-icon-button,
+.session-close,
+.session-small-button {
+    min-width: 36px;
+    min-height: 36px;
+    border: 1px solid #334155;
+    border-radius: 9px;
+    background: #1e293b;
+    color: #f8fafc;
+    font-weight: 700;
+}
+
+.session-icon-button {
+    font-size: 1.15rem;
+}
+
+.session-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 2100 !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(2, 6, 23, .82);
+}
+
+.session-dialog {
+    width: min(100%, 430px);
+    max-height: calc(100dvh - var(--safe-top) - var(--safe-bottom) - 32px);
+    overflow-y: auto;
+    padding: 20px;
+    border: 1px solid #334155;
+    border-radius: 18px;
+    background: #0f172a;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, .55);
+    color: #f8fafc;
+}
+
+.session-dialog h2 {
+    margin: 0;
+    font-size: 1.1rem;
+}
+
+.session-dialog p {
+    margin: 10px 0 18px;
+    color: #cbd5e1;
+    line-height: 1.45;
+}
+
+.session-dialog-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.session-dialog-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.session-dialog-actions button,
+.session-full {
+    flex: 1;
+    min-height: 44px;
+    border-radius: 10px;
+    font-weight: 700;
+}
+
+.session-primary,
+.session-danger,
+.session-secondary,
+.session-tool-grid button {
+    border: 0;
+    color: #fff;
+}
+
+.session-primary {
+    background: #0284c7;
+}
+
+.session-danger {
+    background: #b91c1c;
+}
+
+.session-secondary {
+    background: #334155;
+}
+
+.session-tools-summary {
+    font-size: .85rem;
+}
+
+.session-tool-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.session-tool-grid button {
+    min-height: 68px;
+    padding: 8px;
+    border: 1px solid #334155;
+    border-radius: 12px;
+    background: #1e293b;
+    font-size: .82rem;
+    font-weight: 700;
+}
+
+.session-history-list,
+.session-encounter-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin: 14px 0;
+    padding: 0;
+    list-style: none;
+}
+
+.session-history-list li,
+.session-encounter-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px;
+    border-radius: 10px;
+    background: #1e293b;
+}
+
+.session-history-list span,
+.session-encounter-item strong {
+    font-size: .85rem;
+    font-weight: 700;
+}
+
+.session-history-list small,
+.session-encounter-item small {
+    display: block;
+    margin-top: 3px;
+    color: #94a3b8;
+    font-size: .72rem;
+}
+
+.session-empty {
+    justify-content: center !important;
+    color: #94a3b8;
+    text-align: center;
+}
+
+.session-label {
+    display: block;
+    margin-bottom: 6px;
+    color: #cbd5e1;
+    font-size: .8rem;
+    font-weight: 700;
+}
+
+.session-input {
+    width: 100%;
+    min-height: 44px;
+    padding: 10px;
+    border: 1px solid #475569;
+    border-radius: 10px;
+    background: #1e293b;
+    color: #fff;
+}
+
+.session-encounter-item > div:last-child {
+    display: flex;
+    gap: 6px;
+}
+
+.session-small-button {
+    padding: 0 10px;
+}
+
+.session-small-danger {
+    color: #fca5a5;
+}
+
+@media (min-width: 1024px) {
+    .mobile-navigation {
+        display: none;
+    }
+
+    #appWrapper {
+        height: 100vh;
+        height: 100dvh;
+    }
+
+    #combatList {
+        padding-bottom: 0;
+    }
+
+    #combatControls {
+        position: relative;
+        inset: auto;
+        width: 100%;
+        max-width: none;
+        margin-top: 20px;
+        transform: none;
+        border-radius: 0;
+        box-shadow: none;
+    }
+}

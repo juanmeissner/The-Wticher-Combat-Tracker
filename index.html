@@ -2,7 +2,7 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>The Witcher Combat Tracker</title>
     
     <link rel="manifest" href="manifest.json">
@@ -10,30 +10,39 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="The Witcher TRPG">
     <meta name="theme-color" content="#0f172a">
-    <link rel="apple-touch-icon" href="https://raw.githubusercontent.com/juanmeissner/The-Wticher-Combat-Tracker/refs/heads/main/image.png">
+    <link rel="apple-touch-icon" href="image.png">
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="mobile.css">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
 
 </head>
 
-<div class="desktop-navigation">
+<body class="flex flex-col">
 
-    <button onclick="showSection('combatScreen')">
+<nav class="desktop-navigation" aria-label="Navegação principal">
+
+    <button data-screen="combatScreen" class="active" onclick="showSection('combatScreen')">
         ⚔ Combate
     </button>
 
-    <button onclick="showSection('inventoryScreen')">
+    <button data-screen="inventoryScreen" onclick="showSection('inventoryScreen')">
         🎒 Itens
     </button>
 
-    <button onclick="showSection('abilitiesScreen')">
+    <button data-screen="abilitiesScreen" onclick="showSection('abilitiesScreen')">
         ✨ Habilidades
     </button>
 
-</div>
+</nav>
 
-<body class="flex flex-col"> <div id="appWrapper">
+<nav class="mobile-navigation" aria-label="Navegação principal">
+    <button data-screen="combatScreen" class="active" onclick="showSection('combatScreen')">⚔️ Combate</button>
+    <button data-screen="inventoryScreen" onclick="showSection('inventoryScreen')">🎒 Itens</button>
+    <button data-screen="abilitiesScreen" onclick="showSection('abilitiesScreen')">✨ Habilidades</button>
+</nav>
+
+<div id="appWrapper">
 
     <section id="combatScreen">
 
@@ -216,7 +225,15 @@
     -
 
 </button>
-    
+
+<button
+    onclick="useSelectedInventoryItem()"
+    class="inventory-action-btn bg-purple-700">
+
+    Usar
+
+</button>
+
     </div>
     
     <main id="inventoryList"
@@ -312,6 +329,14 @@
 
             </button>
 
+            <button
+                onclick="showSelectedAbilityDetails()"
+                class="ability-action-btn bg-slate-700">
+
+                Detalhes
+
+            </button>
+
         </div>
 
     </div>
@@ -335,10 +360,10 @@
     <script src="js/bestiary.js"></script>
     <script src="js/monsters.js"></script>
     <script src="js/inventory.js"></script>
-    <script src="js/swipe.js"></script>
+    <script src="js/navigation.js"></script>
     <script src="js/conditions.js"></script>
 
-    <script src="js/combat/combat-storage.js"></script>
+    <script src="js/combat/combat-storage-modern.js"></script>
     <script src="js/combat/combat-input.js"></script>
     <script src="js/combat/combat-events.js"></script>
     <script src="js/combat/combat-render.js"></script>
@@ -355,6 +380,9 @@
     <script src="js/abilities/abilities.js"></script>
     <script src="js/ui/abilities-modal.js"></script>
     <script src="js/abilities/abilities-export.js"></script>
+    <script src="js/interactions.js"></script>
+    <script src="js/app-init.js"></script>
+    <script src="js/session-features.js"></script>
 
 
     <script>
@@ -402,26 +430,51 @@
         let didEndCombatLongPress = false;
 
         
+        function readStoredJSON(key, fallback = null) {
+
+            const rawValue = localStorage.getItem(key);
+
+            if (!rawValue) return fallback;
+
+            try {
+                return JSON.parse(rawValue);
+            } catch (error) {
+                localStorage.setItem(`${key}_backup_corrompido`, rawValue);
+                localStorage.removeItem(key);
+                console.warn(`Dados inválidos removidos de ${key}.`, error);
+                return fallback;
+            }
+        }
+
          // INICIALIZAÇÃO E DELEGAÇÃO DE EVENTOS
         window.onload = () => {
 
-            monsterCounter =
-            parseInt(localStorage.getItem('dnd_monsterCounter')) || 1;
+            const savedSession = readStoredJSON('dnd_combat_session');
 
-            playerCounter =
-            parseInt(localStorage.getItem('dnd_playerCounter')) || 1;
+            if (savedSession && Array.isArray(savedSession.combatants)) {
+                combatants = savedSession.combatants;
+                activeTurnId = savedSession.activeTurnId ?? null;
+                selectedId = savedSession.selectedId ?? null;
+                round = Math.max(1, Number(savedSession.round) || 1);
+                monsterCounter = Math.max(1, Number(savedSession.monsterCounter) || 1);
+                playerCounter = Math.max(1, Number(savedSession.playerCounter) || 1);
+            } else {
+                monsterCounter =
+                parseInt(localStorage.getItem('dnd_monsterCounter')) || 1;
+
+                playerCounter =
+                parseInt(localStorage.getItem('dnd_playerCounter')) || 1;
+
+                combatants = readStoredJSON('dnd_players', []);
+            }
 
             loadInventory();
 
             renderInventory();
-            const savedPlayers = localStorage.getItem('dnd_players');
-            if (savedPlayers) {
-                combatants = JSON.parse(savedPlayers);
-                let pCount = 0;
+            if (combatants.length > 0) {
                 let lastP = null;
                 combatants.forEach(c => {
                     if (c.type === 'player') {
-                        pCount++;
                         lastP = c;
                     }
                     if (c.conditions && c.conditions.length > 0) {
@@ -462,7 +515,15 @@ delete c.conditions;
                     if (c.stabilized === undefined) c.stabilized = false;
                     // Migrar dados antigos
                     if (c.statusSpiral) {
-                        if (!c.conditions.includes('🌀')) c.conditions.push('🌀');
+                        if (!c.effects.some(effect =>
+                            effect.type === 'condition' && effect.id === '🌀'
+                        )) {
+                            c.effects.push({
+                                id: '🌀',
+                                type: 'condition',
+                                remainingTurns: 0
+                            });
+                        }
                         delete c.statusSpiral;
                     }
                 });
@@ -474,8 +535,18 @@ delete c.conditions;
                 ca: lastP.ca,
                 atk: lastP.atkInfo
             };
-                if (combatants.length > 0) activeTurnId = combatants[0].id;
+                if (!combatants.some(c => c.id === activeTurnId)) {
+                    activeTurnId = combatants[0].id;
+                }
+
+                const selectedCombatant =
+                    combatants.find(c => c.id === selectedId);
+
+                document.getElementById('targetName').innerText =
+                    selectedCombatant?.name || 'Nenhum';
+
                 renderList();
+                savePlayersToStorage();
             }
 
             // Delegação de Eventos na Main List
@@ -509,71 +580,6 @@ delete c.conditions;
 
             });
         };
-
-
-
-        document.addEventListener('gesturestart', function (e) {
-        e.preventDefault();
-    });
-
-
-// =========================================
-// BLOQUEIO TOTAL DE ZOOM MOBILE
-// =========================================
-
-// Bloqueia pinch zoom
-// Bloqueia apenas pinch zoom
-document.addEventListener('touchmove', function (event) {
-
-if (event.touches.length > 1) {
-
-    event.preventDefault();
-}
-
-}, { passive: false });
-
-// Bloqueia multitouch
-document.addEventListener('touchstart', function (event) {
-
-if (event.touches.length > 1) {
-    event.preventDefault();
-}
-
-}, { passive: false });
-
-// Bloqueia double tap zoom
-let lastTouchEnd = 0;
-
-document.addEventListener('touchend', function (event) {
-
-const now = Date.now();
-
-if (now - lastTouchEnd <= 300) {
-    event.preventDefault();
-}
-
-lastTouchEnd = now;
-
-}, { passive: false });
-
-// Safari iOS
-document.addEventListener('gesturestart', function (e) {
-e.preventDefault();
-});
-
-document.addEventListener('gesturechange', function (e) {
-e.preventDefault();
-});
-
-document.addEventListener('gestureend', function (e) {
-e.preventDefault();
-});
-
-// Bloqueia dblclick desktop/mobile
-document.addEventListener('dblclick', function (e) {
-e.preventDefault();
-}, { passive: false });
-
     </script>
 
 
@@ -772,7 +778,7 @@ ITEM DETAILS MODAL
         <p class="text-slate-300 mb-6">Passou no teste de concentração? Sim ou Não.</p>
         <div class="flex gap-4">
             <button onclick="answerConcentration(true)" class="flex-1 p-3 rounded-xl bg-emerald-600 font-bold text-white hover:bg-emerald-500">Sim</button>
-            <button onclick="answerConcentration(false)" class="flex-1 p-3 rounded-xl bg-red-600 font-bold text-white hover:bg-red-500">NÃ£o</button>
+            <button onclick="answerConcentration(false)" class="flex-1 p-3 rounded-xl bg-red-600 font-bold text-white hover:bg-red-500">Não</button>
         </div>
     </div>
 </div>
