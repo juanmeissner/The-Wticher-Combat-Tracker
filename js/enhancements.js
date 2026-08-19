@@ -116,6 +116,31 @@ function getActiveCharacterSheet() {
     return characterSheets.find(sheet => sheet.id === activeCharacterSheetId) || null;
 }
 
+function getSheetResourceCurrent(sheet, currentKey, maximum) {
+    if (sheet.resourceStateSaved !== true) return maximum;
+
+    const current = Number(sheet[currentKey]);
+    if (!Number.isFinite(current)) return maximum;
+
+    return Math.min(maximum, Math.max(0, current));
+}
+
+function migrateCharacterSheetResourceState() {
+    let changed = false;
+
+    characterSheets.forEach(sheet => {
+        // Fichas existentes já podem conter PV/EST de uma sessão anterior.
+        // Preservamos esse estado; apenas fichas criadas daqui em diante
+        // começam explicitamente como novas e entram cheias no primeiro combate.
+        if (typeof sheet.resourceStateSaved !== 'boolean') {
+            sheet.resourceStateSaved = true;
+            changed = true;
+        }
+    });
+
+    if (changed) persistCharacterSheets();
+}
+
 function buildSheetFromCombatant(combatant) {
     return {
         id: `sheet-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
@@ -124,6 +149,7 @@ function buildSheetFromCombatant(combatant) {
         hpCurrent: combatant.hpCurrent,
         stMax: combatant.stMax ?? 0,
         stCurrent: combatant.stCurrent ?? 0,
+        resourceStateSaved: true,
         ca: combatant.ca ?? 10,
         atkInfo: combatant.atkInfo ?? '-',
         monsterCategory: normalizeCombatantRaceCategory(combatant.monsterCategory),
@@ -161,12 +187,14 @@ function syncCombatantsToCharacterSheets() {
             hpCurrent: combatant.hpCurrent,
             stMax: combatant.stMax ?? 0,
             stCurrent: combatant.stCurrent ?? 0,
+            resourceStateSaved: true,
             ca: combatant.ca ?? 10,
             atkInfo: combatant.atkInfo ?? '-',
             monsterCategory: normalizeCombatantRaceCategory(combatant.monsterCategory),
             armor: cloneEnhancementData(combatant.armor || { head: 0, torso: 0, arm: 0, leg: 0 }),
             updatedAt: new Date().toISOString()
         });
+        changed = true;
     });
 
     const activeSheet = getActiveCharacterSheet();
@@ -200,6 +228,7 @@ function createNewCharacterSheet() {
         hpCurrent: 10,
         stMax: 0,
         stCurrent: 0,
+        resourceStateSaved: false,
         ca: 10,
         atkInfo: '-',
         monsterCategory: '',
@@ -239,7 +268,7 @@ function openCharacterSheetEditor(id) {
             <label>Armadura: Braço<input id="sheetArmorArm" class="session-input" type="number" min="0" value="${Number(sheet.armor?.arm) || 0}"></label>
             <label>Armadura: Perna<input id="sheetArmorLeg" class="session-input" type="number" min="0" value="${Number(sheet.armor?.leg) || 0}"></label>
         </div>
-        <p class="enhancement-note">Inventário e habilidades da ficha ativa são salvos automaticamente enquanto você joga.</p>
+        <p class="enhancement-note">Fichas novas entram com PV e EST máximos. Após o combate, os valores atuais, inventário e habilidades são salvos automaticamente.</p>
         <div class="session-dialog-actions">
             <button type="button" class="session-secondary" onclick="renderSessionToolsView('sheets')">Voltar</button>
             <button type="button" class="session-primary" onclick="saveCharacterSheet('${sheet.id}')">Salvar</button>
@@ -251,6 +280,8 @@ function saveCharacterSheet(id) {
     const sheet = characterSheets.find(entry => entry.id === id);
 
     if (!sheet) return;
+
+    const previousSheet = cloneEnhancementData(sheet);
 
     const name = document.getElementById('sheetName')?.value.trim();
 
@@ -271,8 +302,8 @@ function saveCharacterSheet(id) {
         arm: Math.max(0, Number(document.getElementById('sheetArmorArm')?.value) || 0),
         leg: Math.max(0, Number(document.getElementById('sheetArmorLeg')?.value) || 0)
     };
-    sheet.hpCurrent = Math.min(sheet.hpMax, sheet.hpCurrent ?? sheet.hpMax);
-    sheet.stCurrent = Math.min(sheet.stMax, sheet.stCurrent ?? sheet.stMax);
+    sheet.hpCurrent = getSheetResourceCurrent(sheet, 'hpCurrent', sheet.hpMax);
+    sheet.stCurrent = getSheetResourceCurrent(sheet, 'stCurrent', sheet.stMax);
     sheet.updatedAt = new Date().toISOString();
 
     combatants.filter(combatant => combatant.sheetId === id).forEach(combatant => {
@@ -290,6 +321,14 @@ function saveCharacterSheet(id) {
     persistCharacterSheets();
     savePlayersToStorage();
     window.refreshAutomationMonsterCategories?.();
+    const historyChange = window.describeCombatantChanges?.(previousSheet, sheet);
+    if (historyChange?.changed) {
+        window.addCombatHistoryEntry?.(
+            historyChange.label,
+            historyChange.detail,
+            historyChange.metadata
+        );
+    }
     renderList(false);
     renderSessionToolsView('sheets');
     showToast('Ficha atualizada.');
@@ -318,15 +357,19 @@ function addCharacterSheetToCombat(id) {
 
     if (!sheet) return;
 
+    const hpCurrent = getSheetResourceCurrent(sheet, 'hpCurrent', sheet.hpMax);
+    const stMax = Math.max(0, Number(sheet.stMax) || 0);
+    const stCurrent = getSheetResourceCurrent(sheet, 'stCurrent', stMax);
+
     const combatant = {
         id: Date.now(),
         sheetId: sheet.id,
         name: sheet.name,
         initiative: 0,
         hpMax: sheet.hpMax,
-        hpCurrent: sheet.hpCurrent ?? sheet.hpMax,
-        stMax: sheet.stMax ?? 0,
-        stCurrent: sheet.stCurrent ?? sheet.stMax ?? 0,
+        hpCurrent,
+        stMax,
+        stCurrent,
         ca: sheet.ca ?? 10,
         atkInfo: sheet.atkInfo ?? '-',
         monsterCategory: normalizeCombatantRaceCategory(sheet.monsterCategory),
@@ -338,6 +381,12 @@ function addCharacterSheetToCombat(id) {
         deathSaves: { success: 0, failures: 0 },
         stabilized: false
     };
+
+    sheet.hpCurrent = hpCurrent;
+    sheet.stCurrent = stCurrent;
+    sheet.resourceStateSaved = true;
+    sheet.updatedAt = new Date().toISOString();
+    persistCharacterSheets();
 
     combatants.push(combatant);
     window.refreshAutomationMonsterCategories?.();
@@ -882,6 +931,7 @@ function renderCombatReportView(dialog) {
 
 function installEnhancements() {
     mergeCustomLibrary();
+    migrateCharacterSheetResourceState();
     applyPreferences();
     syncCombatantsToCharacterSheets();
     installModalAccessibility();

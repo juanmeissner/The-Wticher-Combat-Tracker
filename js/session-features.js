@@ -3,6 +3,17 @@ const SAVED_ENCOUNTERS_KEY = 'dnd_saved_encounters';
 const LAST_COMBAT_REPORT_KEY = 'dnd_last_combat_report';
 const MAX_HISTORY_ENTRIES = 80;
 const MAX_UNDO_ENTRIES = 25;
+const HISTORY_TYPE_INFO = Object.freeze({
+    damage: { icon: '⚔️', label: 'Dano' },
+    healing: { icon: '❤️', label: 'Cura' },
+    'death-save': { icon: '☠️', label: 'Falha de morte' },
+    effect: { icon: '✨', label: 'Efeito' },
+    condition: { icon: '⚠️', label: 'Condição' },
+    turn: { icon: '⏱️', label: 'Turno' },
+    participant: { icon: '🧙', label: 'Participante' },
+    undo: { icon: '↶', label: 'Desfeito' },
+    system: { icon: '📜', label: 'Sessão' }
+});
 const scheduleMicrotask = window.queueMicrotask || (callback => Promise.resolve().then(callback));
 
 let sessionHistory = loadSessionData(SESSION_HISTORY_KEY, []);
@@ -10,6 +21,9 @@ let undoStack = [];
 let trackingDepth = 0;
 let endCombatHoldTimer = null;
 let skipNextEndCombatClick = false;
+let historyFilter = 'all';
+let historyParticipantFilter = 'all';
+let expandedHistoryEntryId = null;
 
 function loadSessionData(key, fallback) {
     try {
@@ -56,11 +70,122 @@ function persistSessionHistory() {
     localStorage.setItem(SESSION_HISTORY_KEY, JSON.stringify(sessionHistory));
 }
 
-function addHistoryEntry(label, detail = '') {
+function inferHistoryType(label) {
+    const normalized = String(label || '').toLowerCase();
+
+    if (normalized.includes('dano em ') || normalized.includes('armadura absorveu')) return 'damage';
+    if (normalized.includes('cura em ')) return 'healing';
+    if (normalized.includes('falha de morte')) return 'death-save';
+    if (normalized.startsWith('turno:')) return 'turn';
+    if (normalized.startsWith('condição')) return 'condition';
+    if (normalized.startsWith('efeito') || normalized.startsWith('item usado')) return 'effect';
+    if (normalized.startsWith('participante') || normalized.startsWith('iniciativa')) return 'participant';
+    if (normalized.startsWith('desfeito')) return 'undo';
+    return 'system';
+}
+
+function normalizeHistoryParticipants(value) {
+    if (!Array.isArray(value)) return [];
+
+    return value
+        .filter(participant => participant?.id !== undefined && participant?.id !== null)
+        .map(participant => ({
+            id: String(participant.id),
+            name: String(participant.name || 'Participante')
+        }));
+}
+
+function formatHistoryValue(value, fallback = 'Não definido') {
+    if (value === undefined || value === null || value === '') return fallback;
+    return String(value);
+}
+
+function getHistoryArmorValue(combatant, part) {
+    return Math.max(0, Number(combatant?.armor?.[part]) || 0);
+}
+
+function describeCombatantChanges(beforeCombatant, afterCombatant) {
+    const name = afterCombatant?.name || beforeCombatant?.name || 'Participante';
+    const participant = afterCombatant || beforeCombatant;
+    const metadata = {
+        type: 'participant',
+        target: participant ? { id: participant.id, name } : undefined,
+        participants: participant ? [{ id: participant.id, name }] : []
+    };
+
+    if (!beforeCombatant && afterCombatant) {
+        return {
+            label: `${name} adicionado ao combate`,
+            detail: `HP máximo ${afterCombatant.hpMax ?? 0} · EST máximo ${afterCombatant.stMax ?? 0} · CA ${afterCombatant.ca ?? 0}`,
+            changed: true,
+            metadata
+        };
+    }
+
+    if (!beforeCombatant || !afterCombatant) {
+        return { label: `${name}: participante atualizado`, detail: '', changed: false, metadata };
+    }
+
+    const changes = [];
+    const addChange = (label, previousValue, nextValue, verb = 'atualizado') => {
+        if (previousValue !== nextValue) {
+            changes.push(`${label} ${verb} ${formatHistoryValue(previousValue)} → ${formatHistoryValue(nextValue)}`);
+        }
+    };
+
+    addChange('Nome', beforeCombatant.name, afterCombatant.name);
+    addChange('Iniciativa', Number(beforeCombatant.initiative) || 0, Number(afterCombatant.initiative) || 0, 'atualizada');
+    addChange('HP máximo', Number(beforeCombatant.hpMax) || 0, Number(afterCombatant.hpMax) || 0);
+    addChange('EST máximo', Number(beforeCombatant.stMax) || 0, Number(afterCombatant.stMax) || 0);
+    addChange('CA', Number(beforeCombatant.ca) || 0, Number(afterCombatant.ca) || 0, 'atualizada');
+    addChange('Ataque/Dano', formatHistoryValue(beforeCombatant.atkInfo, '-'), formatHistoryValue(afterCombatant.atkInfo, '-'));
+    addChange('Raça/categoria', formatHistoryValue(beforeCombatant.monsterCategory), formatHistoryValue(afterCombatant.monsterCategory), 'atualizada');
+    addChange('Armadura Cabeça', getHistoryArmorValue(beforeCombatant, 'head'), getHistoryArmorValue(afterCombatant, 'head'), 'atualizada');
+    addChange('Armadura Tronco', getHistoryArmorValue(beforeCombatant, 'torso'), getHistoryArmorValue(afterCombatant, 'torso'), 'atualizada');
+    addChange('Armadura Braço', getHistoryArmorValue(beforeCombatant, 'arm'), getHistoryArmorValue(afterCombatant, 'arm'), 'atualizada');
+    addChange('Armadura Perna', getHistoryArmorValue(beforeCombatant, 'leg'), getHistoryArmorValue(afterCombatant, 'leg'), 'atualizada');
+
+    return {
+        label: changes.length ? `${name}: ${changes[0]}` : `${name}: participante atualizado`,
+        detail: changes.slice(1).join(' · '),
+        changed: changes.length > 0,
+        metadata
+    };
+}
+
+function describeCombatantCollectionChange(beforeCombatants, afterCombatants) {
+    const previous = Array.isArray(beforeCombatants) ? beforeCombatants : [];
+    const current = Array.isArray(afterCombatants) ? afterCombatants : [];
+    const added = current.find(combatant => !previous.some(oldCombatant => oldCombatant.id === combatant.id));
+
+    if (added) return describeCombatantChanges(null, added);
+
+    const updated = current.find(combatant => {
+        const previousCombatant = previous.find(oldCombatant => oldCombatant.id === combatant.id);
+        return previousCombatant && describeCombatantChanges(previousCombatant, combatant).changed;
+    });
+    const beforeUpdated = updated && previous.find(combatant => combatant.id === updated.id);
+
+    return describeCombatantChanges(beforeUpdated, updated);
+}
+
+function addHistoryEntry(label, detail = '', metadata = {}) {
+    metadata = metadata && typeof metadata === 'object' ? metadata : {};
+    const type = HISTORY_TYPE_INFO[metadata.type] ? metadata.type : inferHistoryType(label);
+
     sessionHistory.unshift({
         id: Date.now() + Math.random(),
         label,
         detail,
+        type,
+        participants: normalizeHistoryParticipants(metadata.participants),
+        source: metadata.source?.id !== undefined
+            ? { id: String(metadata.source.id), name: String(metadata.source.name || 'Origem') }
+            : undefined,
+        target: metadata.target?.id !== undefined
+            ? { id: String(metadata.target.id), name: String(metadata.target.name || 'Alvo') }
+            : undefined,
+        combat: metadata.combat && typeof metadata.combat === 'object' ? metadata.combat : undefined,
         round,
         at: new Date().toISOString()
     });
@@ -70,7 +195,11 @@ function addHistoryEntry(label, detail = '') {
     refreshSessionStatus();
 }
 
-function trackAction(label, callback, detail = '') {
+function resolveHistoryValue(value) {
+    return typeof value === 'function' ? value() : value;
+}
+
+function trackAction(label, callback, detail = '', metadata = {}) {
     const isTopLevelAction = trackingDepth === 0;
     const before = isTopLevelAction ? captureSessionState() : null;
 
@@ -82,9 +211,10 @@ function trackAction(label, callback, detail = '') {
         trackingDepth--;
 
         if (isTopLevelAction && getStateFingerprint(before) !== getStateFingerprint(captureSessionState())) {
-            undoStack.push({ label, state: before });
+            const actionLabel = resolveHistoryValue(label);
+            undoStack.push({ label: actionLabel, state: before });
             undoStack = undoStack.slice(-MAX_UNDO_ENTRIES);
-            addHistoryEntry(label, detail);
+            addHistoryEntry(actionLabel, resolveHistoryValue(detail), resolveHistoryValue(metadata) || {});
         }
     }
 }
@@ -249,6 +379,224 @@ function formatHistoryTime(value) {
     }
 }
 
+function getAutomatedResourceTotal(combatant, resourceKey) {
+    return (combatant?.effects || []).reduce(
+        (total, effect) => total + Math.max(0, Number(effect?.automation?.[resourceKey]) || 0),
+        0
+    );
+}
+
+function captureCombatResources(combatant) {
+    return {
+        hp: Math.max(0, Number(combatant?.hpCurrent) || 0),
+        st: Math.max(0, Number(combatant?.stCurrent) || 0),
+        magicShield: getAutomatedResourceTotal(combatant, 'magicShieldHp'),
+        temporaryHp: getAutomatedResourceTotal(combatant, 'temporaryHp')
+    };
+}
+
+function getHistoryBodyPartName(part) {
+    return ({ head: 'Cabeça', torso: 'Tronco', arm: 'Braço', leg: 'Perna' })[part] || '';
+}
+
+function createResourceHistoryMetadata(type, target, value, context = {}) {
+    const sourceCombatant = combatants.find(combatant => combatant.id === activeTurnId);
+    const source = sourceCombatant
+        ? { id: sourceCombatant.id, name: sourceCombatant.name }
+        : null;
+    const targetInfo = { id: target.id, name: target.name };
+    const participants = [targetInfo];
+
+    if (source && source.id !== target.id) participants.unshift(source);
+
+    return {
+        type,
+        source,
+        target: targetInfo,
+        participants,
+        combat: {
+            baseDamage: Math.max(0, Number(context.baseDamage ?? value) || 0),
+            finalValue: Math.max(0, Number(value) || 0),
+            bodyPart: context.bodyPart || '',
+            bodyMultiplier: Number(context.bodyMultiplier) || 1,
+            typeMultiplier: Number(context.typeMultiplier) || 1,
+            armorAbsorbed: Math.max(0, Number(context.armorAbsorbed) || 0),
+            ignoredArmor: Boolean(context.ignoredArmor),
+            before: captureCombatResources(target),
+            after: null
+        }
+    };
+}
+
+function finalizeResourceHistoryMetadata(metadata, target) {
+    if (metadata?.combat) metadata.combat.after = captureCombatResources(target);
+}
+
+function buildResourceHistoryDetail(metadata) {
+    const combat = metadata?.combat;
+    if (!combat) return '';
+
+    const detail = [];
+    const bodyPart = getHistoryBodyPartName(combat.bodyPart);
+    const before = combat.before || {};
+    const after = combat.after || {};
+    const shieldAbsorbed = Math.max(0, (before.magicShield || 0) - (after.magicShield || 0));
+    const temporaryAbsorbed = Math.max(0, (before.temporaryHp || 0) - (after.temporaryHp || 0));
+
+    if (bodyPart) {
+        detail.push(`${bodyPart} ×${combat.bodyMultiplier || 1}`);
+    }
+
+    if (combat.typeMultiplier !== 1) {
+        detail.push(`tipo ×${combat.typeMultiplier}`);
+    }
+
+    if (combat.ignoredArmor) {
+        detail.push('armadura ignorada');
+    } else if (combat.armorAbsorbed > 0) {
+        detail.push(`armadura absorveu ${combat.armorAbsorbed}`);
+    }
+
+    if (shieldAbsorbed > 0) detail.push(`Escudo Mágico absorveu ${shieldAbsorbed}`);
+    if (temporaryAbsorbed > 0) detail.push(`PV temporários absorveram ${temporaryAbsorbed}`);
+
+    if (before.hp !== after.hp) detail.push(`PV ${before.hp} → ${after.hp}`);
+    if (before.st !== after.st) detail.push(`EST ${before.st} → ${after.st}`);
+
+    if (!detail.length && combat.finalValue > 0) {
+        detail.push(`valor aplicado: ${combat.finalValue}`);
+    }
+
+    return detail.join(' · ');
+}
+
+function getHistoryEntryType(entry) {
+    return HISTORY_TYPE_INFO[entry?.type] ? entry.type : inferHistoryType(entry?.label);
+}
+
+function getHistoryEntryParticipants(entry) {
+    const participants = [
+        ...normalizeHistoryParticipants(entry?.participants),
+        ...normalizeHistoryParticipants([entry?.source, entry?.target])
+    ];
+    const uniqueParticipants = new Map();
+
+    participants.forEach(participant => uniqueParticipants.set(participant.id, participant));
+    return [...uniqueParticipants.values()];
+}
+
+function getHistoryParticipantOptions() {
+    const participants = new Map();
+
+    sessionHistory.forEach(entry => {
+        getHistoryEntryParticipants(entry)
+            .forEach(participant => participants.set(participant.id, participant));
+    });
+
+    return [...participants.values()].sort((first, second) => first.name.localeCompare(second.name, 'pt-BR'));
+}
+
+function historyEntryMatchesFilters(entry) {
+    const type = getHistoryEntryType(entry);
+
+    if (historyFilter !== 'all' && type !== historyFilter) return false;
+    if (historyParticipantFilter === 'all') return true;
+
+    return getHistoryEntryParticipants(entry)
+        .some(participant => participant.id === historyParticipantFilter);
+}
+
+function renderHistoryEntry(entry) {
+    const type = getHistoryEntryType(entry);
+    const typeInfo = HISTORY_TYPE_INFO[type];
+    const entryId = encodeURIComponent(String(entry.id));
+    const expanded = expandedHistoryEntryId === String(entry.id);
+    const participants = getHistoryEntryParticipants(entry);
+    const participantLine = participants.length
+        ? participants.map(participant => participant.name).join(' → ')
+        : '';
+    const metadata = [participantLine, formatHistoryTime(entry.at)].filter(Boolean).join(' · ');
+    const detail = entry.detail || buildResourceHistoryDetail(entry);
+
+    return `
+        <li class="history-entry history-entry-${type}">
+            <button type="button" class="history-entry-main" onclick="toggleHistoryDetails('${entryId}')" aria-expanded="${expanded}">
+                <span class="history-entry-icon" aria-hidden="true">${typeInfo.icon}</span>
+                <span class="history-entry-copy">
+                    <strong>${escapeHtml(entry.label)}</strong>
+                    <small>${escapeHtml(`R${entry.round || 1}${metadata ? ` · ${metadata}` : ''}`)}</small>
+                </span>
+                <span class="history-entry-toggle" aria-hidden="true">${expanded ? '−' : '+'}</span>
+            </button>
+            ${expanded
+                ? `<div class="history-entry-detail">${escapeHtml(detail || 'Nenhum detalhe adicional registrado.')}</div>`
+                : ''}
+        </li>
+    `;
+}
+
+function renderHistoryTimeline() {
+    const entries = sessionHistory.filter(historyEntryMatchesFilters);
+
+    if (!entries.length) {
+        return '<li class="session-empty">Nenhuma ação corresponde aos filtros selecionados.</li>';
+    }
+
+    const groupedEntries = new Map();
+    entries.forEach(entry => {
+        const entryRound = Math.max(1, Number(entry.round) || 1);
+        const group = groupedEntries.get(entryRound) || [];
+        group.push(entry);
+        groupedEntries.set(entryRound, group);
+    });
+
+    return [...groupedEntries.entries()]
+        .map(([entryRound, roundEntries]) => `
+            <li class="history-round-group">
+                <div class="history-round-heading"><span>Rodada ${entryRound}</span><small>${roundEntries.length} ação${roundEntries.length === 1 ? '' : 'ões'}</small></div>
+                <ol class="history-round-list">${roundEntries.map(renderHistoryEntry).join('')}</ol>
+            </li>
+        `)
+        .join('');
+}
+
+function setHistoryFilter(filter) {
+    historyFilter = filter === 'all' || HISTORY_TYPE_INFO[filter] ? filter : 'all';
+    expandedHistoryEntryId = null;
+    renderSessionToolsView('history');
+}
+
+function setHistoryParticipantFilter(id) {
+    historyParticipantFilter = id || 'all';
+    expandedHistoryEntryId = null;
+    renderSessionToolsView('history');
+}
+
+function toggleHistoryDetails(encodedId) {
+    const id = decodeURIComponent(encodedId);
+    expandedHistoryEntryId = expandedHistoryEntryId === id ? null : id;
+    renderSessionToolsView('history');
+}
+
+function clearSessionHistory() {
+    if (!sessionHistory.length) return;
+
+    openSessionConfirm({
+        title: 'Limpar histórico?',
+        message: 'As ações desta sessão serão removidas. Isso não altera fichas nem o combate atual.',
+        confirmLabel: 'Limpar histórico',
+        danger: true,
+        onConfirm: () => {
+            sessionHistory = [];
+            historyFilter = 'all';
+            historyParticipantFilter = 'all';
+            expandedHistoryEntryId = null;
+            persistSessionHistory();
+            renderSessionToolsView('history');
+        }
+    });
+}
+
 function closeSessionTools() {
     document.getElementById('sessionToolsModal')?.remove();
 }
@@ -296,22 +644,31 @@ function renderSessionToolsView(view) {
     }
 
     if (view === 'history') {
-        const entries = sessionHistory.length
-            ? sessionHistory.map(entry => `
-                <li>
-                    <span>${escapeHtml(entry.label)}</span>
-                    <small>R${entry.round} · ${formatHistoryTime(entry.at)}</small>
-                </li>
-            `).join('')
-            : '<li class="session-empty">Ainda não há ações nesta sessão.</li>';
+        const filterTypes = ['all', 'damage', 'healing', 'effect', 'condition', 'turn'];
+        const participants = getHistoryParticipantOptions();
+        const filterButtons = filterTypes.map(type => {
+            const label = type === 'all' ? 'Tudo' : HISTORY_TYPE_INFO[type].label;
+            return `<button type="button" class="history-filter-button ${historyFilter === type ? 'history-filter-active' : ''}" onclick="setHistoryFilter('${type}')">${label}</button>`;
+        }).join('');
+        const participantOptions = participants.map(participant => `
+            <option value="${escapeHtml(participant.id)}"${historyParticipantFilter === participant.id ? ' selected' : ''}>${escapeHtml(participant.name)}</option>
+        `).join('');
 
         dialog.innerHTML = `
             <div class="session-dialog-header">
                 <h2>Histórico</h2>
                 <button type="button" class="session-close" onclick="closeSessionTools()" aria-label="Fechar">×</button>
             </div>
-            <ol class="session-history-list">${entries}</ol>
-            <button type="button" class="session-secondary session-full" onclick="renderSessionToolsView('menu')">Voltar</button>
+            <p class="history-intro">Toque em uma ação para ver os cálculos e efeitos aplicados.</p>
+            <div class="history-filter-bar" role="group" aria-label="Filtrar histórico por tipo">${filterButtons}</div>
+            ${participants.length
+                ? `<label class="history-participant-filter">Participante<select class="session-input" onchange="setHistoryParticipantFilter(this.value)"><option value="all">Todos os participantes</option>${participantOptions}</select></label>`
+                : ''}
+            <ol class="session-history-list session-history-timeline">${renderHistoryTimeline()}</ol>
+            <div class="session-dialog-actions">
+                <button type="button" class="session-secondary" onclick="renderSessionToolsView('menu')">Voltar</button>
+                <button type="button" class="session-danger" onclick="clearSessionHistory()"${sessionHistory.length ? '' : ' disabled'}>Limpar</button>
+            </div>
         `;
         return;
     }
@@ -667,7 +1024,7 @@ function installActionGuards() {
 
         openSessionConfirm({
             title: 'Encerrar combate?',
-            message: 'Monstros e efeitos serão removidos; jogadores voltarão ao estado inicial do combate. Você poderá desfazer.',
+            message: 'Monstros e efeitos serão removidos. PV e EST das fichas salvas serão mantidos para o próximo combate. Você poderá desfazer.',
             confirmLabel: 'Encerrar',
             danger: true,
             onConfirm: () => {
@@ -702,7 +1059,7 @@ function installActionGuards() {
 
     window.cancelEndCombatPress = () => window.clearTimeout(endCombatHoldTimer);
 
-    window.applyHP = (isHealing, resolvedValue = null) => {
+    window.applyHP = (isHealing, resolvedValue = null, historyContext = null) => {
         const target = combatants.find(combatant => combatant.id === selectedId);
         const hasResolvedValue =
             resolvedValue !== null &&
@@ -711,21 +1068,38 @@ function installActionGuards() {
         const value = hasResolvedValue
             ? Math.max(0, Number.parseInt(resolvedValue, 10) || 0)
             : Number.parseInt(currentInput) || 0;
+        const historyType = isHealing ? 'healing' : (value === 0 ? 'death-save' : 'damage');
+        const historyMetadata = target
+            ? createResourceHistoryMetadata(historyType, target, value, historyContext || {})
+            : null;
+        const sourcePrefix = historyMetadata?.source?.name
+            ? `${historyMetadata.source.name} > `
+            : '';
+        const historyLabel = isHealing
+            ? `${sourcePrefix}Cura em ${target?.name || 'alvo'}: ${value}`
+            : `${sourcePrefix}Dano em ${target?.name || 'alvo'}: ${value || 'falha de morte'}`;
 
         const applyOriginalHP = () => {
-            if (!hasResolvedValue) return originalApplyHP(isHealing);
+            let result;
 
-            // A confirmação é assíncrona. Recoloca o valor calculado apenas
-            // no instante da aplicação para que armadura e multiplicadores
-            // não sejam substituídos pelo valor digitado originalmente.
-            currentInput = String(value);
-            return originalApplyHP(isHealing);
+            if (hasResolvedValue) {
+                // A confirmação é assíncrona. Recoloca o valor calculado apenas
+                // no instante da aplicação para que armadura e multiplicadores
+                // não sejam substituídos pelo valor digitado originalmente.
+                currentInput = String(value);
+            }
+
+            result = originalApplyHP(isHealing);
+            if (historyMetadata) finalizeResourceHistoryMetadata(historyMetadata, target);
+            return result;
         };
 
         if (isHealing) {
             return trackAction(
-                `Cura em ${target?.name || 'alvo'}: ${value}`,
-                applyOriginalHP
+                historyLabel,
+                applyOriginalHP,
+                () => buildResourceHistoryDetail(historyMetadata),
+                () => historyMetadata
             );
         }
 
@@ -739,8 +1113,10 @@ function installActionGuards() {
             confirmLabel: 'Aplicar dano',
             danger: true,
             onConfirm: () => trackAction(
-                `Dano em ${target.name}: ${value || 'falha de morte'}`,
-                applyOriginalHP
+                historyLabel,
+                applyOriginalHP,
+                () => buildResourceHistoryDetail(historyMetadata),
+                () => historyMetadata
             )
         });
     };
@@ -791,7 +1167,17 @@ function installActionGuards() {
         renderList(false);
     };
 
-    window.saveEntity = () => trackAction('Participante adicionado ou atualizado', originalSaveEntity);
+    window.saveEntity = () => {
+        const beforeCombatants = cloneSessionData(combatants);
+        const getChange = () => describeCombatantCollectionChange(beforeCombatants, combatants);
+
+        return trackAction(
+            () => getChange().label,
+            originalSaveEntity,
+            () => getChange().detail,
+            () => getChange().metadata
+        );
+    };
     window.applyInitiative = () => trackAction('Iniciativa alterada', originalApplyInitiative);
     window.toggleCondition = icon => trackAction(`Condição alterada: ${conditionDescriptions[icon]?.title || icon}`, () => originalToggleCondition(icon));
     window.toggleEffect = (type, id) => trackAction('Efeito alterado', () => originalToggleEffect(type, id));
@@ -816,6 +1202,12 @@ window.undoLastAction = undoLastAction;
 window.openSessionTools = openSessionTools;
 window.closeSessionTools = closeSessionTools;
 window.renderSessionToolsView = renderSessionToolsView;
+window.setHistoryFilter = setHistoryFilter;
+window.setHistoryParticipantFilter = setHistoryParticipantFilter;
+window.toggleHistoryDetails = toggleHistoryDetails;
+window.clearSessionHistory = clearSessionHistory;
+window.addCombatHistoryEntry = addHistoryEntry;
+window.describeCombatantChanges = describeCombatantChanges;
 window.saveCurrentEncounter = saveCurrentEncounter;
 window.loadSavedEncounter = loadSavedEncounter;
 window.deleteSavedEncounter = deleteSavedEncounter;

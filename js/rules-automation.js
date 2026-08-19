@@ -803,6 +803,11 @@ function installRulesAutomation() {
         const editedCombatantId = editingId;
         const previousIds = new Set(combatants.map(combatant => combatant.id));
         const category = getManualEntityCategoryInput();
+        const previousCategory = editedCombatantId
+            ? normalizeAutomationCombatantCategory(
+                combatants.find(combatant => combatant.id === editedCombatantId)?.monsterCategory
+            )
+            : '';
         originalSaveEntity();
 
         const combatant = editedCombatantId
@@ -814,6 +819,19 @@ function installRulesAutomation() {
         combatant.monsterCategory = category;
         ensureAutomationMonsterCategories();
         savePlayersToStorage();
+        if (previousCategory !== category) {
+            const previousLabel = previousCategory || 'Não definida';
+            const categoryLabel = category || 'Não definida';
+            window.addCombatHistoryEntry?.(
+                `${combatant.name}: Raça/categoria atualizada ${previousLabel} → ${categoryLabel}`,
+                '',
+                {
+                    type: 'participant',
+                    target: { id: combatant.id, name: combatant.name },
+                    participants: [{ id: combatant.id, name: combatant.name }]
+                }
+            );
+        }
         repairAutomationEffectCollections();
         renderList(false);
     };

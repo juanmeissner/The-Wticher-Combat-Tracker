@@ -74,6 +74,9 @@ function closeDamageModals() {
         // =========================================
         
         let finalDamage;
+        const armorAbsorbed = ignoreArmor
+            ? 0
+            : Math.min(pendingDamageBase, armorValue);
 
         if (ignoreArmor) {
         
@@ -90,6 +93,22 @@ function closeDamageModals() {
             if (finalDamage === 0) {
         
                 closeDamageModals();
+
+                window.addCombatHistoryEntry?.(
+                    `Armadura absorveu o dano em ${target.name}`,
+                    `${({ head: 'Cabeça', torso: 'Tronco', arm: 'Braço', leg: 'Perna' })[pendingDamageBodyPart] || 'Local'} · ${armorAbsorbed} absorvido · dano final 0`,
+                    {
+                        type: 'damage',
+                        target: { id: target.id, name: target.name },
+                        participants: [{ id: target.id, name: target.name }],
+                        combat: {
+                            baseDamage: pendingDamageBase,
+                            finalValue: 0,
+                            bodyPart: pendingDamageBodyPart,
+                            armorAbsorbed
+                        }
+                    }
+                );
         
                 showToast(
                     '🛡️ A armadura absorveu todo o dano!'
@@ -140,7 +159,14 @@ function closeDamageModals() {
         
         closeDamageModals();
         
-        applyDirectDamage(finalDamage);
+        applyDirectDamage(finalDamage, {
+            baseDamage: pendingDamageBase,
+            bodyPart: pendingDamageBodyPart,
+            bodyMultiplier,
+            typeMultiplier,
+            armorAbsorbed,
+            ignoredArmor: ignoreArmor
+        });
     
     }
 
@@ -226,7 +252,7 @@ function closeDamageModals() {
         );
     }
 
-    function applyDirectDamage(value) {
+    function applyDirectDamage(value, historyContext = {}) {
 
         const oldInput = currentInput;
         
@@ -234,7 +260,7 @@ function closeDamageModals() {
         
         // Envia o dano já calculado para a confirmação. Isso evita que o
         // valor original do teclado substitua o resultado após fechar o modal.
-        window.applyHP(false, value);
+        window.applyHP(false, value, historyContext);
         
         currentInput = oldInput;
         

@@ -324,6 +324,166 @@ body {
     text-align: center;
 }
 
+.history-intro {
+    margin-bottom: 10px !important;
+    font-size: .78rem;
+}
+
+.history-filter-bar {
+    display: flex;
+    gap: 6px;
+    overflow-x: auto;
+    padding-bottom: 4px;
+    scrollbar-width: none;
+}
+
+.history-filter-bar::-webkit-scrollbar {
+    display: none;
+}
+
+.history-filter-button {
+    flex: 0 0 auto;
+    min-height: 34px;
+    padding: 0 10px;
+    border: 1px solid #475569;
+    border-radius: 999px;
+    background: #1e293b;
+    color: #cbd5e1;
+    font-size: .72rem;
+    font-weight: 700;
+}
+
+.history-filter-button.history-filter-active {
+    border-color: #38bdf8;
+    background: #075985;
+    color: #fff;
+}
+
+.history-participant-filter {
+    display: block;
+    margin-top: 10px;
+    color: #cbd5e1;
+    font-size: .74rem;
+    font-weight: 700;
+}
+
+.history-participant-filter .session-input {
+    margin-top: 4px;
+    min-height: 38px;
+    padding: 7px 9px;
+}
+
+.session-history-timeline {
+    gap: 14px;
+}
+
+.session-history-timeline > .history-round-group {
+    display: block;
+    padding: 0;
+    background: transparent;
+}
+
+.history-round-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin: 0 2px 6px;
+    color: #7dd3fc;
+    font-size: .74rem;
+    font-weight: 800;
+    letter-spacing: .03em;
+    text-transform: uppercase;
+}
+
+.history-round-heading small {
+    margin: 0;
+    color: #64748b;
+    font-size: .68rem;
+    font-weight: 700;
+    text-transform: none;
+}
+
+.history-round-list {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.history-round-list > .history-entry {
+    display: block;
+    padding: 0;
+    overflow: hidden;
+    border: 1px solid #334155;
+    border-left: 3px solid #64748b;
+    border-radius: 10px;
+    background: #1e293b;
+}
+
+.history-entry-damage { border-left-color: #f87171 !important; }
+.history-entry-healing { border-left-color: #4ade80 !important; }
+.history-entry-death-save { border-left-color: #c084fc !important; }
+.history-entry-effect { border-left-color: #38bdf8 !important; }
+.history-entry-condition { border-left-color: #fbbf24 !important; }
+.history-entry-turn { border-left-color: #94a3b8 !important; }
+.history-entry-undo { border-left-color: #a78bfa !important; }
+
+.history-entry-main {
+    display: grid;
+    grid-template-columns: 26px minmax(0, 1fr) 22px;
+    align-items: center;
+    width: 100%;
+    min-height: 48px;
+    padding: 8px;
+    border: 0;
+    background: transparent;
+    color: #f8fafc;
+    text-align: left;
+}
+
+.history-entry-icon {
+    font-size: .95rem !important;
+    font-weight: 400 !important;
+}
+
+.history-entry-copy {
+    min-width: 0;
+}
+
+.history-entry-copy strong {
+    display: block;
+    overflow: hidden;
+    font-size: .79rem !important;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.history-entry-copy small {
+    overflow: hidden;
+    margin-top: 2px !important;
+    color: #94a3b8;
+    font-size: .68rem !important;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.history-entry-toggle {
+    color: #7dd3fc;
+    font-size: 1.1rem !important;
+    font-weight: 400 !important;
+    text-align: center;
+}
+
+.history-entry-detail {
+    padding: 8px 10px 10px 34px;
+    border-top: 1px solid #334155;
+    color: #cbd5e1;
+    font-size: .72rem;
+    line-height: 1.42;
+}
+
 .session-label {
     display: block;
     margin-bottom: 6px;

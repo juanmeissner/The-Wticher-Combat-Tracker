@@ -1,4 +1,4 @@
-const CACHE_NAME = 'witcher-combat-tracker-v13';
+const CACHE_NAME = 'witcher-combat-tracker-v17';
 
 const APP_SHELL = [
     './',

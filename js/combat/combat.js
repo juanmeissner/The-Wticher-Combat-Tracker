@@ -49,7 +49,12 @@ function endCombat() {
     combatants = combatants.filter(c => c.type === 'player');
     combatants.forEach(c => {
         c.initiative = 0;
-        c.hpCurrent = c.hpMax; 
+        // Fichas salvas mantêm os PVs/EST atuais entre combates.
+        // Participantes sem ficha preservam o comportamento anterior e voltam cheios.
+        if (!c.sheetId) {
+            c.hpCurrent = c.hpMax;
+            c.stCurrent = c.stMax;
+        }
         c.statusBrain = false; 
         c.conditions = [];
         c.effects = [];
