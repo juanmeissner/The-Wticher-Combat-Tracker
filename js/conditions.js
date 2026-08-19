@@ -1,7 +1,6 @@
 function openConditionMenu() {
     if (!selectedId) { showToast('Por favor, Selecione um alvo!'); return; }
     const container = document.getElementById('circleContainer');
-    container.innerHTML = `<button class="absolute top-1/2 left-1/2 -mt-6 -ml-6 w-12 h-12 bg-slate-700 rounded-full flex items-center justify-center text-white font-bold z-10 border border-slate-500 shadow-xl" onclick="closeConditionMenu(event, true)">X</button>`;
     
     const conditions = [
         { icon: '😍', name: 'Enfeitiçado.' },
@@ -25,76 +24,45 @@ function openConditionMenu() {
         { icon: '🛢️', name: 'Inflamável.' }
 ];
 
-const innerRadius = 95;
-const outerRadius = 190;
+const selectedCombatant = combatants.find(comp => comp.id === selectedId);
+const renderConditionButton = cond => {
+    const active = (selectedCombatant?.effects || []).some(effect =>
+        effect.type === 'condition' && effect.id === cond.icon
+    );
+    const activeClass = active ? ' condition-grid-option-active' : '';
 
-conditions.forEach((cond, i) => {
+    return `
+        <button
+            type="button"
+            class="condition-grid-option${activeClass}"
+            onclick="toggleCondition('${cond.icon}')"
+            onmousedown="startConditionPress('${cond.icon}')"
+            onmouseup="cancelConditionPress()"
+            onmouseleave="cancelConditionPress()"
+            ontouchstart="startConditionPress('${cond.icon}')"
+            ontouchend="cancelConditionPress()"
+            aria-label="${cond.name}"
+            aria-pressed="${active}"
+        >
+            <span class="condition-grid-icon" aria-hidden="true">${cond.icon}</span>
+            <span class="condition-grid-label">${cond.name}</span>
+        </button>
+    `;
+};
 
-// Divide em dois anéis
-const isOuter = i >= Math.ceil(conditions.length / 2);
-
-const ringConditions = isOuter
-? conditions.slice(Math.ceil(conditions.length / 2))
-: conditions.slice(0, Math.ceil(conditions.length / 2));
-
-const localIndex = isOuter
-? i - Math.ceil(conditions.length / 2)
-: i;
-
-const radius = isOuter ? outerRadius : innerRadius;
-
-const angle =
-(localIndex * (360 / ringConditions.length) - 90)
-* (Math.PI / 180);
-
-const x = Math.cos(angle) * radius;
-const y = Math.sin(angle) * radius;
-
-const el = document.createElement('div');
-
-el.className =
-"absolute top-1/2 left-1/2 -mt-6 -ml-6 w-12 h-12 flex flex-col items-center justify-center";
-
-el.style.transform = `translate(${x}px, ${y}px)`;
-
-const c = combatants.find(comp => comp.id === selectedId);
-
-const isActive =
-(c.effects || []).some(e =>
-
-    e.type === 'condition' &&
-    e.id === cond.icon
-
-);
-
-const bgClass = isActive
-? 'bg-blue-600 border-blue-400'
-: 'bg-slate-800 border-slate-600';
-
-el.innerHTML = `
-<button
-onclick="toggleCondition('${cond.icon}')"
-
-onmousedown="startConditionPress('${cond.icon}')"
-onmouseup="cancelConditionPress()"
-onmouseleave="cancelConditionPress()"
-
-ontouchstart="startConditionPress('${cond.icon}')"
-ontouchend="cancelConditionPress()"
-    class="w-12 h-12 rounded-full text-2xl flex items-center justify-center border ${bgClass} shadow-lg active:scale-90 transition-transform">
-
-    ${cond.icon}
-
-</button>
-
-<span class="text-[10px] text-slate-200 mt-1 font-bold bg-slate-900/80 px-1 rounded whitespace-nowrap">
-    ${cond.name}
-</span>
+container.classList.add('condition-menu-grid');
+container.innerHTML = `
+    <div class="condition-menu-header">
+        <div>
+            <h2>Condições</h2>
+            <p>Toque para aplicar ou remover. Segure para ver os detalhes.</p>
+        </div>
+        <button type="button" class="condition-menu-close" onclick="closeConditionMenu(event, true)" aria-label="Fechar condições">×</button>
+    </div>
+    <div class="condition-grid" role="group" aria-label="Condições disponíveis">
+        ${conditions.map(renderConditionButton).join('')}
+    </div>
 `;
-
-container.appendChild(el);
-});
-
     document.getElementById('circularMenu').style.display = 'flex';
 }
 

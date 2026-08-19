@@ -1,12 +1,22 @@
 /* Camada de layout responsivo — mantém style.css legado intacto. */
 :root {
     --app-navigation-height: calc(56px + var(--safe-top));
+    background: #020617;
 }
 
-html,
+html {
+    min-height: 100%;
+    background: #020617;
+}
+
 body {
+    display: flex;
+    flex-direction: column;
     height: 100vh;
     height: 100dvh;
+    min-height: 100vh;
+    min-height: 100dvh;
+    background-color: #020617;
 }
 
 .mobile-navigation {
@@ -44,9 +54,14 @@ body {
     min-width: 64px;
 }
 
+.inventory-details-action {
+    display: none;
+}
+
 #appWrapper {
-    height: calc(100vh - var(--app-navigation-height));
-    height: calc(100dvh - var(--app-navigation-height));
+    flex: 1 1 auto;
+    min-height: 0;
+    height: auto;
 }
 
 #combatScreen,
@@ -69,12 +84,30 @@ body {
 #combatControls {
     position: absolute;
     left: 0;
-    bottom: calc(12px + var(--safe-bottom));
+    /* O painel ocupa a base visual do app; a área segura fica dentro dele. */
+    bottom: 0;
     width: 100%;
     transform: none;
-    border-radius: 18px;
-    box-shadow: 0 12px 35px rgba(0, 0, 0, .45);
+    padding-bottom: max(10px, var(--safe-bottom)) !important;
+    border-radius: 18px 18px 0 0;
+    box-shadow: 0 -10px 30px rgba(0, 0, 0, .32);
     z-index: 1000;
+}
+
+/* O iOS em modo instalado pode expor uma região abaixo do viewport dinâmico.
+   O preenchimento nativo evita a faixa branca e mantém o conteúdo acima da
+   área do indicador de início. */
+@supports (-webkit-touch-callout: none) {
+    html {
+        height: -webkit-fill-available;
+        background: #020617;
+    }
+
+    body {
+        min-height: -webkit-fill-available;
+        height: -webkit-fill-available;
+        background: #020617;
+    }
 }
 
 /* Todos os modais devem ficar acima da barra de navegação e respeitar
@@ -97,6 +130,137 @@ body {
 #inventoryModal,
 #abilitiesModal {
     align-items: center !important;
+}
+
+/* Grade de condições: legível no desktop e segura dentro da área útil no mobile. */
+#circularMenu {
+    align-items: center;
+    justify-content: center;
+    padding: max(12px, calc(var(--safe-top) + 8px)) 12px max(12px, calc(var(--safe-bottom) + 8px));
+}
+
+#circleContainer.condition-menu-grid {
+    width: min(100%, 640px);
+    height: auto;
+    max-height: calc(100dvh - var(--safe-top) - var(--safe-bottom) - 24px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: 18px;
+    border: 1px solid #334155;
+    border-radius: 18px;
+    background: #0f172a;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, .55);
+    -webkit-overflow-scrolling: touch;
+}
+
+.condition-menu-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.condition-menu-header h2 {
+    margin: 0;
+    color: #f8fafc;
+    font-size: 1.05rem;
+    font-weight: 800;
+}
+
+.condition-menu-header p {
+    margin: 4px 0 0;
+    color: #94a3b8;
+    font-size: .72rem;
+    line-height: 1.35;
+}
+
+.condition-menu-close {
+    flex: 0 0 42px;
+    min-height: 42px;
+    border: 1px solid #475569;
+    border-radius: 12px;
+    background: #1e293b;
+    color: #f8fafc;
+    font-size: 1.45rem;
+    font-weight: 800;
+    line-height: 1;
+}
+
+.condition-grid {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.condition-grid-option {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 76px;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    padding: 8px 5px;
+    border: 1px solid #334155;
+    border-radius: 12px;
+    background: #1e293b;
+    color: #e2e8f0;
+    font-size: .76rem;
+    font-weight: 700;
+    line-height: 1.1;
+    text-align: center;
+    touch-action: manipulation;
+}
+
+.condition-grid-option-active {
+    border-color: #38bdf8;
+    background: #075985;
+    color: #fff;
+    box-shadow: inset 0 0 0 1px rgba(186, 230, 253, .35);
+}
+
+.condition-grid-icon {
+    display: block;
+    font-size: 1.6rem;
+    line-height: 1;
+}
+
+.condition-grid-label {
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow-wrap: anywhere;
+}
+
+@media (max-width: 600px), (max-height: 620px) {
+    #circleContainer.condition-menu-grid {
+        width: min(100%, 440px);
+        padding: 14px;
+    }
+
+    .condition-grid {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 8px;
+    }
+
+    .condition-grid-option {
+        min-height: 64px;
+        gap: 3px;
+        padding: 6px 3px;
+        font-size: .67rem;
+    }
+
+    .condition-grid-icon {
+        font-size: 1.45rem;
+    }
+}
+
+@media (max-width: 359px) {
+    .condition-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
 }
 
 .modal > div,
@@ -768,21 +932,48 @@ html[data-reduced-motion="true"] *::after {
         display: none;
     }
 
-    #appWrapper {
+    body {
+        display: flex;
+        flex-direction: column;
         height: 100vh;
         height: 100dvh;
     }
 
+    .desktop-navigation {
+        flex: 0 0 auto;
+    }
+
+    .inventory-details-action {
+        display: block;
+    }
+
+    #appWrapper {
+        flex: 1 1 auto;
+        min-height: 0;
+        height: auto;
+    }
+
+    #combatScreen {
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+        overflow: hidden;
+    }
+
     #combatList {
+        flex: 1 1 auto;
+        min-height: 0;
         padding-bottom: 0;
+        overflow-y: auto;
     }
 
     #combatControls {
+        flex: 0 0 auto;
         position: relative;
         inset: auto;
         width: 100%;
         max-width: none;
-        margin-top: 20px;
+        margin-top: 0;
         transform: none;
         border-radius: 0;
         box-shadow: none;

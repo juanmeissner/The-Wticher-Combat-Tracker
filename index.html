@@ -197,12 +197,10 @@
 <!-- BOTÃO + -->
 <button
 
+    onclick="handleInventoryIncreaseClick(event)"
+
     ontouchstart="startInventoryIncreaseHold(event)"
     ontouchend="endInventoryIncreaseHold(event)"
-
-    onmousedown="startInventoryIncreaseHold(event)"
-    onmouseup="endInventoryIncreaseHold(event)"
-    onmouseleave="endInventoryIncreaseHold(event)"
 
     class="inventory-action-btn bg-emerald-700">
 
@@ -213,12 +211,10 @@
 <!-- BOTÃO - -->
 <button
 
+    onclick="handleInventoryDecreaseClick(event)"
+
     ontouchstart="startInventoryDecreaseHold(event)"
     ontouchend="endInventoryDecreaseHold(event)"
-
-    onmousedown="startInventoryDecreaseHold(event)"
-    onmouseup="endInventoryDecreaseHold(event)"
-    onmouseleave="endInventoryDecreaseHold(event)"
 
     class="inventory-action-btn bg-red-700">
 
@@ -231,6 +227,14 @@
     class="inventory-action-btn bg-purple-700">
 
     Usar
+
+</button>
+
+<button
+    onclick="showSelectedItemDetails()"
+    class="inventory-action-btn inventory-details-action bg-slate-700">
+
+    Detalhes
 
 </button>
 

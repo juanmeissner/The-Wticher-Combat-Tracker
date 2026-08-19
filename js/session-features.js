@@ -169,6 +169,152 @@ function describeCombatantCollectionChange(beforeCombatants, afterCombatants) {
     return describeCombatantChanges(beforeUpdated, updated);
 }
 
+function getEffectHistoryType(type) {
+    return type === 'condition' ? 'condition' : 'effect';
+}
+
+function getEffectHistoryLabel(type) {
+    return type === 'condition' ? 'Condição' : 'Efeito';
+}
+
+function getEffectSnapshot(combatant, type, id) {
+    if (!Array.isArray(combatant?.effects)) return null;
+
+    return combatant.effects.find(effect => effect.type === type && effect.id === id) || null;
+}
+
+function getEffectSource(effect) {
+    if (effect?.sourceId === undefined || effect.sourceId === null) return null;
+
+    const source = combatants.find(combatant => String(combatant.id) === String(effect.sourceId));
+
+    return source
+        ? { id: source.id, name: source.name }
+        : effect.sourceName
+            ? { id: effect.sourceId, name: effect.sourceName }
+            : null;
+}
+
+function setEffectSource(effect, source) {
+    if (!effect || !source || effect.sourceId !== undefined) return;
+
+    effect.sourceId = source.id;
+    effect.sourceName = source.name;
+}
+
+function formatEffectDuration(effect) {
+    const turns = Math.max(0, Number(effect?.remainingTurns) || 0);
+    return turns > 0
+        ? `Duração restante: ${turns} turno${turns === 1 ? '' : 's'}`
+        : 'Duração: até ser removido';
+}
+
+function getEffectStateDetails(effect) {
+    if (!effect) return [];
+
+    const details = [formatEffectDuration(effect)];
+    const stacks = Math.max(1, Number(effect.stacks) || 1);
+    const maxStacks = Math.max(1, Number(effect.maxStacks) || 1);
+    const automation = effect.automation || {};
+
+    if (maxStacks > 1) details.push(`Acúmulos: ${stacks}/${maxStacks}`);
+    if (Number.isFinite(Number(automation.magicShieldHp))) {
+        details.push(`Escudo mágico: ${Math.max(0, Number(automation.magicShieldHp))}`);
+    }
+    if (Number.isFinite(Number(automation.temporaryHp))) {
+        details.push(`PV temporários: ${Math.max(0, Number(automation.temporaryHp))}`);
+    }
+
+    return details;
+}
+
+function getEffectUpdateDetails(beforeEffect, afterEffect) {
+    const details = [];
+    const beforeTurns = Math.max(0, Number(beforeEffect?.remainingTurns) || 0);
+    const afterTurns = Math.max(0, Number(afterEffect?.remainingTurns) || 0);
+    const beforeStacks = Math.max(1, Number(beforeEffect?.stacks) || 1);
+    const afterStacks = Math.max(1, Number(afterEffect?.stacks) || 1);
+    const beforeMaxStacks = Math.max(1, Number(beforeEffect?.maxStacks) || 1);
+    const afterMaxStacks = Math.max(1, Number(afterEffect?.maxStacks) || 1);
+    const automationFields = [
+        ['magicShieldHp', 'Escudo mágico'],
+        ['temporaryHp', 'PV temporários']
+    ];
+
+    if (beforeTurns !== afterTurns) {
+        details.push(`Duração restante: ${beforeTurns} → ${afterTurns} turno${afterTurns === 1 ? '' : 's'}`);
+    }
+    if (beforeStacks !== afterStacks || beforeMaxStacks !== afterMaxStacks) {
+        details.push(`Acúmulos: ${beforeStacks}/${beforeMaxStacks} → ${afterStacks}/${afterMaxStacks}`);
+    }
+
+    automationFields.forEach(([key, label]) => {
+        const beforeValue = Number(beforeEffect?.automation?.[key]);
+        const afterValue = Number(afterEffect?.automation?.[key]);
+
+        if (Number.isFinite(beforeValue) && Number.isFinite(afterValue) && beforeValue !== afterValue) {
+            details.push(`${label}: ${beforeValue} → ${afterValue}`);
+        }
+    });
+
+    return details;
+}
+
+function describeEffectHistoryChange(beforeCombatant, afterCombatant, type, id) {
+    const beforeEffect = getEffectSnapshot(beforeCombatant, type, id);
+    const afterEffect = getEffectSnapshot(afterCombatant, type, id);
+    const effect = afterEffect || beforeEffect;
+    const target = afterCombatant || beforeCombatant;
+    const targetName = target?.name || 'Participante';
+    const effectName = getEffectName(effect);
+    const effectLabel = getEffectHistoryLabel(type);
+    const appliedVerb = type === 'condition' ? 'aplicada' : 'aplicado';
+    const removedVerb = type === 'condition' ? 'removida' : 'removido';
+    const updatedVerb = type === 'condition' ? 'atualizada' : 'atualizado';
+    const source = getEffectSource(effect);
+    const targetInfo = target ? { id: target.id, name: targetName } : null;
+    const participants = [targetInfo].filter(Boolean);
+
+    if (source && source.id !== targetInfo?.id) participants.unshift(source);
+
+    const metadata = {
+        type: getEffectHistoryType(type),
+        source,
+        target: targetInfo,
+        participants
+    };
+
+    if (!beforeEffect && afterEffect) {
+        const detail = [getEffectHistoryLabel(type), ...getEffectStateDetails(afterEffect)];
+        if (source && source.id !== targetInfo?.id) detail.push(`Aplicado por: ${source.name}`);
+
+        return {
+            label: `${targetName}: ${effectLabel} ${effectName} ${appliedVerb}`,
+            detail: detail.join(' · '),
+            metadata
+        };
+    }
+
+    if (beforeEffect && !afterEffect) {
+        const detail = [getEffectHistoryLabel(type), ...getEffectStateDetails(beforeEffect)];
+        if (source && source.id !== targetInfo?.id) detail.push(`Aplicado por: ${source.name}`);
+
+        return {
+            label: `${targetName}: ${effectLabel} ${effectName} ${removedVerb}`,
+            detail: detail.join(' · '),
+            metadata
+        };
+    }
+
+    const changes = getEffectUpdateDetails(beforeEffect, afterEffect);
+
+    return {
+        label: `${targetName}: ${effectLabel} ${effectName} ${updatedVerb}`,
+        detail: changes.length ? changes.join(' · ') : 'Configuração do efeito atualizada.',
+        metadata
+    };
+}
+
 function addHistoryEntry(label, detail = '', metadata = {}) {
     metadata = metadata && typeof metadata === 'object' ? metadata : {};
     const type = HISTORY_TYPE_INFO[metadata.type] ? metadata.type : inferHistoryType(label);
@@ -390,9 +536,20 @@ function captureCombatResources(combatant) {
     return {
         hp: Math.max(0, Number(combatant?.hpCurrent) || 0),
         st: Math.max(0, Number(combatant?.stCurrent) || 0),
+        deathFailures: Math.max(0, Number(combatant?.deathSaves?.failures) || 0),
         magicShield: getAutomatedResourceTotal(combatant, 'magicShieldHp'),
         temporaryHp: getAutomatedResourceTotal(combatant, 'temporaryHp')
     };
+}
+
+function didCombatantBecomeDefeated(combatant, before = {}, after = {}) {
+    if (!combatant) return false;
+
+    if (combatant.type === 'monster') {
+        return Number(before.hp) > 0 && Number(after.hp) <= 0;
+    }
+
+    return Number(before.deathFailures) < 3 && Number(after.deathFailures) >= 3;
 }
 
 function getHistoryBodyPartName(part) {
@@ -429,7 +586,14 @@ function createResourceHistoryMetadata(type, target, value, context = {}) {
 }
 
 function finalizeResourceHistoryMetadata(metadata, target) {
-    if (metadata?.combat) metadata.combat.after = captureCombatResources(target);
+    if (!metadata?.combat) return;
+
+    metadata.combat.after = captureCombatResources(target);
+    metadata.combat.defeated = didCombatantBecomeDefeated(
+        target,
+        metadata.combat.before,
+        metadata.combat.after
+    );
 }
 
 function buildResourceHistoryDetail(metadata) {
@@ -462,6 +626,7 @@ function buildResourceHistoryDetail(metadata) {
 
     if (before.hp !== after.hp) detail.push(`PV ${before.hp} → ${after.hp}`);
     if (before.st !== after.st) detail.push(`EST ${before.st} → ${after.st}`);
+    if (combat.defeated) detail.push('Alvo derrotado');
 
     if (!detail.length && combat.finalValue > 0) {
         detail.push(`valor aplicado: ${combat.finalValue}`);
@@ -904,6 +1069,8 @@ async function importSessionBackup(event) {
 }
 
 function getEffectName(effect) {
+    if (!effect) return 'Efeito desconhecido';
+
     if (effect.type === 'condition') {
         return conditionDescriptions[effect.id]?.title || effect.id;
     }
@@ -930,7 +1097,7 @@ function applyRecurringEffects(combatant) {
 
         const prevention = window.getRecurringConditionPrevention?.(combatant, effect);
         if (prevention) {
-            changes.push(`${recurringConditions[effect.id]}: ${prevention}`);
+            changes.push({ summary: `${recurringConditions[effect.id]}: ${prevention}` });
             return;
         }
 
@@ -939,29 +1106,63 @@ function applyRecurringEffects(combatant) {
             () => window.rollAutomationDice?.('negativeConditions', '1d6', recurringConditions[effect.id]) ?? (Math.floor(Math.random() * 6) + 1)
         );
         const damage = rolls.reduce((total, roll) => total + roll, 0);
-        const previousHp = combatant.hpCurrent;
+        const before = captureCombatResources(combatant);
 
         combatant.hpCurrent = Math.max(0, combatant.hpCurrent - damage);
 
-        if (previousHp > 0 && combatant.hpCurrent === 0) {
+        if (before.hp > 0 && combatant.hpCurrent === 0) {
             combatant.deathSaves = { success: 0, failures: 0 };
             combatant.stabilized = false;
         }
 
-        changes.push(`${recurringConditions[effect.id]}: ${damage} de dano (${rolls.join('+')})`);
+        const after = captureCombatResources(combatant);
+        const source = getEffectSource(effect);
+        const defeated = didCombatantBecomeDefeated(combatant, before, after);
+        const conditionName = recurringConditions[effect.id];
+        const sourcePrefix = source && source.id !== combatant.id ? `${source.name} > ` : '';
+        const detail = [
+            `Condição ${conditionName}`,
+            `rolagem ${rolls.join('+')}`,
+            `PV ${before.hp} → ${after.hp}`
+        ];
+
+        if (defeated) detail.push('Alvo derrotado');
+
+        changes.push({
+            summary: `${conditionName}: ${damage} de dano (${rolls.join('+')})`,
+            history: {
+                label: defeated
+                    ? `${sourcePrefix}Derrotou ${combatant.name}: ${damage}`
+                    : `${sourcePrefix}Dano de ${conditionName} em ${combatant.name}: ${damage}`,
+                detail: detail.join(' · '),
+                metadata: {
+                    type: 'damage',
+                    source,
+                    target: { id: combatant.id, name: combatant.name },
+                    participants: [source, { id: combatant.id, name: combatant.name }].filter(Boolean),
+                    combat: {
+                        baseDamage: damage,
+                        finalValue: damage,
+                        before,
+                        after,
+                        defeated
+                    }
+                }
+            }
+        });
     });
 
     if (changes.length) {
         savePlayersToStorage();
-        showToast(`⚠️ ${combatant.name}: ${changes.join(' · ')}`);
+        showToast(`⚠️ ${combatant.name}: ${changes.map(change => change.summary).join(' · ')}`);
     }
 
     return changes;
 }
 
 function saveCombatReport(state) {
-    const damageEntries = sessionHistory.filter(entry => entry.label.startsWith('Dano em '));
-    const healingEntries = sessionHistory.filter(entry => entry.label.startsWith('Cura em '));
+    const damageEntries = sessionHistory.filter(entry => getHistoryEntryType(entry) === 'damage');
+    const healingEntries = sessionHistory.filter(entry => getHistoryEntryType(entry) === 'healing');
     const totalFromEntries = entries => entries.reduce((total, entry) => {
         const value = Number(entry.label.match(/(\d+)$/)?.[1] || 0);
         return total + value;
@@ -995,7 +1196,21 @@ function getExpiredEffects(beforeState) {
             );
 
             if (previousEffect.remainingTurns > 0 && !stillActive) {
-                expired.push(`${previousCombatant.name}: ${getEffectName(previousEffect)} expirou`);
+                const change = describeEffectHistoryChange(
+                    previousCombatant,
+                    currentCombatant,
+                    previousEffect.type,
+                    previousEffect.id
+                );
+
+                expired.push({
+                    summary: `${previousCombatant.name}: ${getEffectName(previousEffect)} expirou`,
+                    history: {
+                        label: change.label,
+                        detail: `${change.detail} · Duração encerrada.`,
+                        metadata: change.metadata
+                    }
+                });
             }
         });
     });
@@ -1015,6 +1230,7 @@ function installActionGuards() {
     const originalApplyInitiative = window.applyInitiative;
     const originalToggleCondition = window.toggleCondition;
     const originalToggleEffect = window.toggleEffect;
+    const originalRemoveEffect = window.removeEffect;
     const originalUseSelectedItem = window.useSelectedInventoryItem;
 
     window.removeCombatant = (event, id) => {
@@ -1094,9 +1310,15 @@ function installActionGuards() {
         const sourcePrefix = historyMetadata?.source?.name
             ? `${historyMetadata.source.name} > `
             : '';
-        const historyLabel = isHealing
-            ? `${sourcePrefix}Cura em ${target?.name || 'alvo'}: ${value}`
-            : `${sourcePrefix}Dano em ${target?.name || 'alvo'}: ${value || 'falha de morte'}`;
+        const historyLabel = () => {
+            if (isHealing) return `${sourcePrefix}Cura em ${target?.name || 'alvo'}: ${value}`;
+
+            if (historyMetadata?.combat?.defeated) {
+                return `${sourcePrefix}Derrotou ${target?.name || 'alvo'}: ${value || 'falha de morte'}`;
+            }
+
+            return `${sourcePrefix}Dano em ${target?.name || 'alvo'}: ${value || 'falha de morte'}`;
+        };
 
         const applyOriginalHP = () => {
             let result;
@@ -1172,15 +1394,30 @@ function installActionGuards() {
         originalNextTurn();
 
         const activeCombatant = getActiveCombatant();
-        const recurringChanges = applyRecurringEffects(activeCombatant);
+        const recurringEffects = applyRecurringEffects(activeCombatant);
+        const recurringChanges = recurringEffects.map(change => change.summary);
         const automationChanges = window.processAutomatedTurnEffects?.(activeCombatant) || [];
         const expiredEffects = getExpiredEffects(before);
-        const detail = [...recurringChanges, ...automationChanges, ...expiredEffects].join(' · ');
+        const detail = [
+            ...recurringChanges,
+            ...automationChanges,
+            ...expiredEffects.map(effect => effect.summary)
+        ].join(' · ');
 
         if (getStateFingerprint(before) !== getStateFingerprint(captureSessionState())) {
             undoStack.push({ label: `Próximo turno: ${activeCombatant?.name || 'sem participante'}`, state: before });
             undoStack = undoStack.slice(-MAX_UNDO_ENTRIES);
             addHistoryEntry(`Turno: ${activeCombatant?.name || 'sem participante'}`, detail);
+            recurringEffects.forEach(change => {
+                if (change.history) {
+                    addHistoryEntry(change.history.label, change.history.detail, change.history.metadata);
+                }
+            });
+            expiredEffects.forEach(effect => {
+                if (effect.history) {
+                    addHistoryEntry(effect.history.label, effect.history.detail, effect.history.metadata);
+                }
+            });
         }
 
         renderList(false);
@@ -1198,8 +1435,136 @@ function installActionGuards() {
         );
     };
     window.applyInitiative = () => trackAction('Iniciativa alterada', originalApplyInitiative);
-    window.toggleCondition = icon => trackAction(`Condição alterada: ${conditionDescriptions[icon]?.title || icon}`, () => originalToggleCondition(icon));
-    window.toggleEffect = (type, id) => trackAction('Efeito alterado', () => originalToggleEffect(type, id));
+
+    window.toggleCondition = icon => {
+        const target = combatants.find(combatant => combatant.id === selectedId);
+        const beforeTarget = target ? cloneSessionData(target) : null;
+        const source = combatants.find(combatant => combatant.id === activeTurnId) || null;
+
+        if (!target) return originalToggleCondition(icon);
+
+        return trackAction(
+            () => describeEffectHistoryChange(
+                beforeTarget,
+                combatants.find(combatant => combatant.id === target.id),
+                'condition',
+                icon
+            ).label,
+            () => {
+                const result = originalToggleCondition(icon);
+                const currentTarget = combatants.find(combatant => combatant.id === target.id);
+                const existingBefore = getEffectSnapshot(beforeTarget, 'condition', icon);
+                const currentEffect = getEffectSnapshot(currentTarget, 'condition', icon);
+
+                if (!existingBefore && currentEffect) {
+                    setEffectSource(currentEffect, source);
+                    savePlayersToStorage();
+                }
+
+                return result;
+            },
+            () => describeEffectHistoryChange(
+                beforeTarget,
+                combatants.find(combatant => combatant.id === target.id),
+                'condition',
+                icon
+            ).detail,
+            () => describeEffectHistoryChange(
+                beforeTarget,
+                combatants.find(combatant => combatant.id === target.id),
+                'condition',
+                icon
+            ).metadata
+        );
+    };
+
+    window.toggleEffect = (type, id) => {
+        const target = combatants.find(combatant => combatant.id === selectedId);
+        const beforeTarget = target ? cloneSessionData(target) : null;
+        const source = combatants.find(combatant => combatant.id === activeTurnId) || null;
+
+        if (!target) return originalToggleEffect(type, id);
+
+        return trackAction(
+            () => describeEffectHistoryChange(
+                beforeTarget,
+                combatants.find(combatant => combatant.id === target.id),
+                type,
+                id
+            ).label,
+            () => {
+                const result = originalToggleEffect(type, id);
+                const currentTarget = combatants.find(combatant => combatant.id === target.id);
+                const existingBefore = getEffectSnapshot(beforeTarget, type, id);
+                const currentEffect = getEffectSnapshot(currentTarget, type, id);
+
+                if (!existingBefore && currentEffect) {
+                    setEffectSource(currentEffect, source);
+                    savePlayersToStorage();
+                }
+
+                return result;
+            },
+            () => describeEffectHistoryChange(
+                beforeTarget,
+                combatants.find(combatant => combatant.id === target.id),
+                type,
+                id
+            ).detail,
+            () => describeEffectHistoryChange(
+                beforeTarget,
+                combatants.find(combatant => combatant.id === target.id),
+                type,
+                id
+            ).metadata
+        );
+    };
+
+    const guardEffectChange = originalAction => (combatantId, type, id, ...args) => {
+        const target = combatants.find(combatant => combatant.id === combatantId);
+        const beforeTarget = target ? cloneSessionData(target) : null;
+
+        if (!target) return originalAction(combatantId, type, id, ...args);
+
+        return trackAction(
+            () => describeEffectHistoryChange(
+                beforeTarget,
+                combatants.find(combatant => combatant.id === target.id),
+                type,
+                id
+            ).label,
+            () => originalAction(combatantId, type, id, ...args),
+            () => describeEffectHistoryChange(
+                beforeTarget,
+                combatants.find(combatant => combatant.id === target.id),
+                type,
+                id
+            ).detail,
+            () => describeEffectHistoryChange(
+                beforeTarget,
+                combatants.find(combatant => combatant.id === target.id),
+                type,
+                id
+            ).metadata
+        );
+    };
+
+    if (typeof originalRemoveEffect === 'function') {
+        window.removeEffect = guardEffectChange(originalRemoveEffect);
+    }
+
+    [
+        'increaseEffectTurn',
+        'decreaseEffectTurn',
+        'increaseEffectStack',
+        'decreaseEffectStack'
+    ].forEach(actionName => {
+        const originalAction = window[actionName];
+
+        if (typeof originalAction === 'function') {
+            window[actionName] = guardEffectChange(originalAction);
+        }
+    });
 
     window.useSelectedInventoryItem = () => {
         const item = inventory.find(entry => entry.id === selectedInventoryItemId);

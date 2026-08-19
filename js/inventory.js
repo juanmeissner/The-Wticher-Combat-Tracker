@@ -751,6 +751,17 @@ function increaseSelectedItem() {
     addItem(selectedInventoryItemId);
 }
 
+function handleInventoryIncreaseClick(event) {
+    // O clique sintético que alguns celulares emitem após o toque não pode
+    // repetir a alteração já executada pelo gesto de pressionar.
+    if (inventoryTouchUsed) {
+        event?.preventDefault();
+        return;
+    }
+
+    increaseSelectedItem();
+}
+
 function decreaseSelectedItem(showMessage = true) {
 
     if (!selectedInventoryItemId) return;
@@ -818,6 +829,15 @@ function decreaseSelectedItem(showMessage = true) {
             `🗑️ ${itemName} removido!`
         );
     }
+}
+
+function handleInventoryDecreaseClick(event) {
+    if (inventoryTouchUsed) {
+        event?.preventDefault();
+        return;
+    }
+
+    decreaseSelectedItem();
 }
 
 
