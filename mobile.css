@@ -88,8 +88,8 @@ body {
     bottom: 0;
     width: 100%;
     transform: none;
-    /* Aproxima os botões da base sem invadir o gesto do indicador de início. */
-    padding-bottom: max(10px, calc(var(--safe-bottom) - 12px)) !important;
+    /* Usa a maior parte da área segura, mantendo apenas uma folga tátil mínima. */
+    padding-bottom: max(6px, calc(var(--safe-bottom) - 26px)) !important;
     border-radius: 18px 18px 0 0;
     box-shadow: 0 -10px 30px rgba(0, 0, 0, .32);
     z-index: 1000;
