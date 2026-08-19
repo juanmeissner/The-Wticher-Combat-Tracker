@@ -41,6 +41,11 @@ function renderAbilitiesModal() {
                 .trim()
             : '';
 
+    const selectedType =
+        document
+            .getElementById('abilityTypeFilter')
+            ?.value || '';
+
     container.innerHTML = '';
 
     const filteredAbilities =
@@ -48,7 +53,11 @@ function renderAbilitiesModal() {
             ability =>
                 ability.name
                     .toLowerCase()
-                    .includes(search)
+                    .includes(search) &&
+                (
+                    !selectedType ||
+                    ability.type === selectedType
+                )
         );
 
     if (filteredAbilities.length === 0) {

@@ -383,6 +383,8 @@
     <script src="js/interactions.js"></script>
     <script src="js/app-init.js"></script>
     <script src="js/session-features.js"></script>
+    <script src="js/enhancements.js"></script>
+    <script src="js/rules-automation.js"></script>
 
 
     <script>
@@ -739,6 +741,25 @@ ITEM DETAILS MODAL
             <div>
                 <label class="text-xs text-slate-500 font-bold uppercase">CA</label>
                 <input type="number" id="caInp" placeholder="10">
+            </div>
+            <div class="col-span-2">
+                <label class="text-xs text-slate-500 font-bold uppercase">Raça / categoria</label>
+                <select id="entityRaceInp" aria-describedby="entityRaceHint">
+                    <option value="">Não definida (perguntar quando necessário)</option>
+                    <option value="Humanoide">Humanoide</option>
+                    <option value="Amaldiçoado">Amaldiçoado</option>
+                    <option value="Besta">Besta</option>
+                    <option value="Draconídeo">Draconídeo</option>
+                    <option value="Elemental">Elemental</option>
+                    <option value="Espectro">Espectro</option>
+                    <option value="Híbrido">Híbrido</option>
+                    <option value="Insetoide">Insetoide</option>
+                    <option value="Necrófago">Necrófago</option>
+                    <option value="Ogroide">Ogroide</option>
+                    <option value="Relicto">Relicto</option>
+                    <option value="Vampiro">Vampiro</option>
+                </select>
+                <small id="entityRaceHint" class="text-slate-500">Vampiros recebem a condição automaticamente; as categorias também servem para óleos.</small>
             </div>
             <div>
                 <label class="text-xs text-slate-500 font-bold uppercase">Armadura Cabeça</label>

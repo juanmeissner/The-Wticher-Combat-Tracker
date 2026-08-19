@@ -342,6 +342,29 @@ body {
     color: #fff;
 }
 
+#entityModal > div {
+    max-height: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 40px);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+#entityModal select {
+    width: 100%;
+    min-height: 40px;
+    padding: 8px;
+    border: 1px solid #334155;
+    border-radius: 8px;
+    background: #1e293b;
+    color: #fff;
+}
+
+#entityRaceHint {
+    display: block;
+    margin-top: 4px;
+    font-size: .72rem;
+    line-height: 1.25;
+}
+
 .session-encounter-item > div:last-child {
     display: flex;
     gap: 6px;
@@ -353,6 +376,205 @@ body {
 
 .session-small-danger {
     color: #fca5a5;
+}
+
+/* Controles compactos em barras usam 36–40 px; ações de confirmação e
+   formulários mantêm 44 px, onde há espaço e a precisão é mais importante. */
+.session-connection-status {
+    flex: 0 0 8px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #22c55e;
+    box-shadow: 0 0 8px rgba(34, 197, 94, .65);
+}
+
+.session-connection-status.is-offline {
+    background: #f59e0b;
+    box-shadow: 0 0 8px rgba(245, 158, 11, .65);
+}
+
+.enhancement-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin: 14px 0;
+    padding: 0;
+    list-style: none;
+}
+
+.enhancement-card,
+.enhancement-preference-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 10px;
+    border: 1px solid #334155;
+    border-radius: 12px;
+    background: #1e293b;
+}
+
+.enhancement-card strong,
+.enhancement-preference-row strong {
+    display: block;
+    font-size: .86rem;
+}
+
+.enhancement-card small,
+.enhancement-preference-row small {
+    display: block;
+    margin-top: 3px;
+    color: #94a3b8;
+    font-size: .72rem;
+}
+
+.enhancement-card-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: end;
+    gap: 5px;
+}
+
+.enhancement-card-actions .session-small-button {
+    min-width: 34px;
+    min-height: 34px;
+    padding: 0 7px;
+    font-size: .7rem;
+}
+
+.enhancement-active {
+    border-color: #38bdf8;
+    background: #0369a1;
+}
+
+.enhancement-form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    margin-top: 12px;
+}
+
+.enhancement-form-grid label {
+    min-width: 0;
+    color: #cbd5e1;
+    font-size: .76rem;
+    font-weight: 700;
+}
+
+.enhancement-form-grid .session-input {
+    margin-top: 5px;
+}
+
+.enhancement-span-2 {
+    grid-column: span 2;
+}
+
+.enhancement-textarea {
+    min-height: 100px;
+    resize: vertical;
+}
+
+.enhancement-note {
+    color: #94a3b8 !important;
+    font-size: .8rem;
+}
+
+.enhancement-top-gap {
+    width: 100%;
+    margin-top: 12px;
+}
+
+.enhancement-filter {
+    width: 100%;
+    min-height: 38px;
+    margin: -6px 0 12px;
+    padding: 7px 10px;
+    border: 1px solid #334155;
+    border-radius: 9px;
+    background: #1e293b;
+    color: #cbd5e1;
+    font-size: .8rem;
+}
+
+.enhancement-report-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    margin: 14px 0;
+}
+
+.enhancement-report-grid div {
+    padding: 10px;
+    border-radius: 10px;
+    background: #1e293b;
+}
+
+.enhancement-report-grid small,
+.enhancement-report-grid strong {
+    display: block;
+}
+
+.enhancement-report-grid small {
+    color: #94a3b8;
+    font-size: .7rem;
+}
+
+.enhancement-report-grid strong {
+    margin-top: 3px;
+    font-size: 1rem;
+}
+
+.enhancement-section-title {
+    margin: 16px 0 8px;
+    font-size: .9rem;
+}
+
+.enhancement-preference-stack {
+    align-items: flex-start;
+}
+
+.enhancement-choice-group {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.automation-card-summary {
+    position: relative;
+    z-index: 2;
+    width: fit-content;
+    max-width: calc(100% - 16px);
+    margin: 0 8px 7px;
+    padding: 3px 6px;
+    border: 1px solid #475569;
+    border-radius: 6px;
+    background: rgb(15 23 42 / 88%);
+    color: #cbd5e1;
+    font-size: .66rem;
+    line-height: 1.2;
+}
+
+html[data-theme="contrast"] body {
+    background: #000;
+    color: #fff;
+}
+
+html[data-theme="contrast"] .combat-card,
+html[data-theme="contrast"] .inventory-card,
+html[data-theme="contrast"] .ability-card,
+html[data-theme="contrast"] .session-dialog {
+    border-color: #f8fafc !important;
+    box-shadow: none;
+}
+
+html[data-reduced-motion="true"] *,
+html[data-reduced-motion="true"] *::before,
+html[data-reduced-motion="true"] *::after {
+    scroll-behavior: auto !important;
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
 }
 
 @media (min-width: 1024px) {

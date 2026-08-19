@@ -581,6 +581,11 @@ function renderInventoryItemsModal() {
             ?.value
             .toLowerCase() || '';
 
+    const selectedType =
+        document
+            .getElementById('itemTypeFilter')
+            ?.value || '';
+
     // filtra categoria + nome
     const filteredItems =
     predefinedItems
@@ -594,7 +599,11 @@ function renderInventoryItemsModal() {
                     .toLowerCase()
                     .includes(search);
 
-            return sameCategory && matchesSearch;
+            const matchesType =
+                !selectedType ||
+                item.type === selectedType;
+
+            return sameCategory && matchesSearch && matchesType;
         })
 
         .sort(sortInventoryItems);

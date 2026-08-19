@@ -232,8 +232,9 @@ function closeDamageModals() {
         
         currentInput = String(value);
         
-        // Usa o sistema ORIGINAL do tracker
-        applyHP(false);
+        // Envia o dano já calculado para a confirmação. Isso evita que o
+        // valor original do teclado substitua o resultado após fechar o modal.
+        window.applyHP(false, value);
         
         currentInput = oldInput;
         

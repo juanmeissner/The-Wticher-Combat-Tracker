@@ -171,7 +171,7 @@ function hardResetCombat() {
 
     function applyHP(isHealing) {   
         if (!selectedId) { showToast('Por favor,  Selecione um alvo!'); return; }
-        const value = parseInt(currentInput) || 0;
+        let value = parseInt(currentInput) || 0;
         
         const index = combatants.findIndex(c => c.id === selectedId);
         if (index !== -1) {
@@ -179,6 +179,22 @@ function hardResetCombat() {
             const oldHP = c.hpCurrent;
             const oldFailures = c.deathSaves?.failures || 0;
             let triggerConcentration = false;
+
+            if (!isHealing && value > 0 && typeof window.resolveAutomatedDamage === 'function') {
+                const resolution = window.resolveAutomatedDamage(c, value);
+                value = resolution.remainingDamage;
+
+                if (resolution.message) {
+                    showToast(resolution.message);
+                }
+
+                if (value <= 0) {
+                    savePlayersToStorage();
+                    updateCardTargeted(c);
+                    clearDisplay();
+                    return;
+                }
+            }
             
             if (!c.deathSaves) c.deathSaves = { success: 0, failures: 0 };
 

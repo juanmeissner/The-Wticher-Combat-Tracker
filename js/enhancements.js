@@ -1,0 +1,942 @@
+const CHARACTER_SHEETS_KEY = 'dnd_character_sheets';
+const ACTIVE_SHEET_KEY = 'dnd_active_character_sheet';
+const CUSTOM_LIBRARY_KEY = 'dnd_custom_library';
+const APP_PREFERENCES_KEY = 'dnd_app_preferences';
+const ENHANCEMENTS_LAST_COMBAT_REPORT_KEY = 'dnd_last_combat_report';
+const DEFAULT_APP_PREFERENCES = {
+    theme: 'default',
+    reducedMotion: false,
+    rollModes: {
+        abilities: 'manual',
+        items: 'manual',
+        negativeConditions: 'auto'
+    }
+};
+const COMBATANT_RACE_CATEGORIES = Object.freeze([
+    'Humanoide',
+    'Amaldiçoado',
+    'Besta',
+    'Draconídeo',
+    'Elemental',
+    'Espectro',
+    'Híbrido',
+    'Insetoide',
+    'Necrófago',
+    'Ogroide',
+    'Relicto',
+    'Vampiro'
+]);
+
+let characterSheets = readEnhancementData(CHARACTER_SHEETS_KEY, []);
+let activeCharacterSheetId = localStorage.getItem(ACTIVE_SHEET_KEY) || null;
+let customLibrary = readEnhancementData(CUSTOM_LIBRARY_KEY, {
+    items: [],
+    abilities: [],
+    monsters: []
+});
+const savedAppPreferences = readEnhancementData(APP_PREFERENCES_KEY, {});
+let appPreferences = {
+    ...DEFAULT_APP_PREFERENCES,
+    ...savedAppPreferences,
+    rollModes: {
+        ...DEFAULT_APP_PREFERENCES.rollModes,
+        ...(savedAppPreferences.rollModes || {})
+    }
+};
+let deferredInstallPrompt = null;
+let lastModalFocus = null;
+
+function readEnhancementData(key, fallback) {
+    try {
+        const value = JSON.parse(localStorage.getItem(key));
+        return value ?? fallback;
+    } catch {
+        return fallback;
+    }
+}
+
+function cloneEnhancementData(value) {
+    return JSON.parse(JSON.stringify(value));
+}
+
+function escapeEnhancementHtml(value) {
+    return String(value ?? '')
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#039;');
+}
+
+function normalizeCombatantRaceCategory(value) {
+    return COMBATANT_RACE_CATEGORIES.includes(value) ? value : '';
+}
+
+function renderCombatantRaceOptions(selectedValue) {
+    const selected = normalizeCombatantRaceCategory(selectedValue);
+    const emptySelected = selected ? '' : ' selected';
+    const options = COMBATANT_RACE_CATEGORIES
+        .map(category => `<option value="${category}"${category === selected ? ' selected' : ''}>${category}</option>`)
+        .join('');
+
+    return `<option value=""${emptySelected}>Não definida</option>${options}`;
+}
+
+function makeContentId(prefix, name) {
+    const slug = String(name || prefix)
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/(^-|-$)/g, '')
+        .slice(0, 36);
+
+    return `${prefix}-${slug || 'novo'}-${Date.now().toString(36)}`;
+}
+
+function mergeCustomLibrary() {
+    const mergeEntries = (target, entries) => {
+        entries.forEach(entry => {
+            if (!target.some(existing => existing.id === entry.id)) {
+                target.push(entry);
+            }
+        });
+    };
+
+    mergeEntries(predefinedItems, Array.isArray(customLibrary.items) ? customLibrary.items : []);
+    mergeEntries(predefinedAbilities, Array.isArray(customLibrary.abilities) ? customLibrary.abilities : []);
+    mergeEntries(monsterDatabase, Array.isArray(customLibrary.monsters) ? customLibrary.monsters : []);
+}
+
+function persistCharacterSheets() {
+    localStorage.setItem(CHARACTER_SHEETS_KEY, JSON.stringify(characterSheets));
+}
+
+function getActiveCharacterSheet() {
+    return characterSheets.find(sheet => sheet.id === activeCharacterSheetId) || null;
+}
+
+function buildSheetFromCombatant(combatant) {
+    return {
+        id: `sheet-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+        name: combatant.name,
+        hpMax: combatant.hpMax,
+        hpCurrent: combatant.hpCurrent,
+        stMax: combatant.stMax ?? 0,
+        stCurrent: combatant.stCurrent ?? 0,
+        ca: combatant.ca ?? 10,
+        atkInfo: combatant.atkInfo ?? '-',
+        monsterCategory: normalizeCombatantRaceCategory(combatant.monsterCategory),
+        armor: cloneEnhancementData(combatant.armor || { head: 0, torso: 0, arm: 0, leg: 0 }),
+        inventory: cloneEnhancementData(inventory),
+        abilities: cloneEnhancementData(abilitiesInventory),
+        updatedAt: new Date().toISOString()
+    };
+}
+
+function syncCombatantsToCharacterSheets() {
+    let changed = false;
+
+    combatants.filter(combatant => combatant.type === 'player').forEach(combatant => {
+        let sheet = characterSheets.find(entry => entry.id === combatant.sheetId);
+
+        if (!sheet) {
+            sheet = characterSheets.find(entry => entry.name.trim().toLowerCase() === combatant.name.trim().toLowerCase());
+        }
+
+        if (!sheet) {
+            sheet = buildSheetFromCombatant(combatant);
+            characterSheets.push(sheet);
+            changed = true;
+        }
+
+        if (combatant.sheetId !== sheet.id) {
+            combatant.sheetId = sheet.id;
+            changed = true;
+        }
+
+        Object.assign(sheet, {
+            name: combatant.name,
+            hpMax: combatant.hpMax,
+            hpCurrent: combatant.hpCurrent,
+            stMax: combatant.stMax ?? 0,
+            stCurrent: combatant.stCurrent ?? 0,
+            ca: combatant.ca ?? 10,
+            atkInfo: combatant.atkInfo ?? '-',
+            monsterCategory: normalizeCombatantRaceCategory(combatant.monsterCategory),
+            armor: cloneEnhancementData(combatant.armor || { head: 0, torso: 0, arm: 0, leg: 0 }),
+            updatedAt: new Date().toISOString()
+        });
+    });
+
+    const activeSheet = getActiveCharacterSheet();
+
+    if (activeSheet) {
+        activeSheet.inventory = cloneEnhancementData(inventory);
+        activeSheet.abilities = cloneEnhancementData(abilitiesInventory);
+        activeSheet.updatedAt = new Date().toISOString();
+        changed = true;
+    }
+
+    if (changed) persistCharacterSheets();
+}
+
+function syncActiveSheetCollections() {
+    const activeSheet = getActiveCharacterSheet();
+
+    if (!activeSheet) return;
+
+    activeSheet.inventory = cloneEnhancementData(inventory);
+    activeSheet.abilities = cloneEnhancementData(abilitiesInventory);
+    activeSheet.updatedAt = new Date().toISOString();
+    persistCharacterSheets();
+}
+
+function createNewCharacterSheet() {
+    const sheet = {
+        id: `sheet-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+        name: 'Novo personagem',
+        hpMax: 10,
+        hpCurrent: 10,
+        stMax: 0,
+        stCurrent: 0,
+        ca: 10,
+        atkInfo: '-',
+        monsterCategory: '',
+        armor: { head: 0, torso: 0, arm: 0, leg: 0 },
+        inventory: [],
+        abilities: [],
+        updatedAt: new Date().toISOString()
+    };
+
+    characterSheets.unshift(sheet);
+    activeCharacterSheetId = sheet.id;
+    localStorage.setItem(ACTIVE_SHEET_KEY, sheet.id);
+    persistCharacterSheets();
+    openCharacterSheetEditor(sheet.id);
+}
+
+function openCharacterSheetEditor(id) {
+    const sheet = characterSheets.find(entry => entry.id === id);
+    const dialog = document.querySelector('#sessionToolsModal .session-tools');
+
+    if (!sheet || !dialog) return;
+
+    dialog.innerHTML = `
+        <div class="session-dialog-header">
+            <h2>Ficha de personagem</h2>
+            <button type="button" class="session-close" onclick="closeSessionTools()" aria-label="Fechar">×</button>
+        </div>
+        <div class="enhancement-form-grid">
+            <label>Nome<input id="sheetName" class="session-input" value="${escapeEnhancementHtml(sheet.name)}"></label>
+            <label>HP máximo<input id="sheetHpMax" class="session-input" type="number" min="1" value="${sheet.hpMax}"></label>
+            <label>ST máximo<input id="sheetStMax" class="session-input" type="number" min="0" value="${sheet.stMax}"></label>
+            <label>CA<input id="sheetCa" class="session-input" type="number" min="0" value="${sheet.ca}"></label>
+            <label class="enhancement-span-2">Raça / categoria<select id="sheetRaceCategory" class="session-input">${renderCombatantRaceOptions(sheet.monsterCategory)}</select></label>
+            <label class="enhancement-span-2">Ataque/Dano<input id="sheetAtk" class="session-input" value="${escapeEnhancementHtml(sheet.atkInfo)}"></label>
+            <label>Armadura: Cabeça<input id="sheetArmorHead" class="session-input" type="number" min="0" value="${Number(sheet.armor?.head) || 0}"></label>
+            <label>Armadura: Tronco<input id="sheetArmorTorso" class="session-input" type="number" min="0" value="${Number(sheet.armor?.torso) || 0}"></label>
+            <label>Armadura: Braço<input id="sheetArmorArm" class="session-input" type="number" min="0" value="${Number(sheet.armor?.arm) || 0}"></label>
+            <label>Armadura: Perna<input id="sheetArmorLeg" class="session-input" type="number" min="0" value="${Number(sheet.armor?.leg) || 0}"></label>
+        </div>
+        <p class="enhancement-note">Inventário e habilidades da ficha ativa são salvos automaticamente enquanto você joga.</p>
+        <div class="session-dialog-actions">
+            <button type="button" class="session-secondary" onclick="renderSessionToolsView('sheets')">Voltar</button>
+            <button type="button" class="session-primary" onclick="saveCharacterSheet('${sheet.id}')">Salvar</button>
+        </div>
+    `;
+}
+
+function saveCharacterSheet(id) {
+    const sheet = characterSheets.find(entry => entry.id === id);
+
+    if (!sheet) return;
+
+    const name = document.getElementById('sheetName')?.value.trim();
+
+    if (!name) {
+        showToast('Informe o nome do personagem.');
+        return;
+    }
+
+    sheet.name = name;
+    sheet.hpMax = Math.max(1, Number(document.getElementById('sheetHpMax')?.value) || 1);
+    sheet.stMax = Math.max(0, Number(document.getElementById('sheetStMax')?.value) || 0);
+    sheet.ca = Math.max(0, Number(document.getElementById('sheetCa')?.value) || 0);
+    sheet.monsterCategory = normalizeCombatantRaceCategory(document.getElementById('sheetRaceCategory')?.value);
+    sheet.atkInfo = document.getElementById('sheetAtk')?.value.trim() || '-';
+    sheet.armor = {
+        head: Math.max(0, Number(document.getElementById('sheetArmorHead')?.value) || 0),
+        torso: Math.max(0, Number(document.getElementById('sheetArmorTorso')?.value) || 0),
+        arm: Math.max(0, Number(document.getElementById('sheetArmorArm')?.value) || 0),
+        leg: Math.max(0, Number(document.getElementById('sheetArmorLeg')?.value) || 0)
+    };
+    sheet.hpCurrent = Math.min(sheet.hpMax, sheet.hpCurrent ?? sheet.hpMax);
+    sheet.stCurrent = Math.min(sheet.stMax, sheet.stCurrent ?? sheet.stMax);
+    sheet.updatedAt = new Date().toISOString();
+
+    combatants.filter(combatant => combatant.sheetId === id).forEach(combatant => {
+        combatant.name = sheet.name;
+        combatant.hpMax = sheet.hpMax;
+        combatant.hpCurrent = Math.min(combatant.hpCurrent, sheet.hpMax);
+        combatant.stMax = sheet.stMax;
+        combatant.stCurrent = Math.min(combatant.stCurrent, sheet.stMax);
+        combatant.ca = sheet.ca;
+        combatant.monsterCategory = sheet.monsterCategory;
+        combatant.atkInfo = sheet.atkInfo;
+        combatant.armor = cloneEnhancementData(sheet.armor);
+    });
+
+    persistCharacterSheets();
+    savePlayersToStorage();
+    window.refreshAutomationMonsterCategories?.();
+    renderList(false);
+    renderSessionToolsView('sheets');
+    showToast('Ficha atualizada.');
+}
+
+function activateCharacterSheet(id) {
+    const sheet = characterSheets.find(entry => entry.id === id);
+
+    if (!sheet) return;
+
+    activeCharacterSheetId = id;
+    localStorage.setItem(ACTIVE_SHEET_KEY, id);
+    inventory = cloneEnhancementData(sheet.inventory || []);
+    abilitiesInventory = cloneEnhancementData(sheet.abilities || []);
+    saveInventory();
+    saveAbilities();
+    renderInventory();
+    renderAbilities();
+    updateAbilitiesHeader();
+    renderSessionToolsView('sheets');
+    showToast(`Ficha ativa: ${sheet.name}`);
+}
+
+function addCharacterSheetToCombat(id) {
+    const sheet = characterSheets.find(entry => entry.id === id);
+
+    if (!sheet) return;
+
+    const combatant = {
+        id: Date.now(),
+        sheetId: sheet.id,
+        name: sheet.name,
+        initiative: 0,
+        hpMax: sheet.hpMax,
+        hpCurrent: sheet.hpCurrent ?? sheet.hpMax,
+        stMax: sheet.stMax ?? 0,
+        stCurrent: sheet.stCurrent ?? sheet.stMax ?? 0,
+        ca: sheet.ca ?? 10,
+        atkInfo: sheet.atkInfo ?? '-',
+        monsterCategory: normalizeCombatantRaceCategory(sheet.monsterCategory),
+        armor: cloneEnhancementData(sheet.armor || { head: 0, torso: 0, arm: 0, leg: 0 }),
+        type: 'player',
+        statusBrain: false,
+        conditions: [],
+        effects: [],
+        deathSaves: { success: 0, failures: 0 },
+        stabilized: false
+    };
+
+    combatants.push(combatant);
+    window.refreshAutomationMonsterCategories?.();
+    sortCombatants();
+    activeTurnId ||= combatant.id;
+    savePlayersToStorage();
+    renderList(true);
+    closeSessionTools();
+    showToast(`${sheet.name} adicionado ao combate.`);
+}
+
+function deleteCharacterSheet(id) {
+    const sheet = characterSheets.find(entry => entry.id === id);
+
+    if (!sheet) return;
+
+    openSessionConfirm({
+        title: 'Excluir ficha?',
+        message: `${sheet.name} será removido da lista de fichas.`,
+        confirmLabel: 'Excluir',
+        danger: true,
+        onConfirm: () => {
+            characterSheets = characterSheets.filter(entry => entry.id !== id);
+            if (activeCharacterSheetId === id) {
+                activeCharacterSheetId = null;
+                localStorage.removeItem(ACTIVE_SHEET_KEY);
+            }
+            persistCharacterSheets();
+            renderSessionToolsView('sheets');
+        }
+    });
+}
+
+function renderCharacterSheetsView(dialog) {
+    syncCombatantsToCharacterSheets();
+    const cards = characterSheets.length
+        ? characterSheets.map(sheet => `
+            <li class="enhancement-card">
+                <div>
+                    <strong>${escapeEnhancementHtml(sheet.name)}</strong>
+                    <small>HP ${sheet.hpCurrent}/${sheet.hpMax} · ST ${sheet.stCurrent}/${sheet.stMax}</small>
+                </div>
+                <div class="enhancement-card-actions">
+                    <button type="button" class="session-small-button ${sheet.id === activeCharacterSheetId ? 'enhancement-active' : ''}" onclick="activateCharacterSheet('${sheet.id}')">Usar</button>
+                    <button type="button" class="session-small-button" onclick="addCharacterSheetToCombat('${sheet.id}')">+ Combate</button>
+                    <button type="button" class="session-small-button" onclick="openCharacterSheetEditor('${sheet.id}')">Editar</button>
+                    <button type="button" class="session-small-button session-small-danger" onclick="deleteCharacterSheet('${sheet.id}')" aria-label="Excluir ${escapeEnhancementHtml(sheet.name)}">×</button>
+                </div>
+            </li>
+        `).join('')
+        : '<li class="session-empty">Nenhuma ficha criada ainda.</li>';
+
+    dialog.innerHTML = `
+        <div class="session-dialog-header">
+            <h2>Fichas</h2>
+            <button type="button" class="session-close" onclick="closeSessionTools()" aria-label="Fechar">×</button>
+        </div>
+        <p>Use uma ficha para alternar seu inventário e habilidades; adicione-a ao combate quando necessário.</p>
+        <ul class="enhancement-list">${cards}</ul>
+        <div class="session-dialog-actions">
+            <button type="button" class="session-secondary" onclick="renderSessionToolsView('menu')">Voltar</button>
+            <button type="button" class="session-primary" onclick="createNewCharacterSheet()">Nova ficha</button>
+        </div>
+    `;
+}
+
+function persistCustomLibrary() {
+    localStorage.setItem(CUSTOM_LIBRARY_KEY, JSON.stringify(customLibrary));
+}
+
+function renderContentLibraryView(dialog) {
+    const counts = {
+        item: customLibrary.items.length,
+        ability: customLibrary.abilities.length,
+        monster: customLibrary.monsters.length
+    };
+
+    dialog.innerHTML = `
+        <div class="session-dialog-header">
+            <h2>Biblioteca</h2>
+            <button type="button" class="session-close" onclick="closeSessionTools()" aria-label="Fechar">×</button>
+        </div>
+        <p>Crie conteúdo próprio sem alterar os dados originais do aplicativo.</p>
+        <div class="session-tool-grid">
+            <button type="button" onclick="renderCustomContentList('item')">🎒 Itens (${counts.item})</button>
+            <button type="button" onclick="renderCustomContentList('ability')">✨ Habilidades (${counts.ability})</button>
+            <button type="button" onclick="renderCustomContentList('monster')">👹 Monstros (${counts.monster})</button>
+        </div>
+        <button type="button" class="session-secondary session-full enhancement-top-gap" onclick="renderSessionToolsView('menu')">Voltar</button>
+    `;
+}
+
+function getCustomCollection(type) {
+    return type === 'item'
+        ? customLibrary.items
+        : type === 'ability'
+            ? customLibrary.abilities
+            : customLibrary.monsters;
+}
+
+function renderCustomContentList(type) {
+    const dialog = document.querySelector('#sessionToolsModal .session-tools');
+    const collection = getCustomCollection(type);
+    const typeLabel = type === 'item' ? 'Itens' : type === 'ability' ? 'Habilidades' : 'Monstros';
+
+    if (!dialog) return;
+
+    const entries = collection.length
+        ? collection.map(entry => `
+            <li class="enhancement-card">
+                <strong>${escapeEnhancementHtml(entry.name)}</strong>
+                <div class="enhancement-card-actions">
+                    <button type="button" class="session-small-button" onclick="openCustomContentEditor('${type}', '${entry.id}')">Editar</button>
+                    <button type="button" class="session-small-button session-small-danger" onclick="deleteCustomContent('${type}', '${entry.id}')" aria-label="Excluir ${escapeEnhancementHtml(entry.name)}">×</button>
+                </div>
+            </li>
+        `).join('')
+        : '<li class="session-empty">Nenhum conteúdo personalizado.</li>';
+
+    dialog.innerHTML = `
+        <div class="session-dialog-header">
+            <h2>${typeLabel}</h2>
+            <button type="button" class="session-close" onclick="closeSessionTools()" aria-label="Fechar">×</button>
+        </div>
+        <ul class="enhancement-list">${entries}</ul>
+        <div class="session-dialog-actions">
+            <button type="button" class="session-secondary" onclick="renderSessionToolsView('library')">Voltar</button>
+            <button type="button" class="session-primary" onclick="openCustomContentEditor('${type}')">Novo</button>
+        </div>
+    `;
+}
+
+function openCustomContentEditor(type, id = null) {
+    const dialog = document.querySelector('#sessionToolsModal .session-tools');
+    const existing = getCustomCollection(type).find(entry => entry.id === id);
+    const entry = existing || {};
+    const title = `${existing ? 'Editar' : 'Novo'} ${type === 'item' ? 'item' : type === 'ability' ? 'habilidade' : 'monstro'}`;
+
+    if (!dialog) return;
+
+    const uniqueFields = type === 'item'
+        ? `
+            <label>Categoria<select id="contentCategory" class="session-input"><option value="usable">Usável</option><option value="equipment">Equipamento</option><option value="misc">Diverso</option></select></label>
+            <label>Duração (rodadas)<input id="contentActive" class="session-input" type="number" min="0" value="${Number(entry.active) || 0}"></label>
+            <label>Stacks máximos<input id="contentStack" class="session-input" type="number" min="1" value="${Number(entry.stack) || 1}"></label>
+        `
+        : type === 'ability'
+            ? `
+                <label>Profissão<input id="contentProfession" class="session-input" value="${escapeEnhancementHtml(entry.profession)}"></label>
+                <label>Tipo<input id="contentType" class="session-input" value="${escapeEnhancementHtml(entry.type)}"></label>
+                <label>Custo<input id="contentCost" class="session-input" value="${escapeEnhancementHtml(entry.cost)}"></label>
+                <label>Duração (rodadas)<input id="contentActive" class="session-input" type="number" min="0" value="${Number(entry.active) || 0}"></label>
+                <label>Stacks máximos<input id="contentStack" class="session-input" type="number" min="1" value="${Number(entry.stack) || 1}"></label>
+            `
+            : `
+                <label>HP<input id="contentHp" class="session-input" type="number" min="1" value="${Number(entry.hp) || 10}"></label>
+                <label>ST<input id="contentSt" class="session-input" type="number" min="0" value="${Number(entry.st) || 0}"></label>
+                <label>CA<input id="contentCa" class="session-input" type="number" min="0" value="${Number(entry.ca) || 10}"></label>
+                <label>Ataque<input id="contentAttack" class="session-input" value="${escapeEnhancementHtml(entry.attacks?.[0])}"></label>
+            `;
+
+    dialog.innerHTML = `
+        <div class="session-dialog-header">
+            <h2>${title}</h2>
+            <button type="button" class="session-close" onclick="closeSessionTools()" aria-label="Fechar">×</button>
+        </div>
+        <div class="enhancement-form-grid">
+            <label>Nome<input id="contentName" class="session-input" value="${escapeEnhancementHtml(entry.name)}"></label>
+            <label>Ícone ou imagem<input id="contentIcon" class="session-input" value="${escapeEnhancementHtml(entry.icon || entry.image)}" placeholder="Emoji ou URL"></label>
+            ${uniqueFields}
+            <label class="enhancement-span-2">Descrição<textarea id="contentDescription" class="session-input enhancement-textarea">${escapeEnhancementHtml(entry.description || entry.shortDescription)}</textarea></label>
+        </div>
+        <div class="session-dialog-actions">
+            <button type="button" class="session-secondary" onclick="renderCustomContentList('${type}')">Voltar</button>
+            <button type="button" class="session-primary" onclick="saveCustomContent('${type}', '${id || ''}')">Salvar</button>
+        </div>
+    `;
+
+    if (type === 'item') {
+        dialog.querySelector('#contentCategory').value = entry.category || 'usable';
+    }
+}
+
+function saveCustomContent(type, id) {
+    const name = document.getElementById('contentName')?.value.trim();
+
+    if (!name) {
+        showToast('Informe um nome.');
+        return;
+    }
+
+    const collection = getCustomCollection(type);
+    const existingIndex = collection.findIndex(entry => entry.id === id);
+    const common = {
+        id: id || makeContentId(type, name),
+        name,
+        icon: document.getElementById('contentIcon')?.value.trim() || (type === 'item' ? '🎒' : '✨'),
+        description: document.getElementById('contentDescription')?.value.trim() || ''
+    };
+    let content;
+
+    if (type === 'item') {
+        content = {
+            ...common,
+            category: document.getElementById('contentCategory')?.value || 'usable',
+            type: 'custom',
+            goldValue: 0,
+            recipe: [],
+            active: Math.max(0, Number(document.getElementById('contentActive')?.value) || 0),
+            stack: Math.max(1, Number(document.getElementById('contentStack')?.value) || 1),
+            augment: 'buff'
+        };
+    } else if (type === 'ability') {
+        content = {
+            ...common,
+            shortDescription: common.description,
+            profession: document.getElementById('contentProfession')?.value.trim() || 'Personalizada',
+            category: 'Personalizada',
+            type: document.getElementById('contentType')?.value.trim() || 'Especial',
+            cost: document.getElementById('contentCost')?.value.trim() || '-',
+            duration: 'Personalizada',
+            defense: '-',
+            damage: '-',
+            range: '-',
+            action: 'Livre',
+            unlockCost: 0,
+            active: Math.max(0, Number(document.getElementById('contentActive')?.value) || 0),
+            stack: Math.max(1, Number(document.getElementById('contentStack')?.value) || 1),
+            augment: 'buff'
+        };
+    } else {
+        content = {
+            id: common.id,
+            name: common.name,
+            image: document.getElementById('contentIcon')?.value.trim() || '',
+            hp: Math.max(1, Number(document.getElementById('contentHp')?.value) || 10),
+            st: Math.max(0, Number(document.getElementById('contentSt')?.value) || 0),
+            ca: Math.max(0, Number(document.getElementById('contentCa')?.value) || 10),
+            threat: 'Personalizado',
+            reward: '-',
+            armor: { head: 0, torso: 0, arm: 0, leg: 0 },
+            vulnerabilities: [],
+            abilities: [common.description],
+            attacks: [document.getElementById('contentAttack')?.value.trim() || '-'],
+            loot: [],
+            skills: [],
+            speed: '-',
+            height: '-',
+            weight: '-',
+            habitat: 'Personalizado',
+            intelligence: '-'
+        };
+    }
+
+    if (existingIndex >= 0) {
+        collection[existingIndex] = content;
+        const target = type === 'item' ? predefinedItems : type === 'ability' ? predefinedAbilities : monsterDatabase;
+        const index = target.findIndex(entry => entry.id === content.id);
+        if (index >= 0) target[index] = content;
+    } else {
+        collection.push(content);
+        (type === 'item' ? predefinedItems : type === 'ability' ? predefinedAbilities : monsterDatabase).push(content);
+    }
+
+    persistCustomLibrary();
+    renderCustomContentList(type);
+    showToast(`${content.name} salvo na biblioteca.`);
+}
+
+function deleteCustomContent(type, id) {
+    const collection = getCustomCollection(type);
+    const entry = collection.find(content => content.id === id);
+
+    if (!entry) return;
+
+    openSessionConfirm({
+        title: 'Excluir conteúdo?',
+        message: `${entry.name} será removido da sua biblioteca.`,
+        confirmLabel: 'Excluir',
+        danger: true,
+        onConfirm: () => {
+            const target = type === 'item' ? predefinedItems : type === 'ability' ? predefinedAbilities : monsterDatabase;
+            const targetIndex = target.findIndex(content => content.id === id);
+            if (targetIndex >= 0) target.splice(targetIndex, 1);
+            if (type === 'item') customLibrary.items = customLibrary.items.filter(content => content.id !== id);
+            if (type === 'ability') customLibrary.abilities = customLibrary.abilities.filter(content => content.id !== id);
+            if (type === 'monster') customLibrary.monsters = customLibrary.monsters.filter(content => content.id !== id);
+            persistCustomLibrary();
+            renderCustomContentList(type);
+        }
+    });
+}
+
+function ensureCatalogFilters() {
+    const abilitySearch = document.getElementById('abilitiesSearchInput');
+    const itemSearch = document.getElementById('inventorySearchInput');
+
+    if (abilitySearch && !document.getElementById('abilityTypeFilter')) {
+        const filter = document.createElement('select');
+        filter.id = 'abilityTypeFilter';
+        filter.className = 'enhancement-filter';
+        const types = [...new Set(predefinedAbilities.map(ability => ability.type).filter(Boolean))].sort();
+        filter.innerHTML = `<option value="">Todos os tipos</option>${types.map(type => `<option value="${escapeEnhancementHtml(type)}">${escapeEnhancementHtml(type)}</option>`).join('')}`;
+        abilitySearch.parentElement.insertAdjacentElement('afterend', filter);
+        filter.addEventListener('change', applyCatalogFilters);
+    }
+
+    if (itemSearch && !document.getElementById('itemTypeFilter')) {
+        const filter = document.createElement('select');
+        filter.id = 'itemTypeFilter';
+        filter.className = 'enhancement-filter';
+        const types = [...new Set(predefinedItems.map(item => item.type).filter(Boolean))].sort();
+        filter.innerHTML = `<option value="">Todos os tipos</option>${types.map(type => `<option value="${escapeEnhancementHtml(type)}">${escapeEnhancementHtml(type)}</option>`).join('')}`;
+        itemSearch.parentElement.insertAdjacentElement('afterend', filter);
+        filter.addEventListener('change', applyCatalogFilters);
+    }
+
+    applyCatalogFilters();
+}
+
+function applyCatalogFilters() {
+    if (document.getElementById('abilitiesModalList')) {
+        renderAbilitiesModal();
+    }
+
+    if (document.getElementById('inventoryItemsList')) {
+        renderInventoryItemsModal();
+    }
+}
+
+function isVisibleModal(element) {
+    const style = window.getComputedStyle(element);
+    return style.display !== 'none' && style.visibility !== 'hidden';
+}
+
+function getTopVisibleModal() {
+    return [...document.querySelectorAll('[id$="Modal"], #circularMenu')]
+        .filter(isVisibleModal)
+        .at(-1) || null;
+}
+
+function focusModal(modal) {
+    if (!modal || modal.contains(document.activeElement)) return;
+    lastModalFocus = document.activeElement;
+    const target = modal.querySelector('[autofocus], input, button, select, textarea, [tabindex]:not([tabindex="-1"])');
+    target?.focus();
+}
+
+function installModalAccessibility() {
+    document.querySelectorAll('[id$="Modal"], #circularMenu').forEach(modal => {
+        if (!modal.hasAttribute('role')) modal.setAttribute('role', 'dialog');
+        modal.setAttribute('aria-modal', 'true');
+        modal.tabIndex = -1;
+    });
+
+    document.querySelectorAll('label').forEach(label => {
+        if (!label.htmlFor) {
+            const input = label.parentElement?.querySelector('input, select, textarea');
+            if (input?.id) label.htmlFor = input.id;
+        }
+    });
+
+    document.querySelectorAll('button[title]').forEach(button => {
+        if (!button.hasAttribute('aria-label')) button.setAttribute('aria-label', button.title);
+    });
+
+    new MutationObserver(mutations => {
+        const modalChanged = mutations.some(mutation => mutation.type === 'attributes');
+        if (modalChanged) window.setTimeout(() => focusModal(getTopVisibleModal()), 0);
+        ensureCatalogFilters();
+    }).observe(document.body, {
+        subtree: true,
+        attributes: true,
+        attributeFilter: ['class', 'style']
+    });
+
+    document.addEventListener('keydown', event => {
+        const modal = getTopVisibleModal();
+
+        if (!modal) return;
+
+        if (event.key === 'Escape' && modal.id !== 'concentrationModal') {
+            const closeButton = modal.querySelector('button[onclick*="close"], button[onclick*="Cancel"]');
+            if (closeButton) {
+                event.preventDefault();
+                closeButton.click();
+            }
+        }
+
+        if (event.key !== 'Tab') return;
+
+        const focusable = [...modal.querySelectorAll('button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])')]
+            .filter(element => !element.hidden && isVisibleModal(element));
+
+        if (!focusable.length) return;
+
+        const first = focusable[0];
+        const last = focusable.at(-1);
+
+        if (event.shiftKey && document.activeElement === first) {
+            event.preventDefault();
+            last.focus();
+        } else if (!event.shiftKey && document.activeElement === last) {
+            event.preventDefault();
+            first.focus();
+        }
+    });
+}
+
+function updateConnectionStatus() {
+    const indicator = document.getElementById('sessionConnectionStatus');
+
+    if (!indicator) return;
+
+    const online = navigator.onLine;
+    indicator.classList.toggle('is-offline', !online);
+    indicator.title = online ? 'Online' : 'Offline';
+    indicator.setAttribute('aria-label', online ? 'Online' : 'Offline');
+}
+
+function renderInstallView(dialog) {
+    const isStandalone = window.matchMedia?.('(display-mode: standalone)').matches || navigator.standalone;
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    const action = deferredInstallPrompt
+        ? '<button type="button" class="session-primary session-full" onclick="installCurrentApp()">Instalar aplicativo</button>'
+        : isStandalone
+            ? '<p class="enhancement-note">O aplicativo já está instalado neste dispositivo.</p>'
+            : isIOS
+                ? '<p class="enhancement-note">No Safari, toque em Compartilhar e escolha “Adicionar à Tela de Início”.</p>'
+                : '<p class="enhancement-note">A instalação ficará disponível quando o navegador permitir.</p>';
+
+    dialog.innerHTML = `
+        <div class="session-dialog-header">
+            <h2>Aplicativo</h2>
+            <button type="button" class="session-close" onclick="closeSessionTools()" aria-label="Fechar">×</button>
+        </div>
+        <p>O indicador na faixa de combate mostra se o aplicativo está online ou usando o modo offline.</p>
+        ${action}
+        <button type="button" class="session-secondary session-full enhancement-top-gap" onclick="renderSessionToolsView('menu')">Voltar</button>
+    `;
+}
+
+async function installCurrentApp() {
+    if (!deferredInstallPrompt) return;
+
+    deferredInstallPrompt.prompt();
+    await deferredInstallPrompt.userChoice;
+    deferredInstallPrompt = null;
+    renderSessionToolsView('install');
+}
+
+function applyPreferences() {
+    document.documentElement.dataset.theme = appPreferences.theme || 'default';
+    document.documentElement.dataset.reducedMotion = String(Boolean(appPreferences.reducedMotion));
+}
+
+function setAppPreference(key, value) {
+    appPreferences[key] = value;
+    localStorage.setItem(APP_PREFERENCES_KEY, JSON.stringify(appPreferences));
+    applyPreferences();
+    renderSessionToolsView('preferences');
+}
+
+function setRollMode(preference, value) {
+    appPreferences.rollModes = {
+        ...DEFAULT_APP_PREFERENCES.rollModes,
+        ...(appPreferences.rollModes || {}),
+        [preference]: value
+    };
+    localStorage.setItem(APP_PREFERENCES_KEY, JSON.stringify(appPreferences));
+    renderSessionToolsView('preferences');
+}
+
+function renderPreferencesView(dialog) {
+    const contrastActive = appPreferences.theme === 'contrast';
+    const rollModes = {
+        ...DEFAULT_APP_PREFERENCES.rollModes,
+        ...(appPreferences.rollModes || {})
+    };
+    const renderRollMode = (key, title, description) => `
+        <div class="enhancement-preference-row enhancement-preference-stack">
+            <div><strong>${title}</strong><small>${description}</small></div>
+            <div class="enhancement-choice-group">
+                <button type="button" class="session-small-button ${rollModes[key] === 'manual' ? 'enhancement-active' : ''}" onclick="setRollMode('${key}', 'manual')">Perguntar</button>
+                <button type="button" class="session-small-button ${rollModes[key] === 'auto' ? 'enhancement-active' : ''}" onclick="setRollMode('${key}', 'auto')">Automática</button>
+            </div>
+        </div>
+    `;
+
+    dialog.innerHTML = `
+        <div class="session-dialog-header">
+            <h2>Preferências</h2>
+            <button type="button" class="session-close" onclick="closeSessionTools()" aria-label="Fechar">×</button>
+        </div>
+        <p>As escolhas visuais e de rolagem ficam salvas neste dispositivo.</p>
+        <div class="enhancement-preference-row">
+            <div><strong>Contraste alto</strong><small>Melhora leitura em ambientes escuros.</small></div>
+            <button type="button" class="session-small-button ${contrastActive ? 'enhancement-active' : ''}" onclick="setAppPreference('theme', '${contrastActive ? 'default' : 'contrast'}')">${contrastActive ? 'Ativo' : 'Ativar'}</button>
+        </div>
+        <div class="enhancement-preference-row">
+            <div><strong>Reduzir animações</strong><small>Evita movimentos contínuos e transições.</small></div>
+            <button type="button" class="session-small-button ${appPreferences.reducedMotion ? 'enhancement-active' : ''}" onclick="setAppPreference('reducedMotion', ${!appPreferences.reducedMotion})">${appPreferences.reducedMotion ? 'Ativo' : 'Ativar'}</button>
+        </div>
+        <h3 class="enhancement-section-title">Rolagens de efeitos</h3>
+        ${renderRollMode('abilities', 'Magias e sinais', 'Padrão: perguntar o resultado informado na mesa.')}
+        ${renderRollMode('items', 'Itens', 'Padrão: perguntar o resultado informado na mesa.')}
+        ${renderRollMode('negativeConditions', 'Status negativos', 'Padrão: rolagem automática para efeitos recorrentes.')}
+        <button type="button" class="session-secondary session-full enhancement-top-gap" onclick="renderSessionToolsView('menu')">Voltar</button>
+    `;
+}
+
+function renderCombatReportView(dialog) {
+    const report = readEnhancementData(ENHANCEMENTS_LAST_COMBAT_REPORT_KEY, null);
+
+    if (!report) {
+        dialog.innerHTML = `
+            <div class="session-dialog-header"><h2>Relatório</h2><button type="button" class="session-close" onclick="closeSessionTools()" aria-label="Fechar">×</button></div>
+            <p class="enhancement-note">Finalize um combate para gerar o primeiro relatório.</p>
+            <button type="button" class="session-secondary session-full" onclick="renderSessionToolsView('menu')">Voltar</button>
+        `;
+        return;
+    }
+
+    const actions = report.recentActions?.length
+        ? report.recentActions.map(action => `<li>${escapeEnhancementHtml(action.label)}<small>R${action.round}</small></li>`).join('')
+        : '<li class="session-empty">Sem ações registradas.</li>';
+
+    dialog.innerHTML = `
+        <div class="session-dialog-header"><h2>Relatório pós-combate</h2><button type="button" class="session-close" onclick="closeSessionTools()" aria-label="Fechar">×</button></div>
+        <div class="enhancement-report-grid">
+            <div><small>Rodadas</small><strong>${report.rounds}</strong></div>
+            <div><small>Participantes</small><strong>${report.participants}</strong></div>
+            <div><small>Monstros derrotados</small><strong>${report.defeatedMonsters}/${report.monsters}</strong></div>
+            <div><small>Dano registrado</small><strong>${report.totalDamage}</strong></div>
+            <div><small>Cura registrada</small><strong>${report.totalHealing}</strong></div>
+        </div>
+        <h3 class="enhancement-section-title">Últimas ações</h3>
+        <ul class="session-history-list">${actions}</ul>
+        <button type="button" class="session-secondary session-full" onclick="renderSessionToolsView('menu')">Voltar</button>
+    `;
+}
+
+function installEnhancements() {
+    mergeCustomLibrary();
+    applyPreferences();
+    syncCombatantsToCharacterSheets();
+    installModalAccessibility();
+    ensureCatalogFilters();
+    updateConnectionStatus();
+
+    const originalSavePlayers = window.savePlayersToStorage;
+    const originalSaveInventory = window.saveInventory;
+    const originalSaveAbilities = window.saveAbilities;
+
+    window.savePlayersToStorage = () => {
+        originalSavePlayers();
+        syncCombatantsToCharacterSheets();
+    };
+
+    window.saveInventory = () => {
+        originalSaveInventory();
+        syncActiveSheetCollections();
+    };
+
+    window.saveAbilities = () => {
+        originalSaveAbilities();
+        syncActiveSheetCollections();
+    };
+
+    window.setTimeout(syncCombatantsToCharacterSheets, 0);
+
+    window.addEventListener('online', updateConnectionStatus);
+    window.addEventListener('offline', updateConnectionStatus);
+    window.addEventListener('beforeunload', syncCombatantsToCharacterSheets);
+    document.addEventListener('input', () => window.setTimeout(applyCatalogFilters, 0));
+}
+
+window.renderCharacterSheetsView = renderCharacterSheetsView;
+window.createNewCharacterSheet = createNewCharacterSheet;
+window.openCharacterSheetEditor = openCharacterSheetEditor;
+window.saveCharacterSheet = saveCharacterSheet;
+window.activateCharacterSheet = activateCharacterSheet;
+window.addCharacterSheetToCombat = addCharacterSheetToCombat;
+window.deleteCharacterSheet = deleteCharacterSheet;
+window.renderContentLibraryView = renderContentLibraryView;
+window.renderCustomContentList = renderCustomContentList;
+window.openCustomContentEditor = openCustomContentEditor;
+window.saveCustomContent = saveCustomContent;
+window.deleteCustomContent = deleteCustomContent;
+window.renderPreferencesView = renderPreferencesView;
+window.setAppPreference = setAppPreference;
+window.setRollMode = setRollMode;
+window.renderCombatReportView = renderCombatReportView;
+window.renderInstallView = renderInstallView;
+window.installCurrentApp = installCurrentApp;
+
+window.addEventListener('beforeinstallprompt', event => {
+    event.preventDefault();
+    deferredInstallPrompt = event;
+});
+
+window.addEventListener('load', installEnhancements);

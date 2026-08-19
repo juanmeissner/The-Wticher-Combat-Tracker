@@ -15,7 +15,14 @@ function openConditionMenu() {
         { icon: '💫', name: 'Atordoado.' },
         { icon: '🩸', name: 'Sangrando.' },
         { icon: '🧊', name: 'Congelado.' },
-        { icon: '⚖️', name: 'Desequilibrado.' }
+        { icon: '⚖️', name: 'Desequilibrado.' },
+        { icon: '🙈', name: 'Cego.' },
+        { icon: '🤐', name: 'Silenciado.' },
+        { icon: '⛓️', name: 'Aprisionado.' },
+        { icon: '🧛', name: 'Vampiro.' },
+        { icon: '🌀', name: 'Alucinado.' },
+        { icon: '🍷', name: 'Intoxicado.' },
+        { icon: '🛢️', name: 'Inflamável.' }
 ];
 
 const innerRadius = 95;
@@ -257,6 +264,62 @@ const conditionDescriptions = {
         stack: 1,
         augment: "debuff",
         desc: 'Sofre -2 em ataques e defesas e não pode realizar reações até o próximo turno.'
+    },
+
+    '🙈': {
+        title: 'Cego',
+        active: 0,
+        stack: 1,
+        augment: "debuff",
+        desc: 'Não enxerga o campo de batalha e sofre as penalidades definidas pelo mestre.'
+    },
+
+    '🤐': {
+        title: 'Silenciado',
+        active: 0,
+        stack: 1,
+        augment: "debuff",
+        desc: 'Não consegue falar ou conjurar magias verbais enquanto o efeito durar.'
+    },
+
+    '⛓️': {
+        title: 'Aprisionado',
+        active: 0,
+        stack: 1,
+        augment: "control",
+        desc: 'Não pode se mover ou realizar ações físicas enquanto estiver preso.'
+    },
+
+    '🧛': {
+        title: 'Vampiro',
+        active: 0,
+        stack: 1,
+        augment: "condition",
+        desc: 'Criatura vampírica: sofre Sangue Negro ao atacar um alvo protegido.'
+    },
+
+    '🌀': {
+        title: 'Alucinado',
+        active: 0,
+        stack: 1,
+        augment: "debuff",
+        desc: 'Sofre alucinações até superar o teste de resistência definido pelo mestre.'
+    },
+
+    '🍷': {
+        title: 'Intoxicado',
+        active: 0,
+        stack: 1,
+        augment: "debuff",
+        desc: 'Está intoxicado e sujeito aos efeitos definidos pela substância aplicada.'
+    },
+
+    '🛢️': {
+        title: 'Inflamável',
+        active: 0,
+        stack: 1,
+        augment: "debuff",
+        desc: 'Pode incendiar quando exposto a faíscas; dano de fogo é resolvido conforme a regra do item.'
     }
     };
 

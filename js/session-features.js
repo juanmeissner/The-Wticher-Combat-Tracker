@@ -1,5 +1,6 @@
 const SESSION_HISTORY_KEY = 'dnd_session_history';
 const SAVED_ENCOUNTERS_KEY = 'dnd_saved_encounters';
+const LAST_COMBAT_REPORT_KEY = 'dnd_last_combat_report';
 const MAX_HISTORY_ENTRIES = 80;
 const MAX_UNDO_ENTRIES = 25;
 const scheduleMicrotask = window.queueMicrotask || (callback => Promise.resolve().then(callback));
@@ -203,6 +204,7 @@ function renderSessionStatus() {
     bar.innerHTML = `
         <div class="session-turn-summary" aria-live="polite">
             <span class="session-round">R${round}</span>
+            <span id="sessionConnectionStatus" class="session-connection-status" aria-label="Status da conexão" title="Online"></span>
             <span class="session-turn-name">${escapeHtml(activeCombatant?.name || 'Sem turno')}</span>
             ${nextCombatant && activeCombatant?.id !== nextCombatant.id
                 ? `<span class="session-next">→ ${escapeHtml(nextCombatant.name)}</span>`
@@ -267,6 +269,31 @@ function renderSessionToolsView(view) {
     const dialog = document.querySelector('#sessionToolsModal .session-tools');
 
     if (!dialog) return;
+
+    if (view === 'sheets' && typeof window.renderCharacterSheetsView === 'function') {
+        window.renderCharacterSheetsView(dialog);
+        return;
+    }
+
+    if (view === 'library' && typeof window.renderContentLibraryView === 'function') {
+        window.renderContentLibraryView(dialog);
+        return;
+    }
+
+    if (view === 'preferences' && typeof window.renderPreferencesView === 'function') {
+        window.renderPreferencesView(dialog);
+        return;
+    }
+
+    if (view === 'report' && typeof window.renderCombatReportView === 'function') {
+        window.renderCombatReportView(dialog);
+        return;
+    }
+
+    if (view === 'install' && typeof window.renderInstallView === 'function') {
+        window.renderInstallView(dialog);
+        return;
+    }
 
     if (view === 'history') {
         const entries = sessionHistory.length
@@ -347,6 +374,11 @@ function renderSessionToolsView(view) {
             <button type="button" onclick="renderSessionToolsView('load-encounter')">⚔️ Carregar encontro</button>
             <button type="button" onclick="exportSessionBackup()">⇩ Backup JSON</button>
             <button type="button" onclick="document.getElementById('sessionImportInput').click()">⇧ Restaurar JSON</button>
+            <button type="button" onclick="renderSessionToolsView('sheets')">🧙 Fichas</button>
+            <button type="button" onclick="renderSessionToolsView('library')">✎ Biblioteca</button>
+            <button type="button" onclick="renderSessionToolsView('report')">▤ Relatório</button>
+            <button type="button" onclick="renderSessionToolsView('preferences')">⚙ Preferências</button>
+            <button type="button" onclick="renderSessionToolsView('install')">⌄ Aplicativo</button>
         </div>
         <input id="sessionImportInput" type="file" accept="application/json,.json" hidden onchange="importSessionBackup(event)">
     `;
@@ -520,9 +552,15 @@ function applyRecurringEffects(combatant) {
     combatant.effects.forEach(effect => {
         if (effect.type !== 'condition' || !recurringConditions[effect.id]) return;
 
+        const prevention = window.getRecurringConditionPrevention?.(combatant, effect);
+        if (prevention) {
+            changes.push(`${recurringConditions[effect.id]}: ${prevention}`);
+            return;
+        }
+
         const rolls = Array.from(
             { length: Math.max(1, Number(effect.stacks) || 1) },
-            () => Math.floor(Math.random() * 6) + 1
+            () => window.rollAutomationDice?.('negativeConditions', '1d6', recurringConditions[effect.id]) ?? (Math.floor(Math.random() * 6) + 1)
         );
         const damage = rolls.reduce((total, roll) => total + roll, 0);
         const previousHp = combatant.hpCurrent;
@@ -543,6 +581,30 @@ function applyRecurringEffects(combatant) {
     }
 
     return changes;
+}
+
+function saveCombatReport(state) {
+    const damageEntries = sessionHistory.filter(entry => entry.label.startsWith('Dano em '));
+    const healingEntries = sessionHistory.filter(entry => entry.label.startsWith('Cura em '));
+    const totalFromEntries = entries => entries.reduce((total, entry) => {
+        const value = Number(entry.label.match(/(\d+)$/)?.[1] || 0);
+        return total + value;
+    }, 0);
+    const monsters = state.combatants.filter(combatant => combatant.type === 'monster');
+    const players = state.combatants.filter(combatant => combatant.type === 'player');
+    const defeated = monsters.filter(combatant => combatant.hpCurrent <= 0);
+
+    localStorage.setItem(LAST_COMBAT_REPORT_KEY, JSON.stringify({
+        createdAt: new Date().toISOString(),
+        rounds: state.round,
+        participants: state.combatants.length,
+        players: players.length,
+        monsters: monsters.length,
+        defeatedMonsters: defeated.length,
+        totalDamage: totalFromEntries(damageEntries),
+        totalHealing: totalFromEntries(healingEntries),
+        recentActions: sessionHistory.slice(0, 12)
+    }));
 }
 
 function getExpiredEffects(beforeState) {
@@ -608,7 +670,11 @@ function installActionGuards() {
             message: 'Monstros e efeitos serão removidos; jogadores voltarão ao estado inicial do combate. Você poderá desfazer.',
             confirmLabel: 'Encerrar',
             danger: true,
-            onConfirm: () => trackAction('Combate encerrado', originalEndCombat)
+            onConfirm: () => {
+                const stateBeforeEnd = captureSessionState();
+                trackAction('Combate encerrado', originalEndCombat);
+                saveCombatReport(stateBeforeEnd);
+            }
         });
     };
 
@@ -636,18 +702,34 @@ function installActionGuards() {
 
     window.cancelEndCombatPress = () => window.clearTimeout(endCombatHoldTimer);
 
-    window.applyHP = isHealing => {
+    window.applyHP = (isHealing, resolvedValue = null) => {
         const target = combatants.find(combatant => combatant.id === selectedId);
-        const value = Number.parseInt(currentInput) || 0;
+        const hasResolvedValue =
+            resolvedValue !== null &&
+            resolvedValue !== undefined &&
+            Number.isFinite(Number(resolvedValue));
+        const value = hasResolvedValue
+            ? Math.max(0, Number.parseInt(resolvedValue, 10) || 0)
+            : Number.parseInt(currentInput) || 0;
+
+        const applyOriginalHP = () => {
+            if (!hasResolvedValue) return originalApplyHP(isHealing);
+
+            // A confirmação é assíncrona. Recoloca o valor calculado apenas
+            // no instante da aplicação para que armadura e multiplicadores
+            // não sejam substituídos pelo valor digitado originalmente.
+            currentInput = String(value);
+            return originalApplyHP(isHealing);
+        };
 
         if (isHealing) {
             return trackAction(
                 `Cura em ${target?.name || 'alvo'}: ${value}`,
-                () => originalApplyHP(true)
+                applyOriginalHP
             );
         }
 
-        if (!target) return originalApplyHP(false);
+        if (!target) return applyOriginalHP();
 
         openSessionConfirm({
             title: 'Aplicar dano?',
@@ -658,7 +740,7 @@ function installActionGuards() {
             danger: true,
             onConfirm: () => trackAction(
                 `Dano em ${target.name}: ${value || 'falha de morte'}`,
-                () => originalApplyHP(false)
+                applyOriginalHP
             )
         });
     };
@@ -696,8 +778,9 @@ function installActionGuards() {
 
         const activeCombatant = getActiveCombatant();
         const recurringChanges = applyRecurringEffects(activeCombatant);
+        const automationChanges = window.processAutomatedTurnEffects?.(activeCombatant) || [];
         const expiredEffects = getExpiredEffects(before);
-        const detail = [...recurringChanges, ...expiredEffects].join(' · ');
+        const detail = [...recurringChanges, ...automationChanges, ...expiredEffects].join(' · ');
 
         if (getStateFingerprint(before) !== getStateFingerprint(captureSessionState())) {
             undoStack.push({ label: `Próximo turno: ${activeCombatant?.name || 'sem participante'}`, state: before });
@@ -728,6 +811,7 @@ function installActionGuards() {
 }
 
 window.closeSessionConfirm = closeSessionConfirm;
+window.openSessionConfirm = openSessionConfirm;
 window.undoLastAction = undoLastAction;
 window.openSessionTools = openSessionTools;
 window.closeSessionTools = closeSessionTools;
