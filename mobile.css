@@ -645,6 +645,32 @@ body {
     margin-top: 12px;
 }
 
+.app-maintenance-section {
+    margin-top: 14px;
+    padding: 12px;
+    border: 1px solid #334155;
+    border-radius: 12px;
+    background: #111c30;
+}
+
+.app-maintenance-section h3 {
+    margin: 0 0 10px;
+    color: #f8fafc;
+    font-size: .9rem;
+}
+
+.app-maintenance-section .session-full {
+    width: 100%;
+}
+
+.app-maintenance-section small {
+    display: block;
+    margin-top: 6px;
+    color: #94a3b8;
+    font-size: .76rem;
+    line-height: 1.35;
+}
+
 .enhancement-filter {
     width: 100%;
     min-height: 38px;

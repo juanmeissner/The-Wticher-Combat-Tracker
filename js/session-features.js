@@ -553,7 +553,7 @@ function renderHistoryTimeline() {
     return [...groupedEntries.entries()]
         .map(([entryRound, roundEntries]) => `
             <li class="history-round-group">
-                <div class="history-round-heading"><span>Rodada ${entryRound}</span><small>${roundEntries.length} ação${roundEntries.length === 1 ? '' : 'ões'}</small></div>
+                <div class="history-round-heading"><span>Rodada ${entryRound}</span><small>${roundEntries.length} ${roundEntries.length === 1 ? 'ação' : 'ações'}</small></div>
                 <ol class="history-round-list">${roundEntries.map(renderHistoryEntry).join('')}</ol>
             </li>
         `)
@@ -640,6 +640,11 @@ function renderSessionToolsView(view) {
 
     if (view === 'install' && typeof window.renderInstallView === 'function') {
         window.renderInstallView(dialog);
+        return;
+    }
+
+    if (view === 'app-maintenance' && typeof window.renderAppMaintenanceView === 'function') {
+        window.renderAppMaintenanceView(dialog);
         return;
     }
 
@@ -827,11 +832,12 @@ function deleteSavedEncounter(id) {
 
 function exportSessionBackup() {
     const backup = {
-        version: 1,
+        version: 2,
         exportedAt: new Date().toISOString(),
         session: captureSessionState(),
         history: sessionHistory,
-        encounters: loadSessionData(SAVED_ENCOUNTERS_KEY, [])
+        encounters: loadSessionData(SAVED_ENCOUNTERS_KEY, []),
+        appStorage: window.getApplicationStorageSnapshot?.() || {}
     };
     const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
@@ -852,17 +858,30 @@ async function importSessionBackup(event) {
 
     try {
         const backup = JSON.parse(await file.text());
+        const hasSessionBackup = backup?.session && Array.isArray(backup.session.combatants);
+        const hasCompleteAppBackup = hasSessionBackup && backup?.appStorage &&
+            typeof backup.appStorage === 'object' &&
+            !Array.isArray(backup.appStorage);
 
-        if (!backup?.session || !Array.isArray(backup.session.combatants)) {
+        if (!hasSessionBackup) {
             throw new Error('Arquivo incompatível');
         }
 
         openSessionConfirm({
             title: 'Restaurar backup?',
-            message: 'O combate, inventário e habilidades atuais serão substituídos. Você poderá desfazer esta restauração.',
+            message: hasCompleteAppBackup
+                ? 'Todos os dados do aplicativo serão substituídos, incluindo fichas, biblioteca, preferências e combate atual.'
+                : 'O combate, inventário e habilidades atuais serão substituídos. Você poderá desfazer esta restauração.',
             confirmLabel: 'Restaurar',
             danger: true,
             onConfirm: () => {
+                if (hasCompleteAppBackup && window.restoreApplicationStorageSnapshot?.(backup.appStorage)) {
+                    closeSessionTools();
+                    showToast('⇧ Backup completo restaurado. Reabrindo aplicativo...');
+                    window.setTimeout(() => window.location.reload(), 250);
+                    return;
+                }
+
                 const currentState = captureSessionState();
                 undoStack.push({ label: 'Restaurar backup', state: currentState });
                 undoStack = undoStack.slice(-MAX_UNDO_ENTRIES);

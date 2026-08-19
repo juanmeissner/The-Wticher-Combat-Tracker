@@ -825,6 +825,10 @@ function renderInstallView(dialog) {
         </div>
         <p>O indicador na faixa de combate mostra se o aplicativo está online ou usando o modo offline.</p>
         ${action}
+        <h3 class="enhancement-section-title">Atualizações</h3>
+        <button type="button" class="session-primary session-full" onclick="updateCurrentApplication()">↻ Atualizar agora</button>
+        <p class="enhancement-note">Busca a versão mais recente e recarrega o aplicativo sem apagar fichas, combate ou preferências.</p>
+        <button type="button" class="session-secondary session-full enhancement-top-gap" onclick="renderSessionToolsView('app-maintenance')">Cache e dados do aplicativo</button>
         <button type="button" class="session-secondary session-full enhancement-top-gap" onclick="renderSessionToolsView('menu')">Voltar</button>
     `;
 }
@@ -836,6 +840,130 @@ async function installCurrentApp() {
     await deferredInstallPrompt.userChoice;
     deferredInstallPrompt = null;
     renderSessionToolsView('install');
+}
+
+function updateCurrentApplication() {
+    if (!navigator.onLine) {
+        showToast('Conecte-se à internet para buscar atualizações.');
+        return;
+    }
+
+    closeSessionTools();
+    showToast('↻ Buscando atualização do aplicativo...');
+
+    Promise.resolve(window.updateApplicationNow?.())
+        .then(result => {
+            if (result?.supported === false) {
+                showToast('Atualização automática não é suportada neste navegador. Reabrindo aplicativo...');
+            } else {
+                showToast('✓ Atualização verificada. Reabrindo aplicativo...');
+            }
+
+            window.setTimeout(() => window.location.reload(), 300);
+        })
+        .catch(() => showToast('Não foi possível buscar atualizações agora.'));
+}
+
+function repairCurrentApplicationCache() {
+    openSessionConfirm({
+        title: 'Reparar cache?',
+        message: 'Os arquivos salvos do aplicativo serão baixados novamente. Fichas, combate e preferências serão mantidos.',
+        confirmLabel: 'Reparar cache',
+        danger: true,
+        onConfirm: async () => {
+            if (!navigator.onLine) {
+                showToast('Conecte-se à internet para reparar o cache.');
+                return;
+            }
+
+            closeSessionTools();
+            showToast('↻ Limpando arquivos em cache...');
+
+            try {
+                await window.repairApplicationCache?.();
+                showToast('✓ Cache reparado. Reabrindo aplicativo...');
+                window.setTimeout(() => window.location.reload(), 300);
+            } catch {
+                showToast('Não foi possível reparar o cache agora.');
+            }
+        }
+    });
+}
+
+function restoreDefaultAppPreferences() {
+    openSessionConfirm({
+        title: 'Restaurar preferências?',
+        message: 'Tema, animações e modos de rolagem voltarão ao padrão. Fichas e combate não serão alterados.',
+        confirmLabel: 'Restaurar preferências',
+        danger: true,
+        onConfirm: () => {
+            appPreferences = {
+                ...DEFAULT_APP_PREFERENCES,
+                rollModes: { ...DEFAULT_APP_PREFERENCES.rollModes }
+            };
+            localStorage.removeItem(APP_PREFERENCES_KEY);
+            applyPreferences();
+            showToast('✓ Preferências restauradas.');
+            renderSessionToolsView('app-maintenance');
+        }
+    });
+}
+
+function requestCompleteApplicationReset() {
+    openSessionConfirm({
+        title: 'Apagar todos os dados?',
+        message: 'Isso removerá fichas, combate, inventário, habilidades, histórico, encontros, biblioteca e preferências deste dispositivo.',
+        confirmLabel: 'Continuar',
+        danger: true,
+        onConfirm: () => {
+            openSessionConfirm({
+                title: 'Confirmação final',
+                message: 'Esta ação é permanente neste dispositivo. Faça um backup completo antes de continuar.',
+                confirmLabel: 'Apagar tudo',
+                danger: true,
+                onConfirm: executeCompleteApplicationReset
+            });
+        }
+    });
+}
+
+async function executeCompleteApplicationReset() {
+    closeSessionTools();
+    showToast('↻ Restaurando aplicativo...');
+
+    try {
+        await window.resetApplicationCompletely?.();
+        window.setTimeout(() => window.location.reload(), 300);
+    } catch {
+        showToast('Não foi possível restaurar o aplicativo agora.');
+    }
+}
+
+function renderAppMaintenanceView(dialog) {
+    dialog.innerHTML = `
+        <div class="session-dialog-header">
+            <h2>Cache e dados</h2>
+            <button type="button" class="session-close" onclick="closeSessionTools()" aria-label="Fechar">×</button>
+        </div>
+        <p>Use estas opções quando o aplicativo não exibir uma atualização ou quando quiser restaurar dados deste dispositivo.</p>
+        <section class="app-maintenance-section">
+            <h3>Arquivos do aplicativo</h3>
+            <button type="button" class="session-primary session-full" onclick="updateCurrentApplication()">↻ Atualizar agora</button>
+            <small>Busca a versão mais recente e mantém seus dados.</small>
+            <button type="button" class="session-secondary session-full enhancement-top-gap" onclick="repairCurrentApplicationCache()">Reparar cache</button>
+            <small>Remove somente arquivos temporários e baixa tudo de novo.</small>
+        </section>
+        <section class="app-maintenance-section">
+            <h3>Dados e preferências</h3>
+            <button type="button" class="session-secondary session-full" onclick="exportSessionBackup()">⇩ Baixar backup completo</button>
+            <small>Inclui combate, histórico, fichas, biblioteca, encontros e preferências.</small>
+            <button type="button" class="session-secondary session-full enhancement-top-gap" onclick="restoreDefaultAppPreferences()">Restaurar preferências</button>
+            <small>Volta tema e configurações de rolagem ao padrão.</small>
+            <button type="button" class="session-danger session-full enhancement-top-gap" onclick="requestCompleteApplicationReset()">Apagar todos os dados</button>
+            <small>Remove todos os dados do aplicativo deste dispositivo. Faça backup antes.</small>
+        </section>
+        <button type="button" class="session-secondary session-full enhancement-top-gap" onclick="renderSessionToolsView('install')">Voltar</button>
+    `;
 }
 
 function applyPreferences() {

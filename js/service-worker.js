@@ -1,4 +1,4 @@
-const CACHE_NAME = 'witcher-combat-tracker-v17';
+const CACHE_NAME = 'witcher-combat-tracker-v19';
 
 const APP_SHELL = [
     './',
@@ -50,6 +50,65 @@ const OPTIONAL_REMOTE_ASSETS = [
     'https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap'
 ];
 
+const APP_SHELL_URLS = new Set(
+    APP_SHELL.map(asset => new URL(asset, self.registration.scope).href)
+);
+
+function isCacheableResponse(response) {
+    return response && (response.ok || response.type === 'opaque');
+}
+
+function isApplicationShellRequest(request) {
+    const url = new URL(request.url);
+    url.search = '';
+    url.hash = '';
+
+    return request.mode === 'navigate' || APP_SHELL_URLS.has(url.href);
+}
+
+async function cacheFirst(request) {
+    const cachedResponse = await caches.match(request);
+
+    if (cachedResponse) return cachedResponse;
+
+    try {
+        const response = await fetch(request);
+
+        if (isCacheableResponse(response)) {
+            const cache = await caches.open(CACHE_NAME);
+            await cache.put(request, response.clone());
+        }
+
+        return response;
+    } catch {
+        if (request.mode === 'navigate') {
+            return caches.match('./index.html');
+        }
+
+        return Response.error();
+    }
+}
+
+async function networkFirst(request) {
+    try {
+        const response = await fetch(request, { cache: 'no-store' });
+
+        if (isCacheableResponse(response)) {
+            const cache = await caches.open(CACHE_NAME);
+            await cache.put(request, response.clone());
+        }
+
+        return response;
+    } catch {
+        const cachedResponse = await caches.match(request);
+
+        if (cachedResponse) return cachedResponse;
+        if (request.mode === 'navigate') return caches.match('./index.html');
+
+        return Response.error();
+    }
+}
+
 self.addEventListener('install', event => {
     event.waitUntil(
         caches.open(CACHE_NAME)
@@ -82,34 +141,18 @@ self.addEventListener('activate', event => {
     self.clients.claim();
 });
 
+self.addEventListener('message', event => {
+    if (event.data?.type === 'SKIP_WAITING') {
+        self.skipWaiting();
+    }
+});
+
 self.addEventListener('fetch', event => {
     if (event.request.method !== 'GET') return;
 
     event.respondWith(
-        caches.match(event.request).then(cachedResponse => {
-            if (cachedResponse) return cachedResponse;
-
-            return fetch(event.request)
-                .then(response => {
-                    if (!response || (!response.ok && response.type !== 'opaque')) {
-                        return response;
-                    }
-
-                    const responseCopy = response.clone();
-
-                    caches.open(CACHE_NAME).then(cache => {
-                        cache.put(event.request, responseCopy);
-                    });
-
-                    return response;
-                })
-                .catch(() => {
-                    if (event.request.mode === 'navigate') {
-                        return caches.match('./index.html');
-                    }
-
-                    return Response.error();
-                });
-        })
+        isApplicationShellRequest(event.request)
+            ? networkFirst(event.request)
+            : cacheFirst(event.request)
     );
 });
