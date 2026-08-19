@@ -403,12 +403,11 @@
 
         function updateIOSViewport() {
 
-        const vh = window.innerHeight * 0.01;
+            const viewportHeight = window.innerHeight;
+            const root = document.documentElement;
 
-        document.documentElement.style.setProperty(
-            '--real-vh',
-            `${vh}px`
-        );
+            root.style.setProperty('--real-vh', `${viewportHeight * 0.01}px`);
+            root.style.setProperty('--app-viewport-height', `${viewportHeight}px`);
         }
 
         updateIOSViewport();

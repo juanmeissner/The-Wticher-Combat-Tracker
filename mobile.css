@@ -1,6 +1,8 @@
 /* Camada de layout responsivo — mantém style.css legado intacto. */
 :root {
     --app-navigation-height: calc(56px + var(--safe-top));
+    --app-viewport-height: 100dvh;
+    --app-content-height: calc(var(--app-viewport-height) - var(--app-navigation-height));
     background: #020617;
 }
 
@@ -12,10 +14,8 @@ html {
 body {
     display: flex;
     flex-direction: column;
-    height: 100vh;
-    height: 100dvh;
-    min-height: 100vh;
-    min-height: 100dvh;
+    height: var(--app-viewport-height);
+    min-height: var(--app-viewport-height);
     background-color: #020617;
 }
 
@@ -59,9 +59,9 @@ body {
 }
 
 #appWrapper {
-    flex: 1 1 auto;
+    flex: 0 0 var(--app-content-height);
     min-height: 0;
-    height: auto;
+    height: var(--app-content-height);
 }
 
 #combatScreen,
@@ -105,7 +105,7 @@ body {
 
     body {
         min-height: -webkit-fill-available;
-        height: -webkit-fill-available;
+        height: var(--app-viewport-height);
         background: #020617;
     }
 }
