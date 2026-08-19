@@ -1,6 +1,6 @@
 function savePlayersToStorage() {
     const session = {
-        version: 1,
+        version: 2,
         combatants,
         activeTurnId,
         selectedId,

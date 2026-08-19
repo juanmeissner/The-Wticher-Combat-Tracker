@@ -13,6 +13,7 @@
     <link rel="apple-touch-icon" href="image.png">
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="mobile.css">
+    <link rel="stylesheet" href="character-collections.css">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
 
@@ -150,6 +151,20 @@
 
     <div class="inventory-header">
 
+        <div class="collection-owner-bar">
+            <label for="inventoryOwnerSelect" class="collection-owner-label">
+                <span aria-hidden="true">🎒</span>
+                <span>Inventário de</span>
+            </label>
+            <select
+                id="inventoryOwnerSelect"
+                class="collection-owner-select"
+                onchange="selectCharacterCollectionOwner(this.value)">
+                <option>Sem personagem ativo</option>
+            </select>
+            <span class="collection-owner-indicator" data-collection-turn-indicator>CONSULTA</span>
+        </div>
+
         <div class="inventory-tabs">
     
             <button
@@ -252,6 +267,20 @@
 
     <!-- HEADER -->
     <div class="abilities-header">
+
+        <div class="collection-owner-bar">
+            <label for="abilitiesOwnerSelect" class="collection-owner-label">
+                <span aria-hidden="true">✨</span>
+                <span>Habilidades de</span>
+            </label>
+            <select
+                id="abilitiesOwnerSelect"
+                class="collection-owner-select"
+                onchange="selectCharacterCollectionOwner(this.value)">
+                <option>Sem personagem ativo</option>
+            </select>
+            <span class="collection-owner-indicator" data-collection-turn-indicator>CONSULTA</span>
+        </div>
 
         <div class="flex
         items-center
@@ -384,6 +413,7 @@
 
     <script src="js/abilities/abilities-data.js"></script>
     <script src="js/abilities/abilities.js"></script>
+    <script src="js/character-collections.js"></script>
     <script src="js/ui/abilities-modal.js"></script>
     <script src="js/abilities/abilities-export.js"></script>
     <script src="js/interactions.js"></script>
@@ -477,6 +507,14 @@
 
             loadInventory();
 
+            loadAbilities();
+
+            window.initializeCharacterCollections?.({
+                inventory,
+                abilities: abilitiesInventory,
+                expandedMagic
+            });
+
             renderInventory();
             if (combatants.length > 0) {
                 let lastP = null;
@@ -549,6 +587,8 @@ delete c.conditions;
                 renderList();
                 savePlayersToStorage();
             }
+
+            window.ensureActiveTurnCharacterCollectionContext?.();
 
             // Delegação de Eventos na Main List
             const list = document.getElementById('combatList');

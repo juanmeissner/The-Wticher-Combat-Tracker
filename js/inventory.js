@@ -349,11 +349,18 @@ function renderInventory() {
 
     if (filteredInventory.length === 0) {
 
+        const ownerName = window.getCharacterCollectionContextInfo?.().name;
+        const safeOwnerName = window.escapeCharacterCollectionHtml?.(ownerName) || '';
+
         container.innerHTML = `
 
             <div class="text-center text-slate-500 mt-10">
 
                 Inventário vazio
+
+                ${safeOwnerName
+                    ? `<div class="text-sm mt-2 text-slate-600">Nenhum item adicionado para ${safeOwnerName}.</div>`
+                    : ''}
 
             </div>
         `;
@@ -527,6 +534,13 @@ function useItem(itemId) {
 // =========================================
 
 function saveInventory() {
+
+    if (typeof window.persistCharacterCollections === 'function') {
+
+        window.persistCharacterCollections();
+
+        return;
+    }
 
     localStorage.setItem(
         'inventory',

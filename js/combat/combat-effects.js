@@ -30,6 +30,8 @@ function openEffectModal() {
 
     }
 
+    window.ensureActiveTurnCharacterCollectionContext?.();
+
     document.getElementById('effectModal').style.display = 'flex';
 
     document.getElementById('effectList').innerHTML = '';
@@ -59,10 +61,26 @@ function showEffectList(type) {
 
     renderEffectApplicationContext();
 
-    const database =
-    type === 'ability'
-        ? predefinedAbilities.filter(a => a.hasOwnProperty('active'))
-        : predefinedItems.filter(i => i.hasOwnProperty('active'));
+    window.ensureActiveTurnCharacterCollectionContext?.();
+
+    const database = type === 'ability'
+        ? abilitiesInventory.filter(ability => ability.hasOwnProperty('active'))
+        : inventory.filter(item =>
+            item.hasOwnProperty('active') &&
+            (item.id === 'coroa' || Math.max(0, Number(item.quantity) || 0) > 0)
+        );
+
+    if (database.length === 0) {
+        const ownerName = window.getCharacterCollectionContextInfo?.().name || 'o personagem do turno';
+        const safeOwnerName = window.escapeCharacterCollectionHtml?.(ownerName) || 'o personagem do turno';
+        list.innerHTML = `
+            <div class="effect-list-empty">
+                Nenhum ${type === 'ability' ? 'efeito de habilidade' : 'efeito de item'} disponível para ${safeOwnerName}.
+                <small>Adicione primeiro pela aba ${type === 'ability' ? 'Habilidades' : 'Itens'}.</small>
+            </div>
+        `;
+        return;
+    }
 
     list.innerHTML = database.map(effect => {
 

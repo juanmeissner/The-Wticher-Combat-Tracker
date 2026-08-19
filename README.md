@@ -28,6 +28,8 @@ O **The Witcher Combat Tracker** foi criado para reduzir cálculos repetitivos e
 
 Essa separação permite executar ações rapidamente sem perder o contexto do combate. Cada alteração relevante pode alimentar o histórico, o sistema de desfazer, os relatórios e as fichas persistentes.
 
+O equipamento também acompanha esse contexto: cada participante possui seu próprio inventário, suas próprias habilidades e sua própria configuração de Magia Expandida. Ao avançar o turno, as abas **Itens** e **Habilidades** mudam automaticamente para as coleções do novo personagem ativo.
+
 ```mermaid
 flowchart LR
     A[Turno ativo] --> B[Ação do personagem]
@@ -66,8 +68,8 @@ flowchart LR
 | 👹 Bestiário | Monstros predefinidos, busca, detalhes completos e categorias usadas pelas automações |
 | 🌀 Condições | Painel responsivo em grade, duração, stacks e dano recorrente automatizado |
 | ✨ Efeitos | Magias e itens ativos vinculados individualmente aos participantes |
-| 🎒 Inventário | Catálogo, categorias, quantidades, uso de consumíveis, busca, filtros e detalhes |
-| 📚 Habilidades | Catálogo pesquisável, Magia Expandida, custo de treino, ativação e exportação |
+| 🎒 Inventário | Itens individuais por personagem, troca pelo turno ativo, catálogo, quantidades, filtros e detalhes |
+| 📚 Habilidades | Magias individuais por personagem, Magia Expandida, custo de treino, ativação e exportação |
 | 📜 Histórico | Linha do tempo por rodada, filtros, autoria, alvo, cálculos e golpes finais |
 | ↶ Segurança | Confirmações, desfazer ações, encontros salvos e backup completo em JSON |
 | 📲 PWA | Instalação, modo standalone, cache offline, atualização e reparo do aplicativo |
@@ -158,6 +160,20 @@ As automações preservam a decisão do mestre: magias e itens perguntam resulta
 
 Criaturas predefinidas recebem suas categorias automaticamente. Monstros vampíricos entram no combate com a condição **Vampiro**, permitindo que Sangue Negro funcione sem perguntas repetidas. Personagens e criaturas personalizadas também podem receber uma raça/categoria ao serem criados.
 
+### 👤 Inventários e habilidades por personagem
+
+O turno ativo funciona como contexto padrão das abas **Itens** e **Habilidades**:
+
+- cada participante mantém seu próprio inventário, habilidades e valor de Magia Expandida;
+- avançar o turno troca automaticamente as duas abas para o novo personagem ativo;
+- um seletor permite consultar ou editar diretamente as coleções de qualquer participante sem alterar o turno;
+- ao entrar novamente em uma dessas abas, o personagem do turno volta a ser selecionado por padrão;
+- o painel de aplicação de efeitos mostra somente itens e habilidades realmente possuídos pelo personagem ativo;
+- fichas salvas, encontros, desfazer, backups e restaurações preservam essas coleções individualmente;
+- inventários antigos compartilhados são migrados com segurança para o participante ativo.
+
+> **Exemplo:** Geralt pode carregar uma Espada de Prata de Bruxo e Quen, enquanto Yennefer mantém Clorofórmio e suas próprias magias. Alternar o turno alterna o conteúdo exibido sem misturar os dois personagens.
+
 ### 🎒 Inventário e itens
 
 - separação entre **Usáveis**, **Equipamentos** e **Diversos**;
@@ -168,7 +184,8 @@ Criaturas predefinidas recebem suas categorias automaticamente. Monstros vampír
 - detalhes acessíveis por botão no desktop, duplo clique ou toque prolongado;
 - efeitos de itens aplicáveis a qualquer participante selecionado;
 - feedback visual para inclusão, remoção e uso;
-- sincronização com a ficha ativa.
+- catálogo validado para impedir identificadores duplicados entre armas, equipamentos e materiais;
+- sincronização individual com o participante e sua ficha vinculada.
 
 ### ✨ Habilidades, sinais e magias
 
@@ -179,7 +196,7 @@ Criaturas predefinidas recebem suas categorias automaticamente. Monstros vampír
 - modificador de **Magia Expandida** persistente;
 - efeitos aplicáveis no combate com indicação de **conjurador → alvo**;
 - exportação das habilidades para uma planilha `.xlsx` no desktop;
-- sincronização com a ficha ativa.
+- sincronização individual com o participante e sua ficha vinculada.
 
 ### 🧙 Fichas persistentes
 
@@ -193,7 +210,7 @@ Em **⋯ → Fichas**, é possível criar personagens reutilizáveis contendo:
 - inventário individual;
 - habilidades individuais.
 
-Uma ficha pode ser ativada para carregar seu inventário e suas habilidades ou adicionada diretamente ao combate. Alterações feitas durante a sessão são sincronizadas para reutilização posterior.
+Uma ficha pode ser ativada para consultar seu inventário e suas habilidades ou adicionada diretamente ao combate. Alterações feitas durante a sessão são sincronizadas para reutilização posterior, sem substituir as coleções dos outros participantes.
 
 ### 👹 Bestiário e biblioteca personalizada
 
@@ -249,7 +266,15 @@ O menu **⋯** concentra as ferramentas administrativas:
 - use `⏩` para avançar ao próximo participante;
 - magias automatizadas com custo variável descontam EST do personagem do turno, mas afetam o alvo selecionado.
 
-### 3. Aplique dano
+### 3. Prepare os itens e as habilidades do personagem
+
+1. Verifique o nome do personagem indicado como turno ativo.
+2. Abra **🎒 Itens** e adicione somente os objetos carregados por ele.
+3. Abra **✨ Habilidades** e adicione seus sinais, magias ou técnicas.
+4. Use o seletor no alto da aba para consultar outro participante sem avançar o combate.
+5. Ao usar `⏩`, as duas abas passarão automaticamente para as coleções do próximo personagem.
+
+### 4. Aplique dano
 
 1. Selecione o cartão do alvo.
 2. Digite o dano base no teclado numérico.
@@ -258,14 +283,14 @@ O menu **⋯** concentra as ferramentas administrativas:
 5. Escolha o tipo de dano.
 6. Confira a confirmação e o registro detalhado no histórico.
 
-### 4. Cure ou gerencie recursos
+### 5. Cure ou gerencie recursos
 
 1. Selecione o participante.
 2. Digite o valor.
 3. Use `❤️` para curar, `🔷` para gastar/recuperar ST ou `⚡` para definir iniciativa.
 4. Em 0 HP, os botões de cura e dano também controlam sucessos e falhas de morte.
 
-### 5. Aplique condições, magias e itens ativos
+### 6. Aplique condições, magias e itens ativos
 
 1. Selecione o alvo.
 2. Use `🌀` para condições ou `✨` para efeitos de habilidades e itens.
@@ -273,7 +298,7 @@ O menu **⋯** concentra as ferramentas administrativas:
 4. Quando necessário, informe duração, stacks, EST ou resultado de dados.
 5. Avance os turnos normalmente; os efeitos recorrentes serão processados.
 
-### 6. Consulte ou recupere a sessão
+### 7. Consulte ou recupere a sessão
 
 1. Abra `⋯ → Histórico` para revisar as ações.
 2. Expanda um cartão para visualizar os cálculos.
@@ -338,7 +363,7 @@ Não existe conta, servidor ou banco de dados remoto. Os dados são mantidos no 
 
 - combate atual;
 - fichas e recursos atuais;
-- inventários e habilidades;
+- inventários, habilidades e Magia Expandida de cada participante;
 - histórico e encontros salvos;
 - biblioteca personalizada;
 - preferências e modos de rolagem.
@@ -367,6 +392,7 @@ O projeto não exige framework JavaScript, bundler ou etapa de compilação.
 ├── index.html                    # Estrutura da aplicação e modais
 ├── style.css                    # Estilos principais
 ├── mobile.css                   # Responsividade, iOS e acessibilidade
+├── character-collections.css    # Seletor e contexto das coleções individuais
 ├── manifest.json                # Metadados da PWA
 ├── service-worker.js            # Entrada do Service Worker
 ├── js/
@@ -374,10 +400,12 @@ O projeto não exige framework JavaScript, bundler ou etapa de compilação.
 │   ├── combat/                  # Turnos, dano, renderização, efeitos e persistência
 │   ├── core/                    # Utilitários e notificações
 │   ├── ui/                      # Componentes de interface e modais
+│   ├── character-collections.js # Inventários e habilidades por participante
 │   ├── enhancements.js          # Fichas, biblioteca, preferências e manutenção
 │   ├── rules-automation.js      # Automações de magias, itens e categorias
 │   └── session-features.js      # Histórico, desfazer, encontros, backup e relatório
-└── img/                         # Imagens do bestiário
+├── tests/                        # Validação das coleções e integridade dos catálogos
+└── img/                          # Imagens do bestiário e capturas da interface
 ```
 
 ## 🚀 Executando localmente
@@ -394,6 +422,15 @@ Depois, acesse [http://localhost:8080](http://localhost:8080).
 
 Também é possível usar qualquer servidor estático, como **Live Server**, `npx serve` ou GitHub Pages.
 
+### Testes de integridade
+
+```bash
+node tests/character-collections.test.cjs
+node tests/items-data.test.cjs
+```
+
+Os testes verificam o isolamento entre personagens, a migração do armazenamento antigo, a sincronização com fichas e a existência de identificadores únicos no catálogo de itens.
+
 ## ✅ Estado atual
 
 - [x] Interface mobile first e responsiva
@@ -401,7 +438,10 @@ Também é possível usar qualquer servidor estático, como **Live Server**, `np
 - [x] Compatibilidade visual com safe areas do iOS
 - [x] Combate, iniciativa, rodadas e dano localizado
 - [x] Fichas persistentes e encontros salvos
-- [x] Inventário, habilidades, bestiário e biblioteca própria
+- [x] Inventários e habilidades individuais vinculados ao personagem do turno
+- [x] Seletor para consultar as coleções de outros participantes
+- [x] Catálogo de itens validado contra identificadores duplicados
+- [x] Bestiário e biblioteca própria
 - [x] Condições, efeitos e automações de regras
 - [x] Histórico detalhado, desfazer e relatório pós-combate
 - [x] Backup completo, atualização e reparo de cache

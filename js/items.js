@@ -1059,7 +1059,7 @@ const predefinedItems = [
     },
 
     {
-        id: 'espadadeacodebruxo',
+        id: 'espadadepratadebruxo',
         name: 'Espada de Prata de Bruxo',
         icon: 'https://static.divine-pride.net/images/items/item/1123.png',
         category: 'equipment',
@@ -2479,24 +2479,6 @@ const predefinedItems = [
     },
 
     {
-        id: 'escudotemeriano',
-        name: 'Escudo Temeriano',
-        icon: 'https://static.divine-pride.net/images/items/item/28900.png',
-        category: 'equipment',
-        goldValue: 225,
-        type: 'armor',
-        weaponType: 'Escudo',
-        defense: 3,
-        bonus: ' ',
-        description: 'Escudo',
-        recipe: [
-            '',
-            '',
-            ''
-        ]
-    },
-
-    {
         id: 'escudodesaqueadorskellige',
         name: 'Escudo de Saqueador Skellige',
         icon: 'https://static.divine-pride.net/images/items/item/2147.png',
@@ -3623,16 +3605,6 @@ const predefinedItems = [
     },
     
     {
-        id: 'aguaforte',
-        name: 'Água-forte',
-        icon: 'https://static.divine-pride.net/images/items/item/25783.png',
-        category: 'misc',
-        goldValue: 0,
-        description: 'Liquido',
-        recipe: []
-    },
-    
-    {
         id: 'quintessencia',
         name: 'Quintessência',
         icon: 'https://static.divine-pride.net/images/items/item/1000552.png',
@@ -4203,7 +4175,7 @@ const predefinedItems = [
     },
 
     {
-        id: 'mineriodeferro',
+        id: 'mineriodeferronegro',
         name: 'Minério de Ferro Negro',
         icon: 'https://static.divine-pride.net/images/items/item/757.png',
         category: 'misc',

@@ -1,0 +1,107 @@
+.collection-owner-bar {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+    padding: 9px 10px;
+    border: 1px solid #28415e;
+    border-radius: 13px;
+    background: rgba(2, 6, 23, 0.72);
+}
+
+.collection-owner-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: #cbd5e1;
+    font-size: 0.78rem;
+    font-weight: 800;
+    white-space: nowrap;
+}
+
+.collection-owner-select {
+    min-width: 0;
+    width: 100%;
+    height: 38px;
+    padding: 0 34px 0 11px;
+    border: 1px solid #3b526f;
+    border-radius: 10px;
+    outline: none;
+    background: #172338;
+    color: #f8fafc;
+    font-size: 0.85rem;
+    font-weight: 800;
+    text-overflow: ellipsis;
+}
+
+.collection-owner-select:focus-visible {
+    border-color: #38bdf8;
+    box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.24);
+}
+
+.collection-owner-select:disabled {
+    opacity: 0.68;
+}
+
+.collection-owner-indicator {
+    padding: 4px 7px;
+    border: 1px solid #475569;
+    border-radius: 999px;
+    color: #94a3b8;
+    font-size: 0.6rem;
+    font-weight: 900;
+    letter-spacing: 0.06em;
+    white-space: nowrap;
+}
+
+.collection-owner-indicator-active {
+    border-color: rgba(52, 211, 153, 0.55);
+    background: rgba(16, 185, 129, 0.13);
+    color: #6ee7b7;
+}
+
+.effect-list-empty {
+    display: flex;
+    min-height: 120px;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    padding: 20px;
+    border: 1px dashed #334155;
+    border-radius: 14px;
+    color: #cbd5e1;
+    text-align: center;
+    font-weight: 750;
+}
+
+.effect-list-empty small {
+    color: #64748b;
+    font-size: 0.76rem;
+    font-weight: 650;
+}
+
+@media (max-width: 767px) {
+    .collection-owner-bar {
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 7px;
+        margin-bottom: 9px;
+        padding: 7px;
+    }
+
+    .collection-owner-label {
+        grid-column: 1 / -1;
+        font-size: 0.68rem;
+    }
+
+    .collection-owner-select {
+        height: 36px;
+        font-size: 0.78rem;
+    }
+
+    .collection-owner-indicator {
+        padding-inline: 6px;
+        font-size: 0.52rem;
+    }
+}

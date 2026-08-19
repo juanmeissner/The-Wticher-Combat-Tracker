@@ -192,6 +192,8 @@ function nextTurn() {
 
     updateActiveTurnName();
 
+    window.followActiveTurnCharacterCollectionContext?.();
+
     deleteVisibleId = null;
 
     savePlayersToStorage();

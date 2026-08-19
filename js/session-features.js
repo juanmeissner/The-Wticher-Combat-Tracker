@@ -39,6 +39,8 @@ function cloneSessionData(value) {
 }
 
 function captureSessionState() {
+    window.flushCharacterCollectionContext?.();
+
     return {
         combatants: cloneSessionData(combatants),
         activeTurnId,
@@ -50,7 +52,8 @@ function captureSessionState() {
         lastPlayerData: cloneSessionData(lastPlayerData),
         inventory: cloneSessionData(inventory),
         abilitiesInventory: cloneSessionData(abilitiesInventory),
-        expandedMagic
+        expandedMagic,
+        characterCollectionContextKey: window.getCharacterCollectionContextKey?.() || 'legacy'
     };
 }
 
@@ -62,7 +65,8 @@ function getStateFingerprint(state) {
         round: state.round,
         inventory: state.inventory,
         abilitiesInventory: state.abilitiesInventory,
-        expandedMagic: state.expandedMagic
+        expandedMagic: state.expandedMagic,
+        characterCollectionContextKey: state.characterCollectionContextKey
     });
 }
 
@@ -408,9 +412,13 @@ function restoreSessionState(state) {
     playerCounter = state.playerCounter;
     lastMonsterData = cloneSessionData(state.lastMonsterData);
     lastPlayerData = cloneSessionData(state.lastPlayerData);
-    inventory = cloneSessionData(state.inventory);
-    abilitiesInventory = cloneSessionData(state.abilitiesInventory);
-    expandedMagic = state.expandedMagic;
+    if (typeof window.restoreCharacterCollectionContext === 'function') {
+        window.restoreCharacterCollectionContext(state);
+    } else {
+        inventory = cloneSessionData(state.inventory);
+        abilitiesInventory = cloneSessionData(state.abilitiesInventory);
+        expandedMagic = state.expandedMagic;
+    }
 
     savePlayersToStorage();
     saveInventory();
@@ -1050,7 +1058,11 @@ function saveCurrentEncounter() {
             monsterCounter: state.monsterCounter,
             playerCounter: state.playerCounter,
             lastMonsterData: state.lastMonsterData,
-            lastPlayerData: state.lastPlayerData
+            lastPlayerData: state.lastPlayerData,
+            inventory: state.inventory,
+            abilitiesInventory: state.abilitiesInventory,
+            expandedMagic: state.expandedMagic,
+            characterCollectionContextKey: state.characterCollectionContextKey
         }
     });
 
@@ -1111,7 +1123,7 @@ function deleteSavedEncounter(id) {
 
 function exportSessionBackup() {
     const backup = {
-        version: 2,
+        version: 3,
         exportedAt: new Date().toISOString(),
         session: captureSessionState(),
         history: sessionHistory,
@@ -1360,10 +1372,14 @@ function installActionGuards() {
             message: `${combatant.name} será removido do combate. Você poderá desfazer esta ação.`,
             confirmLabel: 'Remover',
             danger: true,
-            onConfirm: () => trackAction(
-                `Participante removido: ${combatant.name}`,
-                () => originalRemoveCombatant({ stopPropagation() {} }, id)
-            )
+            onConfirm: () => {
+                const result = trackAction(
+                    `Participante removido: ${combatant.name}`,
+                    () => originalRemoveCombatant({ stopPropagation() {} }, id)
+                );
+                window.followActiveTurnCharacterCollectionContext?.();
+                return result;
+            }
         });
     };
 
@@ -1381,6 +1397,7 @@ function installActionGuards() {
             onConfirm: () => {
                 const stateBeforeEnd = captureSessionState();
                 trackAction('Combate encerrado', originalEndCombat);
+                window.followActiveTurnCharacterCollectionContext?.();
                 saveCombatReport(stateBeforeEnd);
             }
         });
@@ -1394,6 +1411,7 @@ function installActionGuards() {
             danger: true,
             onConfirm: () => trackAction('Combate resetado', () => {
                 originalHardResetCombat();
+                window.followActiveTurnCharacterCollectionContext?.();
                 savePlayersToStorage();
             })
         });
@@ -1543,12 +1561,14 @@ function installActionGuards() {
         const beforeCombatants = cloneSessionData(combatants);
         const getChange = () => describeCombatantCollectionChange(beforeCombatants, combatants);
 
-        return trackAction(
+        const result = trackAction(
             () => getChange().label,
             originalSaveEntity,
             () => getChange().detail,
             () => getChange().metadata
         );
+        window.followActiveTurnCharacterCollectionContext?.();
+        return result;
     };
     window.applyInitiative = () => trackAction('Iniciativa alterada', originalApplyInitiative);
 

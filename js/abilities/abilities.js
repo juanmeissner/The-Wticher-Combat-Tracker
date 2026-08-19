@@ -25,11 +25,18 @@ function renderAbilities() {
 
     if (abilitiesInventory.length === 0) {
 
+        const ownerName = window.getCharacterCollectionContextInfo?.().name;
+        const safeOwnerName = window.escapeCharacterCollectionHtml?.(ownerName) || '';
+
         container.innerHTML = `
 
             <div class="text-center text-slate-500 mt-10">
 
                 Nenhuma habilidade
+
+                ${safeOwnerName
+                    ? `<div class="text-sm mt-2 text-slate-600">Nenhuma habilidade adicionada para ${safeOwnerName}.</div>`
+                    : ''}
 
             </div>
         `;
@@ -163,6 +170,13 @@ function selectAbility(id) {
 }
 
 function saveAbilities() {
+
+    if (typeof window.persistCharacterCollections === 'function') {
+
+        window.persistCharacterCollections();
+
+        return;
+    }
 
     localStorage.setItem(
         'abilitiesInventory',
@@ -352,6 +366,11 @@ function setExpandedMagic(value) {
         'expandedMagic',
         value
     );
+
+    if (typeof window.persistCharacterCollections === 'function') {
+
+        window.persistCharacterCollections();
+    }
 
     closeExpandedMagicModal();
 

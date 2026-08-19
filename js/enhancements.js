@@ -154,8 +154,9 @@ function buildSheetFromCombatant(combatant) {
         atkInfo: combatant.atkInfo ?? '-',
         monsterCategory: normalizeCombatantRaceCategory(combatant.monsterCategory),
         armor: cloneEnhancementData(combatant.armor || { head: 0, torso: 0, arm: 0, leg: 0 }),
-        inventory: cloneEnhancementData(inventory),
-        abilities: cloneEnhancementData(abilitiesInventory),
+        inventory: cloneEnhancementData(combatant.inventory || []),
+        abilities: cloneEnhancementData(combatant.abilities || []),
+        expandedMagic: Math.max(0, Number(combatant.expandedMagic) || 0),
         updatedAt: new Date().toISOString()
     };
 }
@@ -181,6 +182,21 @@ function syncCombatantsToCharacterSheets() {
             changed = true;
         }
 
+        if (!Array.isArray(combatant.inventory)) {
+            combatant.inventory = cloneEnhancementData(sheet.inventory || []);
+            changed = true;
+        }
+
+        if (!Array.isArray(combatant.abilities)) {
+            combatant.abilities = cloneEnhancementData(sheet.abilities || []);
+            changed = true;
+        }
+
+        if (!Number.isFinite(Number(combatant.expandedMagic))) {
+            combatant.expandedMagic = Math.max(0, Number(sheet.expandedMagic) || 0);
+            changed = true;
+        }
+
         Object.assign(sheet, {
             name: combatant.name,
             hpMax: combatant.hpMax,
@@ -192,24 +208,23 @@ function syncCombatantsToCharacterSheets() {
             atkInfo: combatant.atkInfo ?? '-',
             monsterCategory: normalizeCombatantRaceCategory(combatant.monsterCategory),
             armor: cloneEnhancementData(combatant.armor || { head: 0, torso: 0, arm: 0, leg: 0 }),
+            inventory: cloneEnhancementData(combatant.inventory || []),
+            abilities: cloneEnhancementData(combatant.abilities || []),
+            expandedMagic: Math.max(0, Number(combatant.expandedMagic) || 0),
             updatedAt: new Date().toISOString()
         });
         changed = true;
     });
 
-    const activeSheet = getActiveCharacterSheet();
-
-    if (activeSheet) {
-        activeSheet.inventory = cloneEnhancementData(inventory);
-        activeSheet.abilities = cloneEnhancementData(abilitiesInventory);
-        activeSheet.updatedAt = new Date().toISOString();
-        changed = true;
-    }
-
     if (changed) persistCharacterSheets();
 }
 
 function syncActiveSheetCollections() {
+    if (window.areCharacterCollectionsReady?.()) {
+        window.flushCharacterCollectionContext?.();
+        return;
+    }
+
     const activeSheet = getActiveCharacterSheet();
 
     if (!activeSheet) return;
@@ -235,6 +250,7 @@ function createNewCharacterSheet() {
         armor: { head: 0, torso: 0, arm: 0, leg: 0 },
         inventory: [],
         abilities: [],
+        expandedMagic: 0,
         updatedAt: new Date().toISOString()
     };
 
@@ -341,13 +357,18 @@ function activateCharacterSheet(id) {
 
     activeCharacterSheetId = id;
     localStorage.setItem(ACTIVE_SHEET_KEY, id);
-    inventory = cloneEnhancementData(sheet.inventory || []);
-    abilitiesInventory = cloneEnhancementData(sheet.abilities || []);
-    saveInventory();
-    saveAbilities();
-    renderInventory();
-    renderAbilities();
-    updateAbilitiesHeader();
+    window.openCharacterSheetCollectionContext?.(id);
+
+    if (!window.areCharacterCollectionsReady?.()) {
+        inventory = cloneEnhancementData(sheet.inventory || []);
+        abilitiesInventory = cloneEnhancementData(sheet.abilities || []);
+        expandedMagic = Math.max(0, Number(sheet.expandedMagic) || 0);
+        saveInventory();
+        saveAbilities();
+        renderInventory();
+        renderAbilities();
+        updateAbilitiesHeader();
+    }
     renderSessionToolsView('sheets');
     showToast(`Ficha ativa: ${sheet.name}`);
 }
@@ -374,6 +395,9 @@ function addCharacterSheetToCombat(id) {
         atkInfo: sheet.atkInfo ?? '-',
         monsterCategory: normalizeCombatantRaceCategory(sheet.monsterCategory),
         armor: cloneEnhancementData(sheet.armor || { head: 0, torso: 0, arm: 0, leg: 0 }),
+        inventory: cloneEnhancementData(sheet.inventory || []),
+        abilities: cloneEnhancementData(sheet.abilities || []),
+        expandedMagic: Math.max(0, Number(sheet.expandedMagic) || 0),
         type: 'player',
         statusBrain: false,
         conditions: [],
@@ -392,6 +416,7 @@ function addCharacterSheetToCombat(id) {
     window.refreshAutomationMonsterCategories?.();
     sortCombatants();
     activeTurnId ||= combatant.id;
+    window.followActiveTurnCharacterCollectionContext?.();
     savePlayersToStorage();
     renderList(true);
     closeSessionTools();

@@ -40,6 +40,10 @@ function showSection(sectionId) {
 
     if (screenIndex === -1) return;
 
+    if (sectionId === 'inventoryScreen' || sectionId === 'abilitiesScreen') {
+        window.ensureActiveTurnCharacterCollectionContext?.();
+    }
+
     navigationScreenIndex = screenIndex;
     updateNavigation();
 }
@@ -69,6 +73,11 @@ document.addEventListener('touchend', event => {
         );
     } else {
         navigationScreenIndex = Math.max(navigationScreenIndex - 1, 0);
+    }
+
+    const destinationScreen = NAVIGATION_SCREENS[navigationScreenIndex];
+    if (destinationScreen === 'inventoryScreen' || destinationScreen === 'abilitiesScreen') {
+        window.ensureActiveTurnCharacterCollectionContext?.();
     }
 
     updateNavigation();

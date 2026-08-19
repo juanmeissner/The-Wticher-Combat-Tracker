@@ -11,6 +11,7 @@ const APP_STORAGE_KEYS = new Set([
     'inventory',
     'abilitiesInventory',
     'expandedMagic',
+    'dnd_character_collections_version',
     'dnd_session_history',
     'dnd_saved_encounters',
     'dnd_last_combat_report',
