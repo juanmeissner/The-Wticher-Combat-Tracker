@@ -98,6 +98,16 @@ const AUTOMATION_MANAGED_EFFECTS = new Set([
     'item:samun'
 ]);
 
+const AUTOMATION_VARIABLE_STAMINA_ABILITIES = new Set([
+    'quen',
+    'quen_ampliado',
+    'yrden',
+    'axii',
+    'axii_marionete'
+]);
+
+let pendingAutomationEffectApplication = null;
+
 function getAutomationPreferences() {
     try {
         const stored = JSON.parse(localStorage.getItem('dnd_app_preferences')) || {};
@@ -283,6 +293,7 @@ function getAutomationConfig(type, id) {
                 magicShieldHp: spent * 5,
                 shieldKind: 'quen',
                 spent,
+                staminaCost: spent,
                 stacks: spent,
                 discardOverflow: true
             };
@@ -294,6 +305,7 @@ function getAutomationConfig(type, id) {
                 magicShieldHp: spent * 10,
                 shieldKind: 'quen-ampliado',
                 spent,
+                staminaCost: spent,
                 stacks: spent,
                 discardOverflow: true
             };
@@ -306,18 +318,36 @@ function getAutomationConfig(type, id) {
             return {
                 duration,
                 stacks: spent,
+                spent,
+                staminaCost: spent,
                 note: `−${spent} Destreza e Esquiva dentro do círculo.`
             };
         }
 
         case 'ability:axii': {
-            const duration = requestAutomationInteger('Axii', 'Duração em rodadas (0 = até ser superado):', 0, 99, 1);
-            return duration === null ? null : { duration, linkedCondition: '💫' };
+            const spent = requestAutomationInteger('Axii', 'EST gasta para conjurar (1 a 15):', 1, 15, 1);
+            if (spent === null) return null;
+
+            const resistancePenalty = 1 + Math.floor((spent - 1) / 2);
+            return {
+                duration: 0,
+                linkedCondition: '💫',
+                stacks: spent,
+                spent,
+                staminaCost: spent,
+                note: `Teste de resistência com −${resistancePenalty}.`
+            };
         }
 
         case 'ability:axii_marionete': {
             const spent = requestAutomationInteger('Axii Marionete', 'EST gasta / duração em rodadas (1 a 15):', 1, 15, 1);
-            return spent === null ? null : { duration: spent, stacks: spent, note: 'Controle mental ativo.' };
+            return spent === null ? null : {
+                duration: spent,
+                stacks: spent,
+                spent,
+                staminaCost: spent,
+                note: 'Controle mental ativo.'
+            };
         }
 
         case 'ability:tempestade_estatica':
@@ -425,6 +455,43 @@ function applyAutomationMetadata(effect, metadata) {
     if (Number.isInteger(metadata.stacks)) {
         effect.stacks = metadata.stacks;
     }
+}
+
+function getAutomationStaminaCost(metadata) {
+    return Math.max(0, Number.parseInt(metadata?.staminaCost, 10) || 0);
+}
+
+function queueAutomationEffectApplication(target, caster, type, id, metadata) {
+    pendingAutomationEffectApplication = {
+        combatantId: String(target.id),
+        type,
+        id,
+        metadata: {
+            ...metadata,
+            ...(caster
+                ? {
+                    staminaPayerId: String(caster.id),
+                    staminaPayerName: caster.name
+                }
+                : {})
+        }
+    };
+}
+
+function consumeAutomationEffectApplication(combatant, type, id) {
+    const pending = pendingAutomationEffectApplication;
+    pendingAutomationEffectApplication = null;
+
+    if (
+        !pending ||
+        String(combatant?.id) !== pending.combatantId ||
+        type !== pending.type ||
+        id !== pending.id
+    ) {
+        return null;
+    }
+
+    return pending.metadata;
 }
 
 function applyAutomationEffectStart(combatant, effect) {
@@ -913,14 +980,40 @@ function installRulesAutomation() {
             return;
         }
 
+        let caster = null;
+        if (type === 'ability' && AUTOMATION_VARIABLE_STAMINA_ABILITIES.has(id)) {
+            caster = combatants.find(current => current.id === activeTurnId) || null;
+            if (!caster) {
+                showToast('Defina o turno ativo antes de conjurar esta magia.');
+                return;
+            }
+        }
+
         const metadata = getAutomationConfig(type, id);
         if (metadata === null) return;
 
+        const staminaCost = getAutomationStaminaCost(metadata);
+        if (staminaCost > 0 && !caster) {
+            caster = combatants.find(current => current.id === activeTurnId) || null;
+        }
+        if (staminaCost > 0 && !caster) {
+            showToast('Defina o turno ativo antes de gastar EST.');
+            return;
+        }
+        if (staminaCost > Math.max(0, Number(caster?.stCurrent) || 0)) {
+            showToast(`${caster.name} não possui EST suficiente para conjurar esta magia.`);
+            return;
+        }
+
+        queueAutomationEffectApplication(combatant, caster, type, id, metadata);
         guardedToggleEffect(type, id);
         const applied = getAutomationEffect(combatant, type, id);
-        if (!applied) return;
+        if (!applied) {
+            pendingAutomationEffectApplication = null;
+            return;
+        }
 
-        applyAutomationMetadata(applied, metadata);
+        applyAutomationMetadata(applied, getAutomationData(applied));
         applyAutomationEffectStart(combatant, applied);
         savePlayersToStorage();
         renderList(false);
@@ -966,6 +1059,7 @@ window.resolveAutomatedDamage = resolveAutomatedDamage;
 window.addAutomationCondition = addAutomationCondition;
 window.renderAutomationCardSummaries = renderAutomationCardSummaries;
 window.hasActiveMagicShield = hasActiveMagicShield;
+window.consumeAutomationEffectApplication = consumeAutomationEffectApplication;
 window.refreshAutomationMonsterCategories = () => {
     ensureAutomationMonsterCategories();
     savePlayersToStorage();

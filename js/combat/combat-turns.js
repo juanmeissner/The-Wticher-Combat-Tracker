@@ -190,6 +190,8 @@ function nextTurn() {
     ? combatants[nextIndex].id
     : null;
 
+    updateActiveTurnName();
+
     deleteVisibleId = null;
 
     savePlayersToStorage();

@@ -1,5 +1,40 @@
+    function isCombatantEliminatedForDisplay(combatant) {
+        const deadMonster = combatant?.type === 'monster' && combatant.hpCurrent <= 0;
+        const deadPlayer = combatant?.type === 'player' && combatant.deathSaves?.failures >= 3;
+
+        return deadMonster || deadPlayer;
+    }
+
+    function orderCombatantsForDisplay(entries) {
+        const living = [];
+        const eliminated = [];
+
+        (Array.isArray(entries) ? entries : []).forEach(combatant => {
+            if (isCombatantEliminatedForDisplay(combatant)) {
+                eliminated.push(combatant);
+            } else {
+                living.push(combatant);
+            }
+        });
+
+        return [...living, ...eliminated];
+    }
+
+    function updateActiveTurnName() {
+        const label = document.getElementById('targetName');
+        if (!label) return;
+
+        const activeCombatant = combatants.find(combatant => combatant.id === activeTurnId);
+        const activeName = activeCombatant?.name?.trim() || 'Sem turno';
+
+        label.innerText = activeName;
+        label.title = activeName;
+        label.setAttribute('aria-label', `Turno ativo: ${activeName}`);
+    }
+
     function renderList(shouldScroll = false) {
         const container = document.getElementById('combatList');
+        updateActiveTurnName();
         container.innerHTML = "";
 
         if (combatants.length === 0) {
@@ -8,8 +43,9 @@
         }
 
         let printedDivider = false;
+        const combatantsForDisplay = orderCombatantsForDisplay(combatants);
 
-        combatants.forEach((c) => {
+        combatantsForDisplay.forEach((c) => {
             const isDeadMonster = c.type === 'monster' && c.hpCurrent <= 0;
             const isDeadPlayer = c.type === 'player' && c.deathSaves?.failures >= 3;
             const isEliminated = isDeadMonster || isDeadPlayer;
@@ -1041,8 +1077,6 @@ if (shouldShow) {
         
         selectedId = id;
         
-        document.getElementById('targetName').innerText = name;
-        
         if (oldSelected) {
         
             const oldCard = document.getElementById(`card-${oldSelected}`);
@@ -1100,3 +1134,4 @@ if (shouldShow) {
         }
         
         window.selectEffect = selectEffect;
+        window.updateActiveTurnName = updateActiveTurnName;

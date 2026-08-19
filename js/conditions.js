@@ -7,7 +7,7 @@ function openConditionMenu() {
         { icon: '😱', name: 'Medo.' },
         { icon: '🚫', name: 'Incapacitado.' },
         { icon: '👻', name: 'Invisí­vel.' },
-        { icon: '🐍', name: 'Envenado.' },
+        { icon: '🐍', name: 'Envenenado.' },
         { icon: '🧎', name: 'Caí­do' },
         { icon: '😮', name: 'Exausto.' },
         { icon: '🔥', name: 'Em Chamas' },
@@ -173,7 +173,7 @@ const conditionDescriptions = {
     '🐍': {
         title: 'Envenenado',
         active: 0,
-        stack: 1,
+        stack: 10,
         augment: "debuff",
         desc: 'Sofre 1d6 de dano por turno e -2 em testes físicos. Pode fazer um teste de resistência ao fim de cada turno para encerrar o efeito.												'
     },

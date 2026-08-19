@@ -71,11 +71,13 @@
             <div class="flex-1">
                 <div class="mb-2 px-1">
 
-                    <!-- ALVO -->
+                    <!-- TURNO ATIVO -->
                     <div class="w-full text-center mb-1">
                 
                         <span
                             id="targetName"
+                            aria-live="polite"
+                            aria-label="Turno ativo: Sem turno"
                             class="block
                                    text-sm
                                    font-bold
@@ -84,7 +86,7 @@
                                    whitespace-nowrap
                                    overflow-hidden">
                 
-                            Nenhum
+                            Sem turno
                 
                         </span>
                 
@@ -543,12 +545,6 @@ delete c.conditions;
                 if (!combatants.some(c => c.id === activeTurnId)) {
                     activeTurnId = combatants[0].id;
                 }
-
-                const selectedCombatant =
-                    combatants.find(c => c.id === selectedId);
-
-                document.getElementById('targetName').innerText =
-                    selectedCombatant?.name || 'Nenhum';
 
                 renderList();
                 savePlayersToStorage();

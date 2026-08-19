@@ -1,3 +1,25 @@
+function renderEffectApplicationContext() {
+    const modal = document.getElementById('effectModal');
+    const title = modal?.querySelector('h2');
+    const target = combatants.find(combatant => combatant.id === selectedId);
+    const caster = combatants.find(combatant => combatant.id === activeTurnId);
+
+    if (!modal || !title || !target) return;
+
+    let context = document.getElementById('effectApplicationContext');
+    if (!context) {
+        context = document.createElement('div');
+        context.id = 'effectApplicationContext';
+        context.className = 'effect-application-context';
+        context.setAttribute('aria-live', 'polite');
+        title.insertAdjacentElement('afterend', context);
+    }
+
+    context.textContent = caster
+        ? `Turno: ${caster.name}  →  Alvo: ${target.name}`
+        : `Sem turno ativo  →  Alvo: ${target.name}`;
+}
+
 function openEffectModal() {
 
     if (!selectedId) {
@@ -11,6 +33,8 @@ function openEffectModal() {
     document.getElementById('effectModal').style.display = 'flex';
 
     document.getElementById('effectList').innerHTML = '';
+
+    renderEffectApplicationContext();
 
 }
 
@@ -32,6 +56,8 @@ function showEffectList(type) {
     const combatant = combatants.find(c => c.id === selectedId);
 
     if (!combatant) return;
+
+    renderEffectApplicationContext();
 
     const database =
     type === 'ability'
@@ -128,26 +154,64 @@ function toggleEffect(type,id){
         type === 'ability'
             ? predefinedAbilities.find(a => a.id === id)
             : predefinedItems.find(i => i.id === id);
-    
-            combatant.effects.push({
 
-                id: source.id,
+        const automationMetadata =
+            window.consumeAutomationEffectApplication?.(combatant, type, id);
+
+        const staminaCost = Math.max(0, Number(automationMetadata?.staminaCost) || 0);
+        const staminaPayer = staminaCost > 0
+            ? combatants.find(current =>
+                String(current.id) === String(automationMetadata?.staminaPayerId)
+            )
+            : null;
+
+        if (
+            staminaCost > 0 &&
+            (!staminaPayer || staminaCost > Math.max(0, Number(staminaPayer.stCurrent) || 0))
+        ) {
+            showToast("O personagem do turno não possui EST suficiente para aplicar este efeito.");
+            return;
+        }
+    
+        const appliedEffect = {
+
+            id: source.id,
             
-                type: type,
+            type: type,
             
-                name: source.name,
+            name: source.name,
             
-                remainingTurns: source.active,
+            remainingTurns: source.active,
             
-                initialTurns: source.active,
+            initialTurns: source.active,
             
-                stacks: 1,
+            stacks: 1,
             
-                maxStacks: source.stack ?? 1,
+            maxStacks: source.stack ?? 1,
             
-                augment: source.augment ?? "buff"
-            
-            });
+            augment: source.augment ?? "buff"
+        };
+
+        if (automationMetadata) {
+            appliedEffect.automation = automationMetadata;
+
+            if (Number.isInteger(automationMetadata.duration)) {
+                appliedEffect.remainingTurns = automationMetadata.duration;
+                appliedEffect.initialTurns = automationMetadata.duration;
+            }
+
+            if (Number.isInteger(automationMetadata.stacks)) {
+                appliedEffect.stacks = automationMetadata.stacks;
+            }
+
+            if (staminaCost > 0) {
+                automationMetadata.staminaBefore = Math.max(0, Number(staminaPayer.stCurrent) || 0);
+                staminaPayer.stCurrent = Math.max(0, automationMetadata.staminaBefore - staminaCost);
+                automationMetadata.staminaAfter = staminaPayer.stCurrent;
+            }
+        }
+
+        combatant.effects.push(appliedEffect);
 
         showToast("✨ Efeito aplicado");
 

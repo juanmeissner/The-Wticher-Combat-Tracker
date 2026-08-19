@@ -13,7 +13,6 @@ function removeCombatant(event, id) {
 
     if (selectedId === id) {
         selectedId = null;
-        document.getElementById('targetName').innerText = "Nenhum";
     }
     
     combatants.splice(index, 1);
@@ -70,7 +69,6 @@ function endCombat() {
     lastMonsterData = { hp: "", ca: "", atk: "" };
     selectedId = null;
     deleteVisibleId = null;
-    document.getElementById('targetName').innerText = "Nenhum";
     sortCombatants();
     renderList(true);
 }
@@ -141,8 +139,6 @@ function hardResetCombat() {
     // =========================================
     // RESET UI
     // =========================================
-
-    document.getElementById('targetName').innerText = "Nenhum";
 
     clearDisplay();
 

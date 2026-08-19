@@ -224,6 +224,18 @@ function getEffectStateDetails(effect) {
     if (Number.isFinite(Number(automation.temporaryHp))) {
         details.push(`PV temporários: ${Math.max(0, Number(automation.temporaryHp))}`);
     }
+    if (Number.isFinite(Number(automation.staminaCost)) && Number(automation.staminaCost) > 0) {
+        if (automation.staminaPayerName) {
+            details.push(`Conjurador: ${automation.staminaPayerName}`);
+        }
+        details.push(`Custo: ${Math.max(0, Number(automation.staminaCost))} EST`);
+        if (
+            Number.isFinite(Number(automation.staminaBefore)) &&
+            Number.isFinite(Number(automation.staminaAfter))
+        ) {
+            details.push(`EST do conjurador: ${automation.staminaBefore} → ${automation.staminaAfter}`);
+        }
+    }
 
     return details;
 }
@@ -281,36 +293,44 @@ function describeEffectHistoryChange(beforeCombatant, afterCombatant, type, id) 
         type: getEffectHistoryType(type),
         source,
         target: targetInfo,
-        participants
+        participants,
+        effect: {
+            id: String(id),
+            type,
+            name: effectName
+        }
     };
 
     if (!beforeEffect && afterEffect) {
+        metadata.effect.action = appliedVerb;
         const detail = [getEffectHistoryLabel(type), ...getEffectStateDetails(afterEffect)];
         if (source && source.id !== targetInfo?.id) detail.push(`Aplicado por: ${source.name}`);
 
         return {
             label: `${targetName}: ${effectLabel} ${effectName} ${appliedVerb}`,
-            detail: detail.join(' · '),
+            detail: detail.join('\n'),
             metadata
         };
     }
 
     if (beforeEffect && !afterEffect) {
+        metadata.effect.action = removedVerb;
         const detail = [getEffectHistoryLabel(type), ...getEffectStateDetails(beforeEffect)];
         if (source && source.id !== targetInfo?.id) detail.push(`Aplicado por: ${source.name}`);
 
         return {
             label: `${targetName}: ${effectLabel} ${effectName} ${removedVerb}`,
-            detail: detail.join(' · '),
+            detail: detail.join('\n'),
             metadata
         };
     }
 
     const changes = getEffectUpdateDetails(beforeEffect, afterEffect);
+    metadata.effect.action = updatedVerb;
 
     return {
         label: `${targetName}: ${effectLabel} ${effectName} ${updatedVerb}`,
-        detail: changes.length ? changes.join(' · ') : 'Configuração do efeito atualizada.',
+        detail: changes.length ? changes.join('\n') : 'Configuração do efeito atualizada.',
         metadata
     };
 }
@@ -332,6 +352,20 @@ function addHistoryEntry(label, detail = '', metadata = {}) {
             ? { id: String(metadata.target.id), name: String(metadata.target.name || 'Alvo') }
             : undefined,
         combat: metadata.combat && typeof metadata.combat === 'object' ? metadata.combat : undefined,
+        condition: metadata.condition && typeof metadata.condition === 'object'
+            ? {
+                id: String(metadata.condition.id || ''),
+                name: String(metadata.condition.name || '')
+            }
+            : undefined,
+        effect: metadata.effect && typeof metadata.effect === 'object'
+            ? {
+                id: String(metadata.effect.id || ''),
+                type: String(metadata.effect.type || ''),
+                name: String(metadata.effect.name || ''),
+                action: String(metadata.effect.action || '')
+            }
+            : undefined,
         round,
         at: new Date().toISOString()
     });
@@ -382,9 +416,6 @@ function restoreSessionState(state) {
     saveInventory();
     saveAbilities();
     localStorage.setItem('expandedMagic', String(expandedMagic));
-
-    const selectedCombatant = combatants.find(combatant => combatant.id === selectedId);
-    document.getElementById('targetName').innerText = selectedCombatant?.name || 'Nenhum';
 
     renderList(false);
     renderInventory();
@@ -608,31 +639,32 @@ function buildResourceHistoryDetail(metadata) {
     const temporaryAbsorbed = Math.max(0, (before.temporaryHp || 0) - (after.temporaryHp || 0));
 
     if (bodyPart) {
-        detail.push(`${bodyPart} ×${combat.bodyMultiplier || 1}`);
+        detail.push(`Local: ${bodyPart} ×${combat.bodyMultiplier || 1}`);
     }
 
     if (combat.typeMultiplier !== 1) {
-        detail.push(`tipo ×${combat.typeMultiplier}`);
+        detail.push(`Multiplicador do tipo: ×${combat.typeMultiplier}`);
     }
 
     if (combat.ignoredArmor) {
-        detail.push('armadura ignorada');
+        detail.push('Armadura: ignorada');
     } else if (combat.armorAbsorbed > 0) {
-        detail.push(`armadura absorveu ${combat.armorAbsorbed}`);
+        detail.push(`Armadura absorveu: ${combat.armorAbsorbed}`);
     }
 
-    if (shieldAbsorbed > 0) detail.push(`Escudo Mágico absorveu ${shieldAbsorbed}`);
-    if (temporaryAbsorbed > 0) detail.push(`PV temporários absorveram ${temporaryAbsorbed}`);
+    if (shieldAbsorbed > 0) detail.push(`Escudo mágico absorveu: ${shieldAbsorbed}`);
+    if (temporaryAbsorbed > 0) detail.push(`PV temporários absorveram: ${temporaryAbsorbed}`);
 
-    if (before.hp !== after.hp) detail.push(`PV ${before.hp} → ${after.hp}`);
-    if (before.st !== after.st) detail.push(`EST ${before.st} → ${after.st}`);
+    if (combat.finalValue > 0) detail.unshift(`Dano total: ${combat.finalValue}`);
+    if (before.hp !== after.hp) detail.push(`PV: ${before.hp} → ${after.hp}`);
+    if (before.st !== after.st) detail.push(`EST: ${before.st} → ${after.st}`);
     if (combat.defeated) detail.push('Alvo derrotado');
 
     if (!detail.length && combat.finalValue > 0) {
-        detail.push(`valor aplicado: ${combat.finalValue}`);
+        detail.push(`Dano total: ${combat.finalValue}`);
     }
 
-    return detail.join(' · ');
+    return detail.join('\n');
 }
 
 function getHistoryEntryType(entry) {
@@ -671,25 +703,107 @@ function historyEntryMatchesFilters(entry) {
         .some(participant => participant.id === historyParticipantFilter);
 }
 
+function getHistoryCompactName(name) {
+    const words = String(name || '').trim().split(/\s+/).filter(Boolean);
+
+    if (words.length <= 2) return words.join(' ') || 'Alvo';
+
+    return `${words[0]} ${words[words.length - 1]}`;
+}
+
+function getHistoryDamageValue(entry) {
+    const value = Number(entry?.combat?.finalValue);
+    if (Number.isFinite(value)) return Math.max(0, value);
+
+    const matches = String(entry?.label || '').match(/(\d+)(?!.*\d)/);
+    return matches ? Number(matches[1]) : 0;
+}
+
+function getHistoryCondition(entry) {
+    if (entry?.condition?.id && entry?.condition?.name) return entry.condition;
+
+    const label = String(entry?.label || '').toLowerCase();
+    const conditions = [
+        { id: '🩸', name: 'Sangramento', match: 'dano de sangramento' },
+        { id: '🔥', name: 'Chamas', match: 'dano de chamas' },
+        { id: '🐍', name: 'Veneno', match: 'dano de veneno' }
+    ];
+
+    return conditions.find(condition => label.includes(condition.match)) || null;
+}
+
+function getHistoryEntryIcon(entry, typeInfo) {
+    if (getHistoryEntryType(entry) !== 'damage') return typeInfo.icon;
+
+    const conditionIcons = {
+        '🩸': '🩸',
+        '🔥': '🔥',
+        '🐍': '🐍'
+    };
+
+    return conditionIcons[getHistoryCondition(entry)?.id] || typeInfo.icon;
+}
+
+function getHistoryEntryHeadline(entry, type) {
+    const targetName = getHistoryCompactName(entry?.target?.name);
+    const value = getHistoryDamageValue(entry);
+    const condition = getHistoryCondition(entry);
+
+    if (type === 'damage') {
+        if (entry?.combat?.defeated) return `Derrotou ${targetName}: ${value}`;
+        if (condition?.name) {
+            return entry?.target?.name
+                ? `${targetName} — ${condition.name}: −${value} PV`
+                : `${condition.name}: −${value} PV`;
+        }
+        return entry?.target?.name ? `Dano em ${targetName}: −${value} PV` : entry.label;
+    }
+
+    if (type === 'healing') {
+        return entry?.target?.name ? `Cura em ${targetName}: +${value} PV` : entry.label;
+    }
+
+    if ((type === 'effect' || type === 'condition') && entry?.effect?.name) {
+        return `${entry.effect.name} · ${entry.effect.action || 'alterado'}`;
+    }
+
+    return entry.label;
+}
+
+function getHistoryEntryMetadata(entry) {
+    const sourceName = entry?.source?.name ? getHistoryCompactName(entry.source.name) : '';
+    const targetName = entry?.target?.name ? getHistoryCompactName(entry.target.name) : '';
+    const actorLine = sourceName && targetName && sourceName !== targetName
+        ? `${sourceName} → ${targetName}`
+        : sourceName || targetName;
+    const legacyParticipants = getHistoryEntryParticipants(entry)
+        .map(participant => getHistoryCompactName(participant.name))
+        .join(' → ');
+    const participantLine = actorLine || legacyParticipants;
+
+    return [
+        `R${entry.round || 1}`,
+        participantLine,
+        formatHistoryTime(entry.at)
+    ].filter(Boolean).join(' · ');
+}
+
 function renderHistoryEntry(entry) {
     const type = getHistoryEntryType(entry);
     const typeInfo = HISTORY_TYPE_INFO[type];
     const entryId = encodeURIComponent(String(entry.id));
     const expanded = expandedHistoryEntryId === String(entry.id);
-    const participants = getHistoryEntryParticipants(entry);
-    const participantLine = participants.length
-        ? participants.map(participant => participant.name).join(' → ')
-        : '';
-    const metadata = [participantLine, formatHistoryTime(entry.at)].filter(Boolean).join(' · ');
+    const headline = getHistoryEntryHeadline(entry, type);
+    const metadata = getHistoryEntryMetadata(entry);
     const detail = entry.detail || buildResourceHistoryDetail(entry);
 
     return `
         <li class="history-entry history-entry-${type}">
             <button type="button" class="history-entry-main" onclick="toggleHistoryDetails('${entryId}')" aria-expanded="${expanded}">
-                <span class="history-entry-icon" aria-hidden="true">${typeInfo.icon}</span>
+                <span class="history-entry-icon" aria-hidden="true">${getHistoryEntryIcon(entry, typeInfo)}</span>
                 <span class="history-entry-copy">
-                    <strong>${escapeHtml(entry.label)}</strong>
-                    <small>${escapeHtml(`R${entry.round || 1}${metadata ? ` · ${metadata}` : ''}`)}</small>
+                    <strong>${escapeHtml(headline)}</strong>
+                    <small>${escapeHtml(metadata)}</small>
                 </span>
                 <span class="history-entry-toggle" aria-hidden="true">${expanded ? '−' : '+'}</span>
             </button>
@@ -1121,9 +1235,10 @@ function applyRecurringEffects(combatant) {
         const conditionName = recurringConditions[effect.id];
         const sourcePrefix = source && source.id !== combatant.id ? `${source.name} > ` : '';
         const detail = [
-            `Condição ${conditionName}`,
-            `rolagem ${rolls.join('+')}`,
-            `PV ${before.hp} → ${after.hp}`
+            `Condição: ${conditionName}`,
+            `Rolagem: ${rolls.join(' + ')}`,
+            `Dano total: ${damage}`,
+            `PV: ${before.hp} → ${after.hp}`
         ];
 
         if (defeated) detail.push('Alvo derrotado');
@@ -1140,6 +1255,7 @@ function applyRecurringEffects(combatant) {
                     source,
                     target: { id: combatant.id, name: combatant.name },
                     participants: [source, { id: combatant.id, name: combatant.name }].filter(Boolean),
+                    condition: { id: effect.id, name: conditionName },
                     combat: {
                         baseDamage: damage,
                         finalValue: damage,
