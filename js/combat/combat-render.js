@@ -298,11 +298,18 @@
 
             const equipmentPanelHtml = window.renderCombatantEquipmentPanel?.(c) || '';
             const monsterActionsPanelHtml = window.renderMonsterActionsPanel?.(c) || '';
+            const monsterAbilitiesPanelHtml = window.renderMonsterAbilitiesPanel?.(c) || '';
+            const monsterSkillsPanelHtml = window.renderMonsterSkillsPanel?.(c) || '';
 
-            if (equipmentPanelHtml || monsterActionsPanelHtml) {
+            if (
+                equipmentPanelHtml ||
+                monsterActionsPanelHtml ||
+                monsterAbilitiesPanelHtml ||
+                monsterSkillsPanelHtml
+            ) {
                 const subpanels = document.createElement('div');
                 subpanels.className = 'combat-subpanels';
-                subpanels.innerHTML = `${equipmentPanelHtml}${monsterActionsPanelHtml}`;
+                subpanels.innerHTML = `${equipmentPanelHtml}${monsterActionsPanelHtml}${monsterAbilitiesPanelHtml}${monsterSkillsPanelHtml}`;
                 wrapper.appendChild(subpanels);
             }
 

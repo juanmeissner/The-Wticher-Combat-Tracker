@@ -65,7 +65,7 @@ flowchart LR
 |---|---|
 | ⚔️ Combate | Iniciativa, turnos, rodadas, alvos, HP, ST, armadura, dano localizado e testes de morte |
 | 🧙 Fichas | Personagens reutilizáveis com recursos atuais, inventário, habilidades, raça, defesa adicional e equipamentos |
-| 👹 Bestiário | Monstros predefinidos, busca, detalhes completos e categorias usadas pelas automações |
+| 👹 Bestiário | Monstros predefinidos, busca, detalhes e painéis rápidos de ataques, habilidades e perícias |
 | 🌀 Condições | Painel responsivo em grade, duração, stacks e dano recorrente automatizado |
 | ✨ Efeitos | Magias e itens ativos vinculados individualmente aos participantes |
 | 🎒 Inventário | Itens individuais por personagem, troca pelo turno ativo, catálogo, quantidades, filtros e detalhes |
@@ -209,6 +209,7 @@ Cada participante possui um conjunto de equipamentos próprio e persistente:
 - defesa total formada pela soma da defesa adicional da ficha, da peça regional e do escudo;
 - equipar ou desequipar uma peça atualiza imediatamente a defesa efetiva sem modificar a defesa adicional;
 - defesa atual de cada peça preservada quando ela é danificada, guardada, salva em ficha ou restaurada em um encontro;
+- reparo completo de armaduras e escudos diretamente nos detalhes do item, restaurando a defesa máxima e registrando a ação no histórico;
 - identificação persistente de **arma ativa**, **reserva**, **peça equipada** e respectivo slot nos cartões do inventário;
 - estado equipado preservado ao trocar de aba, mudar o personagem consultado ou avançar o turno;
 - armas de duas mãos incompatíveis com um escudo ativo — o aplicativo orienta a guardar o escudo antes da troca;
@@ -247,7 +248,13 @@ Uma ficha pode ser ativada para consultar seu inventário e suas habilidades ou 
 
 ### 👹 Bestiário e biblioteca personalizada
 
-O bestiário oferece busca, ficha detalhada e adição rápida de monstros predefinidos. Os ataques de cada criatura tornam-se cartões próprios abaixo do monstro, podem ser recolhidos e usam a mesma preferência de rolagem das armas. Essas ações permanecem exclusivas dos monstros e não aparecem no catálogo dos jogadores.
+O bestiário oferece busca, ficha detalhada e adição rápida de monstros predefinidos. Durante o combate, cada criatura pode apresentar três painéis independentes abaixo do cartão principal:
+
+- **Ataques:** mostra dano, efeitos associados e permite consultar ou rolar a expressão cadastrada;
+- **Habilidades:** exibe o nome e a descrição completa de cada característica especial;
+- **Perícias:** organiza os testes e seus respectivos bônus em uma grade compacta.
+
+Os painéis de **Habilidades** e **Perícias** começam recolhidos para não poluir a tela e podem ser abertos separadamente quando a informação for necessária. Seus dados são copiados para o participante e preservados em encontros e backups. Os ataques continuam usando a mesma preferência de rolagem das armas e permanecem exclusivos dos monstros.
 
 Para conteúdo próprio, **⋯ → Biblioteca** permite criar, editar e excluir:
 
@@ -311,6 +318,8 @@ O menu **⋯** concentra as ferramentas administrativas:
 6. Ao usar `⏩`, as duas abas passarão automaticamente para as coleções do próximo personagem.
 
 No combate, abra ou recolha **EQUIPAMENTOS** abaixo do personagem. Use `🔄` para alternar a arma ativa e `🎲` para consultar ou rolar seu dano, conforme a preferência escolhida.
+
+Para monstros predefinidos, abra os painéis **ATAQUES**, **HABILIDADES** ou **PERÍCIAS** abaixo da criatura. Habilidades e perícias permanecem recolhidas por padrão e não exigem abrir novamente a ficha completa do bestiário.
 
 ### 4. Aplique dano
 
@@ -474,7 +483,7 @@ node tests/items-data.test.cjs
 node tests/equipment.test.cjs
 ```
 
-Os testes verificam o isolamento entre personagens, a migração do armazenamento antigo, a sincronização com fichas, a integridade do catálogo, a classificação dos cinco slots de proteção, os três espaços de arma, a incompatibilidade entre escudo e arma de duas mãos, a soma das fontes defensivas, o desequipamento, o desgaste das proteções e as rolagens de armas e monstros.
+Os testes verificam o isolamento entre personagens, a migração do armazenamento antigo, a sincronização com fichas, a integridade do catálogo, a classificação dos cinco slots de proteção, os três espaços de arma, a incompatibilidade entre escudo e arma de duas mãos, a soma das fontes defensivas, o desequipamento, o desgaste, o reparo das proteções, as rolagens e o catálogo de ataques, habilidades e perícias dos monstros.
 
 ## ✅ Estado atual
 
@@ -489,6 +498,7 @@ Os testes verificam o isolamento entre personagens, a migração do armazenament
 - [x] Defesa adicional independente e soma automática de todas as proteções
 - [x] Estado equipado persistente por personagem, aba, turno e ficha
 - [x] Ataques de monstros em cartões próprios e recolhíveis
+- [x] Habilidades e perícias de monstros em painéis rápidos recolhidos por padrão
 - [x] Rolagem manual ou automática de armas e ataques
 - [x] Seletor para consultar as coleções de outros participantes
 - [x] Catálogo de itens validado contra identificadores duplicados

@@ -28,9 +28,15 @@
     background: #0369a1 !important;
 }
 
-.equipment-details-unequip {
-    width: 100%;
+.equipment-details-actions {
+    display: grid;
+    gap: 8px;
     margin-top: 14px;
+}
+
+.equipment-details-unequip,
+.equipment-details-repair {
+    width: 100%;
     padding: 11px 14px;
     border: 1px solid #475569;
     border-radius: 12px;
@@ -39,8 +45,16 @@
     font-weight: 800;
 }
 
+.equipment-details-repair {
+    border-color: rgba(16, 185, 129, .68);
+    background: rgba(5, 150, 105, .2);
+    color: #6ee7b7;
+}
+
 .combat-equipment-panel,
-.monster-actions-panel {
+.monster-actions-panel,
+.monster-abilities-panel,
+.monster-skills-panel {
     position: relative;
     z-index: 2;
     margin: -2px 8px 8px;
@@ -60,6 +74,16 @@
 .monster-actions-panel {
     border-color: #553135;
     background: rgba(31, 15, 22, .96);
+}
+
+.monster-abilities-panel {
+    border-color: #4c3a70;
+    background: rgba(28, 20, 48, .96);
+}
+
+.monster-skills-panel {
+    border-color: #5b4a2f;
+    background: rgba(39, 29, 15, .96);
 }
 
 .combat-subpanel-header {
@@ -95,6 +119,16 @@
 .monster-actions-header {
     background: rgba(69, 26, 32, .72);
     color: #fca5a5;
+}
+
+.monster-abilities-header {
+    background: rgba(76, 50, 118, .72);
+    color: #d8b4fe;
+}
+
+.monster-skills-header {
+    background: rgba(92, 65, 27, .72);
+    color: #fcd34d;
 }
 
 .combat-equipment-content {
@@ -248,6 +282,88 @@
 .monster-action-copy strong {
     font-size: .72rem;
     white-space: nowrap;
+}
+
+.monster-ability-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 6px;
+    padding: 8px;
+}
+
+.monster-ability-card {
+    display: grid;
+    grid-template-columns: 26px minmax(0, 1fr);
+    align-items: start;
+    gap: 7px;
+    padding: 8px;
+    border: 1px solid rgba(126, 91, 179, .55);
+    border-radius: 10px;
+    background: rgba(69, 44, 105, .5);
+}
+
+.monster-reference-icon {
+    color: #e9d5ff;
+    font-size: 1rem;
+    text-align: center;
+}
+
+.monster-ability-card strong {
+    display: block;
+    color: #f5f3ff;
+    font-size: .72rem;
+    line-height: 1.25;
+}
+
+.monster-ability-card p {
+    margin: 3px 0 0;
+    color: #ddd6fe;
+    font-size: .64rem;
+    line-height: 1.35;
+}
+
+.monster-skill-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(145px, 1fr));
+    gap: 5px;
+    padding: 8px;
+}
+
+.monster-skill-card {
+    display: flex;
+    min-width: 0;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 7px 8px;
+    border: 1px solid rgba(146, 105, 45, .58);
+    border-radius: 9px;
+    background: rgba(80, 55, 20, .5);
+}
+
+.monster-skill-card span {
+    min-width: 0;
+    color: #fef3c7;
+    font-size: .66rem;
+    font-weight: 750;
+    line-height: 1.25;
+    overflow-wrap: anywhere;
+}
+
+.monster-skill-card strong {
+    color: #fcd34d;
+    font-size: .74rem;
+    white-space: nowrap;
+}
+
+@media (max-width: 520px) {
+    .monster-ability-list {
+        grid-template-columns: 1fr;
+    }
+
+    .monster-skill-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
 }
 
 .monster-action-copy small {

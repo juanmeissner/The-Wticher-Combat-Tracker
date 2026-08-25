@@ -250,6 +250,28 @@ vm.runInContext(`
 
 assert.equal(evaluate('appliedDamage'), null);
 
+assert.match(
+    evaluate("window.renderEquipmentDetailsAction(inventory.find(item => item.id === 'temerian-shield'))"),
+    /Reparar defesa \(1 → 3\)/
+);
+
+vm.runInContext("window.repairEquipmentItem('temerian-shield')", context);
+
+assert.equal(evaluate("inventory.find(item => item.id === 'temerian-shield').equipmentDefense"), 3);
+assert.equal(evaluate("window.getEffectiveArmorValue(combatants[0], 'torso')"), 7);
+assert.doesNotMatch(
+    evaluate("window.renderEquipmentDetailsAction(inventory.find(item => item.id === 'temerian-shield'))"),
+    /Reparar defesa/
+);
+
+vm.runInContext("inventory.find(item => item.id === 'cuirass').equipmentDefense = 2", context);
+assert.match(
+    evaluate("window.renderEquipmentDetailsAction(inventory.find(item => item.id === 'cuirass'))"),
+    /Reparar defesa \(2 → 5\)/
+);
+vm.runInContext("window.repairEquipmentItem('cuirass')", context);
+assert.equal(evaluate("inventory.find(item => item.id === 'cuirass').equipmentDefense"), 5);
+
 const roll = evaluate("window.rollDiceExpression('4d6+2', () => 0)");
 assert.deepEqual(roll.rolls, [1, 1, 1, 1]);
 assert.equal(roll.total, 6);
@@ -265,7 +287,7 @@ assert.equal(attack.details, 'Sangramento');
 
 {
     const catalogContext = vm.createContext({ console, Math });
-    vm.runInContext('var window = globalThis;', catalogContext);
+    vm.runInContext('var window = globalThis; function renderList() {}', catalogContext);
     vm.runInContext(
         fs.readFileSync(path.join(projectRoot, 'js', 'items.js'), 'utf8'),
         catalogContext,
@@ -292,6 +314,8 @@ assert.equal(attack.details, 'Sangramento');
             !/^\\d+d\\d+(?:[+-]\\d+)?$/i.test(String(item.damage || '').replaceAll(' ', ''))
         );
         const monsterActions = monsterDatabase.flatMap(monster => window.buildMonsterActions(monster.attacks));
+        const monsterAbilities = monsterDatabase.flatMap(monster => window.buildMonsterAbilities(monster.abilities));
+        const monsterSkills = monsterDatabase.flatMap(monster => window.buildMonsterSkills(monster.skills));
         return {
             equipmentCount: equipment.length,
             unclassified: unclassified.map(item => item.name),
@@ -299,7 +323,11 @@ assert.equal(attack.details, 'Sangramento');
             slotCounts,
             invalidWeaponDamage: invalidWeaponDamage.map(item => item.name),
             monsterActionCount: monsterActions.length,
-            rollableMonsterActions: monsterActions.filter(action => action.damage).length
+            rollableMonsterActions: monsterActions.filter(action => action.damage).length,
+            monsterAbilityCount: monsterAbilities.length,
+            monsterSkillCount: monsterSkills.length,
+            invalidAbilities: monsterAbilities.filter(ability => !ability.name).length,
+            invalidSkills: monsterSkills.filter(skill => !skill.name).length
         };
     })())`, catalogContext));
 
@@ -310,6 +338,45 @@ assert.equal(attack.details, 'Sangramento');
     assert.deepEqual(catalogAudit.invalidWeaponDamage, []);
     assert.equal(catalogAudit.monsterActionCount, 73);
     assert.equal(catalogAudit.rollableMonsterActions, 56);
+    assert.equal(catalogAudit.monsterAbilityCount, 105);
+    assert.equal(catalogAudit.monsterSkillCount, 212);
+    assert.equal(catalogAudit.invalidAbilities, 0);
+    assert.equal(catalogAudit.invalidSkills, 0);
+
+    vm.runInContext(`
+        var grifoCombatant = { id: 900, name: 'Grifo 1', type: 'monster', presetMonsterId: 'grifo' };
+    `, catalogContext);
+
+    const collapsedAbilities = vm.runInContext(
+        'window.renderMonsterAbilitiesPanel(grifoCombatant)',
+        catalogContext
+    );
+    const collapsedSkills = vm.runInContext(
+        'window.renderMonsterSkillsPanel(grifoCombatant)',
+        catalogContext
+    );
+    assert.match(collapsedAbilities, /aria-expanded="false"/);
+    assert.doesNotMatch(collapsedAbilities, /Um grifo pode dar a sua vez/);
+    assert.match(collapsedSkills, /aria-expanded="false"/);
+    assert.doesNotMatch(collapsedSkills, /Curta Distância/);
+
+    vm.runInContext(`
+        window.toggleMonsterAbilitiesPanel(900);
+        window.toggleMonsterSkillsPanel(900);
+    `, catalogContext);
+
+    const expandedAbilities = vm.runInContext(
+        'window.renderMonsterAbilitiesPanel(grifoCombatant)',
+        catalogContext
+    );
+    const expandedSkills = vm.runInContext(
+        'window.renderMonsterSkillsPanel(grifoCombatant)',
+        catalogContext
+    );
+    assert.match(expandedAbilities, /Grito Sônico/);
+    assert.match(expandedAbilities, /Um grifo pode dar a sua vez/);
+    assert.match(expandedSkills, /Curta Distância/);
+    assert.match(expandedSkills, /\+10/);
 }
 
-console.log('✓ Equipamentos, escudo, armas reservas, dados e ataques validados.');
+console.log('✓ Equipamentos, ataques, habilidades e perícias dos monstros validados.');

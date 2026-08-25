@@ -23,6 +23,8 @@ const EQUIPMENT_SLOT_LABELS = Object.freeze({
 
 const collapsedEquipmentPanels = new Set();
 const collapsedMonsterActionPanels = new Set();
+const expandedMonsterAbilityPanels = new Set();
+const expandedMonsterSkillPanels = new Set();
 let pendingArmorSourceDamage = null;
 
 function cloneEquipmentData(value, fallback = null) {
@@ -575,13 +577,58 @@ function updateInventoryEquipmentAction() {
 function renderEquipmentDetailsAction(item) {
     const owner = window.getCharacterCollectionOwner?.();
     const status = owner ? getEquipmentStatus(owner, item?.id) : null;
-    if (!status) return '';
+    const kind = getEquipmentItemKind(item);
+    const canRepair = Boolean(
+        owner &&
+        item &&
+        kind &&
+        kind !== 'weapon' &&
+        kind !== 'ammunition' &&
+        ensureEquipmentDefense(item) < Math.max(0, Number(item.defense) || 0)
+    );
+
+    if (!status && !canRepair) return '';
 
     return `
-        <button type="button" class="equipment-details-unequip" onclick="unequipEquipmentItem('${escapeEquipmentHtml(item.id)}')">
-            Desequipar
-        </button>
+        <div class="equipment-details-actions">
+            ${canRepair ? `
+                <button type="button" class="equipment-details-repair" onclick="repairEquipmentItem('${escapeEquipmentHtml(item.id)}')">
+                    🔧 Reparar defesa (${ensureEquipmentDefense(item)} → ${Math.max(0, Number(item.defense) || 0)})
+                </button>
+            ` : ''}
+            ${status ? `
+                <button type="button" class="equipment-details-unequip" onclick="unequipEquipmentItem('${escapeEquipmentHtml(item.id)}')">
+                    Desequipar
+                </button>
+            ` : ''}
+        </div>
     `;
+}
+
+function repairEquipmentItem(itemId) {
+    const owner = window.getCharacterCollectionOwner?.();
+    const item = owner ? findEquipmentItem(owner, itemId) : null;
+    const kind = getEquipmentItemKind(item);
+
+    if (!owner || !item || !kind || kind === 'weapon' || kind === 'ammunition') return;
+
+    const before = ensureEquipmentDefense(item);
+    const maximum = Math.max(0, Number(item.defense) || 0);
+
+    if (before >= maximum) {
+        showToast(`🛡️ ${item.name} já está com a defesa máxima.`);
+        return;
+    }
+
+    runEquipmentMutation(
+        owner,
+        `${owner.name}: ${item.name} reparada`,
+        `Defesa restaurada: ${before} → ${maximum}`,
+        () => { item.equipmentDefense = maximum; }
+    );
+
+    closeItemDetailsModal();
+    showToast(`🔧 ${item.name} reparada: ${before} → ${maximum} de defesa.`);
 }
 
 function getEquippedArmorSource(combatant, part) {
@@ -885,9 +932,106 @@ function ensureMonsterActions(combatant, monsterSource = null) {
     return combatant.monsterActions;
 }
 
+function normalizeMonsterAbility(rawAbility, index = 0) {
+    if (rawAbility && typeof rawAbility === 'object') {
+        const name = String(rawAbility.name || rawAbility.title || `Habilidade ${index + 1}`).trim();
+        const description = String(
+            rawAbility.description || rawAbility.details || rawAbility.effect || ''
+        ).trim();
+
+        return name || description
+            ? { id: rawAbility.id || `monster-ability-${index}`, name, description }
+            : null;
+    }
+
+    const raw = String(rawAbility || '').replace(/\r/g, '').trim();
+    if (!raw) return null;
+
+    const lines = raw
+        .split('\n')
+        .map(line => line.trim())
+        .filter(Boolean);
+    const name = lines.shift() || `Habilidade ${index + 1}`;
+
+    return {
+        id: `monster-ability-${index}`,
+        name,
+        description: lines.join(' ').replace(/\s+/g, ' ').trim()
+    };
+}
+
+function buildMonsterAbilities(abilities) {
+    return (Array.isArray(abilities) ? abilities : [])
+        .map(normalizeMonsterAbility)
+        .filter(Boolean);
+}
+
+function normalizeMonsterSkill(rawSkill, index = 0) {
+    if (rawSkill && typeof rawSkill === 'object') {
+        const name = String(rawSkill.name || rawSkill.label || `Perícia ${index + 1}`).trim();
+        const value = String(rawSkill.value ?? rawSkill.bonus ?? '').trim();
+        return name || value
+            ? { id: rawSkill.id || `monster-skill-${index}`, name, value }
+            : null;
+    }
+
+    const raw = String(rawSkill || '').replace(/\s+/g, ' ').trim();
+    if (!raw) return null;
+
+    const match = raw.match(/^(.*?)([+-]\s*\d+)$/);
+    return {
+        id: `monster-skill-${index}`,
+        name: (match?.[1] || raw).trim(),
+        value: match ? match[2].replace(/\s+/g, '') : ''
+    };
+}
+
+function buildMonsterSkills(skills) {
+    return (Array.isArray(skills) ? skills : [])
+        .map(normalizeMonsterSkill)
+        .filter(Boolean);
+}
+
+function findMonsterPreset(combatant, monsterSource = null) {
+    if (monsterSource) return monsterSource;
+    if (!combatant?.presetMonsterId || typeof monsterDatabase === 'undefined') return null;
+
+    return monsterDatabase.find(
+        monster => String(monster.id) === String(combatant.presetMonsterId)
+    ) || null;
+}
+
+function ensureMonsterAbilities(combatant, monsterSource = null) {
+    if (!combatant || combatant.type !== 'monster') return [];
+
+    if (Array.isArray(combatant.monsterAbilities) && combatant.monsterAbilities.length) {
+        combatant.monsterAbilities = buildMonsterAbilities(combatant.monsterAbilities);
+        return combatant.monsterAbilities;
+    }
+
+    const preset = findMonsterPreset(combatant, monsterSource);
+    combatant.monsterAbilities = buildMonsterAbilities(preset?.abilities);
+    return combatant.monsterAbilities;
+}
+
+function ensureMonsterSkills(combatant, monsterSource = null) {
+    if (!combatant || combatant.type !== 'monster') return [];
+
+    if (Array.isArray(combatant.monsterSkills) && combatant.monsterSkills.length) {
+        combatant.monsterSkills = buildMonsterSkills(combatant.monsterSkills);
+        return combatant.monsterSkills;
+    }
+
+    const preset = findMonsterPreset(combatant, monsterSource);
+    combatant.monsterSkills = buildMonsterSkills(preset?.skills);
+    return combatant.monsterSkills;
+}
+
 function initializeCombatantEquipment(combatant, monsterSource = null) {
     ensureEquipmentLoadout(combatant);
     ensureMonsterActions(combatant, monsterSource);
+    ensureMonsterAbilities(combatant, monsterSource);
+    ensureMonsterSkills(combatant, monsterSource);
     return combatant;
 }
 
@@ -914,6 +1058,20 @@ function toggleMonsterActionsPanel(combatantId) {
     const key = String(combatantId);
     if (collapsedMonsterActionPanels.has(key)) collapsedMonsterActionPanels.delete(key);
     else collapsedMonsterActionPanels.add(key);
+    renderList(false);
+}
+
+function toggleMonsterAbilitiesPanel(combatantId) {
+    const key = String(combatantId);
+    if (expandedMonsterAbilityPanels.has(key)) expandedMonsterAbilityPanels.delete(key);
+    else expandedMonsterAbilityPanels.add(key);
+    renderList(false);
+}
+
+function toggleMonsterSkillsPanel(combatantId) {
+    const key = String(combatantId);
+    if (expandedMonsterSkillPanels.has(key)) expandedMonsterSkillPanels.delete(key);
+    else expandedMonsterSkillPanels.add(key);
     renderList(false);
 }
 
@@ -1035,6 +1193,65 @@ function renderMonsterActionsPanel(combatant) {
     `;
 }
 
+function renderMonsterAbilitiesPanel(combatant) {
+    if (!combatant || combatant.type !== 'monster') return '';
+
+    const abilities = ensureMonsterAbilities(combatant);
+    if (!abilities.length) return '';
+
+    const expanded = expandedMonsterAbilityPanels.has(String(combatant.id));
+    return `
+        <section class="monster-abilities-panel ${expanded ? '' : 'is-collapsed'}" aria-label="Habilidades de ${escapeEquipmentHtml(combatant.name)}">
+            <button type="button" class="combat-subpanel-header monster-abilities-header" aria-expanded="${expanded}" onclick="event.stopPropagation(); toggleMonsterAbilitiesPanel('${escapeEquipmentHtml(combatant.id)}')">
+                <span>${expanded ? '▼' : '▶'} HABILIDADES</span>
+                <small>${abilities.length} ${abilities.length === 1 ? 'habilidade' : 'habilidades'}</small>
+            </button>
+            ${expanded ? `
+                <div class="monster-ability-list">
+                    ${abilities.map(ability => `
+                        <article class="monster-ability-card">
+                            <span class="monster-reference-icon" aria-hidden="true">✦</span>
+                            <div>
+                                <strong>${escapeEquipmentHtml(ability.name)}</strong>
+                                ${ability.description
+                                    ? `<p>${escapeEquipmentHtml(ability.description)}</p>`
+                                    : '<p>Sem descrição adicional.</p>'}
+                            </div>
+                        </article>
+                    `).join('')}
+                </div>
+            ` : ''}
+        </section>
+    `;
+}
+
+function renderMonsterSkillsPanel(combatant) {
+    if (!combatant || combatant.type !== 'monster') return '';
+
+    const skills = ensureMonsterSkills(combatant);
+    if (!skills.length) return '';
+
+    const expanded = expandedMonsterSkillPanels.has(String(combatant.id));
+    return `
+        <section class="monster-skills-panel ${expanded ? '' : 'is-collapsed'}" aria-label="Perícias de ${escapeEquipmentHtml(combatant.name)}">
+            <button type="button" class="combat-subpanel-header monster-skills-header" aria-expanded="${expanded}" onclick="event.stopPropagation(); toggleMonsterSkillsPanel('${escapeEquipmentHtml(combatant.id)}')">
+                <span>${expanded ? '▼' : '▶'} PERÍCIAS</span>
+                <small>${skills.length} ${skills.length === 1 ? 'perícia' : 'perícias'}</small>
+            </button>
+            ${expanded ? `
+                <div class="monster-skill-grid">
+                    ${skills.map(skill => `
+                        <div class="monster-skill-card">
+                            <span>${escapeEquipmentHtml(skill.name)}</span>
+                            ${skill.value ? `<strong>${escapeEquipmentHtml(skill.value)}</strong>` : ''}
+                        </div>
+                    `).join('')}
+                </div>
+            ` : ''}
+        </section>
+    `;
+}
+
 window.getEquipmentItemKind = getEquipmentItemKind;
 window.getEquipmentItemSlot = getEquipmentItemSlot;
 window.getEquipmentSlotLabel = getEquipmentSlotLabel;
@@ -1048,6 +1265,7 @@ window.getSelectedEquipmentActionLabel = getSelectedEquipmentActionLabel;
 window.updateInventoryEquipmentAction = updateInventoryEquipmentAction;
 window.performSelectedEquipmentAction = performSelectedEquipmentAction;
 window.unequipEquipmentItem = unequipEquipmentItem;
+window.repairEquipmentItem = repairEquipmentItem;
 window.isItemEquippedForCurrentOwner = isItemEquippedForCurrentOwner;
 window.renderEquipmentDetailsAction = renderEquipmentDetailsAction;
 window.getEffectiveArmorBreakdown = getEffectiveArmorBreakdown;
@@ -1062,9 +1280,19 @@ window.rollDiceExpression = rollDiceExpression;
 window.normalizeMonsterAction = normalizeMonsterAction;
 window.buildMonsterActions = buildMonsterActions;
 window.ensureMonsterActions = ensureMonsterActions;
+window.normalizeMonsterAbility = normalizeMonsterAbility;
+window.buildMonsterAbilities = buildMonsterAbilities;
+window.ensureMonsterAbilities = ensureMonsterAbilities;
+window.normalizeMonsterSkill = normalizeMonsterSkill;
+window.buildMonsterSkills = buildMonsterSkills;
+window.ensureMonsterSkills = ensureMonsterSkills;
 window.toggleEquipmentPanel = toggleEquipmentPanel;
 window.toggleMonsterActionsPanel = toggleMonsterActionsPanel;
+window.toggleMonsterAbilitiesPanel = toggleMonsterAbilitiesPanel;
+window.toggleMonsterSkillsPanel = toggleMonsterSkillsPanel;
 window.renderCombatantEquipmentPanel = renderCombatantEquipmentPanel;
 window.renderMonsterActionsPanel = renderMonsterActionsPanel;
+window.renderMonsterAbilitiesPanel = renderMonsterAbilitiesPanel;
+window.renderMonsterSkillsPanel = renderMonsterSkillsPanel;
 window.rollMonsterAction = rollMonsterAction;
 window.escapeEquipmentHtml = escapeEquipmentHtml;
