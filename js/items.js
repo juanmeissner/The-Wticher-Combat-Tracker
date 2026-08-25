@@ -1066,9 +1066,9 @@ const predefinedItems = [
         goldValue: 2300,
         type: 'weapon',
         weaponType: 'Esgrima',
-        damage: '1d6',
+        damage: '4d6',
         bonus: ' ',
-        effect: '3d6 Dano de Prata',
+        effect: 'Dano de Prata',
         description: 'Espada de Duas Mãos',
         recipe: [
             '20x Prata',
@@ -4342,3 +4342,53 @@ const predefinedItems = [
     }
 
 ];
+
+// Cada proteção possui um slot explícito. O subtipo descreve o peso/material e
+// não deve ser usado para decidir qual parte do corpo o item protege.
+const PREDEFINED_ARMOR_SLOTS = Object.freeze({
+    head: [
+        'capuzdearqueirodeverden', 'capuzdetecidoduplo', 'capuzcomprotecaodeolhos',
+        'toucadecotademalha', 'capuzblindado', 'armettemeriano', 'grandeelmo',
+        'elmoskellige', 'elmonilfgardiano', 'capuzelfico', 'elmovrihedd',
+        'elmodemahakam', 'elmodeaconegro', 'capuzelficodebruxo', 'elmodebruxomahakam'
+    ],
+    body: [
+        'jaquetao', 'jaquetaodeaedirn', 'jaquetaodetecidoduplo', 'couraca',
+        'armaduradealabardeiroredaniano', 'jaquetalyrianadecouro', 'armaduradeplaca',
+        'armadurapesadadailhahindar', 'armaduradeplacanilfgardiana', 'armaduradeurso',
+        'armaduradegato', 'armaduradegrifo', 'armadurademanticora', 'armaduradevibora',
+        'armaduradelobo', 'armaduradecorvo', 'cotademalhaelfica', 'armaduravrihedd',
+        'armadurademahakam', 'armaduradeaconegroanao', 'armaduraelficadebruxo',
+        'armaduraanaadebruxo'
+    ],
+    arms: [
+        'braceirasdacavalaria', 'braceirasacolchoadas', 'braceirasdetecidoduplo',
+        'braceirasblindadas', 'armaduradebracosredanianas', 'braceiraslyrianasdecouro',
+        'armaduradeplacasparabraco', 'braceiraspesadasdehindar',
+        'armaduradebracosnilfgardianas', 'braceirasdeurso', 'braceirasdegato',
+        'braceirasdegrifo', 'braceirasdemanticora', 'braceirasdevibora',
+        'braceirasdelobo', 'braceirasdecorvo', 'braceiraselficas', 'braceirasvrihedd',
+        'braceirasdemahakam', 'braceirasdeaconegro', 'braceiraselficasdebruxo',
+        'braceirasanaasdebruxo'
+    ],
+    legs: [
+        'calcasdecavalaria', 'calcasacolchoadas', 'calcasdetecidoduplo', 'calcasblindadas',
+        'grevasredaniana', 'calcaslyrianasdecouro', 'grevasdeplaca',
+        'chaussespesadasdehindas', 'grevasnilfgardianas', 'calcasdeurso', 'calcasdegato',
+        'calcasdegrifo', 'calcasdemanticora', 'calcasdevibora', 'calcasdelobo',
+        'calcasdecorvo', 'calcaselficas', 'grevasvrihedd', 'grevasdemahakam',
+        'grevasdeaconegro', 'calcaselficasdebruxo', 'grevasanaasdebruxo'
+    ],
+    shield: [
+        'escudodemadeira', 'broqueldeaco', 'escudotemeriano',
+        'escudodesaqueadorskellige', 'escudokaedweni', 'escudolagrimadeaco',
+        'pavise', 'pavisenilfgardiano', 'escudopipanilfgardiano'
+    ]
+});
+
+Object.entries(PREDEFINED_ARMOR_SLOTS).forEach(([equipmentSlot, itemIds]) => {
+    itemIds.forEach(itemId => {
+        const item = predefinedItems.find(entry => entry.id === itemId);
+        if (item) item.equipmentSlot = equipmentSlot;
+    });
+});

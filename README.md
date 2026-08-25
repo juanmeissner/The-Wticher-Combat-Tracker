@@ -64,11 +64,12 @@ flowchart LR
 | Sistema | O que entrega |
 |---|---|
 | ⚔️ Combate | Iniciativa, turnos, rodadas, alvos, HP, ST, armadura, dano localizado e testes de morte |
-| 🧙 Fichas | Personagens reutilizáveis com recursos atuais, inventário, habilidades, raça e armaduras por região |
+| 🧙 Fichas | Personagens reutilizáveis com recursos atuais, inventário, habilidades, raça, defesa adicional e equipamentos |
 | 👹 Bestiário | Monstros predefinidos, busca, detalhes completos e categorias usadas pelas automações |
 | 🌀 Condições | Painel responsivo em grade, duração, stacks e dano recorrente automatizado |
 | ✨ Efeitos | Magias e itens ativos vinculados individualmente aos participantes |
 | 🎒 Inventário | Itens individuais por personagem, troca pelo turno ativo, catálogo, quantidades, filtros e detalhes |
+| 🛡️ Equipamentos | Uma arma ativa, duas reservas, cinco slots de proteção, escudo global, troca rápida e defesa persistente |
 | 📚 Habilidades | Magias individuais por personagem, Magia Expandida, custo de treino, ativação e exportação |
 | 📜 Histórico | Linha do tempo por rodada, filtros, autoria, alvo, cálculos e golpes finais |
 | ↶ Segurança | Confirmações, desfazer ações, encontros salvos e backup completo em JSON |
@@ -81,7 +82,7 @@ flowchart LR
 - criação de jogadores e monstros personalizados;
 - inclusão de criaturas diretamente do bestiário;
 - definição de nome, iniciativa, HP, ST, CA, ataque e raça/categoria;
-- armadura independente para **cabeça, tronco, braços e pernas**;
+- defesa adicional opcional para **cabeça, tronco, braços e pernas**, independente dos equipamentos;
 - ordenação por iniciativa e avanço automático de turnos e rodadas;
 - indicação visual do turno atual e do próximo participante;
 - nome do personagem ativo sempre sincronizado no pad;
@@ -93,7 +94,13 @@ flowchart LR
 
 ### 🎯 Dano localizado e armadura
 
-O valor digitado no pad é tratado como dano base. A aplicação reduz primeiro a armadura da região e depois aplica os multiplicadores escolhidos.
+O valor digitado no pad é tratado como dano base. A aplicação calcula toda a proteção disponível na região, reduz esse total do golpe e somente depois aplica os multiplicadores escolhidos.
+
+```text
+Defesa total da região = defesa adicional da ficha + armadura equipada + escudo físico
+```
+
+As três fontes são independentes. Equipar uma peça não altera os valores preenchidos na ficha; desequipá-la remove imediatamente apenas a contribuição daquela peça. A defesa adicional e o escudo permanecem ativos enquanto continuarem configurados.
 
 | Região | Multiplicador |
 |---|---:|
@@ -106,12 +113,15 @@ Também estão disponíveis:
 
 - dano cheio, dividido ou dobrado;
 - dano que ignora armadura;
-- dano direto à armadura da região;
-- registro do dano base, armadura absorvida, multiplicadores e PV final;
+- dano direto à armadura equipada, à defesa adicional ou ao escudo;
+- escolha exata da fonte atingida quando **Dano Armadura** encontra mais de uma proteção disponível;
+- escudos físicos somados à defesa de cabeça, tronco, braços e pernas;
+- soma automática das proteções antes de decidir se o dano alcança os PV;
+- registro do dano base, defesa adicional, equipamento, escudo, total absorvido, multiplicadores e PV final;
 - absorção por escudo mágico e PV temporários;
 - identificação automática de golpes que derrotaram o alvo.
 
-> **Exemplo:** um ataque de 15 no tronco contra armadura 5 causa 10 de dano. Na cabeça, os mesmos 10 pontos restantes são multiplicados por 3, causando 30 de dano.
+> **Exemplo:** um personagem com 2 de defesa adicional, armadura de tronco 5 e escudo 3 possui 10 de defesa total no tronco. Um ataque de 15 deixa 5 pontos de dano. Ao desequipar a armadura, a defesa do tronco passa imediatamente para 5, mantendo apenas a defesa adicional e o escudo.
 
 ### 🛡️ Escudo mágico e PV temporários
 
@@ -187,6 +197,28 @@ O turno ativo funciona como contexto padrão das abas **Itens** e **Habilidades*
 - catálogo validado para impedir identificadores duplicados entre armas, equipamentos e materiais;
 - sincronização individual com o participante e sua ficha vinculada.
 
+### 🛡️ Equipamentos realmente equipáveis
+
+Cada participante possui um conjunto de equipamentos próprio e persistente:
+
+- uma **arma ativa** e até **duas armas reservas**;
+- troca rápida da arma ativa pelo botão `🔄` no cartão do participante;
+- armaduras equipadas separadamente em **cabeça, tronco, braços e pernas**;
+- um escudo físico que acrescenta sua defesa às quatro regiões;
+- slots explícitos `head`, `body`, `arms`, `legs` e `shield`, impedindo que calças ou braceiras substituam a proteção de tronco;
+- defesa total formada pela soma da defesa adicional da ficha, da peça regional e do escudo;
+- equipar ou desequipar uma peça atualiza imediatamente a defesa efetiva sem modificar a defesa adicional;
+- defesa atual de cada peça preservada quando ela é danificada, guardada, salva em ficha ou restaurada em um encontro;
+- identificação persistente de **arma ativa**, **reserva**, **peça equipada** e respectivo slot nos cartões do inventário;
+- estado equipado preservado ao trocar de aba, mudar o personagem consultado ou avançar o turno;
+- armas de duas mãos incompatíveis com um escudo ativo — o aplicativo orienta a guardar o escudo antes da troca;
+- painel próprio recolhível abaixo do personagem, mantendo visível somente a arma ativa e um resumo compacto das proteções;
+- histórico e ação de desfazer para equipar, desequipar, trocar armas e danificar proteções.
+
+A rolagem de dano continua **manual por padrão**, respeitando os dados físicos da mesa. Em `⋯ → Preferências → Rolagens`, a opção **Armas e ataques** pode ser alterada para automática; nesse modo, tocar em `🎲` rola a expressão da arma e coloca o total no pad, sem causar dano imediatamente.
+
+> **Exemplo:** uma defesa adicional de tronco 2, uma armadura equipada com 5 e um escudo com 3 fornecem 10 de proteção. Se **Dano Armadura** for escolhido, o mestre decide se o desgaste será aplicado à defesa adicional, à armadura ou ao escudo.
+
 ### ✨ Habilidades, sinais e magias
 
 - catálogo com busca e filtro por tipo ou elemento cadastrado;
@@ -206,19 +238,22 @@ Em **⋯ → Fichas**, é possível criar personagens reutilizáveis contendo:
 - HP e ST atuais preservados entre combates;
 - raça ou categoria da criatura;
 - ataque e dano;
-- armadura da cabeça, tronco, braços e pernas;
+- defesa adicional opcional da cabeça, tronco, braços e pernas;
 - inventário individual;
-- habilidades individuais.
+- habilidades individuais;
+- arma ativa, reservas, armaduras e escudo equipados, incluindo a defesa restante de cada peça.
 
 Uma ficha pode ser ativada para consultar seu inventário e suas habilidades ou adicionada diretamente ao combate. Alterações feitas durante a sessão são sincronizadas para reutilização posterior, sem substituir as coleções dos outros participantes.
 
 ### 👹 Bestiário e biblioteca personalizada
 
-O bestiário oferece busca, ficha detalhada e adição rápida de monstros predefinidos. Para conteúdo próprio, **⋯ → Biblioteca** permite criar, editar e excluir:
+O bestiário oferece busca, ficha detalhada e adição rápida de monstros predefinidos. Os ataques de cada criatura tornam-se cartões próprios abaixo do monstro, podem ser recolhidos e usam a mesma preferência de rolagem das armas. Essas ações permanecem exclusivas dos monstros e não aparecem no catálogo dos jogadores.
 
-- itens personalizados;
+Para conteúdo próprio, **⋯ → Biblioteca** permite criar, editar e excluir:
+
+- itens personalizados, incluindo armas, armaduras, escudos, dano, defesa, quantidade de mãos e slot corporal;
 - habilidades personalizadas;
-- monstros personalizados.
+- monstros personalizados com vários ataques, informados um por linha.
 
 O conteúdo original permanece intacto e a biblioteca pessoal é mantida somente no dispositivo do usuário.
 
@@ -257,7 +292,7 @@ O menu **⋯** concentra as ferramentas administrativas:
 1. Abra **⚔️ Combate**.
 2. Toque em `🧙‍♂️` para criar um jogador ou em `👹` para criar/escolher um monstro.
 3. Se preferir um personagem reutilizável, abra `⋯ → Fichas → Nova ficha`.
-4. Informe os recursos e armaduras. Depois, use **+ Combate**.
+4. Informe os recursos e, se desejar, uma defesa adicional por região. Depois, use **+ Combate**.
 
 ### 2. Entenda turno e alvo
 
@@ -270,9 +305,12 @@ O menu **⋯** concentra as ferramentas administrativas:
 
 1. Verifique o nome do personagem indicado como turno ativo.
 2. Abra **🎒 Itens** e adicione somente os objetos carregados por ele.
-3. Abra **✨ Habilidades** e adicione seus sinais, magias ou técnicas.
-4. Use o seletor no alto da aba para consultar outro participante sem avançar o combate.
-5. Ao usar `⏩`, as duas abas passarão automaticamente para as coleções do próximo personagem.
+3. Selecione uma arma ou proteção e use **Equipar**. A primeira arma será ativa; as duas seguintes ficarão nas reservas. Cabeça, tronco, braços, pernas e escudo podem ser equipados simultaneamente.
+4. Abra **✨ Habilidades** e adicione seus sinais, magias ou técnicas.
+5. Use o seletor no alto da aba para consultar outro participante sem avançar o combate.
+6. Ao usar `⏩`, as duas abas passarão automaticamente para as coleções do próximo personagem.
+
+No combate, abra ou recolha **EQUIPAMENTOS** abaixo do personagem. Use `🔄` para alternar a arma ativa e `🎲` para consultar ou rolar seu dano, conforme a preferência escolhida.
 
 ### 4. Aplique dano
 
@@ -319,6 +357,8 @@ O menu **⋯** concentra as ferramentas administrativas:
 | `☠️` | Causar dano localizado ou adicionar falha de morte |
 | `🔷` | Gastar ou recuperar ST |
 | `⚡` | Definir iniciativa; mantenha pressionado para rolar monstros |
+| `🔄` | Alternar entre a arma ativa e as reservas do personagem |
+| `🎲` | Consultar a expressão de dano ou rolá-la automaticamente no pad |
 | `C` | Limpar o valor digitado |
 | `←` | Apagar o último dígito |
 | `↶` | Desfazer a última ação disponível |
@@ -363,7 +403,7 @@ Não existe conta, servidor ou banco de dados remoto. Os dados são mantidos no 
 
 - combate atual;
 - fichas e recursos atuais;
-- inventários, habilidades e Magia Expandida de cada participante;
+- inventários, habilidades, equipamentos, desgaste das proteções e Magia Expandida de cada participante;
 - histórico e encontros salvos;
 - biblioteca personalizada;
 - preferências e modos de rolagem.
@@ -381,7 +421,7 @@ Não existe conta, servidor ou banco de dados remoto. Os dados são mantidos no 
 | Persistência | LocalStorage e backups JSON |
 | PWA | Web App Manifest, Service Worker e Cache API |
 | Exportação | SheetJS para arquivos Excel |
-| Compatibilidade | APIs modernas de navegador, safe areas e modo standalone |
+| Compatibilidade | APIs modernas de navegador, UTF-8, safe areas e modo standalone |
 
 O projeto não exige framework JavaScript, bundler ou etapa de compilação.
 
@@ -393,14 +433,18 @@ O projeto não exige framework JavaScript, bundler ou etapa de compilação.
 ├── style.css                    # Estilos principais
 ├── mobile.css                   # Responsividade, iOS e acessibilidade
 ├── character-collections.css    # Seletor e contexto das coleções individuais
+├── equipment.css                # Painéis, armas, armaduras e ações dos monstros
 ├── manifest.json                # Metadados da PWA
 ├── service-worker.js            # Entrada do Service Worker
+├── .editorconfig                # Codificação UTF-8 consistente entre editores
+├── .vscode/settings.json        # Configuração de UTF-8 para o VS Code
 ├── js/
 │   ├── abilities/               # Catálogo, inventário e exportação de habilidades
 │   ├── combat/                  # Turnos, dano, renderização, efeitos e persistência
 │   ├── core/                    # Utilitários e notificações
 │   ├── ui/                      # Componentes de interface e modais
 │   ├── character-collections.js # Inventários e habilidades por participante
+│   ├── equipment.js             # Equipamentos, defesas, rolagens e ataques de monstros
 │   ├── enhancements.js          # Fichas, biblioteca, preferências e manutenção
 │   ├── rules-automation.js      # Automações de magias, itens e categorias
 │   └── session-features.js      # Histórico, desfazer, encontros, backup e relatório
@@ -427,9 +471,10 @@ Também é possível usar qualquer servidor estático, como **Live Server**, `np
 ```bash
 node tests/character-collections.test.cjs
 node tests/items-data.test.cjs
+node tests/equipment.test.cjs
 ```
 
-Os testes verificam o isolamento entre personagens, a migração do armazenamento antigo, a sincronização com fichas e a existência de identificadores únicos no catálogo de itens.
+Os testes verificam o isolamento entre personagens, a migração do armazenamento antigo, a sincronização com fichas, a integridade do catálogo, a classificação dos cinco slots de proteção, os três espaços de arma, a incompatibilidade entre escudo e arma de duas mãos, a soma das fontes defensivas, o desequipamento, o desgaste das proteções e as rolagens de armas e monstros.
 
 ## ✅ Estado atual
 
@@ -439,6 +484,12 @@ Os testes verificam o isolamento entre personagens, a migração do armazenament
 - [x] Combate, iniciativa, rodadas e dano localizado
 - [x] Fichas persistentes e encontros salvos
 - [x] Inventários e habilidades individuais vinculados ao personagem do turno
+- [x] Arma ativa, duas reservas e troca rápida por personagem
+- [x] Armaduras regionais em cinco slots, escudo global e desgaste persistente
+- [x] Defesa adicional independente e soma automática de todas as proteções
+- [x] Estado equipado persistente por personagem, aba, turno e ficha
+- [x] Ataques de monstros em cartões próprios e recolhíveis
+- [x] Rolagem manual ou automática de armas e ataques
 - [x] Seletor para consultar as coleções de outros participantes
 - [x] Catálogo de itens validado contra identificadores duplicados
 - [x] Bestiário e biblioteca própria

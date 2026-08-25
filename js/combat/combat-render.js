@@ -244,7 +244,9 @@
                             leading-tight
                             break-words
                             whitespace-pre-line">
-                        ${c.atkInfo.replace(/\s*\/\s*/g, '<br>')}
+                        ${c.type === 'monster' && window.ensureMonsterActions?.(c).length
+                            ? ''
+                            : String(c.atkInfo || '-').replace(/\s*\/\s*/g, '<br>')}
                     </p>
                         </div>
                     </div>
@@ -293,6 +295,16 @@
             wrapper.className = "combat-wrapper";
             
             wrapper.appendChild(card);
+
+            const equipmentPanelHtml = window.renderCombatantEquipmentPanel?.(c) || '';
+            const monsterActionsPanelHtml = window.renderMonsterActionsPanel?.(c) || '';
+
+            if (equipmentPanelHtml || monsterActionsPanelHtml) {
+                const subpanels = document.createElement('div');
+                subpanels.className = 'combat-subpanels';
+                subpanels.innerHTML = `${equipmentPanelHtml}${monsterActionsPanelHtml}`;
+                wrapper.appendChild(subpanels);
+            }
 
             card.addEventListener('click', () => {
 

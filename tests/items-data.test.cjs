@@ -22,5 +22,7 @@ const witcherSilverSword = items.find(item => item.id === 'espadadepratadebruxo'
 assert.equal(witcherSteelSword?.name, 'Espada de Aço de Bruxo');
 assert.equal(witcherSilverSword?.name, 'Espada de Prata de Bruxo');
 assert.notEqual(witcherSteelSword.id, witcherSilverSword.id);
+assert.equal(witcherSilverSword.damage, '4d6');
+assert.equal(witcherSilverSword.effect, 'Dano de Prata');
 
 console.log(`✓ Catálogo validado: ${items.length} itens com identificadores únicos.`);

@@ -1,0 +1,316 @@
+.inventory-equipment-badge {
+    display: inline-flex;
+    align-items: center;
+    width: max-content;
+    margin-top: 6px;
+    padding: 3px 7px;
+    border: 1px solid #475569;
+    border-radius: 999px;
+    color: #cbd5e1;
+    font-size: .58rem;
+    font-weight: 900;
+    letter-spacing: .05em;
+}
+
+.equipment-badge-active {
+    border-color: rgba(52, 211, 153, .62);
+    background: rgba(16, 185, 129, .14);
+    color: #6ee7b7;
+}
+
+.equipment-badge-reserve {
+    border-color: rgba(56, 189, 248, .52);
+    background: rgba(14, 165, 233, .12);
+    color: #7dd3fc;
+}
+
+.inventory-action-btn.equipment-action-button {
+    background: #0369a1 !important;
+}
+
+.equipment-details-unequip {
+    width: 100%;
+    margin-top: 14px;
+    padding: 11px 14px;
+    border: 1px solid #475569;
+    border-radius: 12px;
+    background: #1e293b;
+    color: #f8fafc;
+    font-weight: 800;
+}
+
+.combat-equipment-panel,
+.monster-actions-panel {
+    position: relative;
+    z-index: 2;
+    margin: -2px 8px 8px;
+    overflow: hidden;
+    border: 1px solid #29425f;
+    border-top: 0;
+    border-radius: 0 0 14px 14px;
+    background: rgba(10, 20, 37, .96);
+    box-shadow: 0 10px 24px rgba(0, 0, 0, .2);
+}
+
+.combat-subpanels {
+    position: relative;
+    z-index: 1;
+}
+
+.monster-actions-panel {
+    border-color: #553135;
+    background: rgba(31, 15, 22, .96);
+}
+
+.combat-subpanel-header {
+    display: flex;
+    width: 100%;
+    min-height: 34px;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 7px 10px;
+    border: 0;
+    background: rgba(30, 41, 59, .75);
+    color: #93c5fd;
+    text-align: left;
+}
+
+.combat-subpanel-header span {
+    font-size: .62rem;
+    font-weight: 950;
+    letter-spacing: .08em;
+}
+
+.combat-subpanel-header small {
+    min-width: 0;
+    overflow: hidden;
+    color: #cbd5e1;
+    font-size: .68rem;
+    font-weight: 750;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.monster-actions-header {
+    background: rgba(69, 26, 32, .72);
+    color: #fca5a5;
+}
+
+.combat-equipment-content {
+    display: grid;
+    gap: 8px;
+    padding: 8px;
+}
+
+.active-weapon-card {
+    display: grid;
+    grid-template-columns: 32px minmax(0, 1fr) 36px 36px;
+    align-items: center;
+    gap: 7px;
+    min-height: 46px;
+    padding: 6px 7px;
+    border: 1px solid #365273;
+    border-radius: 11px;
+    background: #15233a;
+}
+
+.active-weapon-card:not(.has-swap) {
+    grid-template-columns: 32px minmax(0, 1fr) 36px;
+}
+
+.active-weapon-icon {
+    width: 28px;
+    height: 28px;
+    object-fit: contain;
+}
+
+.active-weapon-copy {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.active-weapon-copy strong {
+    overflow: hidden;
+    color: #f8fafc;
+    font-size: .78rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.active-weapon-copy small {
+    overflow: hidden;
+    color: #7dd3fc;
+    font-size: .64rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.equipment-roll-button,
+.equipment-swap-button {
+    display: grid;
+    width: 34px;
+    height: 34px;
+    place-items: center;
+    border: 1px solid #3b526f;
+    border-radius: 9px;
+    background: #1e293b;
+    font-size: .9rem;
+}
+
+.equipment-swap-button {
+    border-color: #155e75;
+    background: #164e63;
+}
+
+.armor-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 5px;
+}
+
+.armor-summary-grid > div {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 3px;
+    min-width: 0;
+    padding: 5px 6px;
+    border: 1px solid #293b54;
+    border-radius: 9px;
+    background: rgba(15, 23, 42, .8);
+}
+
+.armor-summary-grid small {
+    overflow: hidden;
+    color: #94a3b8;
+    font-size: .52rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.armor-summary-grid strong {
+    color: #e2e8f0;
+    font-size: .7rem;
+}
+
+.equipped-shield-line,
+.equipment-empty-line {
+    margin: 0;
+    padding: 4px 6px;
+    color: #93c5fd;
+    font-size: .64rem;
+    font-weight: 750;
+}
+
+.monster-action-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+    gap: 6px;
+    padding: 8px;
+}
+
+.monster-action-card {
+    display: grid;
+    grid-template-columns: 28px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 6px;
+    min-height: 44px;
+    padding: 6px 8px;
+    border: 1px solid #713b41;
+    border-radius: 10px;
+    background: rgba(91, 33, 40, .58);
+    color: #f8fafc;
+    text-align: left;
+}
+
+.monster-action-icon,
+.monster-action-die {
+    font-size: .9rem;
+    text-align: center;
+}
+
+.monster-action-copy {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.monster-action-copy strong,
+.monster-action-copy small {
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.monster-action-copy strong {
+    font-size: .72rem;
+    white-space: nowrap;
+}
+
+.monster-action-copy small {
+    display: -webkit-box;
+    color: #fecaca;
+    font-size: .62rem;
+    line-height: 1.25;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+}
+
+.armor-source-option {
+    display: flex;
+    width: 100%;
+    min-height: 52px;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 3px;
+    padding: 10px 12px;
+    border: 1px solid #3b526f;
+    border-radius: 12px;
+    background: #172338;
+    color: #f8fafc;
+    text-align: left;
+}
+
+.armor-source-option small {
+    color: #94a3b8;
+}
+
+@media (max-width: 520px) {
+    .combat-equipment-panel,
+    .monster-actions-panel {
+        margin-inline: 4px;
+    }
+
+    .armor-summary-grid small {
+        display: none;
+    }
+
+    .armor-summary-grid > div {
+        grid-template-columns: auto 1fr;
+        justify-items: center;
+    }
+
+    .armor-summary-grid strong {
+        font-size: .76rem;
+    }
+
+    .monster-action-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (min-width: 900px) {
+    .combat-equipment-content {
+        grid-template-columns: minmax(280px, .85fr) minmax(360px, 1.15fr);
+        align-items: center;
+    }
+
+    .equipped-shield-line,
+    .equipment-empty-line {
+        grid-column: 1 / -1;
+    }
+}

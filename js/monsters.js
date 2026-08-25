@@ -764,6 +764,8 @@ function spawnPresetMonster(monsterId) {
     .filter(a => a && a.trim() !== '')
     .join(' / '),
 
+        monsterActions: window.buildMonsterActions?.(monster.attacks) || [],
+
         armor: {
             head: monster.armor?.head ?? 0,
             torso: monster.armor?.torso ?? 0,
@@ -786,6 +788,8 @@ function spawnPresetMonster(monsterId) {
 
         stabilized: false
     };
+
+    window.initializeCombatantEquipment?.(newMonster, monster);
 
     combatants.push(newMonster);
 

@@ -5,6 +5,7 @@ const vm = require('node:vm');
 
 const projectRoot = path.resolve(__dirname, '..');
 const source = fs.readFileSync(path.join(projectRoot, 'js', 'character-collections.js'), 'utf8');
+const equipmentSource = fs.readFileSync(path.join(projectRoot, 'js', 'equipment.js'), 'utf8');
 
 function createStorage(initial = {}) {
     const data = new Map(Object.entries(initial));
@@ -72,6 +73,7 @@ function createHarness({
         window.savePlayersToStorage = savePlayersToStorage;
     `, context);
 
+    vm.runInContext(equipmentSource, context, { filename: 'equipment.js' });
     vm.runInContext(source, context, { filename: 'character-collections.js' });
     return context;
 }
@@ -164,7 +166,8 @@ function read(context, expression) {
                 type: 'player',
                 inventory: [],
                 abilities: [],
-                expandedMagic: 0
+                expandedMagic: 0,
+                equipment: {}
             }
         ],
         activeTurnId: 20,
@@ -174,7 +177,8 @@ function read(context, expression) {
                 name: 'Geralt',
                 inventory: [],
                 abilities: [],
-                expandedMagic: 0
+                expandedMagic: 0,
+                equipment: {}
             }
         ],
         activeCharacterSheetId: 'sheet-geralt'
@@ -185,12 +189,94 @@ function read(context, expression) {
         inventory.push({ id: 'pocao-andorinha', name: 'Andorinha', quantity: 2 });
         abilitiesInventory.push({ id: 'igni', name: 'Igni' });
         expandedMagic = 3;
+        combatants[0].equipment = {
+            version: 1,
+            weapons: ['espada-bruxo', null, null],
+            activeWeaponSlot: 0,
+            shield: null,
+            armor: { head: null, torso: null, arm: null, leg: null }
+        };
         window.persistCharacterCollections();
     `, context);
 
     assert.equal(read(context, 'characterSheets[0].inventory[0].id'), 'pocao-andorinha');
     assert.equal(read(context, 'characterSheets[0].abilities[0].id'), 'igni');
     assert.equal(read(context, 'characterSheets[0].expandedMagic'), 3);
+    assert.equal(read(context, 'characterSheets[0].equipment.weapons[0]'), 'espada-bruxo');
+}
+
+{
+    const geraltInventory = [{
+        id: 'wolf-pants',
+        name: 'Calças de Lobo',
+        category: 'equipment',
+        type: 'armor',
+        weaponType: 'Armadura Média',
+        equipmentSlot: 'legs',
+        defense: 3,
+        quantity: 1
+    }];
+    const yenneferInventory = [{
+        id: 'hood',
+        name: 'Capuz Élfico',
+        category: 'equipment',
+        type: 'armor',
+        weaponType: 'Armadura Leve',
+        equipmentSlot: 'head',
+        defense: 2,
+        quantity: 1
+    }];
+    const context = createHarness({
+        combatants: [
+            {
+                id: 31,
+                name: 'Geralt',
+                type: 'player',
+                inventory: geraltInventory,
+                abilities: [],
+                equipment: {
+                    version: 1,
+                    weapons: [null, null, null],
+                    activeWeaponSlot: 0,
+                    shield: null,
+                    armor: { head: null, torso: null, arm: null, leg: 'wolf-pants' }
+                }
+            },
+            {
+                id: 32,
+                name: 'Yennefer',
+                type: 'player',
+                inventory: yenneferInventory,
+                abilities: [],
+                equipment: {
+                    version: 1,
+                    weapons: [null, null, null],
+                    activeWeaponSlot: 0,
+                    shield: null,
+                    armor: { head: 'hood', torso: null, arm: null, leg: null }
+                }
+            }
+        ],
+        activeTurnId: 31
+    });
+
+    vm.runInContext('window.initializeCharacterCollections()', context);
+    assert.equal(read(context, 'combatants[0].equipment.armor.leg'), 'wolf-pants');
+    assert.equal(read(context, "window.getInventoryEquipmentBadge('wolf-pants').label"), 'PERNAS EQUIPADO');
+
+    vm.runInContext(`
+        activeTurnId = 32;
+        window.followActiveTurnCharacterCollectionContext();
+    `, context);
+    assert.equal(read(context, 'combatants[1].equipment.armor.head'), 'hood');
+    assert.equal(read(context, "window.getInventoryEquipmentBadge('hood').label"), 'CABEÇA EQUIPADO');
+
+    vm.runInContext(`
+        activeTurnId = 31;
+        window.followActiveTurnCharacterCollectionContext();
+    `, context);
+    assert.equal(read(context, 'combatants[0].equipment.armor.leg'), 'wolf-pants');
+    assert.equal(read(context, "window.getInventoryEquipmentBadge('wolf-pants').label"), 'PERNAS EQUIPADO');
 }
 
 console.log('✓ Coleções individuais por personagem e migração legada validadas.');

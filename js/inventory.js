@@ -220,7 +220,7 @@ function showItemDetails(itemId) {
             ? `
                 <div class="text-cyan-400 mb-2">
 
-                    🛡️ ${item.defense} DEF
+                    🛡️ ${window.getEquipmentDefenseLabel?.(item) || item.defense} DEF
 
                 </div>
             `
@@ -232,6 +232,14 @@ function showItemDetails(itemId) {
             
                         🏷️ ${item.weaponType}
             
+                    </div>
+                `
+                : ''}
+
+            ${item.type === 'armor' && window.getEquipmentSlotLabel?.(item)
+                ? `
+                    <div class="text-cyan-300 mb-2">
+                        📍 ${window.getEquipmentSlotLabel(item)}
                     </div>
                 `
                 : ''}
@@ -292,6 +300,8 @@ function showItemDetails(itemId) {
             }
 
         </div>
+
+        ${window.renderEquipmentDetailsAction?.(item) || ''}
     `;
 
     document
@@ -365,10 +375,14 @@ function renderInventory() {
             </div>
         `;
 
+        window.updateInventoryEquipmentAction?.();
+
         return;
     }
 
     filteredInventory.forEach(item => {
+
+        const equipmentBadge = window.getInventoryEquipmentBadge?.(item.id);
 
         container.innerHTML += `
     
@@ -410,10 +424,14 @@ function renderInventory() {
                 : ''}
 
             ${item.type === 'armor'
-                ? `🛡️ ${item.defense} DEF`
+                ? `🛡️ ${window.getEquipmentDefenseLabel?.(item) || item.defense} DEF · ${window.getEquipmentSlotLabel?.(item) || 'Proteção'}`
                 : ''}
 
         </div>
+
+        ${equipmentBadge
+            ? `<span class="inventory-equipment-badge ${equipmentBadge.className}">${equipmentBadge.label}</span>`
+            : ''}
 
     </div>
 
@@ -435,6 +453,8 @@ function renderInventory() {
             </div>
         `;
     });
+
+    window.updateInventoryEquipmentAction?.();
 }
 
 // =========================================
@@ -514,6 +534,11 @@ function useItem(itemId) {
         inventory.find(i => i.id === itemId);
 
     if (!item) return;
+
+    if (window.isEquipmentItem?.(item)) {
+        window.performSelectedEquipmentAction?.();
+        return;
+    }
 
     item.quantity--;
 
@@ -677,7 +702,7 @@ function renderInventoryItemsModal() {
                             : ''}
 
                         ${item.type === 'armor'
-                            ? `🛡️ ${item.defense} DEF`
+                            ? `🛡️ ${window.getEquipmentDefenseLabel?.(item) || item.defense} DEF · ${window.getEquipmentSlotLabel?.(item) || 'Proteção'}`
                             : ''}
 
                     </div>
@@ -704,6 +729,8 @@ function selectInventoryItem(itemId) {
     selectedInventoryItemId = itemId;
 
     renderInventory();
+
+    window.updateInventoryEquipmentAction?.();
 }
 
 
@@ -788,6 +815,14 @@ function decreaseSelectedItem(showMessage = true) {
     if (!item) return;
 
     const itemName = item.name;
+
+    if (
+        window.isItemEquippedForCurrentOwner?.(item.id) &&
+        Math.max(0, Number(item.quantity) || 0) <= 1
+    ) {
+        if (showMessage) showToast('Desequipe o item antes de remover a última unidade.');
+        return;
+    }
 
     // =====================================
     // COROA

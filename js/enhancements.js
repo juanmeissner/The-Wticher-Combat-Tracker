@@ -7,6 +7,7 @@ const DEFAULT_APP_PREFERENCES = {
     theme: 'default',
     reducedMotion: false,
     rollModes: {
+        weapons: 'manual',
         abilities: 'manual',
         items: 'manual',
         negativeConditions: 'auto'
@@ -157,6 +158,7 @@ function buildSheetFromCombatant(combatant) {
         inventory: cloneEnhancementData(combatant.inventory || []),
         abilities: cloneEnhancementData(combatant.abilities || []),
         expandedMagic: Math.max(0, Number(combatant.expandedMagic) || 0),
+        equipment: cloneEnhancementData(combatant.equipment || {}),
         updatedAt: new Date().toISOString()
     };
 }
@@ -197,6 +199,13 @@ function syncCombatantsToCharacterSheets() {
             changed = true;
         }
 
+        if (!combatant.equipment || typeof combatant.equipment !== 'object') {
+            combatant.equipment = cloneEnhancementData(sheet.equipment || {});
+            changed = true;
+        }
+
+        window.ensureEquipmentLoadout?.(combatant);
+
         Object.assign(sheet, {
             name: combatant.name,
             hpMax: combatant.hpMax,
@@ -211,6 +220,7 @@ function syncCombatantsToCharacterSheets() {
             inventory: cloneEnhancementData(combatant.inventory || []),
             abilities: cloneEnhancementData(combatant.abilities || []),
             expandedMagic: Math.max(0, Number(combatant.expandedMagic) || 0),
+            equipment: cloneEnhancementData(combatant.equipment || {}),
             updatedAt: new Date().toISOString()
         });
         changed = true;
@@ -251,6 +261,9 @@ function createNewCharacterSheet() {
         inventory: [],
         abilities: [],
         expandedMagic: 0,
+        equipment: window.ensureEquipmentLoadout
+            ? cloneEnhancementData(window.ensureEquipmentLoadout({ inventory: [] }))
+            : {},
         updatedAt: new Date().toISOString()
     };
 
@@ -279,12 +292,12 @@ function openCharacterSheetEditor(id) {
             <label>CA<input id="sheetCa" class="session-input" type="number" min="0" value="${sheet.ca}"></label>
             <label class="enhancement-span-2">Raça / categoria<select id="sheetRaceCategory" class="session-input">${renderCombatantRaceOptions(sheet.monsterCategory)}</select></label>
             <label class="enhancement-span-2">Ataque/Dano<input id="sheetAtk" class="session-input" value="${escapeEnhancementHtml(sheet.atkInfo)}"></label>
-            <label>Armadura: Cabeça<input id="sheetArmorHead" class="session-input" type="number" min="0" value="${Number(sheet.armor?.head) || 0}"></label>
-            <label>Armadura: Tronco<input id="sheetArmorTorso" class="session-input" type="number" min="0" value="${Number(sheet.armor?.torso) || 0}"></label>
-            <label>Armadura: Braço<input id="sheetArmorArm" class="session-input" type="number" min="0" value="${Number(sheet.armor?.arm) || 0}"></label>
-            <label>Armadura: Perna<input id="sheetArmorLeg" class="session-input" type="number" min="0" value="${Number(sheet.armor?.leg) || 0}"></label>
+            <label>Defesa adicional: Cabeça<input id="sheetArmorHead" class="session-input" type="number" min="0" value="${Number(sheet.armor?.head) || 0}"></label>
+            <label>Defesa adicional: Tronco<input id="sheetArmorTorso" class="session-input" type="number" min="0" value="${Number(sheet.armor?.torso) || 0}"></label>
+            <label>Defesa adicional: Braço<input id="sheetArmorArm" class="session-input" type="number" min="0" value="${Number(sheet.armor?.arm) || 0}"></label>
+            <label>Defesa adicional: Perna<input id="sheetArmorLeg" class="session-input" type="number" min="0" value="${Number(sheet.armor?.leg) || 0}"></label>
         </div>
-        <p class="enhancement-note">Fichas novas entram com PV e EST máximos. Após o combate, os valores atuais, inventário e habilidades são salvos automaticamente.</p>
+        <p class="enhancement-note">Fichas novas entram com PV e EST máximos. Recursos atuais, inventário, habilidades e equipamentos são sincronizados automaticamente.</p>
         <div class="session-dialog-actions">
             <button type="button" class="session-secondary" onclick="renderSessionToolsView('sheets')">Voltar</button>
             <button type="button" class="session-primary" onclick="saveCharacterSheet('${sheet.id}')">Salvar</button>
@@ -398,6 +411,7 @@ function addCharacterSheetToCombat(id) {
         inventory: cloneEnhancementData(sheet.inventory || []),
         abilities: cloneEnhancementData(sheet.abilities || []),
         expandedMagic: Math.max(0, Number(sheet.expandedMagic) || 0),
+        equipment: cloneEnhancementData(sheet.equipment || {}),
         type: 'player',
         statusBrain: false,
         conditions: [],
@@ -413,6 +427,7 @@ function addCharacterSheetToCombat(id) {
     persistCharacterSheets();
 
     combatants.push(combatant);
+    window.initializeCombatantEquipment?.(combatant);
     window.refreshAutomationMonsterCategories?.();
     sortCombatants();
     activeTurnId ||= combatant.id;
@@ -555,6 +570,23 @@ function openCustomContentEditor(type, id = null) {
     const uniqueFields = type === 'item'
         ? `
             <label>Categoria<select id="contentCategory" class="session-input"><option value="usable">Usável</option><option value="equipment">Equipamento</option><option value="misc">Diverso</option></select></label>
+            <label>Tipo de equipamento<select id="contentItemType" class="session-input"><option value="custom">Não equipável</option><option value="weapon">Arma</option><option value="armor">Armadura ou escudo</option></select></label>
+            <label>Subtipo<select id="contentWeaponType" class="session-input">
+                <option value="">Não definido</option>
+                <option>Esgrima</option><option>Lâminas Curtas</option><option>Brigar</option><option>Cajado/Lança</option><option>Arco e Flecha</option><option>Flechas</option>
+                <option>Armadura Leve</option><option>Armadura Média</option><option>Armadura Pesada</option><option>Escudo</option><option>Braceiras</option><option>Cabeça</option><option>Pernas</option>
+            </select></label>
+            <label>Slot da proteção<select id="contentEquipmentSlot" class="session-input">
+                <option value="">Não se aplica</option>
+                <option value="head">Cabeça</option>
+                <option value="body">Tronco</option>
+                <option value="arms">Braços</option>
+                <option value="legs">Pernas</option>
+                <option value="shield">Escudo</option>
+            </select></label>
+            <label>Dano da arma<input id="contentDamage" class="session-input" value="${escapeEnhancementHtml(entry.damage)}" placeholder="Ex.: 4d6+2"></label>
+            <label>Defesa<input id="contentDefense" class="session-input" type="number" min="0" value="${Math.max(0, Number(entry.defense) || 0)}"></label>
+            <label>Mãos<select id="contentHands" class="session-input"><option value="1">Uma mão</option><option value="2">Duas mãos</option></select></label>
             <label>Duração (rodadas)<input id="contentActive" class="session-input" type="number" min="0" value="${Number(entry.active) || 0}"></label>
             <label>Stacks máximos<input id="contentStack" class="session-input" type="number" min="1" value="${Number(entry.stack) || 1}"></label>
         `
@@ -570,7 +602,7 @@ function openCustomContentEditor(type, id = null) {
                 <label>HP<input id="contentHp" class="session-input" type="number" min="1" value="${Number(entry.hp) || 10}"></label>
                 <label>ST<input id="contentSt" class="session-input" type="number" min="0" value="${Number(entry.st) || 0}"></label>
                 <label>CA<input id="contentCa" class="session-input" type="number" min="0" value="${Number(entry.ca) || 10}"></label>
-                <label>Ataque<input id="contentAttack" class="session-input" value="${escapeEnhancementHtml(entry.attacks?.[0])}"></label>
+                <label class="enhancement-span-2">Ataques (um por linha)<textarea id="contentAttack" class="session-input enhancement-textarea" placeholder="Mordida 2d6&#10;Garras 3d6">${escapeEnhancementHtml((entry.attacks || []).join('\n'))}</textarea></label>
             `;
 
     dialog.innerHTML = `
@@ -592,6 +624,12 @@ function openCustomContentEditor(type, id = null) {
 
     if (type === 'item') {
         dialog.querySelector('#contentCategory').value = entry.category || 'usable';
+        dialog.querySelector('#contentItemType').value = entry.type || 'custom';
+        dialog.querySelector('#contentWeaponType').value = entry.weaponType || '';
+        dialog.querySelector('#contentEquipmentSlot').value = entry.equipmentSlot
+            || window.getEquipmentItemSlot?.(entry)
+            || '';
+        dialog.querySelector('#contentHands').value = String(Number(entry.hands) === 2 ? 2 : 1);
     }
 }
 
@@ -614,10 +652,29 @@ function saveCustomContent(type, id) {
     let content;
 
     if (type === 'item') {
+        const equipmentType = document.getElementById('contentItemType')?.value || 'custom';
+        const equipmentSubtype = document.getElementById('contentWeaponType')?.value || '';
+        const equipmentSlot = document.getElementById('contentEquipmentSlot')?.value || '';
+
+        if (
+            equipmentType === 'armor' &&
+            !['head', 'body', 'arms', 'legs', 'shield'].includes(equipmentSlot)
+        ) {
+            showToast('Escolha qual região a armadura ou escudo protege.');
+            return;
+        }
+
         content = {
             ...common,
-            category: document.getElementById('contentCategory')?.value || 'usable',
-            type: 'custom',
+            category: equipmentType === 'custom'
+                ? (document.getElementById('contentCategory')?.value || 'usable')
+                : 'equipment',
+            type: equipmentType,
+            weaponType: equipmentSubtype,
+            equipmentSlot: equipmentType === 'armor' ? equipmentSlot : '',
+            damage: document.getElementById('contentDamage')?.value.trim() || '',
+            defense: Math.max(0, Number(document.getElementById('contentDefense')?.value) || 0),
+            hands: Number(document.getElementById('contentHands')?.value) === 2 ? 2 : 1,
             goldValue: 0,
             recipe: [],
             active: Math.max(0, Number(document.getElementById('contentActive')?.value) || 0),
@@ -655,7 +712,10 @@ function saveCustomContent(type, id) {
             armor: { head: 0, torso: 0, arm: 0, leg: 0 },
             vulnerabilities: [],
             abilities: [common.description],
-            attacks: [document.getElementById('contentAttack')?.value.trim() || '-'],
+            attacks: document.getElementById('contentAttack')?.value
+                .split(/\r?\n/)
+                .map(value => value.trim())
+                .filter(Boolean),
             loot: [],
             skills: [],
             speed: '-',
@@ -1019,11 +1079,11 @@ function renderPreferencesView(dialog) {
         ...DEFAULT_APP_PREFERENCES.rollModes,
         ...(appPreferences.rollModes || {})
     };
-    const renderRollMode = (key, title, description) => `
+    const renderRollMode = (key, title, description, manualLabel = 'Perguntar') => `
         <div class="enhancement-preference-row enhancement-preference-stack">
             <div><strong>${title}</strong><small>${description}</small></div>
             <div class="enhancement-choice-group">
-                <button type="button" class="session-small-button ${rollModes[key] === 'manual' ? 'enhancement-active' : ''}" onclick="setRollMode('${key}', 'manual')">Perguntar</button>
+                <button type="button" class="session-small-button ${rollModes[key] === 'manual' ? 'enhancement-active' : ''}" onclick="setRollMode('${key}', 'manual')">${manualLabel}</button>
                 <button type="button" class="session-small-button ${rollModes[key] === 'auto' ? 'enhancement-active' : ''}" onclick="setRollMode('${key}', 'auto')">Automática</button>
             </div>
         </div>
@@ -1043,7 +1103,8 @@ function renderPreferencesView(dialog) {
             <div><strong>Reduzir animações</strong><small>Evita movimentos contínuos e transições.</small></div>
             <button type="button" class="session-small-button ${appPreferences.reducedMotion ? 'enhancement-active' : ''}" onclick="setAppPreference('reducedMotion', ${!appPreferences.reducedMotion})">${appPreferences.reducedMotion ? 'Ativo' : 'Ativar'}</button>
         </div>
-        <h3 class="enhancement-section-title">Rolagens de efeitos</h3>
+        <h3 class="enhancement-section-title">Rolagens</h3>
+        ${renderRollMode('weapons', 'Armas e ataques', 'Manual mantém a rolagem na mesa; automática coloca o total no pad.', 'Manual')}
         ${renderRollMode('abilities', 'Magias e sinais', 'Padrão: perguntar o resultado informado na mesa.')}
         ${renderRollMode('items', 'Itens', 'Padrão: perguntar o resultado informado na mesa.')}
         ${renderRollMode('negativeConditions', 'Status negativos', 'Padrão: rolagem automática para efeitos recorrentes.')}

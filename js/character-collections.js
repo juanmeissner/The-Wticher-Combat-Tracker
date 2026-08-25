@@ -1,5 +1,5 @@
 const CHARACTER_COLLECTIONS_VERSION_KEY = 'dnd_character_collections_version';
-const CHARACTER_COLLECTIONS_VERSION = 1;
+const CHARACTER_COLLECTIONS_VERSION = 3;
 
 let characterCollectionsReady = false;
 let characterCollectionContextKey = 'legacy';
@@ -93,6 +93,11 @@ function ensureCharacterCollectionFields(owner, fallback = {}) {
     } else {
         owner.expandedMagic = Math.max(0, Number(owner.expandedMagic) || 0);
     }
+
+    if (!owner.equipment && fallback.equipment) {
+        owner.equipment = cloneCharacterCollection(fallback.equipment, {});
+    }
+
 }
 
 function getDefaultCharacterCollectionContextKey() {
@@ -127,6 +132,7 @@ function syncCombatantCollectionsToLinkedSheet(combatant) {
     sheet.inventory = cloneCharacterCollection(combatant.inventory, []);
     sheet.abilities = cloneCharacterCollection(combatant.abilities, []);
     sheet.expandedMagic = Math.max(0, Number(combatant.expandedMagic) || 0);
+    sheet.equipment = cloneCharacterCollection(combatant.equipment, {});
     sheet.updatedAt = new Date().toISOString();
     return true;
 }
@@ -203,6 +209,7 @@ function loadCharacterCollectionContext(key, { persistPrevious = true } = {}) {
         inventory = cloneCharacterCollection(owner.inventory, []);
         abilitiesInventory = cloneCharacterCollection(owner.abilities, []);
         expandedMagic = Math.max(0, Number(owner.expandedMagic) || 0);
+        window.ensureEquipmentLoadout?.(owner);
     } else {
         const savedInventory = JSON.parse(localStorage.getItem('inventory') || '[]');
         const savedAbilities = JSON.parse(localStorage.getItem('abilitiesInventory') || '[]');
@@ -231,7 +238,8 @@ function migrateCharacterCollections(legacyState = {}, { forceLegacyMigration = 
             ? {
                 inventory: sheet.inventory,
                 abilities: sheet.abilities,
-                expandedMagic: sheet.expandedMagic
+                expandedMagic: sheet.expandedMagic,
+                equipment: sheet.equipment
             }
             : {};
 
@@ -247,6 +255,7 @@ function migrateCharacterCollections(legacyState = {}, { forceLegacyMigration = 
         }
 
         ensureCharacterCollectionFields(combatant, fallback);
+        window.ensureEquipmentLoadout?.(combatant);
     });
 
     if ((!hadMigration || forceLegacyMigration) && !foundExistingCollections && (legacyInventory.length || legacyAbilities.length || legacyExpandedMagic)) {
@@ -426,6 +435,7 @@ function renderCharacterCollectionScreens() {
     renderInventory();
     renderAbilities();
     updateAbilitiesHeader();
+    window.updateInventoryEquipmentAction?.();
 }
 
 window.initializeCharacterCollections = initializeCharacterCollections;
@@ -439,5 +449,6 @@ window.persistCharacterCollections = persistCharacterCollections;
 window.renderCharacterCollectionSelectors = renderCharacterCollectionSelectors;
 window.getCharacterCollectionContextInfo = getCharacterCollectionContextInfo;
 window.getCharacterCollectionContextKey = () => characterCollectionContextKey;
+window.getCharacterCollectionOwner = () => findCharacterCollectionOwner();
 window.areCharacterCollectionsReady = () => characterCollectionsReady;
 window.escapeCharacterCollectionHtml = escapeCharacterCollectionHtml;

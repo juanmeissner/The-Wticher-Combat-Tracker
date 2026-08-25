@@ -24,6 +24,7 @@ function closeDamageModals() {
         document.getElementById('damageBodyModal').style.display = 'none';
         
         document.getElementById('damageTypeModal').style.display = 'none';
+        window.closeArmorSourceModal?.();
     }
 
     function selectBodyPart(part) {
@@ -68,6 +69,24 @@ function closeDamageModals() {
                 armorValue = target.armor?.leg || 0;
                 break;
         }
+
+        const armorBreakdown = window.getEffectiveArmorBreakdown?.(
+            target,
+            pendingDamageBodyPart
+        );
+        const armorHistoryBreakdown = armorBreakdown
+            ? {
+                manual: armorBreakdown.manual,
+                equipment: armorBreakdown.equipment,
+                region: armorBreakdown.region,
+                shield: armorBreakdown.shield,
+                total: armorBreakdown.total,
+                equipmentName: armorBreakdown.equipmentSource?.name || '',
+                shieldName: armorBreakdown.shieldSource?.name || ''
+            }
+            : null;
+
+        if (armorBreakdown) armorValue = armorBreakdown.total;
         
         // =========================================
         // REDUZ ARMADURA PRIMEIRO
@@ -105,7 +124,8 @@ function closeDamageModals() {
                             baseDamage: pendingDamageBase,
                             finalValue: 0,
                             bodyPart: pendingDamageBodyPart,
-                            armorAbsorbed
+                            armorAbsorbed,
+                            armorBreakdown: armorHistoryBreakdown
                         }
                     }
                 );
@@ -165,7 +185,8 @@ function closeDamageModals() {
             bodyMultiplier,
             typeMultiplier,
             armorAbsorbed,
-            ignoredArmor: ignoreArmor
+            ignoredArmor: ignoreArmor,
+            armorBreakdown: armorHistoryBreakdown
         });
     
     }
@@ -179,77 +200,12 @@ function closeDamageModals() {
     
         const armorDamage =
             parseInt(pendingDamageBase) || 0;
-    
-        if (!target.armor) {
-    
-            target.armor = {
-                head: 0,
-                torso: 0,
-                arm: 0,
-                leg: 0
-            };
-        }
-    
-        switch (pendingDamageBodyPart) {
-    
-            case 'head':
-    
-                target.armor.head =
-                    Math.max(
-                        0,
-                        (target.armor.head || 0)
-                        - armorDamage
-                    );
-    
-                break;
-    
-            case 'torso':
-    
-                target.armor.torso =
-                    Math.max(
-                        0,
-                        (target.armor.torso || 0)
-                        - armorDamage
-                    );
-    
-                break;
-    
-            case 'arm':
-    
-                target.armor.arm =
-                    Math.max(
-                        0,
-                        (target.armor.arm || 0)
-                        - armorDamage
-                    );
-    
-                break;
-    
-            case 'leg':
-    
-                target.armor.leg =
-                    Math.max(
-                        0,
-                        (target.armor.leg || 0)
-                        - armorDamage
-                    );
-    
-                break;
-        }
-    
-        savePlayersToStorage();
-    
-        updateCardTargeted(target);
-    
-        renderList();
-    
-        clearDisplay();
-    
-        closeDamageModals();
-    
-        showToast(
-            `🛡️ Armadura reduzida em ${armorDamage}`
-        );
+
+        if (window.requestArmorDamageSource?.(
+            target,
+            pendingDamageBodyPart,
+            armorDamage
+        )) return;
     }
 
     function applyDirectDamage(value, historyContext = {}) {

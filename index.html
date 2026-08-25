@@ -14,6 +14,7 @@
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="mobile.css">
     <link rel="stylesheet" href="character-collections.css">
+    <link rel="stylesheet" href="equipment.css">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
 
@@ -240,6 +241,7 @@
 </button>
 
 <button
+    id="inventoryUseActionButton"
     onclick="useSelectedInventoryItem()"
     class="inventory-action-btn bg-purple-700">
 
@@ -403,7 +405,7 @@
     <script src="js/combat/combat-events.js"></script>
     <script src="js/combat/combat-render.js"></script>
     <script src="js/combat/combat-turns.js"></script>
-    <script src="js/modal.js"></script>
+    <script src="js/modal.utf8.js"></script>
     <script src="js/combat/combat.js"></script>
 
     <script src="js/ui/condition-modal.js"></script>
@@ -414,6 +416,7 @@
     <script src="js/abilities/abilities-data.js"></script>
     <script src="js/abilities/abilities.js"></script>
     <script src="js/character-collections.js"></script>
+    <script src="js/equipment.js"></script>
     <script src="js/ui/abilities-modal.js"></script>
     <script src="js/abilities/abilities-export.js"></script>
     <script src="js/interactions.js"></script>
@@ -514,6 +517,8 @@
                 abilities: abilitiesInventory,
                 expandedMagic
             });
+
+            window.initializeEquipmentSystem?.();
 
             renderInventory();
             if (combatants.length > 0) {
@@ -801,22 +806,22 @@ ITEM DETAILS MODAL
                 <small id="entityRaceHint" class="text-slate-500">Vampiros recebem a condição automaticamente; as categorias também servem para óleos.</small>
             </div>
             <div>
-                <label class="text-xs text-slate-500 font-bold uppercase">Armadura Cabeça</label>
+                <label class="text-xs text-slate-500 font-bold uppercase">Defesa adicional: Cabeça</label>
                 <input type="number" id="armorHeadInp" placeholder="0">
             </div>
             
             <div>
-                <label class="text-xs text-slate-500 font-bold uppercase">Armadura Tronco</label>
+                <label class="text-xs text-slate-500 font-bold uppercase">Defesa adicional: Tronco</label>
                 <input type="number" id="armorTorsoInp" placeholder="0">
             </div>
             
             <div>
-                <label class="text-xs text-slate-500 font-bold uppercase">Armadura Braço</label>
+                <label class="text-xs text-slate-500 font-bold uppercase">Defesa adicional: Braço</label>
                 <input type="number" id="armorArmInp" placeholder="0">
             </div>
             
             <div>
-                <label class="text-xs text-slate-500 font-bold uppercase">Armadura Perna</label>
+                <label class="text-xs text-slate-500 font-bold uppercase">Defesa adicional: Perna</label>
                 <input type="number" id="armorLegInp" placeholder="0">
             </div>
             <div>
@@ -936,6 +941,18 @@ ITEM DETAILS MODAL
     </button>
 
 </div>
+</div>
+
+<div id="armorSourceModal" class="modal" style="z-index: 83;">
+    <div class="bg-slate-900 p-6 rounded-2xl w-full max-w-sm border border-slate-700 text-center">
+        <h2 class="text-xl font-bold mb-2 text-white">Danificar qual proteção?</h2>
+        <p id="armorSourceContext" class="text-sm text-slate-400 mb-5"></p>
+        <div id="armorSourceOptions" class="flex flex-col gap-3"></div>
+        <button onclick="closeArmorSourceModal(); closeDamageModals();"
+            class="mt-4 w-full p-3 rounded-xl bg-slate-700 hover:bg-slate-600 transition-all">
+            Cancelar
+        </button>
+    </div>
 </div>
 <!-- ========================================= -->
 

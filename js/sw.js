@@ -1,4 +1,4 @@
-const CACHE_NAME = 'dnd-tracker-v5-0';
+const CACHE_NAME = 'dnd-tracker-v5-2';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
@@ -16,7 +16,7 @@ const ASSETS_TO_CACHE = [
   './js/inventory.js',
   './js/swipe.js',
   './js/conditions.js',
-  './js/modal.js',
+  './js/modal.utf8.js',
 
   './js/combat/combat-storage.js',
   './js/combat/combat-input.js',

@@ -69,6 +69,11 @@ function useSelectedInventoryItem() {
 
     if (!item) return;
 
+    if (window.isEquipmentItem?.(item)) {
+        window.performSelectedEquipmentAction?.();
+        return;
+    }
+
     if (item.id === 'coroa') {
         showToast('Coroas não podem ser usadas como consumível.');
         return;

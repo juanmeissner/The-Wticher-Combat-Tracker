@@ -9,6 +9,7 @@ const HISTORY_TYPE_INFO = Object.freeze({
     'death-save': { icon: '☠️', label: 'Falha de morte' },
     effect: { icon: '✨', label: 'Efeito' },
     condition: { icon: '⚠️', label: 'Condição' },
+    equipment: { icon: '🛡️', label: 'Equipamento' },
     turn: { icon: '⏱️', label: 'Turno' },
     participant: { icon: '🧙', label: 'Participante' },
     undo: { icon: '↶', label: 'Desfeito' },
@@ -82,6 +83,7 @@ function inferHistoryType(label) {
     if (normalized.includes('falha de morte')) return 'death-save';
     if (normalized.startsWith('turno:')) return 'turn';
     if (normalized.startsWith('condição')) return 'condition';
+    if (normalized.includes('equipad') || normalized.includes('arma ativa') || normalized.includes('danificado')) return 'equipment';
     if (normalized.startsWith('efeito') || normalized.startsWith('item usado')) return 'effect';
     if (normalized.startsWith('participante') || normalized.startsWith('iniciativa')) return 'participant';
     if (normalized.startsWith('desfeito')) return 'undo';
@@ -617,6 +619,9 @@ function createResourceHistoryMetadata(type, target, value, context = {}) {
             bodyMultiplier: Number(context.bodyMultiplier) || 1,
             typeMultiplier: Number(context.typeMultiplier) || 1,
             armorAbsorbed: Math.max(0, Number(context.armorAbsorbed) || 0),
+            armorBreakdown: context.armorBreakdown && typeof context.armorBreakdown === 'object'
+                ? cloneSessionData(context.armorBreakdown)
+                : null,
             ignoredArmor: Boolean(context.ignoredArmor),
             before: captureCombatResources(target),
             after: null
@@ -658,6 +663,26 @@ function buildResourceHistoryDetail(metadata) {
         detail.push('Armadura: ignorada');
     } else if (combat.armorAbsorbed > 0) {
         detail.push(`Armadura absorveu: ${combat.armorAbsorbed}`);
+
+        if (combat.armorBreakdown) {
+            const sources = [];
+            const manual = Math.max(0, Number(combat.armorBreakdown.manual) || 0);
+            const equipment = Math.max(0, Number(combat.armorBreakdown.equipment) || 0);
+            const shield = Math.max(0, Number(combat.armorBreakdown.shield) || 0);
+
+            if (manual > 0) sources.push(`Defesa adicional ${manual}`);
+            if (equipment > 0) {
+                sources.push(`${combat.armorBreakdown.equipmentName || 'Equipamento'} ${equipment}`);
+            }
+            if (shield > 0) sources.push(`${combat.armorBreakdown.shieldName || 'Escudo'} ${shield}`);
+            if (!sources.length && Number(combat.armorBreakdown.region) > 0) {
+                sources.push(
+                    `${combat.armorBreakdown.regionName || 'Região'} ${combat.armorBreakdown.region}`
+                );
+            }
+
+            if (sources.length) detail.push(`Proteção disponível: ${sources.join(' + ')}`);
+        }
     }
 
     if (shieldAbsorbed > 0) detail.push(`Escudo mágico absorveu: ${shieldAbsorbed}`);
@@ -936,7 +961,7 @@ function renderSessionToolsView(view) {
     }
 
     if (view === 'history') {
-        const filterTypes = ['all', 'damage', 'healing', 'effect', 'condition', 'turn'];
+        const filterTypes = ['all', 'damage', 'healing', 'effect', 'condition', 'equipment', 'turn'];
         const participants = getHistoryParticipantOptions();
         const filterButtons = filterTypes.map(type => {
             const label = type === 'all' ? 'Tudo' : HISTORY_TYPE_INFO[type].label;
@@ -1352,7 +1377,6 @@ function installActionGuards() {
     const originalHardResetCombat = window.hardResetCombat;
     const originalApplyHP = window.applyHP;
     const originalApplyST = window.applyST;
-    const originalApplyArmorDamage = window.applyArmorDamage;
     const originalNextTurn = window.nextTurn;
     const originalSaveEntity = window.saveEntity;
     const originalApplyInitiative = window.applyInitiative;
@@ -1503,24 +1527,6 @@ function installActionGuards() {
             `${isHealing ? 'ST recuperado' : 'ST gasto'} em ${target?.name || 'alvo'}: ${value}`,
             () => originalApplyST(isHealing)
         );
-    };
-
-    window.applyArmorDamage = () => {
-        const target = combatants.find(combatant => combatant.id === selectedId);
-        const value = Number.parseInt(pendingDamageBase) || 0;
-
-        if (!target) return originalApplyArmorDamage();
-
-        openSessionConfirm({
-            title: 'Danificar armadura?',
-            message: `${target.name} perderá ${value} de armadura na área selecionada.`,
-            confirmLabel: 'Danificar',
-            danger: true,
-            onConfirm: () => trackAction(
-                `Armadura danificada: ${target.name} (-${value})`,
-                originalApplyArmorDamage
-            )
-        });
     };
 
     window.nextTurn = () => {
@@ -1707,6 +1713,8 @@ function installActionGuards() {
 
         if (!item || item.id === 'coroa') return originalUseSelectedItem();
 
+        if (window.isEquipmentItem?.(item)) return originalUseSelectedItem();
+
         openSessionConfirm({
             title: 'Usar item?',
             message: `${item.name} será consumido do inventário. Você poderá desfazer.`,
@@ -1727,6 +1735,8 @@ window.setHistoryParticipantFilter = setHistoryParticipantFilter;
 window.toggleHistoryDetails = toggleHistoryDetails;
 window.clearSessionHistory = clearSessionHistory;
 window.addCombatHistoryEntry = addHistoryEntry;
+window.trackEquipmentAction = (label, callback, detail = '', metadata = {}) =>
+    trackAction(label, callback, detail, metadata);
 window.describeCombatantChanges = describeCombatantChanges;
 window.saveCurrentEncounter = saveCurrentEncounter;
 window.loadSavedEncounter = loadSavedEncounter;
