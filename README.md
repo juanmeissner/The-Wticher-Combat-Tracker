@@ -69,6 +69,7 @@ flowchart LR
 | 🌀 Condições | Painel responsivo em grade, duração, stacks e dano recorrente automatizado |
 | ✨ Efeitos | Magias e itens ativos vinculados individualmente aos participantes |
 | 🎒 Inventário | Itens individuais por personagem, troca pelo turno ativo, catálogo, quantidades, filtros e detalhes |
+| ⚒️ Criação e alquimia | Receitas funcionais, ingredientes disponíveis/ausentes, lotes, testes e produção automática |
 | 🛡️ Equipamentos | Uma arma ativa, duas reservas, cinco slots de proteção, escudo global, troca rápida e defesa persistente |
 | 📚 Habilidades | Magias individuais por personagem, Magia Expandida, custo de treino, ativação e exportação |
 | 📜 Histórico | Linha do tempo por rodada, filtros, autoria, alvo, cálculos e golpes finais |
@@ -186,7 +187,7 @@ O turno ativo funciona como contexto padrão das abas **Itens** e **Habilidades*
 
 ### 🎒 Inventário e itens
 
-- separação entre **Usáveis**, **Equipamentos** e **Diversos**;
+- separação entre **Usáveis**, **Equipamentos**, **Diversos** e **Criação**;
 - inclusão de itens a partir do catálogo;
 - busca por nome e filtro por tipo;
 - alteração de quantidade pelos botões `+` e `−`;
@@ -194,8 +195,29 @@ O turno ativo funciona como contexto padrão das abas **Itens** e **Habilidades*
 - detalhes acessíveis por botão no desktop, duplo clique ou toque prolongado;
 - efeitos de itens aplicáveis a qualquer participante selecionado;
 - feedback visual para inclusão, remoção e uso;
+- transferência de itens, materiais, moedas e equipamentos excedentes entre personagens;
+- proteção contra consumo ou transferência acidental da última unidade equipada;
 - catálogo validado para impedir identificadores duplicados entre armas, equipamentos e materiais;
 - sincronização individual com o participante e sua ficha vinculada.
+
+### ⚒️ Criação e alquimia
+
+A categoria **Criação** transforma as receitas do catálogo em uma oficina vinculada ao inventário do personagem consultado:
+
+- lista todas as receitas conhecidas e permite busca por produto;
+- ao tocar no contador, abre um filtro compacto por **Armas**, **Armaduras**, **Alquimia** ou **Materiais**;
+- filtro **Posso criar** mostra somente receitas com ingredientes suficientes;
+- cada cartão informa os componentes livres, os ausentes e o rendimento de cada lote;
+- escolha da quantidade de lotes antes de confirmar a produção;
+- consumo automático dos ingredientes e inclusão do produto no inventário correto;
+- rendimentos especiais preservados, como 10 flechas ou 6 unidades de Pó de Prata por lote;
+- teste manual ou automático quando a receita possuir ND/CD;
+- modo automático configurável em `⋯ → Preferências → Rolagens → Criação e alquimia`, usando `1d10 + bônus`;
+- sucesso e falha registrados no histórico com produto, quantidade, ingredientes e resultado do teste;
+- ingredientes preservados em caso de falha, evitando perdas não previstas por uma regra cadastrada;
+- itens equipados ficam reservados e não são consumidos como matéria-prima.
+
+O catálogo foi normalizado com todos os ingredientes nomeados pelas receitas. Fissstech permanece indisponível porque sua receita original contém apenas ingredientes desconhecidos (`?`). A auditoria completa está em [`docs/crafting-catalog-audit.md`](docs/crafting-catalog-audit.md).
 
 ### 🛡️ Equipamentos realmente equipáveis
 
@@ -275,6 +297,7 @@ O histórico funciona como uma linha do tempo auditável do combate:
 - nomes, ícones e dano específico para Sangramento, Chamas e Veneno;
 - registro de local atingido, rolagem, armadura, escudos, PV temporários e EST;
 - detalhes de efeitos aplicados, atualizados, removidos ou expirados;
+- registro próprio para criação, falha de fabricação e transferência entre participantes;
 - substituição de “dano” por **“derrotou”** quando a ação elimina o alvo;
 - cartões compactos no mobile e detalhes expandidos sob demanda.
 
@@ -316,6 +339,9 @@ O menu **⋯** concentra as ferramentas administrativas:
 4. Abra **✨ Habilidades** e adicione seus sinais, magias ou técnicas.
 5. Use o seletor no alto da aba para consultar outro participante sem avançar o combate.
 6. Ao usar `⏩`, as duas abas passarão automaticamente para as coleções do próximo personagem.
+7. Para fabricar algo, abra **🎒 Itens → Criação** e consulte os componentes livres no inventário.
+8. Use **Posso criar** para esconder receitas ainda incompletas, escolha **Criar** e informe o número de lotes.
+9. Para reunir materiais, selecione o item e use **🔄 Transferir item**; escolha o destinatário e a quantidade.
 
 No combate, abra ou recolha **EQUIPAMENTOS** abaixo do personagem. Use `🔄` para alternar a arma ativa e `🎲` para consultar ou rolar seu dano, conforme a preferência escolhida.
 
@@ -367,6 +393,8 @@ Para monstros predefinidos, abra os painéis **ATAQUES**, **HABILIDADES** ou **P
 | `🔷` | Gastar ou recuperar ST |
 | `⚡` | Definir iniciativa; mantenha pressionado para rolar monstros |
 | `🔄` | Alternar entre a arma ativa e as reservas do personagem |
+| `⚒️ Criação` | Consultar receitas e fabricar lotes com o inventário do personagem |
+| `🔄 Transferir item` | Mover uma quantidade do item selecionado para outro personagem |
 | `🎲` | Consultar a expressão de dano ou rolá-la automaticamente no pad |
 | `C` | Limpar o valor digitado |
 | `←` | Apagar o último dígito |
@@ -443,6 +471,7 @@ O projeto não exige framework JavaScript, bundler ou etapa de compilação.
 ├── mobile.css                   # Responsividade, iOS e acessibilidade
 ├── character-collections.css    # Seletor e contexto das coleções individuais
 ├── equipment.css                # Painéis, armas, armaduras e ações dos monstros
+├── crafting.css                 # Oficina, receitas, ingredientes e transferência
 ├── manifest.json                # Metadados da PWA
 ├── service-worker.js            # Entrada do Service Worker
 ├── .editorconfig                # Codificação UTF-8 consistente entre editores
@@ -454,10 +483,12 @@ O projeto não exige framework JavaScript, bundler ou etapa de compilação.
 │   ├── ui/                      # Componentes de interface e modais
 │   ├── character-collections.js # Inventários e habilidades por participante
 │   ├── equipment.js             # Equipamentos, defesas, rolagens e ataques de monstros
+│   ├── crafting.js              # Receitas, testes, produção e transferência de itens
 │   ├── enhancements.js          # Fichas, biblioteca, preferências e manutenção
 │   ├── rules-automation.js      # Automações de magias, itens e categorias
 │   └── session-features.js      # Histórico, desfazer, encontros, backup e relatório
 ├── tests/                        # Validação das coleções e integridade dos catálogos
+├── docs/                         # Auditorias técnicas e documentação complementar
 └── img/                          # Imagens do bestiário e capturas da interface
 ```
 
@@ -481,9 +512,10 @@ Também é possível usar qualquer servidor estático, como **Live Server**, `np
 node tests/character-collections.test.cjs
 node tests/items-data.test.cjs
 node tests/equipment.test.cjs
+node tests/crafting.test.cjs
 ```
 
-Os testes verificam o isolamento entre personagens, a migração do armazenamento antigo, a sincronização com fichas, a integridade do catálogo, a classificação dos cinco slots de proteção, os três espaços de arma, a incompatibilidade entre escudo e arma de duas mãos, a soma das fontes defensivas, o desequipamento, o desgaste, o reparo das proteções, as rolagens e o catálogo de ataques, habilidades e perícias dos monstros.
+Os testes verificam o isolamento entre personagens, a migração do armazenamento antigo, a sincronização com fichas, a integridade do catálogo, a classificação dos cinco slots de proteção, os três espaços de arma, a incompatibilidade entre escudo e arma de duas mãos, a soma das fontes defensivas, o desequipamento, o desgaste, o reparo das proteções, as rolagens, o catálogo de ataques, habilidades e perícias dos monstros, a resolução de ingredientes, os rendimentos das receitas, a proteção de itens equipados e a transferência entre personagens.
 
 ## ✅ Estado atual
 
@@ -493,6 +525,8 @@ Os testes verificam o isolamento entre personagens, a migração do armazenament
 - [x] Combate, iniciativa, rodadas e dano localizado
 - [x] Fichas persistentes e encontros salvos
 - [x] Inventários e habilidades individuais vinculados ao personagem do turno
+- [x] Criação e alquimia por personagem, com receitas, lotes e testes configuráveis
+- [x] Transferência de itens e materiais entre personagens
 - [x] Arma ativa, duas reservas e troca rápida por personagem
 - [x] Armaduras regionais em cinco slots, escudo global e desgaste persistente
 - [x] Defesa adicional independente e soma automática de todas as proteções

@@ -8,6 +8,7 @@ const DEFAULT_APP_PREFERENCES = {
     reducedMotion: false,
     rollModes: {
         weapons: 'manual',
+        crafting: 'manual',
         abilities: 'manual',
         items: 'manual',
         negativeConditions: 'auto'
@@ -1105,6 +1106,7 @@ function renderPreferencesView(dialog) {
         </div>
         <h3 class="enhancement-section-title">Rolagens</h3>
         ${renderRollMode('weapons', 'Armas e ataques', 'Manual mantém a rolagem na mesa; automática coloca o total no pad.', 'Manual')}
+        ${renderRollMode('crafting', 'Criação e alquimia', 'Manual solicita o total do teste; automática rola 1d10 e soma o bônus informado.', 'Manual')}
         ${renderRollMode('abilities', 'Magias e sinais', 'Padrão: perguntar o resultado informado na mesa.')}
         ${renderRollMode('items', 'Itens', 'Padrão: perguntar o resultado informado na mesa.')}
         ${renderRollMode('negativeConditions', 'Status negativos', 'Padrão: rolagem automática para efeitos recorrentes.')}

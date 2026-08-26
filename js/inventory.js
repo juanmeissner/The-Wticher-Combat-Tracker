@@ -122,11 +122,11 @@ function setInventoryFilter(category) {
     // AUTO SELECIONA PRIMEIRO ITEM
     // =====================================
 
-    const filteredItems = inventory
-        .filter(
-            item => item.category === currentInventoryFilter
-        )
-        .sort(sortInventoryItems);
+    const filteredItems = category === 'crafting'
+        ? []
+        : inventory
+            .filter(item => item.category === currentInventoryFilter)
+            .sort(sortInventoryItems);
 
     if (filteredItems.length > 0) {
 
@@ -350,6 +350,14 @@ function renderInventory() {
     if (!container) return;
 
     container.innerHTML = '';
+
+    const actions = document.getElementById('inventoryActions');
+    if (actions) actions.hidden = currentInventoryFilter === 'crafting';
+
+    if (currentInventoryFilter === 'crafting') {
+        window.renderCraftingScreen?.(container);
+        return;
+    }
 
     const filteredInventory = inventory
     .filter(

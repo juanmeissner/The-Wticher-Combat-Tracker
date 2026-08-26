@@ -10,6 +10,8 @@ const HISTORY_TYPE_INFO = Object.freeze({
     effect: { icon: '✨', label: 'Efeito' },
     condition: { icon: '⚠️', label: 'Condição' },
     equipment: { icon: '🛡️', label: 'Equipamento' },
+    crafting: { icon: '⚒️', label: 'Criação' },
+    transfer: { icon: '🔄', label: 'Transferência' },
     turn: { icon: '⏱️', label: 'Turno' },
     participant: { icon: '🧙', label: 'Participante' },
     undo: { icon: '↶', label: 'Desfeito' },

@@ -828,7 +828,7 @@ const predefinedItems = [
         recipe: [
             'Álcool Anão',
             'Pólvora',
-            'Pó de Dimerítio'
+            'Dimerítio'
         ]
     },
 
@@ -4339,7 +4339,49 @@ const predefinedItems = [
         goldValue: 1,
         description: 'Moeda local.',
         recipe: []
-    }
+    },
+
+    // =====================================
+    // INGREDIENTES DE CRIAÇÃO E ALQUIMIA
+    // =====================================
+    ...[
+        ['verbena', 'Verbena', '🌿', 'Erva usada em preparados alquímicos e óleos.'],
+        ['visco', 'Visco', '🌿', 'Ingrediente vegetal adesivo usado em alquimia.'],
+        ['extratodemandragora', 'Extrato de Mandrágora', '🧪', 'Extrato alquímico concentrado de mandrágora.'],
+        ['scleroderma', 'Scleroderma', '🍄', 'Fungo utilizado como reagente alquímico.'],
+        ['raizdemandragora', 'Raiz de Mandrágora', '🌱', 'Raiz de alto valor para poções e preparados.'],
+        ['fosforo', 'Fósforo', '🧂', 'Reagente inflamável usado em bombas e compostos.'],
+        ['cal', 'Cal', '⚪', 'Composto mineral usado em preparados médicos e alquímicos.'],
+        ['seivabranca', 'Seiva Branca', '💧', 'Seiva vegetal usada em alucinógenos e bombas.'],
+        ['semprevivaana', 'Sempre-viva Anã', '🌼', 'Planta resistente usada em óleos e tintas.'],
+        ['quelidonia', 'Quelidônia', '🌿', 'Erva medicinal usada em poções de bruxo.'],
+        ['solucaodemercurio', 'Solução de Mercúrio', '🧪', 'Solução metálica empregada em compostos alquímicos.'],
+        ['mel', 'Mel', '🍯', 'Ingrediente natural usado em alimentos e alquimia.'],
+        ['raizdepimenta', 'Raiz de Pimenta', '🌱', 'Raiz aromática usada em sais e preparados.'],
+        ['raizdepimentadioica', 'Raiz de Pimenta Dioica', '🌱', 'Raiz picante utilizada em poções e antídotos.'],
+        ['sanguedecarnical', 'Sangue de Carniçal', '🩸', 'Componente de monstro usado em poções e óleos.'],
+        ['sanguedevampiro', 'Sangue de Vampiro', '🩸', 'Componente vampírico raro usado em alquimia.'],
+        ['salivadelobisomem', 'Saliva de Lobisomem', '🧫', 'Componente de amaldiçoado usado em poções e óleos.'],
+        ['salivadeendriga', 'Saliva de Endriga', '🧫', 'Componente insetoide usado em poções.'],
+        ['venenodearacna', 'Veneno de Aracna', '☠️', 'Veneno de monstro usado em óleos e poções.'],
+        ['hidromel', 'Hidromel', '🍺', 'Bebida fermentada usada como base alquímica.'],
+        ['sebo', 'Sebo', '🫙', 'Gordura usada como base para óleos.'],
+        ['salivadevampiro', 'Saliva de Vampiro', '🧫', 'Componente vampírico usado em óleo de necrófago.'],
+        ['salmineralrefinado', 'Sal Mineral Refinado', '🧂', 'Sal purificado usado em óleos especiais.'],
+        ['salitre', 'Salitre', '🧂', 'Reagente explosivo usado na fabricação de bombas.'],
+        ['nitratodeprata', 'Nitrato de Prata', '⚗️', 'Sal de prata usado em explosivos especializados.'],
+        ['estilhacosdeferro', 'Estilhaços de Ferro', '🔩', 'Fragmentos metálicos usados em bombas de estilhaços.']
+    ].map(([id, name, icon, description]) => ({
+        id,
+        name,
+        icon,
+        category: 'misc',
+        type: 'material',
+        craftingMaterial: true,
+        goldValue: 0,
+        description,
+        recipe: []
+    }))
 
 ];
 

@@ -15,6 +15,7 @@
     <link rel="stylesheet" href="mobile.css">
     <link rel="stylesheet" href="character-collections.css">
     <link rel="stylesheet" href="equipment.css">
+    <link rel="stylesheet" href="crafting.css">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
 
@@ -197,12 +198,21 @@
                 Etc...
     
             </button>
+
+            <button
+                data-category="crafting"
+                onclick="setInventoryFilter('crafting')"
+                class="inventory-tab">
+
+                Criação
+
+            </button>
     
         </div>
     
     </div>
 
-    <div class="inventory-actions">
+    <div id="inventoryActions" class="inventory-actions">
 
         <button
             id="openInventoryModalBtn"
@@ -254,6 +264,15 @@
     class="inventory-action-btn inventory-details-action bg-slate-700">
 
     Detalhes
+
+</button>
+
+<button
+    type="button"
+    onclick="openTransferItemModal()"
+    class="inventory-action-btn inventory-transfer-action">
+
+    🔄 Transferir item
 
 </button>
 
@@ -417,6 +436,7 @@
     <script src="js/abilities/abilities.js"></script>
     <script src="js/character-collections.js"></script>
     <script src="js/equipment.js"></script>
+    <script src="js/crafting.js"></script>
     <script src="js/ui/abilities-modal.js"></script>
     <script src="js/abilities/abilities-export.js"></script>
     <script src="js/interactions.js"></script>
@@ -761,6 +781,80 @@ ITEM DETAILS MODAL
 
     </div>
 
+</div>
+<!-- =====================================
+CRIAÇÃO E ALQUIMIA
+===================================== -->
+
+<div id="craftingModal" class="modal crafting-modal" role="dialog" aria-modal="true" aria-labelledby="craftingModalTitle">
+    <div class="crafting-dialog">
+        <header class="crafting-dialog-header">
+            <div>
+                <small>⚒️ CRIAÇÃO E ALQUIMIA</small>
+                <h2 id="craftingModalTitle">Criar item</h2>
+                <p id="craftingModalContext"></p>
+            </div>
+            <button type="button" onclick="closeCraftingModal()" aria-label="Fechar criação">×</button>
+        </header>
+
+        <label class="crafting-field" for="craftingQuantityInput">
+            <span>Quantidade de lotes</span>
+            <input id="craftingQuantityInput" type="number" min="1" value="1" inputmode="numeric" oninput="updateCraftingModalSummary()">
+        </label>
+
+        <div id="craftingTestArea" class="crafting-test-area">
+            <strong id="craftingDifficultyLabel"></strong>
+            <label id="craftingManualResultField" class="crafting-field" for="craftingManualResultInput">
+                <span>Resultado total obtido</span>
+                <input id="craftingManualResultInput" type="number" inputmode="numeric" placeholder="Ex.: 16">
+            </label>
+            <label id="craftingAutoBonusField" class="crafting-field" for="craftingAutoBonusInput">
+                <span>Bônus do teste automático</span>
+                <input id="craftingAutoBonusInput" type="number" value="0" inputmode="numeric">
+            </label>
+        </div>
+
+        <p id="craftingOutputPreview" class="crafting-output-preview"></p>
+
+        <div class="crafting-dialog-actions">
+            <button type="button" class="crafting-secondary" onclick="closeCraftingModal()">Cancelar</button>
+            <button type="button" class="crafting-primary" onclick="confirmCrafting()">Criar</button>
+        </div>
+    </div>
+</div>
+
+<!-- =====================================
+TRANSFERÊNCIA DE ITEM
+===================================== -->
+
+<div id="transferItemModal" class="modal crafting-modal" role="dialog" aria-modal="true" aria-labelledby="transferItemName">
+    <div class="crafting-dialog transfer-dialog">
+        <header class="crafting-dialog-header">
+            <div>
+                <small>🔄 TRANSFERÊNCIA</small>
+                <h2 id="transferItemName">Transferir item</h2>
+                <p id="transferItemContext"></p>
+            </div>
+            <button type="button" onclick="closeTransferItemModal()" aria-label="Fechar transferência">×</button>
+        </header>
+
+        <label class="crafting-field" for="transferTargetSelect">
+            <span>Transferir para</span>
+            <select id="transferTargetSelect"></select>
+        </label>
+
+        <label class="crafting-field" for="transferQuantityInput">
+            <span>Quantidade</span>
+            <input id="transferQuantityInput" type="number" min="1" value="1" inputmode="numeric">
+        </label>
+
+        <p class="transfer-note">Itens equipados permanecem com o personagem. Para transferir a última unidade, desequipe-a primeiro.</p>
+
+        <div class="crafting-dialog-actions">
+            <button type="button" class="crafting-secondary" onclick="closeTransferItemModal()">Cancelar</button>
+            <button type="button" class="crafting-primary" onclick="confirmItemTransfer()">Transferir</button>
+        </div>
+    </div>
 </div>
 <div id="entityModal" class="modal">
     <div class="bg-slate-900 p-6 rounded-2xl w-full max-w-md border border-slate-700">
