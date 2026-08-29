@@ -214,6 +214,8 @@ function closeDamageModals() {
     function applyDirectDamage(value, historyContext = {}) {
 
         const oldInput = currentInput;
+
+        window.setPendingAutomationDamageContext?.(historyContext);
         
         currentInput = String(value);
         

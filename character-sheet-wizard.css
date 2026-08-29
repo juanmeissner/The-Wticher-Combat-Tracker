@@ -1222,6 +1222,34 @@
         padding: 16px;
     }
 
+    .character-allocation-card {
+        align-items: stretch;
+        flex-direction: column;
+        justify-content: flex-start;
+        gap: 8px;
+    }
+
+    .character-allocation-card strong {
+        overflow: visible;
+        line-height: 1.25;
+        text-overflow: clip;
+        white-space: normal;
+    }
+
+    .character-allocation-card small {
+        line-height: 1.35;
+    }
+
+    .character-allocation-control {
+        width: 100%;
+        grid-template-columns: 34px minmax(32px, 1fr) 34px;
+        gap: 6px;
+    }
+
+    .character-allocation-control button {
+        width: 34px;
+    }
+
     .character-choice-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }

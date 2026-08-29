@@ -179,17 +179,21 @@ const interactionsSource = read(path.join('js', 'interactions.js'));
 const automationSource = read(path.join('js', 'rules-automation.js'));
 assert.match(indexSource, /toxicity\.css/);
 assert.match(indexSource, /js\/toxicity\.js/);
-assert.match(workerSource, /witcher-combat-tracker-v53/);
+assert.match(workerSource, /witcher-combat-tracker-v58/);
 assert.match(workerSource, /toxicity\.css/);
 assert.match(workerSource, /js\/toxicity\.js/);
 assert.match(sessionSource, /processCombatantToxicityTurn/);
 assert.match(sessionSource, /consumeToxicityItemUseDetail/);
 assert.match(enhancementsSource, /toxicityCurrent/);
 assert.match(inventorySource, /applyInventoryItemEffectOnOwner/);
+assert.match(inventorySource, /catalogItem\.potion \|\| catalogItem\.oil/);
 assert.match(inventorySource, /appendToxicityItemUseDetail/);
 assert.match(interactionsSource, /result\?\.used === false/);
 assert.match(automationSource, /function applyInventoryItemEffectOnOwner/);
+assert.match(automationSource, /item\?\.oil/);
+assert.match(automationSource, /effectKind: isActiveOil \? 'oil' : \(isActivePotion \? 'potion' : 'item'\)/);
 assert.match(automationSource, /refreshed: Boolean\(previousEffect\)/);
+assert.match(sessionSource, /itemDefinition\.potion \|\| itemDefinition\.oil/);
 
 context.__inventoryEvents = [];
 context.__inventoryOwner = { id: 'geralt', name: 'Geralt' };
@@ -237,5 +241,54 @@ const blockedInventoryUse = vm.runInContext(`useItem('gato')`, context);
 assert.equal(blockedInventoryUse.used, false);
 assert.equal(vm.runInContext('inventory[0].quantity', context), 1);
 assert.deepEqual(JSON.parse(JSON.stringify(context.__inventoryEvents)), []);
+
+const expectedActiveOils = [
+    'oleodefera',
+    'oleodeamaldicoado',
+    'oleodedraconideo',
+    'oleodeelemental',
+    'venenodoenforcado',
+    'oleodehibrido',
+    'oleodeinsetoide',
+    'oleodenecrofago',
+    'oleodeogroide',
+    'oleoderelicto',
+    'oleodeespectro',
+    'oleodevampiro'
+];
+
+expectedActiveOils.forEach(id => {
+    context.__itemId = id;
+    const item = vm.runInContext('predefinedItems.find(entry => entry.id === __itemId)', context);
+    assert.equal(item?.oil, true, `${id} deve estar classificado como óleo ativo.`);
+    assert.equal(item?.active, 20, `${id} deve permanecer ativo por 20 rodadas.`);
+});
+
+context.__inventoryEvents.length = 0;
+context.applyInventoryItemEffectOnOwner = (_owner, id) => {
+    context.__inventoryEvents.push(`effect:${id}`);
+    return {
+        applied: true,
+        refreshed: false,
+        effectKind: 'oil',
+        effect: { remainingTurns: 20 }
+    };
+};
+context.applyConsumedItemToxicity = () => {
+    context.__inventoryEvents.push('toxicity-check');
+    return null;
+};
+context.appendToxicityItemUseDetail = () => context.__inventoryEvents.push('detail');
+vm.runInContext(`inventory = [{ id: 'oleodenecrofago', name: 'Óleo de necrófago', quantity: 1 }]`, context);
+
+const oilInventoryUse = vm.runInContext(`useItem('oleodenecrofago')`, context);
+assert.equal(oilInventoryUse.used, true);
+assert.equal(oilInventoryUse.effect.effectKind, 'oil');
+assert.equal(vm.runInContext('inventory.length', context), 0);
+assert.deepEqual(
+    JSON.parse(JSON.stringify(context.__inventoryEvents)),
+    ['effect:oleodenecrofago', 'toxicity-check', 'detail', 'persist', 'render'],
+    'Usar um óleo pelo inventário deve aplicar o efeito antes de consumir a unidade.'
+);
 
 console.log('toxicity tests: ok');

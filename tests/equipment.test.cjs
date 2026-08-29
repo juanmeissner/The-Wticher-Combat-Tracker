@@ -568,4 +568,15 @@ assert.equal(attack.details, 'Sangramento');
     assert.match(expandedSkills, /\+10/);
 }
 
+const indexSource = fs.readFileSync(path.join(projectRoot, 'index.html'), 'utf8');
+const mobileSource = fs.readFileSync(path.join(projectRoot, 'mobile.css'), 'utf8');
+
+assert.match(
+    indexSource,
+    /class="inventory-toolbar"[\s\S]*id="inventoryActions"[\s\S]*id="inventoryList"/,
+    'O cabeçalho e as ações devem compartilhar a barra flutuante antes da lista.'
+);
+assert.match(mobileSource, /\.inventory-toolbar\s*\{[\s\S]*position:\s*sticky;[\s\S]*top:\s*0;/);
+assert.match(mobileSource, /\.inventory-toolbar \.inventory-transfer-action\s*\{[\s\S]*grid-column:\s*1 \/ -1;/);
+
 console.log('✓ Equipamentos, ataques, habilidades e perícias dos monstros validados.');

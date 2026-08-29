@@ -319,6 +319,7 @@
             const characterSpellsPanelHtml = window.renderCharacterSpellsPanel?.(c) || '';
             const criticalWoundsPanelHtml = window.renderCombatantCriticalWoundsPanel?.(c) || '';
             const combatConsequencesPanelHtml = window.renderCombatantCombatConsequencesPanel?.(c) || '';
+            const monsterLootPanelHtml = window.renderCombatantLootPanel?.(c) || '';
 
             if (
                 equipmentPanelHtml ||
@@ -329,11 +330,12 @@
                 characterProfessionalPanelHtml ||
                 characterSpellsPanelHtml ||
                 criticalWoundsPanelHtml ||
-                combatConsequencesPanelHtml
+                combatConsequencesPanelHtml ||
+                monsterLootPanelHtml
             ) {
                 const subpanels = document.createElement('div');
                 subpanels.className = 'combat-subpanels';
-                subpanels.innerHTML = `${equipmentPanelHtml}${monsterActionsPanelHtml}${monsterAbilitiesPanelHtml}${monsterSkillsPanelHtml}${characterSkillsPanelHtml}${characterProfessionalPanelHtml}${characterSpellsPanelHtml}${criticalWoundsPanelHtml}${combatConsequencesPanelHtml}`;
+                subpanels.innerHTML = `${equipmentPanelHtml}${monsterActionsPanelHtml}${monsterAbilitiesPanelHtml}${monsterSkillsPanelHtml}${characterSkillsPanelHtml}${characterProfessionalPanelHtml}${characterSpellsPanelHtml}${criticalWoundsPanelHtml}${combatConsequencesPanelHtml}${monsterLootPanelHtml}`;
                 wrapper.appendChild(subpanels);
             }
 

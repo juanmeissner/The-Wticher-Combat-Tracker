@@ -67,6 +67,7 @@ flowchart LR
 | 💥 Críticos | Margem, gravidade, 24 ferimentos, vacilos, defesas críticas, consequências avançadas, tratamento e histórico |
 | 🧙 Fichas | Criação rápida ou completa com raça, profissão, atributos, perícias, progressão, inventário e equipamentos |
 | 👹 Bestiário | Monstros predefinidos, busca, detalhes e painéis rápidos de ataques, habilidades e perícias |
+| 🎁 Saque | Recompensas contextuais, rolagem de quantidades, distribuição de itens e divisão de Coroas |
 | 🌀 Condições | Painel responsivo em grade, duração, stacks e dano recorrente automatizado |
 | ☣️ Toxicidade | Poções com valores próprios, limiares cumulativos, Tolerância, overdose e Mel Branco |
 | ✨ Efeitos | Magias e itens ativos vinculados individualmente aos participantes |
@@ -240,7 +241,7 @@ As automações preservam a decisão do mestre: magias e itens perguntam resulta
 | Coruja-do-mato | Recupera ST por turno |
 | Filtro de Petri | Registra o bônus para o próximo sinal |
 | Sangue Negro | Causa 1d6 ao vampiro que atacar o usuário protegido |
-| Óleos | Adicionam o bônus contra a categoria correta de criatura |
+| Óleos | Aplicam o efeito diretamente pelo inventário e adicionam o bônus contra a categoria correta de criatura |
 | Fissstech | Reduz pela metade o dano recebido enquanto estiver ativo |
 
 Criaturas predefinidas recebem suas categorias automaticamente. Monstros vampíricos entram no combate com a condição **Vampiro**, permitindo que Sangue Negro funcione sem perguntas repetidas. Personagens e criaturas personalizadas também podem receber uma raça/categoria ao serem criados.
@@ -267,6 +268,7 @@ O turno ativo funciona como contexto padrão das abas **Itens** e **Habilidades*
 - alteração de quantidade pelos botões `+` e `−`;
 - uso direto de consumíveis;
 - aplicação ou renovação automática do efeito da poção no dono do inventário ao usar o consumível;
+- aplicação ou renovação automática dos óleos de bruxo usados pelo inventário, com duração de 20 rodadas e bônus contra a categoria correspondente;
 - toxicidade exibida nos detalhes de cada poção e aplicada ao consumir;
 - detalhes acessíveis por botão no desktop, duplo clique ou toque prolongado;
 - efeitos de itens aplicáveis a qualquer participante selecionado;
@@ -347,6 +349,7 @@ Em **⋯ → Fichas → Nova ficha**, é possível escolher entre criação ráp
 - raça, profissão, especialização ou escola de bruxo;
 - nível configurável e orçamentos progressivos de atributo, perícia e treino;
 - seis atributos com valor base 10 e bônus derivado a cada dois pontos;
+- distribuição de atributos otimizada para celular, com nomes e cálculos completos, controles separados e adaptação automática para uma coluna em telas estreitas;
 - 53 perícias gerais e 280 habilidades profissionais com descrições completas;
 - pontos compartilhados entre perícias gerais e profissionais, com limite de investimento validado;
 - aprendizado de magias usando o custo oficial `unlockCost` e pontos de treino;
@@ -429,6 +432,21 @@ O bestiário oferece busca, ficha detalhada e adição rápida de monstros prede
 
 Os painéis de **Habilidades** e **Perícias** começam recolhidos para não poluir a tela e podem ser abertos separadamente quando a informação for necessária. Seus dados são copiados para o participante e preservados em encontros e backups. Os ataques continuam usando a mesma preferência de rolagem das armas e permanecem exclusivos dos monstros.
 
+#### 🎁 Saque e recompensas
+
+Quando um monstro predefinido é derrotado, o card eliminado recebe a ação contextual **Coletar saque**. O controle não aparece durante o combate normal e não ocupa espaço nos participantes vivos.
+
+- interpreta quantidades fixas, dados como `1d10` e divisões como `1d6/2`, arredondadas para cima;
+- resolve chances percentuais, como um saque com `5%` de possibilidade;
+- mantém a primeira rolagem salva no monstro, mesmo ao fechar e reabrir o modal;
+- destaca itens que exigem um teste `ND/CD` e deixa a confirmação do sucesso com o mestre;
+- permite escolher individualmente quem recebe cada item encontrado;
+- divide a recompensa em Coroas igualmente entre os personagens marcados;
+- adiciona materiais ainda não cadastrados como itens genéricos transferíveis no inventário;
+- impede que o mesmo monstro seja saqueado duas vezes;
+- preserva toda a distribuição em encontros, backups, histórico e desfazer;
+- inclui monstros saqueados, destinatários, itens e Coroas no relatório pós-combate.
+
 Para conteúdo próprio, **⋯ → Biblioteca** permite criar, editar e excluir:
 
 - itens personalizados, incluindo armas, armaduras, escudos, dano, defesa, quantidade de mãos e slot corporal;
@@ -442,14 +460,14 @@ O conteúdo original permanece intacto e a biblioteca pessoal é mantida somente
 O histórico funciona como uma linha do tempo auditável do combate:
 
 - organização por rodada;
-- filtros por dano, cura, efeito, condição, equipamento, teste e turno;
+- filtros por dano, cura, efeito, condição, equipamento, saque, teste e turno;
 - filtro por participante;
 - identificação de autor e alvo, como `Geralt → Grifo`;
 - nomes, ícones e dano específico para Sangramento, Chamas e Veneno;
 - registro de local atingido, rolagem, armadura, escudos, PV temporários e EST;
 - detalhes de efeitos aplicados, atualizados, removidos ou expirados;
 - testes de perícia com dado natural, bônus total, modificador, dificuldade ou oposição, margem, resultado e recompensas de crítico;
-- registro próprio para criação, falha de fabricação e transferência entre participantes;
+- registro próprio para criação, falha de fabricação, transferência e distribuição de saque;
 - substituição de “dano” por **“derrotou”** quando a ação elimina o alvo;
 - cartões compactos no mobile e detalhes expandidos sob demanda.
 
@@ -460,7 +478,7 @@ O menu **⋯** concentra as ferramentas administrativas:
 - `↶` desfaz ações recentes;
 - salva e carrega encontros completos;
 - exporta e restaura backup em JSON;
-- gera relatório pós-combate com rodadas, participantes, derrotas, dano e cura;
+- gera relatório pós-combate com rodadas, participantes, derrotas, dano, cura, itens e Coroas distribuídas;
 - configura contraste, animações e modos de rolagem;
 - instala ou atualiza a PWA;
 - repara o cache sem apagar os dados do usuário;
@@ -503,6 +521,8 @@ O menu **⋯** concentra as ferramentas administrativas:
 No combate, abra ou recolha **EQUIPAMENTOS** abaixo do personagem. Use `🔄` para alternar a arma ativa e `🎲` para consultar ou rolar seu dano, conforme a preferência escolhida.
 
 Para monstros predefinidos, abra os painéis **ATAQUES**, **HABILIDADES** ou **PERÍCIAS** abaixo da criatura. Habilidades e perícias permanecem recolhidas por padrão e não exigem abrir novamente a ficha completa do bestiário.
+
+Depois de derrotar uma criatura predefinida, expanda **ELIMINADOS** e toque em **🎁 Coletar saque**. Confira as quantidades roladas, marque os testes ND bem-sucedidos, escolha o destinatário de cada item e selecione quem participará da divisão das Coroas. A coleta fica salva e será levada ao relatório pós-combate.
 
 Para jogadores de ficha completa, abra **PERÍCIAS** abaixo do personagem e toque na perícia desejada. Informe a dificuldade ou o resultado do oponente, o d20 rolado na mesa e qualquer modificador temporário. As habilidades de profissão ficam no painel separado **HABILIDADES PROFISSIONAIS**.
 
@@ -580,6 +600,7 @@ A interface foi construída para sessões presenciais e se adapta ao espaço dis
 - uso da safe area em iPhones com notch e modo standalone;
 - notificações posicionadas acima do pad e dentro da área visível;
 - modais centralizados, roláveis e protegidos contra sobreposição da navegação;
+- cards de atributos reorganizados no mobile para preservar nomes, fórmulas e controles sem vazamento horizontal;
 - painel de condições em grade tanto no mobile quanto no desktop;
 - botões de detalhes e interações próprias para mouse em telas maiores;
 - suporte a teclado, foco, tecla `Esc`, contraste alto e redução de animações.
@@ -646,6 +667,7 @@ O projeto não exige framework JavaScript, bundler ou etapa de compilação.
 ├── character-spells.css         # Repertório e fluxo de conjuração no combate
 ├── critical-wounds.css          # Críticos, tratamentos, tabelas e consequências
 ├── toxicity.css                 # Indicador compacto e níveis visuais de toxicidade
+├── loot-rewards.css             # Coleta e distribuição responsiva de recompensas
 ├── crafting.css                 # Oficina, receitas, ingredientes e transferência
 ├── manifest.json                # Metadados da PWA
 ├── service-worker.js            # Entrada do Service Worker
@@ -666,6 +688,7 @@ O projeto não exige framework JavaScript, bundler ou etapa de compilação.
 │   ├── professional-skills-data.js # Classificação e automações das habilidades profissionais
 │   ├── critical-wounds.js        # Críticos, vacilos, ferimentos e tratamento médico
 │   ├── toxicity.js               # Poções, limiares, Tolerância, overdose e Mel Branco
+│   ├── loot-rewards.js            # Rolagem, distribuição, persistência e relatório de saque
 │   ├── equipment.js             # Equipamentos, defesas, rolagens e ataques de monstros
 │   ├── crafting.js              # Receitas, testes, produção e transferência de itens
 │   ├── enhancements.js          # Fichas, biblioteca, preferências e manutenção
@@ -701,13 +724,14 @@ node tests/character-skill-tests.test.cjs
 node tests/character-spells.test.cjs
 node tests/critical-wounds.test.cjs
 node tests/toxicity.test.cjs
+node tests/loot-rewards.test.cjs
 node tests/rune-source.test.cjs
 node tests/items-data.test.cjs
 node tests/equipment.test.cjs
 node tests/crafting.test.cjs
 ```
 
-Os testes verificam o isolamento entre personagens, a migração e o backup do armazenamento antigo, a criação completa, os seis modelos prontos, os orçamentos de progressão, o aprendizado de magias, os painéis de perícias e magias, os custos efetivos, Magia Expandida, Sobrecarga Arcana, Cura Mágica, a fórmula e as recompensas dos testes, a integração do `20 natural`, as quatro gravidades e os 24 ferimentos críticos, tratamento médico, vacilos, críticos defensivos, desarme, consequências avançadas, toxicidades das poções, limiares cumulativos sem dano duplicado, Toxicidade Controlada, redução por Tolerância e nível, overdose e Mel Branco, além da aplicação ou renovação segura dos efeitos ativos ao consumir poções pelo inventário. Também validam a sincronização com fichas, a integridade do catálogo, a classificação dos cinco slots de proteção, os três espaços de arma, os dois espaços de munição, a compatibilidade entre arcos/flechas e bestas/setas, troca e consumo de munição, a incompatibilidade entre escudo e arma de duas mãos, a soma das fontes defensivas, o desequipamento, o desgaste, o reparo das proteções, as rolagens, o catálogo de ataques, habilidades e perícias dos monstros, a resolução de ingredientes, os rendimentos das receitas, a proteção de itens equipados e a transferência entre personagens.
+Os testes verificam o isolamento entre personagens, a migração e o backup do armazenamento antigo, a criação completa, os seis modelos prontos, os orçamentos de progressão, o aprendizado de magias, os painéis de perícias e magias, os custos efetivos, Magia Expandida, Sobrecarga Arcana, Cura Mágica, a fórmula e as recompensas dos testes, a integração do `20 natural`, as quatro gravidades e os 24 ferimentos críticos, tratamento médico, vacilos, críticos defensivos, desarme, consequências avançadas, toxicidades das poções, limiares cumulativos sem dano duplicado, Toxicidade Controlada, redução por Tolerância e nível, overdose e Mel Branco, além da aplicação ou renovação segura dos efeitos ativos ao consumir poções pelo inventário. Também validam a sincronização com fichas, a integridade do catálogo, a classificação dos cinco slots de proteção, os três espaços de arma, os dois espaços de munição, a compatibilidade entre arcos/flechas e bestas/setas, troca e consumo de munição, a incompatibilidade entre escudo e arma de duas mãos, a soma das fontes defensivas, o desequipamento, o desgaste, o reparo das proteções, as rolagens, o catálogo de ataques, habilidades e perícias dos monstros, todos os formatos de saque atuais, a divisão de Coroas, a geração de materiais ausentes, a resolução de ingredientes, os rendimentos das receitas, a proteção de itens equipados e a transferência entre personagens.
 
 ## ✅ Estado atual
 
@@ -717,6 +741,7 @@ Os testes verificam o isolamento entre personagens, a migração e o backup do a
 - [x] Combate, iniciativa, rodadas e dano localizado
 - [x] Fichas persistentes e encontros salvos
 - [x] Criação completa com raças, profissões, atributos, perícias e aprendizado de magias
+- [x] Distribuição responsiva de atributos com controles legíveis e grade adaptável no mobile
 - [x] Seis modelos prontos, editáveis e validados pelos mesmos orçamentos da ficha completa
 - [x] Migração segura com cópia local única das fichas anteriores e resumo atualizado
 - [x] Painéis de perícias e habilidades profissionais para jogadores no combate
@@ -738,6 +763,7 @@ Os testes verificam o isolamento entre personagens, a migração e o backup do a
 - [x] Estado equipado persistente por personagem, aba, turno e ficha
 - [x] Ataques de monstros em cartões próprios e recolhíveis
 - [x] Habilidades e perícias de monstros em painéis rápidos recolhidos por padrão
+- [x] Saque contextual de monstros com rolagens, testes ND, destinatários e divisão de Coroas
 - [x] Rolagem manual ou automática de armas e ataques
 - [x] Seletor para consultar as coleções de outros participantes
 - [x] Catálogo de itens validado contra identificadores duplicados
@@ -745,7 +771,7 @@ Os testes verificam o isolamento entre personagens, a migração e o backup do a
 - [x] Condições, efeitos e automações de regras
 - [x] Toxicidade de poções, limiares cumulativos, Tolerância, overdose e Mel Branco
 - [x] Consumo de poções pelo inventário com efeito ativo, automações e renovação segura
-- [x] Histórico detalhado, desfazer e relatório pós-combate
+- [x] Histórico detalhado, desfazer e relatório pós-combate com saques e recompensas
 - [x] Backup completo, atualização e reparo de cache
 - [ ] Sincronização opcional entre dispositivos
 - [ ] Perfis de regras para outros sistemas de RPG

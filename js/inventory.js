@@ -566,13 +566,15 @@ function useItem(itemId) {
 
     const collectionOwner = window.getCharacterCollectionOwner?.() || null;
     const catalogItem = predefinedItems.find(entry => entry.id === itemId) || item;
-    const isActivePotion = Boolean(
-        catalogItem.potion &&
-        Object.prototype.hasOwnProperty.call(catalogItem, 'active')
+    const appliesActiveInventoryEffect = Boolean(
+        window.isInventoryItemAutomationManaged?.(catalogItem) || (
+            (catalogItem.potion || catalogItem.oil) &&
+            Object.prototype.hasOwnProperty.call(catalogItem, 'active')
+        )
     );
     let effectResult = null;
 
-    if (isActivePotion) {
+    if (appliesActiveInventoryEffect) {
         if (typeof window.applyInventoryItemEffectOnOwner !== 'function') {
             showToast('O sistema de efeitos ainda está carregando. Tente novamente.');
             return { used: false, reason: 'effect-system-unavailable' };
@@ -592,14 +594,18 @@ function useItem(itemId) {
     const toxicityResult = window.applyConsumedItemToxicity?.(collectionOwner, catalogItem) || null;
 
     if (effectResult?.applied) {
-        const duration = Number(effectResult.effect?.remainingTurns) || 0;
-        const durationDetail = duration > 0
-            ? ` por ${duration} rodada${duration === 1 ? '' : 's'}`
-            : '';
-        const action = effectResult.refreshed ? 'renovado' : 'aplicado';
-        window.appendToxicityItemUseDetail?.(
-            `Efeito ${catalogItem.name} ${action} em ${collectionOwner?.name || 'personagem'}${durationDetail}`
-        );
+        if (effectResult.summary) {
+            window.appendToxicityItemUseDetail?.(effectResult.summary);
+        } else {
+            const duration = Number(effectResult.effect?.remainingTurns) || 0;
+            const durationDetail = duration > 0
+                ? ` por ${duration} rodada${duration === 1 ? '' : 's'}`
+                : '';
+            const action = effectResult.refreshed ? 'renovado' : 'aplicado';
+            window.appendToxicityItemUseDetail?.(
+                `Efeito ${catalogItem.name} ${action} em ${collectionOwner?.name || 'personagem'}${durationDetail}`
+            );
+        }
     }
 
     item.quantity--;

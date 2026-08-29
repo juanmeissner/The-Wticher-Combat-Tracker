@@ -21,7 +21,12 @@ function openConditionMenu() {
         { icon: '🧛', name: 'Vampiro.' },
         { icon: '🌀', name: 'Alucinado.' },
         { icon: '🍷', name: 'Intoxicado.' },
-        { icon: '🛢️', name: 'Inflamável.' }
+        { icon: '🛢️', name: 'Inflamável.' },
+        { icon: '🕸️', name: 'Grudado.' },
+        { icon: '💉', name: 'Vício em Fisstech.' },
+        { icon: '🥶', name: 'Abstinência de Fisstech.' },
+        { icon: '🤪', name: 'Alegria Delirante.' },
+        { icon: '🧴', name: 'Cura Potencializada.' }
 ];
 
 const selectedCombatant = combatants.find(comp => comp.id === selectedId);
@@ -239,7 +244,7 @@ const conditionDescriptions = {
         active: 0,
         stack: 1,
         augment: "debuff",
-        desc: 'Não enxerga o campo de batalha e sofre as penalidades definidas pelo mestre.'
+        desc: 'Percepção exclusivamente visual falha automaticamente. Sofre desvantagem em ataques, defesas, Esquiva e Percepção que dependam da visão; ataques contra o alvo têm vantagem, o Movimento é reduzido pela metade sem orientação e reações que exijam visão ficam indisponíveis.'
     },
 
     '🤐': {
@@ -271,7 +276,7 @@ const conditionDescriptions = {
         active: 0,
         stack: 1,
         augment: "debuff",
-        desc: 'Sofre alucinações até superar o teste de resistência definido pelo mestre.'
+        desc: 'Sofre −4 em Percepção, −2 em Dedução e Percepção Humana, além de desvantagem em todos os testes de Ataque, Defesa, Percepção e Esquiva.'
     },
 
     '🍷': {
@@ -287,7 +292,47 @@ const conditionDescriptions = {
         active: 0,
         stack: 1,
         augment: "debuff",
-        desc: 'Pode incendiar quando exposto a faíscas; dano de fogo é resolvido conforme a regra do item.'
+        desc: 'Pode incendiar quando exposto a faíscas. Enquanto estiver sob o efeito de Inflamador, todo dano de Fogo recebido é dobrado.'
+    },
+
+    '🕸️': {
+        title: 'Grudado',
+        active: 0,
+        stack: 1,
+        augment: 'control',
+        desc: 'Movimento 0 e não pode Esquivar. Ainda pode atacar e bloquear. Pode gastar uma ação e passar em Físico ND 16 para se libertar.'
+    },
+
+    '💉': {
+        title: 'Vício em Fisstech',
+        active: 0,
+        stack: 5,
+        augment: 'debuff',
+        desc: 'Dependência permanente e acumulativa. Uma falha em Tolerância ND 20 após usar Fisstech aumenta o Vício em 1 pilha. O tratamento reduz as pilhas individualmente.'
+    },
+
+    '🥶': {
+        title: 'Abstinência de Fisstech',
+        active: 0,
+        stack: 5,
+        augment: 'debuff',
+        desc: '1 pilha: −2 em Percepção e Tolerância. 2: −2 em todos os testes. 3: desvantagem em todos os testes. 4: recuperação de HP e EST pela metade. 5: também fica Exausto. Usar Fisstech alivia 1 pilha.'
+    },
+
+    '🤪': {
+        title: 'Alegria Delirante',
+        active: 120,
+        stack: 1,
+        augment: 'condition',
+        desc: '+2 em Carisma social, Sedução e Persuasão, com vantagem em Coragem e resistência a Medo. Sofre −2 em Dedução, Percepção Humana e Resistir à Coerção, além de desvantagem para perceber mentiras e intenções hostis.'
+    },
+
+    '🧴': {
+        title: 'Cura Potencializada',
+        active: 20,
+        stack: 1,
+        augment: 'buff',
+        desc: 'Toda cura real de HP recebida é dobrada. Não aumenta PV temporários nem Escudo Mágico e nunca ultrapassa o HP máximo.'
     }
     };
 

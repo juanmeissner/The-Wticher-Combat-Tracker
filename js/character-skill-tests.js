@@ -314,6 +314,12 @@
             breakdown
         ) || { total: 0, details: [] };
         const toxicityModifier = global.getToxicitySkillModifier?.(combatant, skill) || { total: 0, details: [] };
+        const itemConditionModifier = global.getItemConditionSkillModifier?.(combatant, skill) || {
+            total: 0,
+            details: [],
+            advantage: false,
+            disadvantage: false
+        };
         const modal = document.createElement('div');
         modal.id = 'characterSkillTestModal';
         modal.className = 'session-overlay';
@@ -337,6 +343,9 @@
                 ${toxicityModifier.total ? `
                     <p class="character-professional-test-rule">☣ Toxicidade: ${toxicityModifier.total} · ${escapeSkillHtml(toxicityModifier.details.join(' · '))}</p>
                 ` : ''}
+                ${itemConditionModifier.total || itemConditionModifier.advantage || itemConditionModifier.disadvantage ? `
+                    <p class="character-professional-test-rule">🧪 Efeitos ativos: ${itemConditionModifier.total >= 0 ? '+' : ''}${itemConditionModifier.total} · ${escapeSkillHtml(itemConditionModifier.details.join(' · '))}</p>
+                ` : ''}
                 ${professional ? `<p class="character-professional-test-rule">${escapeSkillHtml(skill.description)}</p>` : ''}
 
                 <div class="character-skill-form-grid">
@@ -353,13 +362,13 @@
                     </label>
                     ${rollMode === 'manual' ? `
                         <label class="character-skill-field">
-                            <span>Resultado natural do d20</span>
+                            <span>Resultado natural do d20${itemConditionModifier.disadvantage ? ' · use o menor de 2d20' : itemConditionModifier.advantage ? ' · use o maior de 2d20' : ''}</span>
                             <input id="characterSkillNaturalRoll" type="number" inputmode="numeric" min="1" max="20" placeholder="1 a 20">
                         </label>
                     ` : `
                         <div class="character-skill-auto-roll">
                             <span>🎲 Rolagem automática</span>
-                            <small>O aplicativo rolará 1d20 ao confirmar.</small>
+                            <small>O aplicativo rolará ${itemConditionModifier.disadvantage || itemConditionModifier.advantage ? '2d20 e escolherá o resultado correto' : '1d20'} ao confirmar.</small>
                         </div>
                     `}
                     <label class="character-skill-field">
@@ -368,7 +377,7 @@
                     </label>
                 </div>
 
-                <div class="character-skill-formula">1d20 + ${breakdown.total} da perícia${woundModifier.total ? ` ${woundModifier.total} de ferimentos` : ''}${toxicityModifier.total ? ` ${toxicityModifier.total} de toxicidade` : ''} + modificador</div>
+                <div class="character-skill-formula">1d20 + ${breakdown.total} da perícia${woundModifier.total ? ` ${woundModifier.total} de ferimentos` : ''}${toxicityModifier.total ? ` ${toxicityModifier.total} de toxicidade` : ''}${itemConditionModifier.total ? ` ${itemConditionModifier.total} de efeitos ativos` : ''} + modificador</div>
                 <div class="session-dialog-actions">
                     <button type="button" class="session-secondary" onclick="closeCharacterSkillTest()">Cancelar</button>
                     <button type="button" class="session-primary" onclick="executeCharacterSkillTest('${encodedCombatantId}', '${encodedSkillId}', '${professional ? 'professional' : 'general'}')">Realizar teste</button>
@@ -420,8 +429,22 @@
 
         const rollMode = getSkillRollMode();
         const naturalInput = document.getElementById('characterSkillNaturalRoll');
-        const naturalRoll = rollMode === 'auto'
+        const itemConditionModifier = global.getItemConditionSkillModifier?.(combatant, skill) || {
+            total: 0,
+            details: [],
+            advantage: false,
+            disadvantage: false
+        };
+        const firstNaturalRoll = rollMode === 'auto' ? Math.floor(random() * 20) + 1 : null;
+        const secondNaturalRoll = rollMode === 'auto' && (itemConditionModifier.advantage || itemConditionModifier.disadvantage)
             ? Math.floor(random() * 20) + 1
+            : null;
+        const naturalRoll = rollMode === 'auto'
+            ? itemConditionModifier.disadvantage
+                ? Math.min(firstNaturalRoll, secondNaturalRoll)
+                : itemConditionModifier.advantage
+                    ? Math.max(firstNaturalRoll, secondNaturalRoll)
+                    : firstNaturalRoll
             : Number(naturalInput?.value);
 
         if (rollMode === 'manual' && (!naturalInput?.value.trim() || naturalRoll < 1 || naturalRoll > 20)) {
@@ -439,7 +462,7 @@
             breakdown
         ) || { total: 0, details: [] };
         const toxicityModifier = global.getToxicitySkillModifier?.(combatant, skill) || { total: 0, details: [] };
-        const modifier = manualModifier + woundModifier.total + toxicityModifier.total;
+        const modifier = manualModifier + woundModifier.total + toxicityModifier.total + itemConditionModifier.total;
         const result = model.resolveCharacterSkillTest({
             naturalRoll,
             skillTotal: breakdown.total,
@@ -475,6 +498,9 @@
         const detail = [
             ...(professional ? ['Tipo: habilidade profissional assistida'] : []),
             `Dado: ${result.naturalRoll}${critical ? ' (20 natural — Crítico)' : ''}`,
+            ...(secondNaturalRoll !== null ? [
+                `Rolagem com ${itemConditionModifier.disadvantage ? 'desvantagem' : 'vantagem'}: ${firstNaturalRoll} e ${secondNaturalRoll} → ${naturalRoll}`
+            ] : []),
             `${professional ? 'Nível profissional' : 'Total da perícia'}: ${result.skillTotal >= 0 ? '+' : ''}${result.skillTotal}`,
             `Modificador manual: ${manualModifier >= 0 ? '+' : ''}${manualModifier}`,
             ...(woundModifier.total ? [
@@ -484,6 +510,10 @@
             ...(toxicityModifier.total ? [
                 `Penalidade de toxicidade: ${toxicityModifier.total}`,
                 ...toxicityModifier.details.map(detail => `Toxicidade: ${detail}`)
+            ] : []),
+            ...(itemConditionModifier.total || itemConditionModifier.advantage || itemConditionModifier.disadvantage ? [
+                `Efeitos de item/condição: ${itemConditionModifier.total >= 0 ? '+' : ''}${itemConditionModifier.total}`,
+                ...itemConditionModifier.details.map(detail => `Efeito: ${detail}`)
             ] : []),
             `Modificador final: ${result.modifier >= 0 ? '+' : ''}${result.modifier}`,
             `Resultado final: ${result.finalResult}`,

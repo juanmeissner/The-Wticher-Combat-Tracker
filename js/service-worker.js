@@ -1,4 +1,4 @@
-const CACHE_NAME = 'witcher-combat-tracker-v53';
+const CACHE_NAME = 'witcher-combat-tracker-v58';
 
 const APP_SHELL = [
     './',
@@ -9,6 +9,7 @@ const APP_SHELL = [
     './equipment.css',
     './critical-wounds.css',
     './toxicity.css',
+    './loot-rewards.css',
     './character-spells.css',
     './crafting.css',
     './character-sheet-wizard.css',
@@ -50,6 +51,7 @@ const APP_SHELL = [
     './js/equipment.js',
     './js/critical-wounds.js',
     './js/toxicity.js',
+    './js/loot-rewards.js',
     './js/character-skill-tests.js',
     './js/character-spells.js',
     './js/crafting.js',
@@ -60,7 +62,8 @@ const APP_SHELL = [
     './js/session-features.js',
     './js/enhancements.js',
     './js/character-sheet-wizard.js',
-    './js/rules-automation.js'
+    './js/rules-automation.js',
+    './js/item-use-automation.js'
 ];
 
 const OPTIONAL_REMOTE_ASSETS = [

@@ -12,6 +12,7 @@ const HISTORY_TYPE_INFO = Object.freeze({
     equipment: { icon: '🛡️', label: 'Equipamento' },
     crafting: { icon: '⚒️', label: 'Criação' },
     transfer: { icon: '🔄', label: 'Transferência' },
+    loot: { icon: '🎁', label: 'Saque' },
     'skill-test': { icon: '🎲', label: 'Teste' },
     turn: { icon: '⏱️', label: 'Turno' },
     participant: { icon: '🧙', label: 'Participante' },
@@ -660,6 +661,15 @@ function finalizeResourceHistoryMetadata(metadata, target) {
     if (!metadata?.combat) return;
 
     metadata.combat.after = captureCombatResources(target);
+    if (metadata.type === 'damage') {
+        const automationDamage = window.consumeAutomationDamageResolution?.(target);
+        if (automationDamage) {
+            metadata.combat.automationDamage = cloneSessionData(automationDamage);
+            if (Number.isFinite(Number(automationDamage.damageAfterFisstech))) {
+                metadata.combat.finalValue = Math.max(0, Number(automationDamage.damageAfterFisstech) || 0);
+            }
+        }
+    }
     metadata.combat.defeated = didCombatantBecomeDefeated(
         target,
         metadata.combat.before,
@@ -744,6 +754,22 @@ function buildResourceHistoryDetail(metadata) {
 
     if (shieldAbsorbed > 0) detail.push(`Escudo mágico absorveu: ${shieldAbsorbed}`);
     if (temporaryAbsorbed > 0) detail.push(`PV temporários absorveram: ${temporaryAbsorbed}`);
+
+    const automationDamage = combat.automationDamage;
+    if (automationDamage?.damageType === 'fire') {
+        if (automationDamage.fireBonus > 0) detail.push(`Bafo de Dragão: +${automationDamage.fireBonus} de Fogo`);
+        if (automationDamage.fireMultiplier > 1) detail.push(`Inflamador: ×${automationDamage.fireMultiplier}`);
+    }
+    if (automationDamage?.fissstechSuppressed > 0) {
+        detail.push(`Fisstech suprimiu: ${automationDamage.fissstechSuppressed}`);
+        detail.push(`Dano após Fisstech: ${automationDamage.damageAfterFisstech}`);
+    }
+
+    if (metadata.type === 'healing' && Number(combat.healingMultiplier) !== 1) {
+        detail.push(`Cura base: ${combat.requestedHealing || 0}`);
+        detail.push(`Multiplicador de cura: ×${combat.healingMultiplier}`);
+        detail.push(`Cura calculada: ${combat.finalValue}`);
+    }
 
     if (combat.finalValue > 0) detail.unshift(`Dano total: ${combat.finalValue}`);
     if (before.hp !== after.hp) detail.push(`PV: ${before.hp} → ${after.hp}`);
@@ -1026,7 +1052,7 @@ function renderSessionToolsView(view) {
     }
 
     if (view === 'history') {
-        const filterTypes = ['all', 'damage', 'healing', 'effect', 'condition', 'equipment', 'skill-test', 'turn'];
+        const filterTypes = ['all', 'damage', 'healing', 'effect', 'condition', 'equipment', 'loot', 'skill-test', 'turn'];
         const participants = getHistoryParticipantOptions();
         const filterButtons = filterTypes.map(type => {
             const label = type === 'all' ? 'Tudo' : HISTORY_TYPE_INFO[type].label;
@@ -1487,6 +1513,11 @@ function saveCombatReport(state) {
     const monsters = state.combatants.filter(combatant => combatant.type === 'monster');
     const players = state.combatants.filter(combatant => combatant.type === 'player');
     const defeated = monsters.filter(combatant => combatant.hpCurrent <= 0);
+    const lootReport = window.getCollectedLootReport?.(state.combatants) || {
+        collections: [],
+        totalCrowns: 0,
+        totalItems: 0
+    };
 
     localStorage.setItem(LAST_COMBAT_REPORT_KEY, JSON.stringify({
         createdAt: new Date().toISOString(),
@@ -1497,6 +1528,9 @@ function saveCombatReport(state) {
         defeatedMonsters: defeated.length,
         totalDamage: totalFromEntries(damageEntries),
         totalHealing: totalFromEntries(healingEntries),
+        lootCollections: lootReport.collections,
+        totalCrownsCollected: lootReport.totalCrowns,
+        totalLootItems: lootReport.totalItems,
         recentActions: sessionHistory.slice(0, 12)
     }));
 }
@@ -1622,31 +1656,47 @@ function installActionGuards() {
             resolvedValue !== null &&
             resolvedValue !== undefined &&
             Number.isFinite(Number(resolvedValue));
-        const value = hasResolvedValue
+        const requestedValue = hasResolvedValue
             ? Math.max(0, Number.parseInt(resolvedValue, 10) || 0)
             : Number.parseInt(currentInput) || 0;
+        const healingMultiplier = isHealing && requestedValue > 0
+            ? Math.max(0, Number(window.getItemConditionHealingMultiplier?.(target)) || 1)
+            : 1;
+        const value = isHealing
+            ? Math.floor(requestedValue * healingMultiplier)
+            : requestedValue;
         const historyType = isHealing ? 'healing' : (value === 0 ? 'death-save' : 'damage');
         const historyMetadata = target
-            ? createResourceHistoryMetadata(historyType, target, value, historyContext || {})
+            ? createResourceHistoryMetadata(historyType, target, value, {
+                ...(historyContext || {}),
+                requestedHealing: isHealing ? requestedValue : undefined,
+                healingMultiplier
+            })
             : null;
+        if (historyMetadata?.combat && isHealing) {
+            historyMetadata.combat.requestedHealing = requestedValue;
+            historyMetadata.combat.healingMultiplier = healingMultiplier;
+        }
         const sourcePrefix = historyMetadata?.source?.name
             ? `${historyMetadata.source.name} > `
             : '';
         const historyLabel = () => {
             if (isHealing) return `${sourcePrefix}Cura em ${target?.name || 'alvo'}: ${value}`;
 
+            const recordedDamage = historyMetadata?.combat?.automationDamage?.damageAfterFisstech ?? value;
+
             if (historyMetadata?.combat?.defeated) {
                 if (historyMetadata?.combat?.critical) {
-                    return `${sourcePrefix}Derrotou ${target?.name || 'alvo'} com crítico: ${value}`;
+                    return `${sourcePrefix}Derrotou ${target?.name || 'alvo'} com crítico: ${recordedDamage}`;
                 }
-                return `${sourcePrefix}Derrotou ${target?.name || 'alvo'}: ${value || 'falha de morte'}`;
+                return `${sourcePrefix}Derrotou ${target?.name || 'alvo'}: ${recordedDamage || 'falha de morte'}`;
             }
 
             if (historyMetadata?.combat?.critical) {
-                return `${sourcePrefix}Crítico em ${target?.name || 'alvo'}: ${value}`;
+                return `${sourcePrefix}Crítico em ${target?.name || 'alvo'}: ${recordedDamage}`;
             }
 
-            return `${sourcePrefix}Dano em ${target?.name || 'alvo'}: ${value || 'falha de morte'}`;
+            return `${sourcePrefix}Dano em ${target?.name || 'alvo'}: ${recordedDamage || 'falha de morte'}`;
         };
 
         const applyOriginalHP = () => {
@@ -1704,7 +1754,11 @@ function installActionGuards() {
 
     window.applyST = isHealing => {
         const target = combatants.find(combatant => combatant.id === selectedId);
-        const value = Number.parseInt(currentInput) || 0;
+        const requestedValue = Number.parseInt(currentInput) || 0;
+        const recoveryMultiplier = isHealing
+            ? Math.max(0, Number(window.getItemConditionStaminaRecoveryMultiplier?.(target)) || 1)
+            : 1;
+        const value = isHealing ? Math.floor(requestedValue * recoveryMultiplier) : requestedValue;
         const stBefore = Math.max(0, Number(target?.stCurrent) || 0);
         const runeSourceMaximum = Math.max(0, Number(target?.runeSourceMax) || 0);
         const runeSourceBefore = Math.max(0, Number(target?.runeSourceCurrent) || 0);
@@ -1717,6 +1771,7 @@ function installActionGuards() {
                 ? (restoresRuneSource ? 'Recursos regenerados' : 'ST recuperado')
                 : 'ST gasto'} em ${target?.name || 'alvo'}: ${value}`,
             () => {
+                if (value !== requestedValue) currentInput = String(value);
                 const result = originalApplyST(isHealing);
 
                 if (target && restoresRuneSource) {
@@ -1734,6 +1789,9 @@ function installActionGuards() {
             },
             () => {
                 const details = [`EST: ${stBefore} → ${stAfter}`];
+                if (recoveryMultiplier !== 1) {
+                    details.push(`Recuperação base ${requestedValue} ×${recoveryMultiplier} = ${value}`);
+                }
                 if (restoresRuneSource) {
                     details.push(`Fonte Rúnica: ${runeSourceBefore} → ${runeSourceAfter}`);
                 }
@@ -1946,23 +2004,31 @@ function installActionGuards() {
 
         const itemDefinition = predefinedItems.find(entry => entry.id === item.id) || item;
         const collectionOwner = window.getCharacterCollectionOwner?.() || null;
-        const appliesActivePotionEffect = Boolean(
-            itemDefinition.potion &&
-            Object.prototype.hasOwnProperty.call(itemDefinition, 'active')
+        const appliesActiveInventoryEffect = Boolean(
+            window.isInventoryItemAutomationManaged?.(itemDefinition) || (
+                (itemDefinition.potion || itemDefinition.oil) &&
+                Object.prototype.hasOwnProperty.call(itemDefinition, 'active')
+            )
         );
-        const confirmationMessage = appliesActivePotionEffect
-            ? `${item.name} será consumida e seu efeito será aplicado em ${collectionOwner?.name || 'quem possui este inventário'}. Você poderá desfazer.`
+        const confirmationMessage = appliesActiveInventoryEffect
+            ? `${item.name} será consumido e seu efeito será aplicado em ${collectionOwner?.name || 'quem possui este inventário'}. Você poderá desfazer.`
             : `${item.name} será consumido do inventário. Você poderá desfazer.`;
+
+        const executeUse = () => trackAction(
+            `Item usado: ${item.name}`,
+            originalUseSelectedItem,
+            () => window.consumeToxicityItemUseDetail?.() || ''
+        );
+
+        if (window.beginInventoryItemUseFlow?.(itemDefinition, collectionOwner, executeUse)) {
+            return;
+        }
 
         openSessionConfirm({
             title: 'Usar item?',
             message: confirmationMessage,
             confirmLabel: 'Usar item',
-            onConfirm: () => trackAction(
-                `Item usado: ${item.name}`,
-                originalUseSelectedItem,
-                () => window.consumeToxicityItemUseDetail?.() || ''
-            )
+            onConfirm: executeUse
         });
     };
 }

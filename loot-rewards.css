@@ -1,0 +1,257 @@
+.monster-loot-panel {
+    position: relative;
+    z-index: 2;
+    margin: -2px 8px 8px;
+    overflow: hidden;
+    border: 1px solid rgba(245, 158, 11, .48);
+    border-top: 0;
+    border-radius: 0 0 14px 14px;
+    background: rgba(51, 31, 8, .96);
+}
+
+.monster-loot-panel.monster-loot-collected {
+    border-color: rgba(16, 185, 129, .42);
+    background: rgba(6, 46, 38, .94);
+}
+
+.monster-loot-action {
+    display: flex;
+    width: 100%;
+    min-height: 42px;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 8px 11px;
+    border: 0;
+    background: transparent;
+    color: #fcd34d;
+    text-align: left;
+}
+
+.monster-loot-collected .monster-loot-action {
+    color: #6ee7b7;
+}
+
+.monster-loot-action span {
+    flex: 0 0 auto;
+    font-size: .68rem;
+    font-weight: 950;
+    letter-spacing: .07em;
+}
+
+.monster-loot-action small {
+    min-width: 0;
+    overflow: hidden;
+    color: #e2e8f0;
+    font-size: .68rem;
+    font-weight: 750;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.monster-loot-dialog {
+    width: min(100%, 620px);
+}
+
+.loot-dialog-kicker,
+.loot-section-heading small {
+    display: block;
+    margin-bottom: 3px;
+    color: #38bdf8;
+    font-size: .62rem;
+    font-weight: 950;
+    letter-spacing: .1em;
+}
+
+.loot-dialog-note {
+    margin-bottom: 14px !important;
+    font-size: .8rem;
+}
+
+.loot-reward-section,
+.loot-items-section {
+    margin-top: 12px;
+    padding: 12px;
+    border: 1px solid #334155;
+    border-radius: 14px;
+    background: rgba(30, 41, 59, .58);
+}
+
+.loot-reward-section {
+    border-color: rgba(245, 158, 11, .38);
+    background: rgba(120, 53, 15, .16);
+}
+
+.loot-section-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.loot-section-heading strong {
+    display: block;
+    color: #f8fafc;
+}
+
+.loot-section-heading > span {
+    color: #94a3b8;
+    font-size: .7rem;
+    font-weight: 750;
+}
+
+.loot-recipient-checks {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 7px;
+}
+
+.loot-recipient-checks label,
+.loot-difficulty-check {
+    display: flex;
+    min-height: 38px;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 9px;
+    border: 1px solid #334155;
+    border-radius: 10px;
+    background: rgba(15, 23, 42, .72);
+    color: #e2e8f0;
+    font-size: .74rem;
+    font-weight: 750;
+}
+
+.loot-recipient-checks input,
+.loot-difficulty-check input {
+    width: 18px;
+    height: 18px;
+    accent-color: #0ea5e9;
+}
+
+.loot-results {
+    display: grid;
+    gap: 8px;
+}
+
+.loot-result-card {
+    padding: 10px;
+    border: 1px solid #334155;
+    border-radius: 12px;
+    background: #111c31;
+}
+
+.loot-result-card.loot-result-missed {
+    opacity: .62;
+}
+
+.loot-result-main {
+    display: grid;
+    grid-template-columns: 34px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 9px;
+}
+
+.loot-result-icon {
+    font-size: 1.35rem;
+    text-align: center;
+}
+
+.loot-result-main strong,
+.loot-result-main small {
+    display: block;
+}
+
+.loot-result-main strong {
+    color: #f8fafc;
+    font-size: .82rem;
+}
+
+.loot-result-main small {
+    margin-top: 2px;
+    color: #94a3b8;
+    font-size: .68rem;
+}
+
+.loot-result-main b {
+    color: #fcd34d;
+    font-size: .76rem;
+}
+
+.loot-difficulty-check {
+    margin-top: 9px;
+    border-color: rgba(245, 158, 11, .42);
+    color: #fde68a;
+}
+
+.loot-recipient-select {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    gap: 10px;
+    margin-top: 8px;
+    color: #94a3b8;
+    font-size: .7rem;
+    font-weight: 800;
+}
+
+.loot-recipient-select select {
+    width: 100%;
+    min-height: 38px;
+    padding: 7px 30px 7px 9px;
+    border: 1px solid #475569;
+    border-radius: 9px;
+    background: #1e293b;
+    color: #f8fafc;
+    font-weight: 750;
+}
+
+.loot-summary-list {
+    display: grid;
+    gap: 7px;
+    margin: 8px 0 16px;
+    padding: 0;
+    list-style: none;
+}
+
+.loot-summary-list li {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 9px 10px;
+    border: 1px solid #334155;
+    border-radius: 10px;
+    background: #1e293b;
+    font-size: .75rem;
+}
+
+.loot-summary-list strong {
+    color: #7dd3fc;
+    text-align: right;
+}
+
+.loot-summary-list .loot-result-missed {
+    opacity: .6;
+}
+
+@media (max-width: 520px) {
+    .monster-loot-dialog {
+        width: calc(100% - 20px);
+        padding: 16px;
+    }
+
+    .loot-recipient-checks {
+        grid-template-columns: 1fr;
+    }
+
+    .monster-loot-action {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 2px;
+    }
+
+    .monster-loot-action small {
+        width: 100%;
+    }
+}

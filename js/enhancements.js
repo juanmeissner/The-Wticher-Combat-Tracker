@@ -1489,6 +1489,24 @@ function renderCombatReportView(dialog) {
     const actions = report.recentActions?.length
         ? report.recentActions.map(action => `<li>${escapeEnhancementHtml(action.label)}<small>R${action.round}</small></li>`).join('')
         : '<li class="session-empty">Sem ações registradas.</li>';
+    const lootCollections = Array.isArray(report.lootCollections) ? report.lootCollections : [];
+    const lootDetails = lootCollections.length
+        ? lootCollections.map(collection => {
+            const crownSummary = (collection.crowns || []).map(distribution =>
+                `${escapeEnhancementHtml(distribution.recipientName)} +${distribution.amount}`
+            ).join(', ');
+            const itemSummary = (collection.items || [])
+                .filter(item => item.status === 'collected')
+                .map(item => `${item.quantity}x ${escapeEnhancementHtml(item.itemName)} → ${escapeEnhancementHtml(item.recipientName)}`)
+                .join(' · ');
+            return `
+                <li>
+                    <strong>🎁 ${escapeEnhancementHtml(collection.monsterName)}</strong>
+                    <small>${crownSummary || 'Sem Coroas'}${itemSummary ? `<br>${itemSummary}` : ''}</small>
+                </li>
+            `;
+        }).join('')
+        : '<li class="session-empty">Nenhum saque foi coletado.</li>';
 
     dialog.innerHTML = `
         <div class="session-dialog-header"><h2>Relatório pós-combate</h2><button type="button" class="session-close" onclick="closeSessionTools()" aria-label="Fechar">×</button></div>
@@ -1498,7 +1516,11 @@ function renderCombatReportView(dialog) {
             <div><small>Monstros derrotados</small><strong>${report.defeatedMonsters}/${report.monsters}</strong></div>
             <div><small>Dano registrado</small><strong>${report.totalDamage}</strong></div>
             <div><small>Cura registrada</small><strong>${report.totalHealing}</strong></div>
+            <div><small>Coroas distribuídas</small><strong>${report.totalCrownsCollected || 0}</strong></div>
+            <div><small>Itens coletados</small><strong>${report.totalLootItems || 0}</strong></div>
         </div>
+        <h3 class="enhancement-section-title">Saques e recompensas</h3>
+        <ul class="session-history-list enhancement-loot-report">${lootDetails}</ul>
         <h3 class="enhancement-section-title">Últimas ações</h3>
         <ul class="session-history-list">${actions}</ul>
         <button type="button" class="session-secondary session-full" onclick="renderSessionToolsView('menu')">Voltar</button>

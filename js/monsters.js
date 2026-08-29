@@ -786,7 +786,9 @@ function spawnPresetMonster(monsterId) {
             failures: 0
         },
 
-        stabilized: false
+        stabilized: false,
+
+        lootCollection: null
     };
 
     window.initializeCombatantEquipment?.(newMonster, monster);

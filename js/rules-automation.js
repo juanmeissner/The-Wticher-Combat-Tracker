@@ -91,12 +91,37 @@ const AUTOMATION_MANAGED_EFFECTS = new Set([
     'item:podedimeritio',
     'item:filtrodepetri',
     'item:trovoada',
+    'item:adesivoalquimico',
     'item:cloroformio',
+    'item:ervasentorpecentes',
+    'item:elixirdepantagran',
     'item:alucinogeno',
     'item:pocaodeperfume',
     'item:inflamador',
+    'item:fluidoesterilizante',
+    'item:soprodesucubo',
     'item:lagrimasdetalgar',
+    'item:bafodedragao',
     'item:samun'
+]);
+
+const AUTOMATION_DIRECT_INVENTORY_ITEMS = new Set([
+    'adesivoalquimico',
+    'cloroformio',
+    'podecoagulacao',
+    'fissstech',
+    'alucinogeno',
+    'ervasentorpecentes',
+    'elixirdepantagran',
+    'pocaodeperfume',
+    'inflamador',
+    'fluidoesterilizante',
+    'soprodesucubo',
+    'lagrimasdetalgar',
+    'podelua',
+    'podedimeritio',
+    'bafodedragao',
+    'samun'
 ]);
 
 let pendingCharacterSpellEffect = null;
@@ -114,6 +139,7 @@ const AUTOMATION_INSTANT_HEALING_ABILITIES = new Set([
 ]);
 
 let pendingAutomationEffectApplication = null;
+let pendingAutomationDamageContext = null;
 
 function getAutomationPreferences() {
     try {
@@ -241,15 +267,19 @@ function addAutomationCondition(combatant, icon, parentEffect = null) {
     if (existing) return existing;
 
     const duration = parentEffect?.remainingTurns ?? 0;
+    const definition = typeof conditionDescriptions !== 'undefined'
+        ? conditionDescriptions[icon]
+        : null;
     const condition = {
         id: icon,
         type: 'condition',
-        name: icon,
+        name: definition?.title || icon,
+        shortDescription: definition?.desc || '',
         remainingTurns: duration,
         initialTurns: duration,
         stacks: 1,
-        maxStacks: 1,
-        augment: 'debuff',
+        maxStacks: Math.max(1, Number(definition?.stack) || 1),
+        augment: definition?.augment || 'debuff',
         automation: parentEffect
             ? { linkedEffect: { id: parentEffect.id, type: parentEffect.type } }
             : undefined
@@ -288,6 +318,33 @@ function hasEffectBlockingItems(combatant) {
 
 function hasEffectBlockingRegeneration(combatant) {
     return hasAutomationEffect(combatant, 'item', 'podelua');
+}
+
+function isInventoryItemAutomationManaged(itemOrId) {
+    const id = typeof itemOrId === 'string' ? itemOrId : itemOrId?.id;
+    const item = typeof itemOrId === 'object'
+        ? itemOrId
+        : predefinedItems.find(current => current.id === id);
+
+    return Boolean(
+        id && (
+            AUTOMATION_DIRECT_INVENTORY_ITEMS.has(id) ||
+            item?.potion ||
+            item?.oil
+        ) && Object.prototype.hasOwnProperty.call(item || {}, 'active')
+    );
+}
+
+function setPendingAutomationDamageContext(context = {}) {
+    pendingAutomationDamageContext = context && typeof context === 'object'
+        ? { ...context }
+        : {};
+}
+
+function consumeAutomationDamageResolution(target) {
+    const resolution = target?.automation?.lastDamageResolution || null;
+    if (target?.automation) delete target.automation.lastDamageResolution;
+    return resolution;
 }
 
 function getConfiguredAutomationSpent(options, min, max, requestValue) {
@@ -450,20 +507,53 @@ function getAutomationConfig(type, id, options = {}) {
             return roll === null ? null : { signalBonus: roll, note: `+${roll} EST no próximo sinal.` };
         }
 
+        case 'item:adesivoalquimico':
+            return { adhesiveCountdown: 2, note: 'O adesivo endurece após 2 turnos do alvo.' };
+
         case 'item:cloroformio':
-            return window.confirm('O alvo falhou no teste de resistência?') ? { linkedCondition: '🚫' } : null;
+            return { linkedCondition: '🚫' };
 
         case 'item:alucinogeno':
-            return window.confirm('O alvo falhou no teste de resistência?') ? { linkedCondition: '🌀' } : null;
+            return { linkedCondition: '🌀' };
 
-        case 'item:pocaodeperfume':
-            return window.confirm('O alvo falhou no teste de Tolerância?') ? { linkedCondition: '🍷' } : null;
+        case 'item:ervasentorpecentes':
+            return { duration: 20, linkedCondition: '🌀', stabilizesCriticalWound: true };
+
+        case 'item:elixirdepantagran':
+            return { duration: 120, linkedCondition: '🤪' };
+
+        case 'item:pocaodeperfume': {
+            const pending = window.getPendingInventoryItemAutomationOptions?.(id) || {};
+            return {
+                duration: Math.max(60, Number(pending.duration) || 60),
+                linkedConditions: ['🍷', '🐍'],
+                poisonNoSave: true,
+                note: pending.hours ? `${pending.hours} hora(s) · somente cura de veneno remove o efeito.` : ''
+            };
+        }
 
         case 'item:inflamador':
             return { linkedCondition: '🛢️' };
 
+        case 'item:fluidoesterilizante':
+            return { duration: 20, linkedCondition: '🧴', healingMultiplier: 2 };
+
+        case 'item:soprodesucubo': {
+            const pending = window.getPendingInventoryItemAutomationOptions?.(id) || {};
+            return {
+                duration: 30,
+                succubusMode: pending.succubusMode || 'skin',
+                note: pending.succubusMode === 'drink'
+                    ? '−5 em Resistir à Sedução.'
+                    : '+2 em Sedução.'
+            };
+        }
+
         case 'item:lagrimasdetalgar':
             return { linkedCondition: '🧊' };
+
+        case 'item:bafodedragao':
+            return { duration: 3, fireDamageBonus: 20 };
 
         case 'item:samun':
             return { linkedCondition: '🙈' };
@@ -631,6 +721,10 @@ function applyAutomationEffectStart(combatant, effect) {
         addAutomationCondition(combatant, metadata.linkedCondition, effect);
     }
 
+    (metadata.linkedConditions || []).forEach(icon => {
+        addAutomationCondition(combatant, icon, effect);
+    });
+
     if (key === 'item:papafigo') {
         removeAutomationCondition(combatant, '🐍');
     }
@@ -681,7 +775,9 @@ function applyAutomationDirectDamage(combatant, damage) {
 }
 
 function applyAutomationHealing(combatant, value) {
-    const amount = Math.max(0, Number(value) || 0);
+    const baseAmount = Math.max(0, Number(value) || 0);
+    const multiplier = Math.max(0, Number(window.getItemConditionHealingMultiplier?.(combatant)) || 1);
+    const amount = Math.floor(baseAmount * multiplier);
     if (!combatant || amount === 0 || hasEffectBlockingRegeneration(combatant)) return 0;
 
     const previousHp = combatant.hpCurrent;
@@ -715,11 +811,13 @@ function applyInstantAbilityHealing(target, caster, ability) {
         const hpBefore = Math.max(0, Number(target.hpCurrent) || 0);
         const hpMaximum = Math.max(hpBefore, Number(target.hpMax) || 0);
         const blocked = hasEffectBlockingRegeneration(target);
+        const healingMultiplier = Math.max(0, Number(window.getItemConditionHealingMultiplier?.(target)) || 1);
+        const effectiveHealing = Math.floor(calculation.total * healingMultiplier);
         if (!spendAutomationEnergy(caster, energyMetadata)) return null;
 
         const hpAfter = blocked
             ? hpBefore
-            : Math.min(hpMaximum, hpBefore + calculation.total);
+            : Math.min(hpMaximum, hpBefore + effectiveHealing);
         target.hpCurrent = hpAfter;
         if (hpAfter > hpBefore) {
             target.deathSaves = { success: 0, failures: 0 };
@@ -727,6 +825,8 @@ function applyInstantAbilityHealing(target, caster, ability) {
         }
         result = {
             ...calculation,
+            healingMultiplier,
+            effectiveHealing,
             blocked,
             healed: hpAfter - hpBefore,
             hpBefore,
@@ -740,6 +840,7 @@ function applyInstantAbilityHealing(target, caster, ability) {
     const detail = () => [
         `Magia: ${ability.name}`,
         `Fórmula de cura: ${calculation.base} + ${calculation.attributeLabel} ${calculation.attributeBonus} + ${calculation.dice} ${calculation.roll} = ${calculation.total}`,
+        ...(result?.healingMultiplier !== 1 ? [`Fluido/condições: ${calculation.total} ×${result?.healingMultiplier} = ${result?.effectiveHealing}`] : []),
         result?.blocked ? 'Cura efetiva: 0 PV · regeneração bloqueada' : `Cura efetiva: ${result?.healed || 0} PV`,
         `PV de ${target.name}: ${result?.hpBefore ?? target.hpCurrent} → ${result?.hpAfter ?? target.hpCurrent}`,
         `EST de ${caster.name}: ${energyMetadata.staminaBefore ?? caster.stCurrent} → ${energyMetadata.staminaAfter ?? caster.stCurrent}`
@@ -926,6 +1027,17 @@ function resolveAutomatedDamage(target, damage) {
     const attacker = combatants.find(combatant => combatant.id === activeTurnId) || null;
     const messages = [];
     let remainingDamage = Math.max(0, Number(damage) || 0);
+    const damageContext = pendingAutomationDamageContext || {};
+    pendingAutomationDamageContext = null;
+    const resolution = {
+        requestedDamage: remainingDamage,
+        damageType: damageContext.damageType || '',
+        fireBonus: 0,
+        fireMultiplier: 1,
+        fissstechSuppressed: 0,
+        damageAfterFisstech: remainingDamage,
+        remainingDamage
+    };
 
     target.automation = { ...(target.automation || {}), attackedSinceTurn: true };
 
@@ -935,9 +1047,27 @@ function resolveAutomatedDamage(target, damage) {
         messages.push(`${oil.effect.name}: +12 contra ${oil.category}`);
     }
 
-    if (hasAutomationEffect(target, 'item', 'fissstech')) {
-        remainingDamage = Math.floor(remainingDamage / 2);
-        messages.push('Fissstech: dano reduzido pela metade');
+    const hasFireReaction =
+        hasAutomationEffect(target, 'item', 'bafodedragao') ||
+        hasAutomationEffect(target, 'item', 'inflamador');
+    const isFireDamage = damageContext.damageType === 'fire' || (
+        !damageContext.damageType &&
+        hasFireReaction &&
+        window.confirm(`${target.name} possui um efeito que reage a Fogo. Este dano é de Fogo?`)
+    );
+
+    if (isFireDamage) {
+        resolution.damageType = 'fire';
+        if (hasAutomationEffect(target, 'item', 'bafodedragao')) {
+            remainingDamage += 20;
+            resolution.fireBonus = 20;
+            messages.push('Bafo de Dragão: +20 de dano de Fogo');
+        }
+        if (hasAutomationEffect(target, 'item', 'inflamador')) {
+            remainingDamage *= 2;
+            resolution.fireMultiplier = 2;
+            messages.push('Inflamador: dano de Fogo dobrado');
+        }
     }
 
     const bloodBlack = triggerAutomationBloodBlack(attacker, target);
@@ -962,7 +1092,18 @@ function resolveAutomatedDamage(target, damage) {
         }
 
         window.setTimeout(renderAutomationCardSummaries, 0);
-        return { remainingDamage: 0, message: messages.join(' · ') };
+        resolution.remainingDamage = 0;
+        resolution.magicShieldAbsorbed = absorbed;
+        target.automation.lastDamageResolution = resolution;
+        return { ...resolution, remainingDamage: 0, message: messages.join(' · ') };
+    }
+
+    if (hasAutomationEffect(target, 'item', 'fissstech')) {
+        const beforeFissstech = remainingDamage;
+        remainingDamage = Math.floor(beforeFissstech / 2);
+        resolution.fissstechSuppressed = beforeFissstech - remainingDamage;
+        resolution.damageAfterFisstech = remainingDamage;
+        messages.push(`Fisstech: suprimiu ${resolution.fissstechSuppressed} de dano`);
     }
 
     getAutomationTemporarySources(target).forEach(effect => {
@@ -974,8 +1115,10 @@ function resolveAutomatedDamage(target, damage) {
         messages.push(`${effect.name}: absorveu ${absorbed}`);
     });
 
+    resolution.remainingDamage = remainingDamage;
+    target.automation.lastDamageResolution = resolution;
     window.setTimeout(renderAutomationCardSummaries, 0);
-    return { remainingDamage, message: messages.join(' · ') };
+    return { ...resolution, remainingDamage, message: messages.join(' · ') };
 }
 
 function renderAutomationCardSummaries() {
@@ -1188,15 +1331,25 @@ function installRulesAutomation() {
     function applyInventoryItemEffectOnOwner(target, id) {
         const combatTarget = combatants.find(current => String(current.id) === String(target?.id));
         const item = predefinedItems.find(current => current.id === id);
+        const isActivePotion = Boolean(
+            item?.potion && Object.prototype.hasOwnProperty.call(item, 'active')
+        );
+        const isActiveOil = Boolean(
+            item?.oil &&
+            AUTOMATION_OIL_CATEGORIES[id] &&
+            Object.prototype.hasOwnProperty.call(item, 'active')
+        );
 
         if (!combatTarget) {
-            showToast('Adicione o personagem ao combate antes de consumir uma poção com efeito ativo.');
+            showToast('Adicione o personagem ao combate antes de consumir um item com efeito ativo.');
             return { applied: false, blocked: true, reason: 'not-in-combat' };
         }
-        if (!item?.potion || !Object.prototype.hasOwnProperty.call(item, 'active')) {
+        const isManagedInventoryItem = AUTOMATION_DIRECT_INVENTORY_ITEMS.has(id) &&
+            Object.prototype.hasOwnProperty.call(item || {}, 'active');
+        if (!isActivePotion && !isActiveOil && !isManagedInventoryItem) {
             return { applied: false, notApplicable: true };
         }
-        if (id !== 'papafigo' && hasEffectBlockingItems(combatTarget)) {
+        if (isActivePotion && id !== 'papafigo' && hasEffectBlockingItems(combatTarget)) {
             showToast('Papa-figo neutraliza outras poções neste personagem.');
             return { applied: false, blocked: true, reason: 'papafigo' };
         }
@@ -1247,7 +1400,8 @@ function installRulesAutomation() {
             applied: true,
             refreshed: Boolean(previousEffect),
             effect: applied,
-            targetId: combatTarget.id
+            targetId: combatTarget.id,
+            effectKind: isActiveOil ? 'oil' : (isActivePotion ? 'potion' : 'item')
         };
     }
 
@@ -1371,6 +1525,9 @@ function installRulesAutomation() {
 }
 
 window.rollAutomationDice = rollAutomationDice;
+window.isInventoryItemAutomationManaged = isInventoryItemAutomationManaged;
+window.setPendingAutomationDamageContext = setPendingAutomationDamageContext;
+window.consumeAutomationDamageResolution = consumeAutomationDamageResolution;
 window.isAutomationRegenerationBlocked = hasEffectBlockingRegeneration;
 window.applyInstantAbilityHealing = applyInstantAbilityHealing;
 window.getRecurringConditionPrevention = getRecurringConditionPrevention;
