@@ -1,4 +1,5 @@
 const CHARACTER_SHEETS_KEY = 'dnd_character_sheets';
+const CHARACTER_SHEETS_STAGE_10_BACKUP_KEY = 'dnd_character_sheets_backup_stage10_v11';
 const ACTIVE_SHEET_KEY = 'dnd_active_character_sheet';
 const CUSTOM_LIBRARY_KEY = 'dnd_custom_library';
 const APP_PREFERENCES_KEY = 'dnd_app_preferences';
@@ -11,6 +12,7 @@ const DEFAULT_APP_PREFERENCES = {
         crafting: 'manual',
         abilities: 'manual',
         items: 'manual',
+        skills: 'manual',
         negativeConditions: 'auto'
     }
 };
@@ -114,6 +116,127 @@ function persistCharacterSheets() {
     localStorage.setItem(CHARACTER_SHEETS_KEY, JSON.stringify(characterSheets));
 }
 
+function ensureCharacterSheetStage10Backup(sheets = characterSheets) {
+    if (!Array.isArray(sheets) || !sheets.length) return false;
+    if (localStorage.getItem(CHARACTER_SHEETS_STAGE_10_BACKUP_KEY)) return false;
+
+    localStorage.setItem(CHARACTER_SHEETS_STAGE_10_BACKUP_KEY, JSON.stringify({
+        createdAt: new Date().toISOString(),
+        rulesVersion: window.characterSheetModel?.CHARACTER_RULES_VERSION || 11,
+        sheets: cloneEnhancementData(sheets)
+    }));
+    return true;
+}
+
+const CHARACTER_FOUNDATION_FIELDS = Object.freeze([
+    'schemaVersion',
+    'rulesVersion',
+    'creationMode',
+    'raceId',
+    'identity',
+    'attributes',
+    'skills',
+    'professionalSkills',
+    'learnedAbilityIds',
+    'abilities',
+    'progression',
+    'traits',
+    'racialTraits',
+    'raceEffects',
+    'derivedValues',
+    'resources',
+    'automationState',
+    'criticalWounds',
+    'criticalWoundBaseResources'
+]);
+
+function refreshCharacterDerivedValues(target, options = {}) {
+    if (!target || target.creationMode !== 'full') return null;
+
+    const model = window.characterSheetModel;
+    if (!model?.calculateCharacterDerivedValues) return null;
+
+    const equippedWeight = window.getEquippedWeightBreakdown?.(target)?.total || 0;
+    const baseDerived = model.calculateCharacterDerivedValues(target, { equippedWeight });
+    const derived = window.applyCriticalWoundDerivedModifiers?.(target, baseDerived) || baseDerived;
+    const initializeCurrent = options.initializeCurrent === true;
+    const previousHpCurrent = Number(target.hpCurrent);
+    const previousStCurrent = Number(target.stCurrent);
+    const previousRuneCurrent = Number(
+        target.runeSourceCurrent ?? target.resources?.runeSource?.current
+    );
+
+    target.hpMax = derived.hpMaximum;
+    target.stMax = derived.stMaximum;
+    target.hpCurrent = initializeCurrent || !Number.isFinite(previousHpCurrent)
+        ? derived.hpMaximum
+        : Math.min(derived.hpMaximum, Math.max(0, previousHpCurrent));
+    target.stCurrent = initializeCurrent || !Number.isFinite(previousStCurrent)
+        ? derived.stMaximum
+        : Math.min(derived.stMaximum, Math.max(0, previousStCurrent));
+    target.runeSourceMax = derived.runeSourceMaximum;
+    target.runeSourceCurrent = initializeCurrent || !Number.isFinite(previousRuneCurrent)
+        ? derived.runeSourceMaximum
+        : Math.min(derived.runeSourceMaximum, Math.max(0, previousRuneCurrent));
+    target.expandedMagic = Math.max(0, Number(derived.expandedMagic) || 0);
+    target.carryingCapacity = derived.carryingCapacity;
+    target.movement = derived.movement;
+    target.equippedWeight = derived.equippedWeight;
+    target.derivedValues = cloneEnhancementData(derived);
+    target.resources = {
+        ...(target.resources && typeof target.resources === 'object' ? target.resources : {}),
+        hp: { current: target.hpCurrent, max: target.hpMax },
+        st: { current: target.stCurrent, max: target.stMax },
+        runeSource: { current: target.runeSourceCurrent, max: target.runeSourceMax },
+        carryingCapacity: target.carryingCapacity,
+        movement: target.movement,
+        equippedWeight: target.equippedWeight
+    };
+
+    if (options.persist === true) {
+        if (combatants.includes(target)) window.savePlayersToStorage?.();
+        else persistCharacterSheets();
+    }
+
+    return derived;
+}
+
+function normalizeCharacterSheetFoundation(sheet) {
+    return window.characterSheetModel?.normalizeCharacterSheet
+        ? window.characterSheetModel.normalizeCharacterSheet(sheet)
+        : sheet;
+}
+
+function copyCharacterFoundation(target, source, { overwrite = true } = {}) {
+    if (!target || !source) return target;
+
+    CHARACTER_FOUNDATION_FIELDS.forEach(field => {
+        if (source[field] === undefined) return;
+        if (!overwrite && target[field] !== undefined) return;
+
+        target[field] = source[field] && typeof source[field] === 'object'
+            ? cloneEnhancementData(source[field])
+            : source[field];
+    });
+
+    return target;
+}
+
+function migrateCharacterSheetSchema() {
+    if (!window.characterSheetModel?.migrateCharacterSheets) return false;
+
+    ensureCharacterSheetStage10Backup(characterSheets);
+    const migration = window.characterSheetModel.migrateCharacterSheets(characterSheets);
+    characterSheets = migration.sheets;
+
+    characterSheets.forEach(sheet => refreshCharacterDerivedValues(sheet));
+
+    if (migration.changed || characterSheets.some(sheet => sheet.creationMode === 'full')) {
+        persistCharacterSheets();
+    }
+    return migration.changed;
+}
+
 function getActiveCharacterSheet() {
     return characterSheets.find(sheet => sheet.id === activeCharacterSheetId) || null;
 }
@@ -144,13 +267,14 @@ function migrateCharacterSheetResourceState() {
 }
 
 function buildSheetFromCombatant(combatant) {
-    return {
+    const sheet = {
         id: `sheet-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
         name: combatant.name,
         hpMax: combatant.hpMax,
         hpCurrent: combatant.hpCurrent,
         stMax: combatant.stMax ?? 0,
         stCurrent: combatant.stCurrent ?? 0,
+        toxicityCurrent: Math.max(0, Number(combatant.toxicityCurrent) || 0),
         resourceStateSaved: true,
         ca: combatant.ca ?? 10,
         atkInfo: combatant.atkInfo ?? '-',
@@ -160,14 +284,22 @@ function buildSheetFromCombatant(combatant) {
         abilities: cloneEnhancementData(combatant.abilities || []),
         expandedMagic: Math.max(0, Number(combatant.expandedMagic) || 0),
         equipment: cloneEnhancementData(combatant.equipment || {}),
+        criticalWounds: cloneEnhancementData(combatant.criticalWounds || []),
+        criticalWoundBaseResources: cloneEnhancementData(combatant.criticalWoundBaseResources || null),
         updatedAt: new Date().toISOString()
     };
+
+    copyCharacterFoundation(sheet, combatant);
+    refreshCharacterDerivedValues(sheet);
+    return normalizeCharacterSheetFoundation(sheet);
 }
 
 function syncCombatantsToCharacterSheets() {
     let changed = false;
 
-    combatants.filter(combatant => combatant.type === 'player').forEach(combatant => {
+    combatants
+        .filter(combatant => combatant.type === 'player' && combatant.characterPersistence !== 'combat-only')
+        .forEach(combatant => {
         let sheet = characterSheets.find(entry => entry.id === combatant.sheetId);
 
         if (!sheet) {
@@ -178,6 +310,16 @@ function syncCombatantsToCharacterSheets() {
             sheet = buildSheetFromCombatant(combatant);
             characterSheets.push(sheet);
             changed = true;
+        }
+
+        const combatantHasFoundation = combatant.creationMode === 'quick'
+            || combatant.creationMode === 'full';
+
+        if (!combatantHasFoundation || (sheet.creationMode === 'full' && combatant.creationMode !== 'full')) {
+            copyCharacterFoundation(combatant, sheet);
+            changed = true;
+        } else {
+            copyCharacterFoundation(sheet, combatant);
         }
 
         if (combatant.sheetId !== sheet.id) {
@@ -206,6 +348,7 @@ function syncCombatantsToCharacterSheets() {
         }
 
         window.ensureEquipmentLoadout?.(combatant);
+        refreshCharacterDerivedValues(combatant);
 
         Object.assign(sheet, {
             name: combatant.name,
@@ -213,6 +356,7 @@ function syncCombatantsToCharacterSheets() {
             hpCurrent: combatant.hpCurrent,
             stMax: combatant.stMax ?? 0,
             stCurrent: combatant.stCurrent ?? 0,
+            toxicityCurrent: Math.max(0, Number(combatant.toxicityCurrent) || 0),
             resourceStateSaved: true,
             ca: combatant.ca ?? 10,
             atkInfo: combatant.atkInfo ?? '-',
@@ -222,6 +366,8 @@ function syncCombatantsToCharacterSheets() {
             abilities: cloneEnhancementData(combatant.abilities || []),
             expandedMagic: Math.max(0, Number(combatant.expandedMagic) || 0),
             equipment: cloneEnhancementData(combatant.equipment || {}),
+            criticalWounds: cloneEnhancementData(combatant.criticalWounds || []),
+            criticalWoundBaseResources: cloneEnhancementData(combatant.criticalWoundBaseResources || null),
             updatedAt: new Date().toISOString()
         });
         changed = true;
@@ -246,14 +392,17 @@ function syncActiveSheetCollections() {
     persistCharacterSheets();
 }
 
-function createNewCharacterSheet() {
-    const sheet = {
+function buildCharacterSheetRecord(foundation = {}, overrides = {}) {
+    const identityName = String(foundation.identity?.name || '').trim();
+
+    const sheet = normalizeCharacterSheetFoundation({
         id: `sheet-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-        name: 'Novo personagem',
+        name: identityName || 'Novo personagem',
         hpMax: 10,
         hpCurrent: 10,
         stMax: 0,
         stCurrent: 0,
+        toxicityCurrent: 0,
         resourceStateSaved: false,
         ca: 10,
         atkInfo: '-',
@@ -265,14 +414,41 @@ function createNewCharacterSheet() {
         equipment: window.ensureEquipmentLoadout
             ? cloneEnhancementData(window.ensureEquipmentLoadout({ inventory: [] }))
             : {},
-        updatedAt: new Date().toISOString()
-    };
+        criticalWounds: [],
+        criticalWoundBaseResources: null,
+        updatedAt: new Date().toISOString(),
+        ...cloneEnhancementData(foundation),
+        ...cloneEnhancementData(overrides)
+    });
+
+    refreshCharacterDerivedValues(sheet, {
+        initializeCurrent: sheet.creationMode === 'full' && sheet.resourceStateSaved !== true
+    });
+    return sheet;
+}
+
+function createQuickCharacterSheet() {
+    const sheet = buildCharacterSheetRecord();
 
     characterSheets.unshift(sheet);
     activeCharacterSheetId = sheet.id;
     localStorage.setItem(ACTIVE_SHEET_KEY, sheet.id);
     persistCharacterSheets();
     openCharacterSheetEditor(sheet.id);
+
+    return sheet;
+}
+
+function createNewCharacterSheet(mode = '') {
+    if (mode === 'quick') return createQuickCharacterSheet();
+    if (mode === 'full') return window.startCharacterSheetWizard?.({ fresh: true });
+
+    if (typeof window.openCharacterCreationModeChooser === 'function') {
+        window.openCharacterCreationModeChooser();
+        return null;
+    }
+
+    return createQuickCharacterSheet();
 }
 
 function openCharacterSheetEditor(id) {
@@ -280,7 +456,13 @@ function openCharacterSheetEditor(id) {
     const dialog = document.querySelector('#sessionToolsModal .session-tools');
 
     if (!sheet || !dialog) return;
+    if (sheet.creationMode === 'full') {
+        window.startCharacterSheetWizard?.({ editSheetId: id });
+        return;
+    }
 
+    refreshCharacterDerivedValues(sheet);
+    const derivedLocked = sheet.creationMode === 'full';
     dialog.innerHTML = `
         <div class="session-dialog-header">
             <h2>Ficha de personagem</h2>
@@ -288,8 +470,8 @@ function openCharacterSheetEditor(id) {
         </div>
         <div class="enhancement-form-grid">
             <label>Nome<input id="sheetName" class="session-input" value="${escapeEnhancementHtml(sheet.name)}"></label>
-            <label>HP máximo<input id="sheetHpMax" class="session-input" type="number" min="1" value="${sheet.hpMax}"></label>
-            <label>ST máximo<input id="sheetStMax" class="session-input" type="number" min="0" value="${sheet.stMax}"></label>
+            <label>HP máximo<input id="sheetHpMax" class="session-input" type="number" min="1" value="${sheet.hpMax}" ${derivedLocked ? 'readonly' : ''}></label>
+            <label>ST máximo<input id="sheetStMax" class="session-input" type="number" min="0" value="${sheet.stMax}" ${derivedLocked ? 'readonly' : ''}></label>
             <label>CA<input id="sheetCa" class="session-input" type="number" min="0" value="${sheet.ca}"></label>
             <label class="enhancement-span-2">Raça / categoria<select id="sheetRaceCategory" class="session-input">${renderCombatantRaceOptions(sheet.monsterCategory)}</select></label>
             <label class="enhancement-span-2">Ataque/Dano<input id="sheetAtk" class="session-input" value="${escapeEnhancementHtml(sheet.atkInfo)}"></label>
@@ -298,7 +480,9 @@ function openCharacterSheetEditor(id) {
             <label>Defesa adicional: Braço<input id="sheetArmorArm" class="session-input" type="number" min="0" value="${Number(sheet.armor?.arm) || 0}"></label>
             <label>Defesa adicional: Perna<input id="sheetArmorLeg" class="session-input" type="number" min="0" value="${Number(sheet.armor?.leg) || 0}"></label>
         </div>
-        <p class="enhancement-note">Fichas novas entram com PV e EST máximos. Recursos atuais, inventário, habilidades e equipamentos são sincronizados automaticamente.</p>
+        <p class="enhancement-note">${derivedLocked
+            ? `HP e EST máximos são calculados pela ficha completa. Movimento ${sheet.movement} · Carga ${sheet.equippedWeight}/${sheet.carryingCapacity}.${Number(sheet.runeSourceMax) > 0 ? ` Fonte Rúnica ${sheet.runeSourceCurrent}/${sheet.runeSourceMax}, separada do EST comum.` : ''} O valor atual dos recursos é preservado quando o máximo aumenta.`
+            : 'Fichas novas entram com PV e EST máximos. Recursos atuais, inventário, habilidades e equipamentos são sincronizados automaticamente.'}</p>
         <div class="session-dialog-actions">
             <button type="button" class="session-secondary" onclick="renderSessionToolsView('sheets')">Voltar</button>
             <button type="button" class="session-primary" onclick="saveCharacterSheet('${sheet.id}')">Salvar</button>
@@ -321,8 +505,13 @@ function saveCharacterSheet(id) {
     }
 
     sheet.name = name;
-    sheet.hpMax = Math.max(1, Number(document.getElementById('sheetHpMax')?.value) || 1);
-    sheet.stMax = Math.max(0, Number(document.getElementById('sheetStMax')?.value) || 0);
+    if (sheet.creationMode === 'full' && sheet.identity) {
+        sheet.identity.name = name;
+    }
+    if (sheet.creationMode !== 'full') {
+        sheet.hpMax = Math.max(1, Number(document.getElementById('sheetHpMax')?.value) || 1);
+        sheet.stMax = Math.max(0, Number(document.getElementById('sheetStMax')?.value) || 0);
+    }
     sheet.ca = Math.max(0, Number(document.getElementById('sheetCa')?.value) || 0);
     sheet.monsterCategory = normalizeCombatantRaceCategory(document.getElementById('sheetRaceCategory')?.value);
     sheet.atkInfo = document.getElementById('sheetAtk')?.value.trim() || '-';
@@ -332,11 +521,13 @@ function saveCharacterSheet(id) {
         arm: Math.max(0, Number(document.getElementById('sheetArmorArm')?.value) || 0),
         leg: Math.max(0, Number(document.getElementById('sheetArmorLeg')?.value) || 0)
     };
+    refreshCharacterDerivedValues(sheet);
     sheet.hpCurrent = getSheetResourceCurrent(sheet, 'hpCurrent', sheet.hpMax);
     sheet.stCurrent = getSheetResourceCurrent(sheet, 'stCurrent', sheet.stMax);
     sheet.updatedAt = new Date().toISOString();
 
     combatants.filter(combatant => combatant.sheetId === id).forEach(combatant => {
+        copyCharacterFoundation(combatant, sheet);
         combatant.name = sheet.name;
         combatant.hpMax = sheet.hpMax;
         combatant.hpCurrent = Math.min(combatant.hpCurrent, sheet.hpMax);
@@ -346,6 +537,7 @@ function saveCharacterSheet(id) {
         combatant.monsterCategory = sheet.monsterCategory;
         combatant.atkInfo = sheet.atkInfo;
         combatant.armor = cloneEnhancementData(sheet.armor);
+        refreshCharacterDerivedValues(combatant);
     });
 
     persistCharacterSheets();
@@ -387,24 +579,22 @@ function activateCharacterSheet(id) {
     showToast(`Ficha ativa: ${sheet.name}`);
 }
 
-function addCharacterSheetToCombat(id) {
-    const sheet = characterSheets.find(entry => entry.id === id);
-
-    if (!sheet) return;
-
+function buildCombatantFromCharacterSheet(sheet, { linkSheet = true } = {}) {
+    refreshCharacterDerivedValues(sheet);
     const hpCurrent = getSheetResourceCurrent(sheet, 'hpCurrent', sheet.hpMax);
     const stMax = Math.max(0, Number(sheet.stMax) || 0);
     const stCurrent = getSheetResourceCurrent(sheet, 'stCurrent', stMax);
 
     const combatant = {
         id: Date.now(),
-        sheetId: sheet.id,
+        ...(linkSheet ? { sheetId: sheet.id } : { characterPersistence: 'combat-only' }),
         name: sheet.name,
         initiative: 0,
         hpMax: sheet.hpMax,
         hpCurrent,
         stMax,
         stCurrent,
+        toxicityCurrent: Math.max(0, Number(sheet.toxicityCurrent) || 0),
         ca: sheet.ca ?? 10,
         atkInfo: sheet.atkInfo ?? '-',
         monsterCategory: normalizeCombatantRaceCategory(sheet.monsterCategory),
@@ -413,6 +603,8 @@ function addCharacterSheetToCombat(id) {
         abilities: cloneEnhancementData(sheet.abilities || []),
         expandedMagic: Math.max(0, Number(sheet.expandedMagic) || 0),
         equipment: cloneEnhancementData(sheet.equipment || {}),
+        criticalWounds: cloneEnhancementData(sheet.criticalWounds || []),
+        criticalWoundBaseResources: cloneEnhancementData(sheet.criticalWoundBaseResources || null),
         type: 'player',
         statusBrain: false,
         conditions: [],
@@ -421,14 +613,15 @@ function addCharacterSheetToCombat(id) {
         stabilized: false
     };
 
-    sheet.hpCurrent = hpCurrent;
-    sheet.stCurrent = stCurrent;
-    sheet.resourceStateSaved = true;
-    sheet.updatedAt = new Date().toISOString();
-    persistCharacterSheets();
+    copyCharacterFoundation(combatant, sheet);
+    refreshCharacterDerivedValues(combatant);
+    return combatant;
+}
 
+function insertCharacterCombatant(combatant, message) {
     combatants.push(combatant);
     window.initializeCombatantEquipment?.(combatant);
+    window.restoreCriticalWoundConditions?.(combatant);
     window.refreshAutomationMonsterCategories?.();
     sortCombatants();
     activeTurnId ||= combatant.id;
@@ -436,7 +629,120 @@ function addCharacterSheetToCombat(id) {
     savePlayersToStorage();
     renderList(true);
     closeSessionTools();
-    showToast(`${sheet.name} adicionado ao combate.`);
+    showToast(message || `${combatant.name} adicionado ao combate.`);
+
+    return combatant;
+}
+
+function addCharacterSheetToCombat(id) {
+    const sheet = characterSheets.find(entry => entry.id === id);
+
+    if (!sheet) return null;
+
+    const combatant = buildCombatantFromCharacterSheet(sheet);
+
+    sheet.hpCurrent = combatant.hpCurrent;
+    sheet.stCurrent = combatant.stCurrent;
+    sheet.toxicityCurrent = Math.max(0, Number(combatant.toxicityCurrent) || 0);
+    sheet.resourceStateSaved = true;
+    sheet.updatedAt = new Date().toISOString();
+    persistCharacterSheets();
+
+    return insertCharacterCombatant(combatant, `${sheet.name} adicionado ao combate.`);
+}
+
+function createFullCharacterSheetFromDraft(draft, { addToCombat = false } = {}) {
+    if (!window.characterSheetModel?.createFullCharacterFoundation) return null;
+
+    const foundation = window.characterSheetModel.createFullCharacterFoundation(draft);
+    const sheet = buildCharacterSheetRecord(foundation, {
+        name: foundation.identity.name || 'Novo personagem',
+        monsterCategory: window.characterSheetModel.getDefaultMonsterCategoryForRace(foundation.raceId)
+    });
+
+    characterSheets.unshift(sheet);
+    activeCharacterSheetId = sheet.id;
+    localStorage.setItem(ACTIVE_SHEET_KEY, sheet.id);
+    persistCharacterSheets();
+
+    if (addToCombat) {
+        addCharacterSheetToCombat(sheet.id);
+    } else {
+        renderSessionToolsView('sheets');
+        showToast(`${sheet.name} salvo nas fichas.`);
+    }
+
+    return sheet;
+}
+
+function updateFullCharacterSheetFromDraft(id, draft) {
+    const sheet = characterSheets.find(entry => entry.id === id);
+    const model = window.characterSheetModel;
+    if (!sheet || sheet.creationMode !== 'full' || !model?.createFullCharacterFoundation) return null;
+
+    const previousSheet = cloneEnhancementData(sheet);
+    const foundation = model.createFullCharacterFoundation({
+        ...draft,
+        progression: draft.progression || sheet.progression,
+        abilities: draft.abilities || sheet.abilities,
+        automationState: draft.automationState || sheet.automationState,
+        traits: draft.traits || sheet.traits
+    });
+
+    copyCharacterFoundation(sheet, foundation);
+    sheet.name = foundation.identity?.name || sheet.name;
+    sheet.monsterCategory = model.getDefaultMonsterCategoryForRace(foundation.raceId)
+        || sheet.monsterCategory;
+    sheet.updatedAt = new Date().toISOString();
+    refreshCharacterDerivedValues(sheet);
+
+    combatants.filter(combatant => combatant.sheetId === id).forEach(combatant => {
+        copyCharacterFoundation(combatant, sheet);
+        combatant.name = sheet.name;
+        combatant.monsterCategory = sheet.monsterCategory;
+        refreshCharacterDerivedValues(combatant);
+    });
+
+    persistCharacterSheets();
+    savePlayersToStorage();
+    window.refreshAutomationMonsterCategories?.();
+    if (activeCharacterSheetId === id) {
+        window.openCharacterSheetCollectionContext?.(id);
+    }
+
+    const historyChange = window.describeCombatantChanges?.(previousSheet, sheet);
+    window.addCombatHistoryEntry?.(
+        `${sheet.name}: ficha completa atualizada`,
+        historyChange?.detail || `Nível ${previousSheet.identity?.level || 1} → ${sheet.identity?.level || 1}. Atributos, perícias, habilidades e valores derivados foram recalculados.`,
+        {
+            ...(historyChange?.metadata || {}),
+            type: 'participant-update',
+            participantId: sheet.id,
+            participantName: sheet.name
+        }
+    );
+
+    renderList(false);
+    renderSessionToolsView('sheets');
+    showToast(`${sheet.name} atualizado com a ficha completa.`);
+    return sheet;
+}
+
+function addFullCharacterDraftToCombat(draft) {
+    if (!window.characterSheetModel?.createFullCharacterFoundation) return null;
+
+    const foundation = window.characterSheetModel.createFullCharacterFoundation(draft);
+    const transientSheet = buildCharacterSheetRecord(foundation, {
+        name: foundation.identity.name || 'Novo personagem',
+        monsterCategory: window.characterSheetModel.getDefaultMonsterCategoryForRace(foundation.raceId),
+        resourceStateSaved: false
+    });
+    const combatant = buildCombatantFromCharacterSheet(transientSheet, { linkSheet: false });
+
+    return insertCharacterCombatant(
+        combatant,
+        `${combatant.name} adicionado somente a este combate.`
+    );
 }
 
 function deleteCharacterSheet(id) {
@@ -462,22 +768,75 @@ function deleteCharacterSheet(id) {
 }
 
 function renderCharacterSheetsView(dialog) {
+    dialog.classList.remove('character-wizard-dialog');
     syncCombatantsToCharacterSheets();
     const cards = characterSheets.length
-        ? characterSheets.map(sheet => `
-            <li class="enhancement-card">
-                <div>
-                    <strong>${escapeEnhancementHtml(sheet.name)}</strong>
-                    <small>HP ${sheet.hpCurrent}/${sheet.hpMax} · ST ${sheet.stCurrent}/${sheet.stMax}</small>
-                </div>
-                <div class="enhancement-card-actions">
-                    <button type="button" class="session-small-button ${sheet.id === activeCharacterSheetId ? 'enhancement-active' : ''}" onclick="activateCharacterSheet('${sheet.id}')">Usar</button>
-                    <button type="button" class="session-small-button" onclick="addCharacterSheetToCombat('${sheet.id}')">+ Combate</button>
-                    <button type="button" class="session-small-button" onclick="openCharacterSheetEditor('${sheet.id}')">Editar</button>
-                    <button type="button" class="session-small-button session-small-danger" onclick="deleteCharacterSheet('${sheet.id}')" aria-label="Excluir ${escapeEnhancementHtml(sheet.name)}">×</button>
-                </div>
-            </li>
-        `).join('')
+        ? characterSheets.map(sheet => {
+            const model = window.characterSheetModel;
+            const allocation = sheet.creationMode === 'full'
+                ? model?.getCharacterAllocationSummary(
+                    sheet.identity?.level,
+                    sheet.attributes,
+                    sheet.skills,
+                    {
+                        professionalSkills: sheet.professionalSkills,
+                        specializationId: sheet.identity?.specializationId
+                    }
+                )
+                : null;
+            const trainingPoints = sheet.creationMode === 'full'
+                ? model?.getCharacterTrainingPointBudget(sheet.identity?.level)
+                : 0;
+            const trainingPointsSpent = Math.max(0, Number(sheet.progression?.trainingPointsSpent) || 0);
+            const race = sheet.creationMode === 'full' ? model?.getCharacterRaceDefinition(sheet.raceId) : null;
+            const profession = sheet.creationMode === 'full'
+                ? model?.getCharacterProfessionDefinition(sheet.identity?.professionId)
+                : null;
+            const specialization = sheet.creationMode === 'full'
+                ? model?.getCharacterSpecializationDefinition(
+                    sheet.identity?.professionId,
+                    sheet.identity?.specializationId,
+                    sheet.raceId
+                )
+                : null;
+            const pathLabel = [race?.name, profession?.name, specialization?.name]
+                .filter((label, index, entries) => label && entries.indexOf(label) === index)
+                .join(' · ');
+            const runeSource = Number(sheet.runeSourceMax) > 0
+                ? `<span><b>${sheet.runeSourceCurrent}/${sheet.runeSourceMax}</b><small>Fonte Rúnica</small></span>`
+                : '';
+
+            return `
+                <li class="enhancement-card character-sheet-saved-card">
+                    <div class="character-sheet-card-copy">
+                        <div class="character-sheet-card-heading">
+                            <strong>${escapeEnhancementHtml(sheet.name)}</strong>
+                            <span>${sheet.creationMode === 'full'
+                                ? `Completa · Nv. ${Math.max(1, Number(sheet.identity?.level) || 1)}`
+                                : 'Rápida'}</span>
+                        </div>
+                        ${sheet.creationMode === 'full'
+                            ? `<small class="character-sheet-card-path">${escapeEnhancementHtml(pathLabel || 'Caminho em definição')} · Regras v${Number(sheet.rulesVersion) || model?.CHARACTER_RULES_VERSION || 11}</small>`
+                            : ''}
+                        <div class="character-sheet-card-resources">
+                            <span><b>${sheet.hpCurrent}/${sheet.hpMax}</b><small>HP</small></span>
+                            <span><b>${sheet.stCurrent}/${sheet.stMax}</b><small>ST</small></span>
+                            ${runeSource}
+                        </div>
+                        ${sheet.creationMode === 'full'
+                            ? `<small>Atributos ${allocation?.attributePointsSpent || 0}/${allocation?.attributePoints || 0} · Perícias ${allocation?.skillPointsSpent || 0}/${allocation?.skillPoints || 0} · Treino ${trainingPointsSpent}/${trainingPoints || 0}</small>
+                               <small>Movimento ${Number(sheet.movement) || 0} · Carga ${Number(sheet.equippedWeight) || 0}/${Number(sheet.carryingCapacity) || 0} · Magias ${Array.isArray(sheet.abilities) ? sheet.abilities.length : 0}</small>`
+                            : ''}
+                    </div>
+                    <div class="enhancement-card-actions">
+                        <button type="button" class="session-small-button ${sheet.id === activeCharacterSheetId ? 'enhancement-active' : ''}" onclick="activateCharacterSheet('${sheet.id}')">Usar</button>
+                        <button type="button" class="session-small-button" onclick="addCharacterSheetToCombat('${sheet.id}')">+ Combate</button>
+                        <button type="button" class="session-small-button" onclick="openCharacterSheetEditor('${sheet.id}')">Editar</button>
+                        <button type="button" class="session-small-button session-small-danger" onclick="deleteCharacterSheet('${sheet.id}')" aria-label="Excluir ${escapeEnhancementHtml(sheet.name)}">×</button>
+                    </div>
+                </li>
+            `;
+        }).join('')
         : '<li class="session-empty">Nenhuma ficha criada ainda.</li>';
 
     dialog.innerHTML = `
@@ -574,7 +933,7 @@ function openCustomContentEditor(type, id = null) {
             <label>Tipo de equipamento<select id="contentItemType" class="session-input"><option value="custom">Não equipável</option><option value="weapon">Arma</option><option value="armor">Armadura ou escudo</option></select></label>
             <label>Subtipo<select id="contentWeaponType" class="session-input">
                 <option value="">Não definido</option>
-                <option>Esgrima</option><option>Lâminas Curtas</option><option>Brigar</option><option>Cajado/Lança</option><option>Arco e Flecha</option><option>Flechas</option>
+                <option>Esgrima</option><option>Lâminas Curtas</option><option>Brigar</option><option>Cajado/Lança</option><option>Arco e Flecha</option><option>Flechas</option><option>Setas</option>
                 <option>Armadura Leve</option><option>Armadura Média</option><option>Armadura Pesada</option><option>Escudo</option><option>Braceiras</option><option>Cabeça</option><option>Pernas</option>
             </select></label>
             <label>Slot da proteção<select id="contentEquipmentSlot" class="session-input">
@@ -1109,6 +1468,7 @@ function renderPreferencesView(dialog) {
         ${renderRollMode('crafting', 'Criação e alquimia', 'Manual solicita o total do teste; automática rola 1d10 e soma o bônus informado.', 'Manual')}
         ${renderRollMode('abilities', 'Magias e sinais', 'Padrão: perguntar o resultado informado na mesa.')}
         ${renderRollMode('items', 'Itens', 'Padrão: perguntar o resultado informado na mesa.')}
+        ${renderRollMode('skills', 'Testes de perícia', 'Manual usa o d20 rolado na mesa; automática realiza a rolagem no aplicativo.', 'Manual')}
         ${renderRollMode('negativeConditions', 'Status negativos', 'Padrão: rolagem automática para efeitos recorrentes.')}
         <button type="button" class="session-secondary session-full enhancement-top-gap" onclick="renderSessionToolsView('menu')">Voltar</button>
     `;
@@ -1147,6 +1507,7 @@ function renderCombatReportView(dialog) {
 
 function installEnhancements() {
     mergeCustomLibrary();
+    migrateCharacterSheetSchema();
     migrateCharacterSheetResourceState();
     applyPreferences();
     syncCombatantsToCharacterSheets();
@@ -1159,6 +1520,7 @@ function installEnhancements() {
     const originalSaveAbilities = window.saveAbilities;
 
     window.savePlayersToStorage = () => {
+        combatants.forEach(combatant => refreshCharacterDerivedValues(combatant));
         originalSavePlayers();
         syncCombatantsToCharacterSheets();
     };
@@ -1182,7 +1544,13 @@ function installEnhancements() {
 }
 
 window.renderCharacterSheetsView = renderCharacterSheetsView;
+window.refreshCharacterDerivedValues = refreshCharacterDerivedValues;
 window.createNewCharacterSheet = createNewCharacterSheet;
+window.createQuickCharacterSheet = createQuickCharacterSheet;
+window.createFullCharacterSheetFromDraft = createFullCharacterSheetFromDraft;
+window.updateFullCharacterSheetFromDraft = updateFullCharacterSheetFromDraft;
+window.addFullCharacterDraftToCombat = addFullCharacterDraftToCombat;
+window.getCharacterSheetForEditing = id => characterSheets.find(sheet => sheet.id === id) || null;
 window.openCharacterSheetEditor = openCharacterSheetEditor;
 window.saveCharacterSheet = saveCharacterSheet;
 window.activateCharacterSheet = activateCharacterSheet;

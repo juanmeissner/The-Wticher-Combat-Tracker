@@ -1,0 +1,74 @@
+.toxicity-indicator {
+    --toxicity-color: #84cc16;
+    width: 64px;
+    margin-top: 0.45rem;
+    color: var(--toxicity-color);
+    font-variant-numeric: tabular-nums;
+}
+
+.toxicity-indicator-line {
+    display: flex;
+    align-items: baseline;
+    justify-content: center;
+    gap: 0.2rem;
+    line-height: 1;
+}
+
+.toxicity-indicator-line > span {
+    font-size: 0.72rem;
+}
+
+.toxicity-indicator-line strong {
+    font-size: 0.75rem;
+}
+
+.toxicity-indicator-line small {
+    color: #94a3b8;
+    font-size: 0.52rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+}
+
+.toxicity-indicator-track {
+    display: block;
+    height: 3px;
+    margin-top: 0.25rem;
+    overflow: hidden;
+    border-radius: 999px;
+    background: rgba(148, 163, 184, 0.2);
+}
+
+.toxicity-indicator-track > span {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: var(--toxicity-color);
+}
+
+.toxicity-tier-warning {
+    --toxicity-color: #facc15;
+}
+
+.toxicity-tier-impaired {
+    --toxicity-color: #fb923c;
+}
+
+.toxicity-tier-severe {
+    --toxicity-color: #f97316;
+}
+
+.toxicity-tier-critical,
+.toxicity-tier-overdose {
+    --toxicity-color: #ef4444;
+}
+
+.toxicity-tier-overdose .toxicity-indicator-line {
+    text-shadow: 0 0 8px rgba(239, 68, 68, 0.55);
+}
+
+@media (max-width: 520px) {
+    .toxicity-indicator {
+        width: 56px;
+        margin-top: 0.35rem;
+    }
+}

@@ -64,15 +64,17 @@ flowchart LR
 | Sistema | O que entrega |
 |---|---|
 | ⚔️ Combate | Iniciativa, turnos, rodadas, alvos, HP, ST, armadura, dano localizado e testes de morte |
-| 🧙 Fichas | Personagens reutilizáveis com recursos atuais, inventário, habilidades, raça, defesa adicional e equipamentos |
+| 💥 Críticos | Margem, gravidade, 24 ferimentos, vacilos, defesas críticas, consequências avançadas, tratamento e histórico |
+| 🧙 Fichas | Criação rápida ou completa com raça, profissão, atributos, perícias, progressão, inventário e equipamentos |
 | 👹 Bestiário | Monstros predefinidos, busca, detalhes e painéis rápidos de ataques, habilidades e perícias |
 | 🌀 Condições | Painel responsivo em grade, duração, stacks e dano recorrente automatizado |
+| ☣️ Toxicidade | Poções com valores próprios, limiares cumulativos, Tolerância, overdose e Mel Branco |
 | ✨ Efeitos | Magias e itens ativos vinculados individualmente aos participantes |
 | 🎒 Inventário | Itens individuais por personagem, troca pelo turno ativo, catálogo, quantidades, filtros e detalhes |
 | ⚒️ Criação e alquimia | Receitas funcionais, ingredientes disponíveis/ausentes, lotes, testes e produção automática |
-| 🛡️ Equipamentos | Uma arma ativa, duas reservas, cinco slots de proteção, escudo global, troca rápida e defesa persistente |
+| 🛡️ Equipamentos | Armas, reservas, flechas/setas, cinco slots de proteção, escudo global, troca rápida e defesa persistente |
 | 📚 Habilidades | Magias individuais por personagem, Magia Expandida, custo de treino, ativação e exportação |
-| 📜 Histórico | Linha do tempo por rodada, filtros, autoria, alvo, cálculos e golpes finais |
+| 📜 Histórico | Linha do tempo por rodada, filtros, autoria, testes, cálculos, efeitos e golpes finais |
 | ↶ Segurança | Confirmações, desfazer ações, encontros salvos e backup completo em JSON |
 | 📲 PWA | Instalação, modo standalone, cache offline, atualização e reparo do aplicativo |
 
@@ -113,6 +115,7 @@ As três fontes são independentes. Equipar uma peça não altera os valores pre
 Também estão disponíveis:
 
 - dano cheio, dividido ou dobrado;
+- dano crítico contextual, disponível somente depois de escolher a região atingida;
 - dano que ignora armadura;
 - dano direto à armadura equipada, à defesa adicional ou ao escudo;
 - escolha exata da fonte atingida quando **Dano Armadura** encontra mais de uma proteção disponível;
@@ -123,6 +126,57 @@ Também estão disponíveis:
 - identificação automática de golpes que derrotaram o alvo.
 
 > **Exemplo:** um personagem com 2 de defesa adicional, armadura de tronco 5 e escudo 3 possui 10 de defesa total no tronco. Um ataque de 15 deixa 5 pontos de dano. Ao desequipar a armadura, a defesa do tronco passa imediatamente para 5, mantendo apenas a defesa adicional e o escudo.
+
+### 💥 Críticos e ferimentos críticos
+
+O crítico não acrescenta um controle permanente ao pad. Depois de informar o dano e escolher a região, a opção **Dano Crítico** abre um fluxo contextual:
+
+1. dobra o dano base;
+2. aplica o multiplicador da região;
+3. ignora toda a armadura física;
+4. identifica a gravidade pela margem que venceu a defesa;
+5. permite sortear ou informar um ferimento válido para a região atingida;
+6. soma o dano adicional do ferimento ao resultado localizado;
+7. concede `+1 Adrenalina` ao personagem do turno.
+
+| Margem | Gravidade | Dano adicional |
+|---:|---|---:|
+| 7–9 | Simples | +3 |
+| 10–12 | Complicado | +5 |
+| 13–14 | Difícil | +8 |
+| 15 ou mais | Mortal | +10 |
+
+Os 24 ferimentos cadastrados são filtrados por **cabeça, tronco, braço ou perna** e usam diretamente os atributos e perícias existentes no aplicativo — Constituição, Força, Destreza, Inteligência, Físico, Atletismo e Reflexo/Esquivas — sem depender das antigas abreviações CORPO, VEL, VON ou REF. Sangramento, Veneno, Atordoamento e morte imediata são aplicados quando a regra exigir; **Estômago Rasgado** causa 4 de dano ácido por turno e **Dano no Coração tratado** mantém 2 de Sangramento recorrente. Penalidades entram no assistente de testes, Fratura de Crânio eleva para ×4 novos danos na cabeça e limitações graves reduzem automaticamente EST, Movimento e Carga. Braços inutilizados bloqueiam armas de duas mãos; pernas torcidas, fraturadas ou amputadas aplicam reduções e frações de Movimento previstas pela regra. Lembretes de Sufocamento e testes periódicos de Atordoamento ou Morte aparecem no turno correto. Cada participante recebe um painel recolhido por padrão para acompanhar **Normal → Estabilizado → Tratado → Curado**, com consequências e mudanças registradas no histórico.
+
+> **Exemplo:** 20 de dano crítico na cabeça vira `20 × 2 × 3 = 120`. Um ferimento Mortal acrescenta 10, totalizando **130 de dano com armadura ignorada**.
+
+#### 🩺 Tratamento médico assistido
+
+As mudanças de **Normal → Estabilizado** e **Estabilizado → Tratado** passam por um assistente de tratamento. O mestre escolhe o responsável, a perícia ou recurso utilizado, o ND, o modificador, a quantidade de sucessos necessária e, quando aplicável, o tempo estimado de recuperação. O sistema oferece **Primeiros Socorros**, **Mãos Curativas** para quem possui a habilidade e uma opção manual para itens, magias ou outros auxílios.
+
+- usa rolagem manual ou automática conforme a preferência de testes;
+- considera penalidades causadas pelos ferimentos do responsável;
+- acumula e persiste sucessos quando o tratamento exigir mais de uma tentativa;
+- mantém o ferimento no estado atual quando o teste falha;
+- bloqueia estabilização ou tratamento quando a regra do ferimento não permite;
+- registra paciente, responsável, método, cálculo, ND, margem, progresso e recuperação no histórico;
+- concede Dado da Sorte e Adrenalina ao responsável em um `20 natural`, seguindo a regra geral de críticos.
+
+#### 💢 Vacilos e críticos defensivos
+
+Um `1 natural` em ataque, Bloqueio ou Esquiva abre a tabela contextual adequada. Um `20 natural` em Bloqueio ou Esquiva abre o crítico defensivo. O mestre pode rolar ou informar o `1d10`, revisar o resultado e só então aplicá-lo. O sistema cobre:
+
+- vacilos de ataques corpo a corpo e à distância;
+- vacilos de Bloqueio e Esquiva;
+- críticos de Bloqueio e Esquiva;
+- condições como Caído e Desequilibrado;
+- munição destruída, desgaste e inutilização de armas;
+- dano complementar, seleção do participante afetado e absorção por proteções temporárias;
+- desarme real da arma ativa, que continua preservada no inventário;
+- escolhas contextuais da Esquiva crítica, como **Desequilibrado ou perder a reação** e **Caído ou sofrer 1d6 de impacto**;
+- consequências pendentes em um minicard recolhível, com ação **Resolver**.
+
+Armas avariadas exibem seu desgaste no card de equipamentos e podem ser reparadas nos detalhes do item. Reposicionamentos, testes de Atordoamento, ataques imediatos e resultados que exigem escolher dano ou região permanecem como lembretes resolvíveis porque dependem do estado da mesa. Resultado, escolha, condições, dano, proteção, munição e arma afetada são registrados no histórico. Todo o fluxo permanece contextual e não adiciona novos botões permanentes ao pad.
 
 ### 🛡️ Escudo mágico e PV temporários
 
@@ -148,6 +202,22 @@ Cada condição ou efeito pode conter:
 
 **Sangramento**, **Em Chamas** e **Envenenado** causam 1d6 por stack no início do turno afetado. As três condições aceitam até 10 stacks, conforme suas regras cadastradas.
 
+### ☣️ Toxicidade de poções
+
+As poções possuem toxicidade própria de **25%, 50% ou 75%**. Ao consumir uma delas pela aba **Itens**, seu efeito ativo é aplicado — ou renovado — automaticamente no personagem dono daquele inventário, incluindo as automações específicas da poção. Em seguida, a toxicidade é somada e um indicador compacto aparece no cartão de combate somente enquanto houver toxicidade.
+
+| Limiar | Processamento no turno |
+|---:|---|
+| 100% | Teste de Tolerância CD 14; uma falha causa 1d4 de dano |
+| 125% | 1d4 automático e −2 em testes físicos |
+| 150% | O dano passa a 1d6; Tolerância CD 16 contra Atordoamento |
+| 175% | Mantém 1d6; Tolerância CD 18 contra Inconsciência |
+| 200% | Mantém 1d6; Tolerância CD 18 contra Estado de Morte por overdose |
+
+As consequências são cumulativas, mas o dano recorrente **não**: a aplicação usa somente o dado da faixa mais alta alcançada. No fim do processamento, o personagem reduz `Tolerância total + nível` pontos percentuais de toxicidade. Cada nível investido em **Toxicidade Controlada** eleva todos os limiares em 25 pontos percentuais. **Mel Branco** zera a toxicidade e remove os efeitos ativos de poções, preservando magias, condições e outros tipos de efeito.
+
+Os testes usam a preferência de **Condições negativas** — rolagem automática por padrão ou resultado informado pelo mestre — e dano, testes, condições, redução natural e overdose ficam disponíveis nos detalhes do histórico.
+
 ### 🤖 Automações de regras
 
 As automações preservam a decisão do mestre: magias e itens perguntam resultados por padrão, enquanto condições negativas usam rolagem automática. Esse comportamento pode ser alterado em **⋯ → Preferências**.
@@ -159,7 +229,11 @@ As automações preservam a decisão do mestre: magias e itens perguntam resulta
 | Yrden | Usa EST variável, calcula penalidade e controla duração |
 | Axii | Pergunta o EST, calcula a penalidade do teste e aplica a condição vinculada ao alvo |
 | Axii Marionete | Usa o EST gasto como custo e duração do controle |
+| Cura Mágica | Calcula `3 + bônus de Inteligência + 1d6`, cura o alvo escolhido e registra a fórmula completa |
 | Sangramento, Chamas e Veneno | Rola 1d6 por stack e aplica o dano no turno do alvo |
+| Toxicidade | Processa limiares, um único dano recorrente, testes de Tolerância, penalidades e redução por turno |
+| Toxicidade Controlada | Eleva todos os limiares em 25 pontos percentuais por nível investido |
+| Mel Branco | Zera a toxicidade e remove apenas efeitos de poções |
 | Pó de Coagulação | Impede que Sangramento produza efeito enquanto estiver ativo |
 | Lua Cheia | Concede 10 + 1d20 PV temporários |
 | Andorinha | Recupera vida por turno enquanto as condições do item forem atendidas |
@@ -192,6 +266,8 @@ O turno ativo funciona como contexto padrão das abas **Itens** e **Habilidades*
 - busca por nome e filtro por tipo;
 - alteração de quantidade pelos botões `+` e `−`;
 - uso direto de consumíveis;
+- aplicação ou renovação automática do efeito da poção no dono do inventário ao usar o consumível;
+- toxicidade exibida nos detalhes de cada poção e aplicada ao consumir;
 - detalhes acessíveis por botão no desktop, duplo clique ou toque prolongado;
 - efeitos de itens aplicáveis a qualquer participante selecionado;
 - feedback visual para inclusão, remoção e uso;
@@ -210,7 +286,7 @@ A categoria **Criação** transforma as receitas do catálogo em uma oficina vin
 - cada cartão informa os componentes livres, os ausentes e o rendimento de cada lote;
 - escolha da quantidade de lotes antes de confirmar a produção;
 - consumo automático dos ingredientes e inclusão do produto no inventário correto;
-- rendimentos especiais preservados, como 10 flechas ou 6 unidades de Pó de Prata por lote;
+- rendimentos especiais preservados, como 10 flechas, 10 setas ou 6 unidades de Pó de Prata por lote;
 - teste manual ou automático quando a receita possuir ND/CD;
 - modo automático configurável em `⋯ → Preferências → Rolagens → Criação e alquimia`, usando `1d10 + bônus`;
 - sucesso e falha registrados no histórico com produto, quantidade, ingredientes e resultado do teste;
@@ -225,6 +301,11 @@ Cada participante possui um conjunto de equipamentos próprio e persistente:
 
 - uma **arma ativa** e até **duas armas reservas**;
 - troca rápida da arma ativa pelo botão `🔄` no cartão do participante;
+- duas posições de munição por personagem, com uma munição ativa e uma segunda opção para troca rápida;
+- compatibilidade automática: arcos usam flechas, enquanto bestas usam setas/virotes;
+- quantidade e modificador da munição visíveis junto da arma de disparo ativa;
+- consumo de uma unidade pelo botão `−1`, sem abrir o inventário;
+- troca automática para a segunda munição compatível quando o estoque ativo chega a zero;
 - armaduras equipadas separadamente em **cabeça, tronco, braços e pernas**;
 - um escudo físico que acrescenta sua defesa às quatro regiões;
 - slots explícitos `head`, `body`, `arms`, `legs` e `shield`, impedindo que calças ou braceiras substituam a proteção de tronco;
@@ -236,7 +317,7 @@ Cada participante possui um conjunto de equipamentos próprio e persistente:
 - estado equipado preservado ao trocar de aba, mudar o personagem consultado ou avançar o turno;
 - armas de duas mãos incompatíveis com um escudo ativo — o aplicativo orienta a guardar o escudo antes da troca;
 - painel próprio recolhível abaixo do personagem, mantendo visível somente a arma ativa e um resumo compacto das proteções;
-- histórico e ação de desfazer para equipar, desequipar, trocar armas e danificar proteções.
+- histórico e ação de desfazer para equipar, desequipar, trocar armas ou munições, consumir disparos e danificar proteções.
 
 A rolagem de dano continua **manual por padrão**, respeitando os dados físicos da mesa. Em `⋯ → Preferências → Rolagens`, a opção **Armas e ataques** pode ser alterada para automática; nesse modo, tocar em `🎲` rola a expressão da arma e coloca o total no pad, sem causar dano imediatamente.
 
@@ -249,13 +330,47 @@ A rolagem de dano continua **manual por padrão**, respeitando os dados físicos
 - adição, remoção, ativação e desativação;
 - cálculo do custo total de treino;
 - modificador de **Magia Expandida** persistente;
+- card compacto de **Magias** nas fichas completas, exibindo somente o repertório conhecido pelo personagem;
+- cálculo não destrutivo da magia efetiva: custo original, reduções, modificadores profissionais e opções de conjuração;
+- botão **Conjurar** com bloqueio por EST insuficiente, consumo da Fonte Rúnica antes do EST nos Sinais e registro detalhado no histórico;
+- **Sobrecarga Arcana** opcional durante a conjuração, com escolha válida de dano, alcance ou duração, teste CD 16 e consequências automáticas de sucesso ou falha;
+- **Cura Mágica** automatizada pela fórmula `3 + bônus de Inteligência + 1d6`, com dado físico informado por padrão ou rolagem automática pela preferência de magias;
+- escolha do beneficiário, limitação pelo HP máximo e registro de cura solicitada, cura efetiva, fórmula e PV antes/depois;
 - efeitos aplicáveis no combate com indicação de **conjurador → alvo**;
 - exportação das habilidades para uma planilha `.xlsx` no desktop;
 - sincronização individual com o participante e sua ficha vinculada.
 
 ### 🧙 Fichas persistentes
 
-Em **⋯ → Fichas**, é possível criar personagens reutilizáveis contendo:
+Em **⋯ → Fichas → Nova ficha**, é possível escolher entre criação rápida, **criação completa em nove etapas** ou um **modelo pronto**. A ficha completa oferece:
+
+- raça, profissão, especialização ou escola de bruxo;
+- nível configurável e orçamentos progressivos de atributo, perícia e treino;
+- seis atributos com valor base 10 e bônus derivado a cada dois pontos;
+- 53 perícias gerais e 280 habilidades profissionais com descrições completas;
+- pontos compartilhados entre perícias gerais e profissionais, com limite de investimento validado;
+- aprendizado de magias usando o custo oficial `unlockCost` e pontos de treino;
+- permissões automáticas para Mago, Druida, Sacerdote/Clérigo, Ritual e Hex;
+- concessão gratuita dos nove sinais e habilidades oficiais para personagens Witcher;
+- busca e filtros na etapa de magias, além de resumo dos gastos na revisão;
+- etapa exclusiva de valores derivados, com explicação dos cálculos de HP, EST, Carga e Movimento;
+- Fonte Mágica do Lobo e Sobrecarga Arcana integradas ao EST máximo;
+- Fonte Rúnica do Grifo mantida como uma reserva própria e visível no combate, priorizada no custo dos Sinais e regenerada junto do EST;
+- rascunho persistente e opções para salvar, salvar e adicionar ao combate ou usar somente na sessão.
+- edição completa pelo mesmo assistente: ao tocar em **Editar** numa ficha completa, os nove passos reabrem preenchidos desde o início para alterar nível, atributos, perícias e magias sem perder inventário, equipamentos, ferimentos ou recursos atuais.
+
+Os seis modelos prontos aceleram a preparação sem bloquear nenhuma escolha:
+
+- Bruxo da Escola do Lobo;
+- Mago Humano;
+- Guerreiro Vanguarda;
+- Assassino Profissional;
+- Clérigo de Melitele;
+- Arqueiro Humano.
+
+Ao escolher um modelo, o assistente abre no primeiro passo com uma construção de nível 1 já válida. Nome, raça, caminho, pontos, perícias e magias podem ser revisados livremente antes do salvamento. Cada uso cria um rascunho independente e não adiciona nada automaticamente às fichas ou ao combate.
+
+As fichas rápidas e completas continuam reutilizáveis e podem conter:
 
 - nome, HP máximo, ST máximo e CA;
 - HP e ST atuais preservados entre combates;
@@ -266,7 +381,43 @@ Em **⋯ → Fichas**, é possível criar personagens reutilizáveis contendo:
 - habilidades individuais;
 - arma ativa, reservas, armaduras e escudo equipados, incluindo a defesa restante de cada peça.
 
-Uma ficha pode ser ativada para consultar seu inventário e suas habilidades ou adicionada diretamente ao combate. Alterações feitas durante a sessão são sincronizadas para reutilização posterior, sem substituir as coleções dos outros participantes.
+Nas fichas completas, os valores máximos são recalculados a partir da construção do personagem:
+
+- **HP:** `(bônus de Constituição + Físico total) × nível + (10 + Constituição base)`, em que Constituição base começa em 10 e inclui os pontos investidos, sem somar bônus raciais ou temporários novamente;
+- **EST:** usa a fórmula correspondente a Witcher, Mago, Clérigo/Druida ou reserva física;
+- **Carga:** `Força total ÷ 2 + Físico total + bônus de Força`, incluindo `+25` para Anões;
+- **Movimento:** varia entre 5 e 15 e desconta o peso de todos os equipamentos usados;
+- **Peso equipado:** soma armaduras, escudo, arma ativa e as duas armas reservas; itens apenas guardados não contam.
+
+Quando um novo cálculo aumenta HP ou EST máximo, o recurso atual é preservado em vez de curar ou restaurar o personagem automaticamente. Se o novo máximo ficar abaixo do atual, o valor é limitado ao novo teto.
+
+Uma ficha pode ser ativada para consultar seu inventário e suas habilidades ou adicionada diretamente ao combate. A lista de fichas resume caminho, nível, versão das regras, HP, EST, Fonte Rúnica, movimento, carga e pontos distribuídos sem exigir a abertura do editor. Alterações feitas durante a sessão são sincronizadas para reutilização posterior, sem substituir as coleções dos outros participantes.
+
+### 🎲 Perícias e testes durante o combate
+
+Personagens criados pela ficha completa recebem três painéis independentes abaixo do card principal, todos recolhidos por padrão:
+
+- **Perícias:** mostra somente totais diferentes de zero, com nome, atributo vinculado e valor pronto para uso;
+- **Habilidades profissionais:** mostra apenas habilidades investidas, mantendo nível e descrição completa disponíveis durante a sessão.
+- **Magias:** lista apenas as magias conhecidas, mostra o custo efetivo daquele personagem e permite expandir detalhes ou conjurar diretamente no turno.
+- As 280 habilidades profissionais são classificadas em automáticas, assistidas, lembretes e referências para implementação segura em lotes.
+- Habilidades cujos bônus e recursos já são aplicados pelo sistema recebem um selo compacto `AUTOMÁTICO`.
+- Habilidades assistidas oferecem **🎲 Realizar teste** no próprio card, calculando `1d20 + nível profissional + modificador` contra dificuldade ou oposição.
+- O histórico mantém dado, nível, modificador, resultado, margem, desfecho e a descrição integral da regra consultada.
+- Habilidades condicionais exibem etiquetas discretas como **PV baixo**, **Ao sofrer dano**, **Poção/Toxicidade** e **Durante o turno**, destacadas somente quando o contexto puder ser detectado.
+- Regras narrativas ou dependentes de decisões externas recebem o selo `REFERÊNCIA` e continuam disponíveis integralmente para consulta.
+
+Ao tocar em uma perícia, o aplicativo abre um assistente compacto que:
+
+1. mostra a composição do total entre investimento, atributo, raça, profissão, equipamento e ajustes;
+2. aceita uma dificuldade definida pelo mestre ou o resultado do oponente;
+3. soma `1d20 + total da perícia + modificador do teste`;
+4. usa o d20 físico informado manualmente por padrão;
+5. pode rolar o d20 automaticamente quando **⋯ → Preferências → Testes de perícia** estiver em modo automático;
+6. informa sucesso, falha, margem e resultado final;
+7. registra todo o cálculo no histórico com um filtro próprio de **Teste**.
+
+Um **20 natural** recebe a classificação **Crítico**, concede `+1 Dado da Sorte` e, durante o combate, `+1 Adrenalina`. Esses recursos ficam persistidos na progressão do personagem e aparecem no cabeçalho do painel de perícias. Quando um teste bem-sucedido de ataque corpo a corpo ou à distância obtém `20 natural`, o aplicativo prepara automaticamente o próximo dano daquele personagem como crítico, transporta a margem contra a defesa e reaproveita a Adrenalina já concedida. Depois de informar o dano e escolher a região, o fluxo crítico abre automaticamente sem conceder a recompensa duas vezes. Bloqueios e Esquivas com `20 natural` continuam abrindo suas próprias tabelas defensivas de `1d10`.
 
 ### 👹 Bestiário e biblioteca personalizada
 
@@ -291,12 +442,13 @@ O conteúdo original permanece intacto e a biblioteca pessoal é mantida somente
 O histórico funciona como uma linha do tempo auditável do combate:
 
 - organização por rodada;
-- filtros por dano, cura, efeito, condição e turno;
+- filtros por dano, cura, efeito, condição, equipamento, teste e turno;
 - filtro por participante;
 - identificação de autor e alvo, como `Geralt → Grifo`;
 - nomes, ícones e dano específico para Sangramento, Chamas e Veneno;
 - registro de local atingido, rolagem, armadura, escudos, PV temporários e EST;
 - detalhes de efeitos aplicados, atualizados, removidos ou expirados;
+- testes de perícia com dado natural, bônus total, modificador, dificuldade ou oposição, margem, resultado e recompensas de crítico;
 - registro próprio para criação, falha de fabricação e transferência entre participantes;
 - substituição de “dano” por **“derrotou”** quando a ação elimina o alvo;
 - cartões compactos no mobile e detalhes expandidos sob demanda.
@@ -322,7 +474,9 @@ O menu **⋯** concentra as ferramentas administrativas:
 1. Abra **⚔️ Combate**.
 2. Toque em `🧙‍♂️` para criar um jogador ou em `👹` para criar/escolher um monstro.
 3. Se preferir um personagem reutilizável, abra `⋯ → Fichas → Nova ficha`.
-4. Informe os recursos e, se desejar, uma defesa adicional por região. Depois, use **+ Combate**.
+4. Escolha **⚡ Criação rápida**, **📜 Criação completa** ou **🧭 Modelo pronto**.
+5. Nos modelos prontos, selecione a função desejada, revise a construção desde o primeiro passo e personalize o nome.
+6. Conclua com **Salvar ficha**, **Salvar e adicionar ao combate** ou **Somente combate**.
 
 ### 2. Entenda turno e alvo
 
@@ -336,16 +490,29 @@ O menu **⋯** concentra as ferramentas administrativas:
 1. Verifique o nome do personagem indicado como turno ativo.
 2. Abra **🎒 Itens** e adicione somente os objetos carregados por ele.
 3. Selecione uma arma ou proteção e use **Equipar**. A primeira arma será ativa; as duas seguintes ficarão nas reservas. Cabeça, tronco, braços, pernas e escudo podem ser equipados simultaneamente.
-4. Abra **✨ Habilidades** e adicione seus sinais, magias ou técnicas.
-5. Use o seletor no alto da aba para consultar outro participante sem avançar o combate.
-6. Ao usar `⏩`, as duas abas passarão automaticamente para as coleções do próximo personagem.
-7. Para fabricar algo, abra **🎒 Itens → Criação** e consulte os componentes livres no inventário.
-8. Use **Posso criar** para esconder receitas ainda incompletas, escolha **Criar** e informe o número de lotes.
-9. Para reunir materiais, selecione o item e use **🔄 Transferir item**; escolha o destinatário e a quantidade.
+4. Para um arco ou uma besta, equipe até duas munições. O aplicativo separa flechas de arco e setas de besta automaticamente.
+5. No painel **EQUIPAMENTOS**, use `🔄` para trocar a munição e `−1` depois de cada disparo. Ao esgotar, a segunda munição compatível assume.
+6. Abra **✨ Habilidades** e adicione seus sinais, magias ou técnicas.
+7. Use o seletor no alto da aba para consultar outro participante sem avançar o combate.
+8. Ao usar `⏩`, as duas abas passarão automaticamente para as coleções do próximo personagem.
+9. Para fabricar algo, abra **🎒 Itens → Criação** e consulte os componentes livres no inventário.
+10. Use **Posso criar** para esconder receitas ainda incompletas, escolha **Criar** e informe o número de lotes.
+11. Para reunir materiais, selecione o item e use **🔄 Transferir item**; escolha o destinatário e a quantidade.
+12. Ao usar uma poção, acompanhe `☣ TOX` no cartão do personagem; os limiares serão resolvidos automaticamente quando o turno dele começar. Use **Mel Branco** para limpar toxicidade e efeitos de poções.
 
 No combate, abra ou recolha **EQUIPAMENTOS** abaixo do personagem. Use `🔄` para alternar a arma ativa e `🎲` para consultar ou rolar seu dano, conforme a preferência escolhida.
 
 Para monstros predefinidos, abra os painéis **ATAQUES**, **HABILIDADES** ou **PERÍCIAS** abaixo da criatura. Habilidades e perícias permanecem recolhidas por padrão e não exigem abrir novamente a ficha completa do bestiário.
+
+Para jogadores de ficha completa, abra **PERÍCIAS** abaixo do personagem e toque na perícia desejada. Informe a dificuldade ou o resultado do oponente, o d20 rolado na mesa e qualquer modificador temporário. As habilidades de profissão ficam no painel separado **HABILIDADES PROFISSIONAIS**.
+
+Abra **MAGIAS** para consultar o repertório daquele personagem. Expanda `⌄` para ler a regra completa ou use **Conjurar**: escolha o alvo, informe o EST base quando a magia for variável e revise o custo final. Magia Expandida é calculada sem alterar o catálogo original. Se o personagem possuir Sobrecarga Arcana, a decisão e o teste aparecem dentro desse mesmo fluxo; um `20 natural` também concede Dado da Sorte e Adrenalina conforme as regras de testes em combate.
+
+Ao conjurar **Cura Mágica**, selecione o beneficiário e informe o resultado do `1d6` físico. Se a preferência de magias estiver em modo automático, o aplicativo rola esse dado, calcula `3 + bônus de Inteligência + 1d6`, limita a recuperação ao HP máximo e registra todo o cálculo.
+
+Se o teste de combate resultar em `1 natural`, ou em `20 natural` ao Bloquear/Esquivar, conclua a tabela contextual de `1d10`. Revise o participante afetado, a escolha oferecida e os dados complementares antes de aplicar; lembretes que dependem da decisão do mestre ficam no painel **CONSEQUÊNCIAS** do participante. Em um ataque bem-sucedido com `20 natural`, selecione o alvo, informe o dano pelo pad e escolha a região: a margem já calculada será usada automaticamente no fluxo de ferimento crítico.
+
+Quando uma habilidade profissional possuir resolução assistida, use **🎲 Realizar teste** no próprio card. O aplicativo calcula o confronto e deixa decisões narrativas ou efeitos condicionais sob controle do mestre.
 
 ### 4. Aplique dano
 
@@ -354,7 +521,8 @@ Para monstros predefinidos, abra os painéis **ATAQUES**, **HABILIDADES** ou **P
 3. Toque em `☠️`.
 4. Escolha cabeça, tronco, braço ou perna.
 5. Escolha o tipo de dano.
-6. Confira a confirmação e o registro detalhado no histórico.
+6. Para um crítico, escolha **💥 Dano Crítico**, informe a margem e sorteie ou selecione o ferimento.
+7. Confira a confirmação e o registro detalhado no histórico.
 
 ### 5. Cure ou gerencie recursos
 
@@ -392,10 +560,11 @@ Para monstros predefinidos, abra os painéis **ATAQUES**, **HABILIDADES** ou **P
 | `☠️` | Causar dano localizado ou adicionar falha de morte |
 | `🔷` | Gastar ou recuperar ST |
 | `⚡` | Definir iniciativa; mantenha pressionado para rolar monstros |
-| `🔄` | Alternar entre a arma ativa e as reservas do personagem |
+| `🔄` | Alternar entre armas ou entre as duas munições compatíveis equipadas |
+| `−1` | Gastar uma flecha ou seta equipada diretamente no card de equipamentos |
 | `⚒️ Criação` | Consultar receitas e fabricar lotes com o inventário do personagem |
 | `🔄 Transferir item` | Mover uma quantidade do item selecionado para outro personagem |
-| `🎲` | Consultar a expressão de dano ou rolá-la automaticamente no pad |
+| `🎲` | Rolar/consultar dano de armas ou iniciar um teste no card de perícia |
 | `C` | Limpar o valor digitado |
 | `←` | Apagar o último dígito |
 | `↶` | Desfazer a última ação disponível |
@@ -440,10 +609,12 @@ Não existe conta, servidor ou banco de dados remoto. Os dados são mantidos no 
 
 - combate atual;
 - fichas e recursos atuais;
-- inventários, habilidades, equipamentos, desgaste das proteções e Magia Expandida de cada participante;
+- inventários, habilidades, equipamentos, desgaste das proteções, toxicidade e Magia Expandida de cada participante;
 - histórico e encontros salvos;
 - biblioteca personalizada;
 - preferências e modos de rolagem.
+
+Na primeira consolidação da Etapa 10, o aplicativo cria uma cópia local única das fichas existentes antes de normalizá-las para as regras atuais. Essa cópia também participa do backup completo do aplicativo e não é sobrescrita em recarregamentos posteriores.
 
 > [!IMPORTANT]
 > Limpar os dados do site ou remover o armazenamento do navegador pode apagar a campanha local. Exporte periodicamente um **backup JSON completo**, principalmente antes de trocar de dispositivo.
@@ -471,9 +642,14 @@ O projeto não exige framework JavaScript, bundler ou etapa de compilação.
 ├── mobile.css                   # Responsividade, iOS e acessibilidade
 ├── character-collections.css    # Seletor e contexto das coleções individuais
 ├── equipment.css                # Painéis, armas, armaduras e ações dos monstros
+├── character-sheet-wizard.css   # Assistente responsivo da ficha completa
+├── character-spells.css         # Repertório e fluxo de conjuração no combate
+├── critical-wounds.css          # Críticos, tratamentos, tabelas e consequências
+├── toxicity.css                 # Indicador compacto e níveis visuais de toxicidade
 ├── crafting.css                 # Oficina, receitas, ingredientes e transferência
 ├── manifest.json                # Metadados da PWA
 ├── service-worker.js            # Entrada do Service Worker
+├── professional-skills-descriptions.js # Descrições profissionais normalizadas em UTF-8
 ├── .editorconfig                # Codificação UTF-8 consistente entre editores
 ├── .vscode/settings.json        # Configuração de UTF-8 para o VS Code
 ├── js/
@@ -482,6 +658,14 @@ O projeto não exige framework JavaScript, bundler ou etapa de compilação.
 │   ├── core/                    # Utilitários e notificações
 │   ├── ui/                      # Componentes de interface e modais
 │   ├── character-collections.js # Inventários e habilidades por participante
+│   ├── character-sheet-model.js # Regras, progressão e cálculos puros da ficha completa
+│   ├── character-sheet-templates.js # Modelos prontos e rascunhos independentes
+│   ├── character-sheet-wizard.js # Assistente responsivo de criação completa
+│   ├── character-skill-tests.js  # Painéis e testes de perícia durante o combate
+│   ├── character-spells.js       # Repertório, magia efetiva e conjuração das fichas completas
+│   ├── professional-skills-data.js # Classificação e automações das habilidades profissionais
+│   ├── critical-wounds.js        # Críticos, vacilos, ferimentos e tratamento médico
+│   ├── toxicity.js               # Poções, limiares, Tolerância, overdose e Mel Branco
 │   ├── equipment.js             # Equipamentos, defesas, rolagens e ataques de monstros
 │   ├── crafting.js              # Receitas, testes, produção e transferência de itens
 │   ├── enhancements.js          # Fichas, biblioteca, preferências e manutenção
@@ -510,12 +694,20 @@ Também é possível usar qualquer servidor estático, como **Live Server**, `np
 
 ```bash
 node tests/character-collections.test.cjs
+node tests/character-sheet-model.test.cjs
+node tests/character-sheet-templates.test.cjs
+node tests/character-sheet-wizard.test.cjs
+node tests/character-skill-tests.test.cjs
+node tests/character-spells.test.cjs
+node tests/critical-wounds.test.cjs
+node tests/toxicity.test.cjs
+node tests/rune-source.test.cjs
 node tests/items-data.test.cjs
 node tests/equipment.test.cjs
 node tests/crafting.test.cjs
 ```
 
-Os testes verificam o isolamento entre personagens, a migração do armazenamento antigo, a sincronização com fichas, a integridade do catálogo, a classificação dos cinco slots de proteção, os três espaços de arma, a incompatibilidade entre escudo e arma de duas mãos, a soma das fontes defensivas, o desequipamento, o desgaste, o reparo das proteções, as rolagens, o catálogo de ataques, habilidades e perícias dos monstros, a resolução de ingredientes, os rendimentos das receitas, a proteção de itens equipados e a transferência entre personagens.
+Os testes verificam o isolamento entre personagens, a migração e o backup do armazenamento antigo, a criação completa, os seis modelos prontos, os orçamentos de progressão, o aprendizado de magias, os painéis de perícias e magias, os custos efetivos, Magia Expandida, Sobrecarga Arcana, Cura Mágica, a fórmula e as recompensas dos testes, a integração do `20 natural`, as quatro gravidades e os 24 ferimentos críticos, tratamento médico, vacilos, críticos defensivos, desarme, consequências avançadas, toxicidades das poções, limiares cumulativos sem dano duplicado, Toxicidade Controlada, redução por Tolerância e nível, overdose e Mel Branco, além da aplicação ou renovação segura dos efeitos ativos ao consumir poções pelo inventário. Também validam a sincronização com fichas, a integridade do catálogo, a classificação dos cinco slots de proteção, os três espaços de arma, os dois espaços de munição, a compatibilidade entre arcos/flechas e bestas/setas, troca e consumo de munição, a incompatibilidade entre escudo e arma de duas mãos, a soma das fontes defensivas, o desequipamento, o desgaste, o reparo das proteções, as rolagens, o catálogo de ataques, habilidades e perícias dos monstros, a resolução de ingredientes, os rendimentos das receitas, a proteção de itens equipados e a transferência entre personagens.
 
 ## ✅ Estado atual
 
@@ -524,10 +716,23 @@ Os testes verificam o isolamento entre personagens, a migração do armazenament
 - [x] Compatibilidade visual com safe areas do iOS
 - [x] Combate, iniciativa, rodadas e dano localizado
 - [x] Fichas persistentes e encontros salvos
+- [x] Criação completa com raças, profissões, atributos, perícias e aprendizado de magias
+- [x] Seis modelos prontos, editáveis e validados pelos mesmos orçamentos da ficha completa
+- [x] Migração segura com cópia local única das fichas anteriores e resumo atualizado
+- [x] Painéis de perícias e habilidades profissionais para jogadores no combate
+- [x] Painel de magias conhecidas com detalhes, custo efetivo e conjuração direta no combate
+- [x] Magia Expandida e Sobrecarga Arcana integradas ao custo, teste, recursos e histórico
+- [x] Cura Mágica com fórmula, rolagem configurável, escolha de alvo e histórico detalhado
+- [x] Assistente de testes manual ou automático, histórico e recompensas de crítico
+- [x] `20 natural` de ataque integrado ao próximo dano crítico, com margem transportada e Adrenalina sem duplicidade
+- [x] Quatro gravidades, 24 ferimentos críticos e consequências persistentes por região
+- [x] Tratamento médico assistido com ND, perícia, progresso, recuperação, falha e histórico
+- [x] Vacilos e críticos de Bloqueio/Esquiva com tabelas contextuais, escolhas, desarme e dano complementar
 - [x] Inventários e habilidades individuais vinculados ao personagem do turno
 - [x] Criação e alquimia por personagem, com receitas, lotes e testes configuráveis
 - [x] Transferência de itens e materiais entre personagens
 - [x] Arma ativa, duas reservas e troca rápida por personagem
+- [x] Flechas e setas equipáveis em duas posições, troca compatível e consumo direto no combate
 - [x] Armaduras regionais em cinco slots, escudo global e desgaste persistente
 - [x] Defesa adicional independente e soma automática de todas as proteções
 - [x] Estado equipado persistente por personagem, aba, turno e ficha
@@ -538,6 +743,8 @@ Os testes verificam o isolamento entre personagens, a migração do armazenament
 - [x] Catálogo de itens validado contra identificadores duplicados
 - [x] Bestiário e biblioteca própria
 - [x] Condições, efeitos e automações de regras
+- [x] Toxicidade de poções, limiares cumulativos, Tolerância, overdose e Mel Branco
+- [x] Consumo de poções pelo inventário com efeito ativo, automações e renovação segura
 - [x] Histórico detalhado, desfazer e relatório pós-combate
 - [x] Backup completo, atualização e reparo de cache
 - [ ] Sincronização opcional entre dispositivos

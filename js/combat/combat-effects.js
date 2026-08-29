@@ -183,11 +183,15 @@ function toggleEffect(type,id){
             )
             : null;
 
-        if (
-            staminaCost > 0 &&
-            (!staminaPayer || staminaCost > Math.max(0, Number(staminaPayer.stCurrent) || 0))
-        ) {
-            showToast("O personagem do turno não possui EST suficiente para aplicar este efeito.");
+        const energyAvailability = staminaPayer
+            ? window.getAutomationEnergyAvailability?.(staminaPayer, automationMetadata)
+                || { total: Math.max(0, Number(staminaPayer.stCurrent) || 0) }
+            : { total: 0 };
+
+        if (staminaCost > 0 && (!staminaPayer || staminaCost > energyAvailability.total)) {
+            showToast(automationMetadata?.prioritizeRuneSource
+                ? "O personagem do turno não possui Fonte Rúnica/EST suficiente para aplicar este Sinal."
+                : "O personagem do turno não possui EST suficiente para aplicar este efeito.");
             return;
         }
     
@@ -223,9 +227,16 @@ function toggleEffect(type,id){
             }
 
             if (staminaCost > 0) {
-                automationMetadata.staminaBefore = Math.max(0, Number(staminaPayer.stCurrent) || 0);
-                staminaPayer.stCurrent = Math.max(0, automationMetadata.staminaBefore - staminaCost);
-                automationMetadata.staminaAfter = staminaPayer.stCurrent;
+                if (typeof window.spendAutomationEnergy === 'function') {
+                    if (!window.spendAutomationEnergy(staminaPayer, automationMetadata)) {
+                        showToast("Não foi possível consumir os recursos do personagem do turno.");
+                        return;
+                    }
+                } else {
+                    automationMetadata.staminaBefore = Math.max(0, Number(staminaPayer.stCurrent) || 0);
+                    staminaPayer.stCurrent = Math.max(0, automationMetadata.staminaBefore - staminaCost);
+                    automationMetadata.staminaAfter = staminaPayer.stCurrent;
+                }
             }
         }
 

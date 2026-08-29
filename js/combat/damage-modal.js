@@ -25,6 +25,7 @@ function closeDamageModals() {
         
         document.getElementById('damageTypeModal').style.display = 'none';
         window.closeArmorSourceModal?.();
+        window.closeCriticalDamageModal?.();
     }
 
     function selectBodyPart(part) {
@@ -32,6 +33,8 @@ function closeDamageModals() {
         pendingDamageBodyPart = part;
         
         document.getElementById('damageBodyModal').style.display = 'none';
+
+        if (window.openPreparedCriticalDamageFlow?.()) return;
         
         document.getElementById('damageTypeModal').style.display = 'flex';
     }
@@ -279,3 +282,5 @@ function closeDamageModals() {
             closeSTModal();
         }
     }
+
+    window.applyDirectDamage = applyDirectDamage;

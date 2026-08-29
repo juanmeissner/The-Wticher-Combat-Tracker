@@ -177,6 +177,8 @@ function showItemDetails(itemId) {
 
     if (!item) return;
 
+    const catalogItem = predefinedItems.find(entry => entry.id === item.id) || item;
+
     const content =
         document.getElementById(
             'itemDetailsContent'
@@ -260,6 +262,15 @@ function showItemDetails(itemId) {
             
                         🌀 ${item.effect}
             
+                    </div>
+                `
+                : ''}
+
+            ${catalogItem.potion
+                ? `
+                    <div class="text-lime-300 mb-3">
+                        ☣ Toxicidade: ${Math.max(0, Number(catalogItem.toxicity) || 0)}%
+                        ${catalogItem.clearsToxicity ? ' · remove toda a toxicidade e efeitos de poções' : ''}
                     </div>
                 `
                 : ''}
@@ -391,6 +402,7 @@ function renderInventory() {
     filteredInventory.forEach(item => {
 
         const equipmentBadge = window.getInventoryEquipmentBadge?.(item.id);
+        const equipmentKind = window.getEquipmentItemKind?.(item);
 
         container.innerHTML += `
     
@@ -427,8 +439,12 @@ function renderInventory() {
 
         <div class="text-sm text-slate-400 mt-1">
 
-            ${item.type === 'weapon'
+            ${equipmentKind === 'weapon'
                 ? `⚔️ ${item.damage} DMG`
+                : ''}
+
+            ${equipmentKind === 'ammunition'
+                ? `🏹 ${window.getAmmunitionType?.(item) === 'bolt' ? 'Seta para besta' : 'Flecha para arco'}${String(item.damage || '').trim() && String(item.damage).trim() !== '0' ? ` · ${item.damage}` : ''}`
                 : ''}
 
             ${item.type === 'armor'
@@ -545,7 +561,45 @@ function useItem(itemId) {
 
     if (window.isEquipmentItem?.(item)) {
         window.performSelectedEquipmentAction?.();
-        return;
+        return { used: false, reason: 'equipment' };
+    }
+
+    const collectionOwner = window.getCharacterCollectionOwner?.() || null;
+    const catalogItem = predefinedItems.find(entry => entry.id === itemId) || item;
+    const isActivePotion = Boolean(
+        catalogItem.potion &&
+        Object.prototype.hasOwnProperty.call(catalogItem, 'active')
+    );
+    let effectResult = null;
+
+    if (isActivePotion) {
+        if (typeof window.applyInventoryItemEffectOnOwner !== 'function') {
+            showToast('O sistema de efeitos ainda está carregando. Tente novamente.');
+            return { used: false, reason: 'effect-system-unavailable' };
+        }
+
+        effectResult = window.applyInventoryItemEffectOnOwner(collectionOwner, catalogItem.id);
+
+        if (effectResult?.blocked || effectResult?.cancelled || !effectResult?.applied) {
+            return {
+                used: false,
+                reason: effectResult?.reason || (effectResult?.cancelled ? 'cancelled' : 'effect-not-applied'),
+                effect: effectResult
+            };
+        }
+    }
+
+    const toxicityResult = window.applyConsumedItemToxicity?.(collectionOwner, catalogItem) || null;
+
+    if (effectResult?.applied) {
+        const duration = Number(effectResult.effect?.remainingTurns) || 0;
+        const durationDetail = duration > 0
+            ? ` por ${duration} rodada${duration === 1 ? '' : 's'}`
+            : '';
+        const action = effectResult.refreshed ? 'renovado' : 'aplicado';
+        window.appendToxicityItemUseDetail?.(
+            `Efeito ${catalogItem.name} ${action} em ${collectionOwner?.name || 'personagem'}${durationDetail}`
+        );
     }
 
     item.quantity--;
@@ -560,6 +614,13 @@ function useItem(itemId) {
     saveInventory();
 
     renderInventory();
+
+    return {
+        used: true,
+        itemId,
+        toxicity: toxicityResult,
+        effect: effectResult
+    };
 }
 
 // =========================================

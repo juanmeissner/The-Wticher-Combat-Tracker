@@ -79,8 +79,11 @@ function useSelectedInventoryItem() {
         return;
     }
 
-    useItem(item.id);
+    const result = useItem(item.id);
+    if (result?.used === false) return result;
+
     showToast(`✅ ${item.name} utilizado.`);
+    return result;
 }
 
 function showSelectedAbilityDetails() {

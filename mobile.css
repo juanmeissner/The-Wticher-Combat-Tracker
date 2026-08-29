@@ -396,6 +396,19 @@ body {
     max-width: 110px;
 }
 
+.session-critical-ready {
+    flex: 0 0 auto;
+    padding: 3px 6px;
+    border: 1px solid rgba(251, 113, 133, .55);
+    border-radius: 999px;
+    background: rgba(190, 24, 93, .22);
+    color: #fda4af;
+    font-size: .62rem;
+    font-weight: 900;
+    line-height: 1;
+    white-space: nowrap;
+}
+
 .session-next {
     max-width: 84px;
     color: #94a3b8;
@@ -662,6 +675,7 @@ body {
 .history-entry-death-save { border-left-color: #c084fc !important; }
 .history-entry-effect { border-left-color: #38bdf8 !important; }
 .history-entry-condition { border-left-color: #fbbf24 !important; }
+.history-entry-skill-test { border-left-color: #22d3ee !important; }
 .history-entry-turn { border-left-color: #94a3b8 !important; }
 .history-entry-undo { border-left-color: #a78bfa !important; }
 

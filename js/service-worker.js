@@ -1,4 +1,4 @@
-const CACHE_NAME = 'witcher-combat-tracker-v27';
+const CACHE_NAME = 'witcher-combat-tracker-v53';
 
 const APP_SHELL = [
     './',
@@ -7,10 +7,15 @@ const APP_SHELL = [
     './mobile.css',
     './character-collections.css',
     './equipment.css',
+    './critical-wounds.css',
+    './toxicity.css',
+    './character-spells.css',
     './crafting.css',
+    './character-sheet-wizard.css',
     './manifest.json',
     './service-worker.js',
     './image.png',
+    './professional-skills-descriptions.js',
     './img/monsters/witch.png',
     './img/monsters/umbrenato.png',
     './img/monsters/lamia.png',
@@ -19,6 +24,9 @@ const APP_SHELL = [
     './js/state.js',
     './js/core/toast.js',
     './js/core/helpers.js',
+    './js/professional-skills-data.js',
+    './js/character-sheet-model.js',
+    './js/character-sheet-templates.js',
     './js/items.js',
     './js/bestiary.js',
     './js/monsters.js',
@@ -40,6 +48,10 @@ const APP_SHELL = [
     './js/abilities/abilities.js',
     './js/character-collections.js',
     './js/equipment.js',
+    './js/critical-wounds.js',
+    './js/toxicity.js',
+    './js/character-skill-tests.js',
+    './js/character-spells.js',
     './js/crafting.js',
     './js/ui/abilities-modal.js',
     './js/abilities/abilities-export.js',
@@ -47,6 +59,7 @@ const APP_SHELL = [
     './js/app-init.js',
     './js/session-features.js',
     './js/enhancements.js',
+    './js/character-sheet-wizard.js',
     './js/rules-automation.js'
 ];
 

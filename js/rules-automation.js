@@ -63,6 +63,7 @@ const AUTOMATION_MANAGED_EFFECTS = new Set([
     'ability:tempestade_estatica',
     'ability:correntes_de_brasa',
     'ability:bencao_de_cura',
+    'ability:ritual_de_vida',
     'ability:reservatorio_primal',
     'ability:fios_da_vida',
     'ability:portal_vertical',
@@ -98,12 +99,18 @@ const AUTOMATION_MANAGED_EFFECTS = new Set([
     'item:samun'
 ]);
 
+let pendingCharacterSpellEffect = null;
+
 const AUTOMATION_VARIABLE_STAMINA_ABILITIES = new Set([
     'quen',
     'quen_ampliado',
     'yrden',
     'axii',
     'axii_marionete'
+]);
+
+const AUTOMATION_INSTANT_HEALING_ABILITIES = new Set([
+    'cura_magica'
 ]);
 
 let pendingAutomationEffectApplication = null;
@@ -283,12 +290,23 @@ function hasEffectBlockingRegeneration(combatant) {
     return hasAutomationEffect(combatant, 'item', 'podelua');
 }
 
-function getAutomationConfig(type, id) {
+function getConfiguredAutomationSpent(options, min, max, requestValue) {
+    const configured = Number(options?.spent);
+    if (Number.isInteger(configured)) {
+        return Math.min(max, Math.max(min, configured));
+    }
+
+    return requestValue();
+}
+
+function getAutomationConfig(type, id, options = {}) {
     const key = `${type}:${id}`;
 
     switch (key) {
         case 'ability:quen': {
-            const spent = requestAutomationInteger('Quen', 'EST gasta para o escudo (1 a 10):', 1, 10, 1);
+            const spent = getConfiguredAutomationSpent(options, 1, 10, () =>
+                requestAutomationInteger('Quen', 'EST gasta para o escudo (1 a 10):', 1, 10, 1)
+            );
             return spent === null ? null : {
                 magicShieldHp: spent * 5,
                 shieldKind: 'quen',
@@ -300,7 +318,9 @@ function getAutomationConfig(type, id) {
         }
 
         case 'ability:quen_ampliado': {
-            const spent = requestAutomationInteger('Quen Ampliado', 'EST gasta para o escudo (1 a 15):', 1, 15, 1);
+            const spent = getConfiguredAutomationSpent(options, 1, 15, () =>
+                requestAutomationInteger('Quen Ampliado', 'EST gasta para o escudo (1 a 15):', 1, 15, 1)
+            );
             return spent === null ? null : {
                 magicShieldHp: spent * 10,
                 shieldKind: 'quen-ampliado',
@@ -312,7 +332,9 @@ function getAutomationConfig(type, id) {
         }
 
         case 'ability:yrden': {
-            const spent = requestAutomationInteger('Yrden', 'EST gasta para definir a penalidade (1 a 5):', 1, 5, 1);
+            const spent = getConfiguredAutomationSpent(options, 1, 5, () =>
+                requestAutomationInteger('Yrden', 'EST gasta para definir a penalidade (1 a 5):', 1, 5, 1)
+            );
             const duration = requestAutomationDice('abilities', '1d6', 'Yrden — duração');
             if (spent === null || duration === null) return null;
             return {
@@ -325,7 +347,9 @@ function getAutomationConfig(type, id) {
         }
 
         case 'ability:axii': {
-            const spent = requestAutomationInteger('Axii', 'EST gasta para conjurar (1 a 15):', 1, 15, 1);
+            const spent = getConfiguredAutomationSpent(options, 1, 15, () =>
+                requestAutomationInteger('Axii', 'EST gasta para conjurar (1 a 15):', 1, 15, 1)
+            );
             if (spent === null) return null;
 
             const resistancePenalty = 1 + Math.floor((spent - 1) / 2);
@@ -340,7 +364,9 @@ function getAutomationConfig(type, id) {
         }
 
         case 'ability:axii_marionete': {
-            const spent = requestAutomationInteger('Axii Marionete', 'EST gasta / duração em rodadas (1 a 15):', 1, 15, 1);
+            const spent = getConfiguredAutomationSpent(options, 1, 15, () =>
+                requestAutomationInteger('Axii Marionete', 'EST gasta / duração em rodadas (1 a 15):', 1, 15, 1)
+            );
             return spent === null ? null : {
                 duration: spent,
                 stacks: spent,
@@ -363,7 +389,10 @@ function getAutomationConfig(type, id) {
             return { turnDamage: '2d6', rollGroup: 'abilities', linkedCondition: '⚖️' };
 
         case 'ability:bencao_de_cura':
-            return { turnHealing: 3 };
+            return { turnHealing: 3, perTurnSt: 3, staminaCost: 5 };
+
+        case 'ability:ritual_de_vida':
+            return { duration: 10, turnHealing: 3, staminaCost: 5 };
 
         case 'ability:reservatorio_primal':
             return { perTurnSt: 6, note: '+5 em dano corpo a corpo e +6 dano físico.' };
@@ -461,6 +490,55 @@ function getAutomationStaminaCost(metadata) {
     return Math.max(0, Number.parseInt(metadata?.staminaCost, 10) || 0);
 }
 
+function isAutomationWitcherSign(type, id) {
+    if (type !== 'ability') return false;
+
+    const ability = predefinedAbilities.find(current => current.id === id);
+    const profession = String(ability?.profession || '').toLocaleLowerCase('pt-BR');
+    const category = String(ability?.category || '').toLocaleLowerCase('pt-BR');
+
+    return profession === 'bruxo' || category === 'bruxo';
+}
+
+function getAutomationEnergyAvailability(caster, metadata = {}) {
+    const stamina = Math.max(0, Number(caster?.stCurrent) || 0);
+    const runeSource = metadata.prioritizeRuneSource
+        ? Math.max(0, Number(caster?.runeSourceCurrent) || 0)
+        : 0;
+
+    return {
+        stamina,
+        runeSource,
+        total: stamina + runeSource
+    };
+}
+
+function spendAutomationEnergy(caster, metadata = {}) {
+    const cost = getAutomationStaminaCost(metadata);
+    const availability = getAutomationEnergyAvailability(caster, metadata);
+
+    if (!caster || cost > availability.total) return false;
+
+    const runeSourceSpent = metadata.prioritizeRuneSource
+        ? Math.min(cost, availability.runeSource)
+        : 0;
+    const staminaSpent = cost - runeSourceSpent;
+
+    metadata.staminaBefore = availability.stamina;
+    metadata.staminaSpent = staminaSpent;
+    metadata.staminaAfter = availability.stamina - staminaSpent;
+
+    if (metadata.prioritizeRuneSource) {
+        metadata.runeSourceBefore = availability.runeSource;
+        metadata.runeSourceSpent = runeSourceSpent;
+        metadata.runeSourceAfter = availability.runeSource - runeSourceSpent;
+        caster.runeSourceCurrent = metadata.runeSourceAfter;
+    }
+    caster.stCurrent = metadata.staminaAfter;
+
+    return true;
+}
+
 function queueAutomationEffectApplication(target, caster, type, id, metadata) {
     pendingAutomationEffectApplication = {
         combatantId: String(target.id),
@@ -492,6 +570,57 @@ function consumeAutomationEffectApplication(combatant, type, id) {
     }
 
     return pending.metadata;
+}
+
+function isAutomationManagedEffect(type, id) {
+    return AUTOMATION_MANAGED_EFFECTS.has(`${type}:${id}`);
+}
+
+function prepareCharacterSpellEffect(target, caster, id, cast = {}) {
+    pendingCharacterSpellEffect = null;
+    if (!target || !caster || !id) return null;
+
+    if (getAutomationEffect(target, 'ability', id)) {
+        showToast(`${target.name} já possui este efeito ativo.`);
+        return null;
+    }
+
+    if (hasEffectBlockingAbility(target)) {
+        showToast('Pó de Dimerítio bloqueia magias neste alvo.');
+        return null;
+    }
+
+    if (!isAutomationManagedEffect('ability', id)) {
+        return { managed: false };
+    }
+
+    const metadata = getAutomationConfig('ability', id, { spent: cast.baseCost });
+    if (metadata === null) return null;
+
+    pendingCharacterSpellEffect = {
+        targetId: String(target.id),
+        casterId: String(caster.id),
+        id,
+        metadata: {
+            ...metadata,
+            staminaCost: 0,
+            prepaidSpellCast: true,
+            spellCast: { ...cast }
+        }
+    };
+
+    return { managed: true, metadata: pendingCharacterSpellEffect.metadata };
+}
+
+function consumeCharacterSpellEffect(target, id) {
+    const prepared = pendingCharacterSpellEffect;
+    pendingCharacterSpellEffect = null;
+
+    if (!prepared || prepared.targetId !== String(target?.id) || prepared.id !== id) {
+        return null;
+    }
+
+    return prepared;
 }
 
 function applyAutomationEffectStart(combatant, effect) {
@@ -560,6 +689,104 @@ function applyAutomationHealing(combatant, value) {
     return combatant.hpCurrent - previousHp;
 }
 
+function applyInstantAbilityHealing(target, caster, ability) {
+    if (!target || !caster || !ability || !AUTOMATION_INSTANT_HEALING_ABILITIES.has(ability.id)) {
+        return null;
+    }
+
+    const staminaCost = Math.max(0, Number.parseInt(ability.cost, 10) || 0);
+    const energyMetadata = { staminaCost, prioritizeRuneSource: false };
+    if (getAutomationEnergyAvailability(caster, energyMetadata).total < staminaCost) {
+        showToast(`${caster.name} não possui EST suficiente para conjurar ${ability.name}.`);
+        return null;
+    }
+
+    const roll = requestAutomationDice('abilities', '1d6', `${ability.name} — cura`);
+    if (roll === null) return null;
+
+    const calculation = window.characterSpellCasting?.calculateSpellHealing?.(caster, ability, roll);
+    if (!calculation?.valid) {
+        showToast(`Não foi possível calcular a cura de ${ability.name}.`);
+        return null;
+    }
+
+    let result = null;
+    const mutate = () => {
+        const hpBefore = Math.max(0, Number(target.hpCurrent) || 0);
+        const hpMaximum = Math.max(hpBefore, Number(target.hpMax) || 0);
+        const blocked = hasEffectBlockingRegeneration(target);
+        if (!spendAutomationEnergy(caster, energyMetadata)) return null;
+
+        const hpAfter = blocked
+            ? hpBefore
+            : Math.min(hpMaximum, hpBefore + calculation.total);
+        target.hpCurrent = hpAfter;
+        if (hpAfter > hpBefore) {
+            target.deathSaves = { success: 0, failures: 0 };
+            target.stabilized = false;
+        }
+        result = {
+            ...calculation,
+            blocked,
+            healed: hpAfter - hpBefore,
+            hpBefore,
+            hpAfter,
+            energy: { ...energyMetadata }
+        };
+        savePlayersToStorage();
+        renderList(false);
+        return result;
+    };
+    const detail = () => [
+        `Magia: ${ability.name}`,
+        `Fórmula de cura: ${calculation.base} + ${calculation.attributeLabel} ${calculation.attributeBonus} + ${calculation.dice} ${calculation.roll} = ${calculation.total}`,
+        result?.blocked ? 'Cura efetiva: 0 PV · regeneração bloqueada' : `Cura efetiva: ${result?.healed || 0} PV`,
+        `PV de ${target.name}: ${result?.hpBefore ?? target.hpCurrent} → ${result?.hpAfter ?? target.hpCurrent}`,
+        `EST de ${caster.name}: ${energyMetadata.staminaBefore ?? caster.stCurrent} → ${energyMetadata.staminaAfter ?? caster.stCurrent}`
+    ].join('\n');
+    const metadata = () => ({
+        type: 'healing',
+        source: { id: caster.id, name: caster.name },
+        target: { id: target.id, name: target.name },
+        participants: [
+            { id: caster.id, name: caster.name },
+            { id: target.id, name: target.name }
+        ],
+        effect: { id: ability.id, type: 'ability', name: ability.name, action: 'conjurada' },
+        combat: {
+            action: 'spell-healing',
+            abilityId: ability.id,
+            finalValue: result?.healed || 0,
+            requestedValue: calculation.total,
+            before: { hp: result?.hpBefore ?? target.hpCurrent },
+            after: { hp: result?.hpAfter ?? target.hpCurrent },
+            healing: {
+                base: calculation.base,
+                attributeLabel: calculation.attributeLabel,
+                attributeBonus: calculation.attributeBonus,
+                dice: calculation.dice,
+                roll: calculation.roll,
+                blocked: Boolean(result?.blocked)
+            }
+        }
+    });
+
+    const trackedResult = window.trackCombatAction
+        ? window.trackCombatAction(
+            () => `${caster.name} conjurou ${ability.name} em ${target.name}: ${result?.healed || 0} PV`,
+            mutate,
+            detail,
+            metadata
+        )
+        : mutate();
+    if (!trackedResult) return null;
+
+    showToast(result.blocked
+        ? `🌿 ${ability.name}: a regeneração de ${target.name} está bloqueada.`
+        : `🌿 ${caster.name} curou ${target.name} em ${result.healed} PV.`);
+    return result;
+}
+
 function processAutomatedTurnEffects(combatant) {
     if (!combatant?.effects?.length) return [];
 
@@ -574,13 +801,16 @@ function processAutomatedTurnEffects(combatant) {
         if (!Object.keys(metadata).length) return;
 
         if (metadata.perTurnSt) {
-            if (combatant.stCurrent >= metadata.perTurnSt) {
-                combatant.stCurrent -= metadata.perTurnSt;
-                changes.push(`${effect.name}: −${metadata.perTurnSt} EST`);
+            const staminaPayer = metadata.staminaPayerId
+                ? combatants.find(current => String(current.id) === String(metadata.staminaPayerId))
+                : combatant;
+            if (staminaPayer && staminaPayer.stCurrent >= metadata.perTurnSt) {
+                staminaPayer.stCurrent -= metadata.perTurnSt;
+                changes.push(`${effect.name}: −${metadata.perTurnSt} EST de ${staminaPayer.name || 'conjurador'}`);
                 changed = true;
             } else {
                 combatant.effects = combatant.effects.filter(current => current !== effect);
-                changes.push(`${effect.name}: encerrado por falta de EST`);
+                changes.push(`${effect.name}: encerrado por falta de EST do conjurador`);
                 changed = true;
                 return;
             }
@@ -954,6 +1184,75 @@ function installRulesAutomation() {
     }
 
     const guardedToggleEffect = window.toggleEffect;
+
+    function applyInventoryItemEffectOnOwner(target, id) {
+        const combatTarget = combatants.find(current => String(current.id) === String(target?.id));
+        const item = predefinedItems.find(current => current.id === id);
+
+        if (!combatTarget) {
+            showToast('Adicione o personagem ao combate antes de consumir uma poção com efeito ativo.');
+            return { applied: false, blocked: true, reason: 'not-in-combat' };
+        }
+        if (!item?.potion || !Object.prototype.hasOwnProperty.call(item, 'active')) {
+            return { applied: false, notApplicable: true };
+        }
+        if (id !== 'papafigo' && hasEffectBlockingItems(combatTarget)) {
+            showToast('Papa-figo neutraliza outras poções neste personagem.');
+            return { applied: false, blocked: true, reason: 'papafigo' };
+        }
+
+        const metadata = AUTOMATION_MANAGED_EFFECTS.has(`item:${id}`)
+            ? getAutomationConfig('item', id)
+            : {};
+        if (metadata === null) {
+            return { applied: false, cancelled: true };
+        }
+
+        if (!Array.isArray(combatTarget.effects)) combatTarget.effects = [];
+        const existingIndex = combatTarget.effects.findIndex(
+            effect => effect.type === 'item' && effect.id === id
+        );
+        const previousEffect = existingIndex >= 0
+            ? JSON.parse(JSON.stringify(combatTarget.effects[existingIndex]))
+            : null;
+
+        if (existingIndex >= 0) combatTarget.effects.splice(existingIndex, 1);
+
+        queueAutomationEffectApplication(combatTarget, null, 'item', id, metadata);
+        const previousSelectedId = selectedId;
+        selectedId = combatTarget.id;
+
+        try {
+            guardedToggleEffect('item', id);
+        } finally {
+            selectedId = previousSelectedId;
+        }
+
+        const applied = getAutomationEffect(combatTarget, 'item', id);
+        if (!applied) {
+            pendingAutomationEffectApplication = null;
+            if (previousEffect) combatTarget.effects.splice(existingIndex, 0, previousEffect);
+            return { applied: false, cancelled: true };
+        }
+
+        applyAutomationMetadata(applied, getAutomationData(applied));
+        applyAutomationEffectStart(combatTarget, applied);
+        applied.sourceId = combatTarget.id;
+        applied.sourceName = combatTarget.name;
+        savePlayersToStorage();
+        renderList(false);
+        window.setTimeout(renderAutomationCardSummaries, 0);
+
+        return {
+            applied: true,
+            refreshed: Boolean(previousEffect),
+            effect: applied,
+            targetId: combatTarget.id
+        };
+    }
+
+    window.applyInventoryItemEffectOnOwner = applyInventoryItemEffectOnOwner;
+
     window.toggleEffect = (type, id) => {
         const combatant = combatants.find(current => current.id === selectedId);
         if (!combatant) return guardedToggleEffect(type, id);
@@ -975,13 +1274,29 @@ function installRulesAutomation() {
             return;
         }
 
+        if (type === 'ability' && AUTOMATION_INSTANT_HEALING_ABILITIES.has(id)) {
+            const caster = combatants.find(current => current.id === activeTurnId) || null;
+            if (!caster) {
+                showToast('Defina o turno ativo antes de conjurar esta magia de cura.');
+                return;
+            }
+            const ability = predefinedAbilities.find(current => current.id === id);
+            return applyInstantAbilityHealing(combatant, caster, ability);
+        }
+
+        const preparedSpell = type === 'ability'
+            ? consumeCharacterSpellEffect(combatant, id)
+            : null;
+
         if (!AUTOMATION_MANAGED_EFFECTS.has(`${type}:${id}`)) {
             guardedToggleEffect(type, id);
             return;
         }
 
-        let caster = null;
-        if (type === 'ability' && AUTOMATION_VARIABLE_STAMINA_ABILITIES.has(id)) {
+        let caster = preparedSpell
+            ? combatants.find(current => String(current.id) === preparedSpell.casterId) || null
+            : null;
+        if (!preparedSpell && type === 'ability' && AUTOMATION_VARIABLE_STAMINA_ABILITIES.has(id)) {
             caster = combatants.find(current => current.id === activeTurnId) || null;
             if (!caster) {
                 showToast('Defina o turno ativo antes de conjurar esta magia.');
@@ -989,10 +1304,11 @@ function installRulesAutomation() {
             }
         }
 
-        const metadata = getAutomationConfig(type, id);
+        const metadata = preparedSpell?.metadata || getAutomationConfig(type, id);
         if (metadata === null) return;
 
         const staminaCost = getAutomationStaminaCost(metadata);
+        metadata.prioritizeRuneSource = staminaCost > 0 && isAutomationWitcherSign(type, id);
         if (staminaCost > 0 && !caster) {
             caster = combatants.find(current => current.id === activeTurnId) || null;
         }
@@ -1000,8 +1316,10 @@ function installRulesAutomation() {
             showToast('Defina o turno ativo antes de gastar EST.');
             return;
         }
-        if (staminaCost > Math.max(0, Number(caster?.stCurrent) || 0)) {
-            showToast(`${caster.name} não possui EST suficiente para conjurar esta magia.`);
+        if (staminaCost > getAutomationEnergyAvailability(caster, metadata).total) {
+            showToast(metadata.prioritizeRuneSource
+                ? `${caster.name} não possui Fonte Rúnica/EST suficiente para conjurar este Sinal.`
+                : `${caster.name} não possui EST suficiente para conjurar esta magia.`);
             return;
         }
 
@@ -1053,6 +1371,8 @@ function installRulesAutomation() {
 }
 
 window.rollAutomationDice = rollAutomationDice;
+window.isAutomationRegenerationBlocked = hasEffectBlockingRegeneration;
+window.applyInstantAbilityHealing = applyInstantAbilityHealing;
 window.getRecurringConditionPrevention = getRecurringConditionPrevention;
 window.processAutomatedTurnEffects = processAutomatedTurnEffects;
 window.resolveAutomatedDamage = resolveAutomatedDamage;
@@ -1060,6 +1380,10 @@ window.addAutomationCondition = addAutomationCondition;
 window.renderAutomationCardSummaries = renderAutomationCardSummaries;
 window.hasActiveMagicShield = hasActiveMagicShield;
 window.consumeAutomationEffectApplication = consumeAutomationEffectApplication;
+window.isAutomationManagedEffect = isAutomationManagedEffect;
+window.prepareCharacterSpellEffect = prepareCharacterSpellEffect;
+window.getAutomationEnergyAvailability = getAutomationEnergyAvailability;
+window.spendAutomationEnergy = spendAutomationEnergy;
 window.refreshAutomationMonsterCategories = () => {
     ensureAutomationMonsterCategories();
     savePlayersToStorage();

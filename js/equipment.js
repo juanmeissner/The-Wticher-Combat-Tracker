@@ -1,4 +1,4 @@
-const EQUIPMENT_SCHEMA_VERSION = 2;
+const EQUIPMENT_SCHEMA_VERSION = 3;
 const EQUIPMENT_ARMOR_PARTS = Object.freeze(['head', 'torso', 'arm', 'leg']);
 const EQUIPMENT_PART_LABELS = Object.freeze({
     head: 'Cabeça',
@@ -13,12 +13,19 @@ const EQUIPMENT_SLOT_TO_ARMOR_PART = Object.freeze({
     legs: 'leg',
     shield: 'shield'
 });
+const EQUIPMENT_ARMOR_PART_TO_SLOT = Object.freeze({
+    head: 'head',
+    torso: 'body',
+    arm: 'arms',
+    leg: 'legs'
+});
 const EQUIPMENT_SLOT_LABELS = Object.freeze({
     head: 'Cabeça',
     body: 'Tronco',
     arms: 'Braços',
     legs: 'Pernas',
-    shield: 'Escudo'
+    shield: 'Escudo',
+    ammunition: 'Munição'
 });
 
 const collapsedEquipmentPanels = new Set();
@@ -49,6 +56,8 @@ function createEmptyEquipmentLoadout() {
         version: EQUIPMENT_SCHEMA_VERSION,
         weapons: [null, null, null],
         activeWeaponSlot: 0,
+        ammunition: [null, null],
+        activeAmmunitionSlot: 0,
         shield: null,
         armor: {
             head: null,
@@ -63,7 +72,13 @@ function getEquipmentItemSlot(item) {
     if (!item || item.category !== 'equipment') return null;
 
     if (item.type === 'weapon') {
-        return item.weaponType === 'Flechas' ? 'ammunition' : 'weapon';
+        const explicitSlot = String(item.equipmentSlot || '').toLocaleLowerCase('en-US');
+        const weaponType = String(item.weaponType || '').toLocaleLowerCase('pt-BR');
+        const name = String(item.name || '').toLocaleLowerCase('pt-BR');
+        const ammunition = explicitSlot === 'ammunition'
+            || ['flechas', 'setas', 'virotes'].includes(weaponType)
+            || /^(flecha|seta|virote)\b/.test(name);
+        return ammunition ? 'ammunition' : 'weapon';
     }
 
     if (item.type !== 'armor') return null;
@@ -107,13 +122,41 @@ function getEquipmentItemKind(item) {
     return EQUIPMENT_SLOT_TO_ARMOR_PART[slot] || slot;
 }
 
+function getAmmunitionType(item) {
+    if (!item || getEquipmentItemSlot(item) !== 'ammunition') return null;
+
+    const explicit = String(item.ammunitionType || '').toLocaleLowerCase('en-US');
+    if (explicit === 'arrow' || explicit === 'bolt') return explicit;
+
+    const source = `${item.weaponType || ''} ${item.name || ''}`.toLocaleLowerCase('pt-BR');
+    return /seta|virote/.test(source) ? 'bolt' : 'arrow';
+}
+
+function getRequiredAmmunitionType(item) {
+    if (!item || getEquipmentItemSlot(item) !== 'weapon') return null;
+
+    const explicit = String(item.requiredAmmunitionType || '').toLocaleLowerCase('en-US');
+    if (explicit === 'arrow' || explicit === 'bolt') return explicit;
+
+    const weaponType = String(item.weaponType || '').toLocaleLowerCase('pt-BR');
+    if (weaponType !== 'arco e flecha') return null;
+
+    const source = `${item.name || ''} ${item.description || ''}`.toLocaleLowerCase('pt-BR');
+    return source.includes('besta') ? 'bolt' : 'arrow';
+}
+
+function isAmmunitionCompatibleWithWeapon(ammunition, weapon) {
+    const requiredType = getRequiredAmmunitionType(weapon);
+    return Boolean(requiredType && getAmmunitionType(ammunition) === requiredType);
+}
+
 function getEquipmentSlotLabel(item) {
     return EQUIPMENT_SLOT_LABELS[getEquipmentItemSlot(item)] || '';
 }
 
 function isEquipmentItem(item) {
     const kind = getEquipmentItemKind(item);
-    return Boolean(kind && kind !== 'ammunition');
+    return Boolean(kind);
 }
 
 function isTwoHandedWeapon(item) {
@@ -137,7 +180,7 @@ function findEquipmentItem(owner, itemId) {
 }
 
 function ensureEquipmentDefense(item) {
-    if (!item || getEquipmentItemKind(item) === 'weapon') return 0;
+    if (!item || ['weapon', 'ammunition'].includes(getEquipmentItemKind(item))) return 0;
 
     const maximum = Math.max(0, Number(item.defense) || 0);
     const current = Number(item.equipmentDefense);
@@ -150,7 +193,7 @@ function ensureEquipmentDefense(item) {
 }
 
 function getEquipmentDefenseLabel(item) {
-    if (!item || getEquipmentItemKind(item) === 'weapon') return '';
+    if (!item || ['weapon', 'ammunition'].includes(getEquipmentItemKind(item))) return '';
 
     const current = ensureEquipmentDefense(item);
     const maximum = Math.max(0, Number(item.defense) || 0);
@@ -176,6 +219,18 @@ function ensureEquipmentLoadout(owner) {
 
     while (weapons.length < 3) weapons.push(null);
 
+    const rawAmmunition = Array.isArray(saved.ammunition) ? saved.ammunition : [];
+    const usedAmmunitionIds = new Set();
+    const ammunition = rawAmmunition.slice(0, 2).map(itemId => {
+        if (!itemId || usedAmmunitionIds.has(String(itemId))) return null;
+        const item = findEquipmentItem(owner, itemId);
+        if (getEquipmentItemKind(item) !== 'ammunition' || Number(item.quantity) <= 0) return null;
+        usedAmmunitionIds.add(String(itemId));
+        return item.id;
+    });
+
+    while (ammunition.length < 2) ammunition.push(null);
+
     const armor = {};
     EQUIPMENT_ARMOR_PARTS.forEach(part => {
         const itemId = saved.armor?.[part];
@@ -194,11 +249,19 @@ function ensureEquipmentLoadout(owner) {
         activeWeaponSlot = firstOccupied === -1 ? 0 : firstOccupied;
     }
 
+    let activeAmmunitionSlot = Math.min(1, Math.max(0, Number(saved.activeAmmunitionSlot) || 0));
+    if (!ammunition[activeAmmunitionSlot]) {
+        const firstOccupied = ammunition.findIndex(Boolean);
+        activeAmmunitionSlot = firstOccupied === -1 ? 0 : firstOccupied;
+    }
+
     const normalizedLoadout = {
         ...empty,
         version: EQUIPMENT_SCHEMA_VERSION,
         weapons,
         activeWeaponSlot,
+        ammunition,
+        activeAmmunitionSlot,
         shield,
         armor
     };
@@ -219,6 +282,201 @@ function getActiveWeaponEntry(owner) {
         : null;
 }
 
+function getCriticalWeaponRestriction(owner, item) {
+    if (!owner || !item) return '';
+    if (window.hasUnusableArmFromCriticalWound?.(owner) && isTwoHandedWeapon(item)) {
+        return `${owner.name} está com um braço inutilizado e não pode usar armas de duas mãos.`;
+    }
+    if (item.weaponUnusable) {
+        return `${item.name} está inutilizável e precisa ser reparada.`;
+    }
+    return '';
+}
+
+function applyActiveWeaponDurabilityDamage(owner, amount) {
+    const weapon = getActiveWeaponEntry(owner)?.item;
+    if (!weapon) return null;
+    const before = Math.max(0, Number(weapon.durabilityDamage) || 0);
+    const applied = Math.max(0, Math.floor(Number(amount) || 0));
+    weapon.durabilityDamage = before + applied;
+    return { item: weapon, name: weapon.name, before, after: weapon.durabilityDamage };
+}
+
+function markActiveWeaponUnusable(owner) {
+    const weapon = getActiveWeaponEntry(owner)?.item;
+    if (!weapon) return null;
+    weapon.weaponUnusable = true;
+    return weapon;
+}
+
+function disarmActiveWeapon(owner) {
+    const entry = getActiveWeaponEntry(owner);
+    if (!entry) return null;
+
+    const loadout = ensureEquipmentLoadout(owner);
+    const previousSlot = entry.slotIndex;
+    loadout.weapons[previousSlot] = null;
+    const replacementSlot = loadout.weapons.findIndex(Boolean);
+    loadout.activeWeaponSlot = replacementSlot >= 0 ? replacementSlot : 0;
+
+    return {
+        item: entry.item,
+        name: entry.item.name,
+        previousSlot,
+        replacementSlot,
+        replacementName: replacementSlot >= 0
+            ? findEquipmentItem(owner, loadout.weapons[replacementSlot])?.name || ''
+            : ''
+    };
+}
+
+function consumeActiveAmmunitionForOutcome(owner, amount = 1) {
+    const weapon = getActiveWeaponEntry(owner)?.item;
+    const entry = weapon ? getActiveAmmunitionEntry(owner, weapon) : null;
+    if (!entry) return null;
+    const before = Math.max(0, Number(entry.item.quantity) || 0);
+    const after = Math.max(0, before - Math.max(1, Math.floor(Number(amount) || 1)));
+    entry.item.quantity = after;
+    if (after === 0) {
+        ensureEquipmentLoadout(owner).ammunition[entry.slotIndex] = null;
+    }
+    return { item: entry.item, name: entry.item.name, before, after };
+}
+
+function enforceCriticalEquipmentRestrictions(owner) {
+    if (!owner) return null;
+    const loadout = ensureEquipmentLoadout(owner);
+    const removedArmor = [];
+
+    EQUIPMENT_ARMOR_PARTS.forEach(part => {
+        const slot = EQUIPMENT_ARMOR_PART_TO_SLOT[part];
+        const restriction = window.getCriticalEquipmentSlotRestriction?.(owner, slot);
+        const item = findEquipmentItem(owner, loadout.armor[part]);
+        if (!restriction || !item) return;
+        loadout.armor[part] = null;
+        removedArmor.push({ part, itemId: item.id, name: item.name, restriction });
+    });
+
+    const active = getActiveWeaponEntry(owner)?.item;
+    let weaponResult = null;
+
+    if (active && isTwoHandedWeapon(active) && window.hasUnusableArmFromCriticalWound?.(owner)) {
+        const replacementSlot = loadout.weapons.findIndex((itemId, slotIndex) => {
+            if (!itemId || slotIndex === loadout.activeWeaponSlot) return false;
+            const candidate = findEquipmentItem(owner, itemId);
+            return candidate && !isTwoHandedWeapon(candidate) && !candidate.weaponUnusable;
+        });
+        const previousSlot = loadout.activeWeaponSlot;
+        if (replacementSlot >= 0) loadout.activeWeaponSlot = replacementSlot;
+        weaponResult = {
+            previousWeapon: active.name,
+            replacementWeapon: replacementSlot >= 0
+                ? findEquipmentItem(owner, loadout.weapons[replacementSlot])?.name || ''
+                : '',
+            previousSlot,
+            currentSlot: loadout.activeWeaponSlot
+        };
+    }
+
+    if (!weaponResult && !removedArmor.length) return null;
+    return { ...(weaponResult || {}), removedArmor };
+}
+
+function getCompatibleAmmunitionSlots(owner, weapon = getActiveWeaponEntry(owner)?.item) {
+    const loadout = ensureEquipmentLoadout(owner);
+    if (!getRequiredAmmunitionType(weapon)) return [];
+
+    return loadout.ammunition
+        .map((itemId, slotIndex) => {
+            const item = findEquipmentItem(owner, itemId);
+            return item && Number(item.quantity) > 0 && isAmmunitionCompatibleWithWeapon(item, weapon)
+                ? slotIndex
+                : null;
+        })
+        .filter(slotIndex => slotIndex !== null);
+}
+
+function getActiveAmmunitionEntry(owner, weapon = getActiveWeaponEntry(owner)?.item) {
+    const loadout = ensureEquipmentLoadout(owner);
+    const compatibleSlots = getCompatibleAmmunitionSlots(owner, weapon);
+    if (!compatibleSlots.length) return null;
+
+    if (!compatibleSlots.includes(loadout.activeAmmunitionSlot)) {
+        loadout.activeAmmunitionSlot = compatibleSlots[0];
+    }
+
+    const item = findEquipmentItem(owner, loadout.ammunition[loadout.activeAmmunitionSlot]);
+    return item ? { item, slotIndex: loadout.activeAmmunitionSlot } : null;
+}
+
+function getEquipmentItemWeight(item) {
+    const weight = Number(item?.weight);
+    return Number.isFinite(weight) ? Math.max(0, weight) : 0;
+}
+
+function getEquippedWeightBreakdown(owner) {
+    if (!owner) return { total: 0, weapons: 0, ammunition: 0, armor: 0, shield: 0, entries: [] };
+
+    const loadout = ensureEquipmentLoadout(owner);
+    const entries = [];
+    loadout.weapons.forEach((itemId, slotIndex) => {
+        const item = findEquipmentItem(owner, itemId);
+        if (!item) return;
+        entries.push({
+            itemId: item.id,
+            name: item.name,
+            category: slotIndex === loadout.activeWeaponSlot ? 'weapon-active' : 'weapon-reserve',
+            weight: getEquipmentItemWeight(item)
+        });
+    });
+    loadout.ammunition.forEach((itemId, slotIndex) => {
+        const item = findEquipmentItem(owner, itemId);
+        if (!item) return;
+        entries.push({
+            itemId: item.id,
+            name: item.name,
+            category: slotIndex === loadout.activeAmmunitionSlot ? 'ammunition-active' : 'ammunition-reserve',
+            weight: getEquipmentItemWeight(item)
+        });
+    });
+    EQUIPMENT_ARMOR_PARTS.forEach(part => {
+        const item = findEquipmentItem(owner, loadout.armor[part]);
+        if (!item) return;
+        entries.push({
+            itemId: item.id,
+            name: item.name,
+            category: `armor-${part}`,
+            weight: getEquipmentItemWeight(item)
+        });
+    });
+    const shield = findEquipmentItem(owner, loadout.shield);
+    if (shield) {
+        entries.push({
+            itemId: shield.id,
+            name: shield.name,
+            category: 'shield',
+            weight: getEquipmentItemWeight(shield)
+        });
+    }
+
+    const sum = category => entries
+        .filter(entry => entry.category === category || entry.category.startsWith(`${category}-`))
+        .reduce((total, entry) => total + entry.weight, 0);
+    const weapons = sum('weapon');
+    const ammunition = sum('ammunition');
+    const armor = sum('armor');
+    const shieldWeight = sum('shield');
+
+    return {
+        total: Math.round((weapons + ammunition + armor + shieldWeight) * 100) / 100,
+        weapons,
+        ammunition,
+        armor,
+        shield: shieldWeight,
+        entries
+    };
+}
+
 function getEquipmentStatus(owner, itemId) {
     const loadout = ensureEquipmentLoadout(owner);
     const weaponSlot = loadout.weapons.findIndex(id => String(id) === String(itemId));
@@ -236,6 +494,18 @@ function getEquipmentStatus(owner, itemId) {
             label: weaponSlot === loadout.activeWeaponSlot
                 ? 'ARMA ATIVA'
                 : `RESERVA ${reserveNumber}`
+        };
+    }
+
+    const ammunitionSlot = loadout.ammunition.findIndex(id => String(id) === String(itemId));
+    if (ammunitionSlot !== -1) {
+        return {
+            kind: 'ammunition',
+            slotIndex: ammunitionSlot,
+            active: ammunitionSlot === loadout.activeAmmunitionSlot,
+            label: ammunitionSlot === loadout.activeAmmunitionSlot
+                ? 'MUNIÇÃO ATIVA'
+                : 'MUNIÇÃO RESERVA'
         };
     }
 
@@ -271,6 +541,8 @@ function getInventoryEquipmentBadge(itemId) {
 function persistEquipmentOwner(owner) {
     const currentOwner = window.getCharacterCollectionOwner?.();
 
+    window.refreshCharacterDerivedValues?.(owner, { persist: false });
+
     if (owner === currentOwner) {
         window.persistCharacterCollections?.();
     } else if (combatants.includes(owner)) {
@@ -303,6 +575,11 @@ function runEquipmentMutation(owner, label, detail, callback) {
 }
 
 function confirmTwoHandedWeapon(owner, item, onConfirm) {
+    const restriction = getCriticalWeaponRestriction(owner, item);
+    if (restriction) {
+        showToast(`⚠️ ${restriction}`);
+        return;
+    }
     const loadout = ensureEquipmentLoadout(owner);
     if (!isTwoHandedWeapon(item) || !loadout.shield) {
         onConfirm(false);
@@ -339,6 +616,7 @@ function activateWeaponSlot(owner, slotIndex) {
             () => {
                 loadout.activeWeaponSlot = slotIndex;
                 if (removeShield) loadout.shield = null;
+                getActiveAmmunitionEntry(owner, item);
             }
         );
         showToast(`⚔️ ${item.name} agora é a arma ativa de ${owner.name}.`);
@@ -362,6 +640,7 @@ function equipWeapon(owner, item) {
                         loadout.weapons[existingSlot] = null;
                         loadout.activeWeaponSlot = nextSlot === -1 ? 0 : nextSlot;
                         if (removeShield) loadout.shield = null;
+                        if (nextWeapon) getActiveAmmunitionEntry(owner, nextWeapon);
                     }
                 );
                 showToast(`🎒 ${item.name} foi guardada.`);
@@ -404,6 +683,72 @@ function equipWeapon(owner, item) {
     } else {
         finishEquip(false);
     }
+}
+
+function activateAmmunitionSlot(owner, slotIndex) {
+    const loadout = ensureEquipmentLoadout(owner);
+    const item = findEquipmentItem(owner, loadout.ammunition[slotIndex]);
+    if (!item || slotIndex === loadout.activeAmmunitionSlot) return;
+
+    const activeWeapon = getActiveWeaponEntry(owner)?.item;
+    const requiredType = getRequiredAmmunitionType(activeWeapon);
+    if (requiredType && !isAmmunitionCompatibleWithWeapon(item, activeWeapon)) {
+        showToast(requiredType === 'bolt'
+            ? `⚠️ ${activeWeapon.name} usa setas, não flechas.`
+            : `⚠️ ${activeWeapon.name} usa flechas, não setas.`);
+        return;
+    }
+
+    const previous = findEquipmentItem(owner, loadout.ammunition[loadout.activeAmmunitionSlot]);
+    runEquipmentMutation(
+        owner,
+        `${owner.name}: ${item.name} tornou-se a munição ativa`,
+        `${previous?.name || 'Nenhuma munição'} → ${item.name}`,
+        () => { loadout.activeAmmunitionSlot = slotIndex; }
+    );
+    showToast(`🏹 ${item.name} agora é a munição ativa de ${owner.name}.`);
+}
+
+function equipAmmunition(owner, item) {
+    const loadout = ensureEquipmentLoadout(owner);
+    const existingSlot = loadout.ammunition.findIndex(id => String(id) === String(item.id));
+
+    if (existingSlot !== -1) {
+        if (existingSlot === loadout.activeAmmunitionSlot) {
+            runEquipmentMutation(
+                owner,
+                `${owner.name}: ${item.name} desequipada`,
+                'A munição permanece disponível no inventário.',
+                () => {
+                    loadout.ammunition[existingSlot] = null;
+                    const nextSlot = loadout.ammunition.findIndex(Boolean);
+                    loadout.activeAmmunitionSlot = nextSlot === -1 ? 0 : nextSlot;
+                }
+            );
+            showToast(`🎒 ${item.name} foi guardada.`);
+        } else {
+            activateAmmunitionSlot(owner, existingSlot);
+        }
+        return;
+    }
+
+    const emptySlot = loadout.ammunition.findIndex(id => !id);
+    if (emptySlot === -1) {
+        showToast('As duas posições de munição estão ocupadas. Desequipe uma munição primeiro.');
+        return;
+    }
+
+    const becomesActive = !loadout.ammunition.some(Boolean);
+    runEquipmentMutation(
+        owner,
+        `${owner.name}: ${item.name} equipada${becomesActive ? ' como munição ativa' : ' como reserva'}`,
+        becomesActive ? `Quantidade disponível: ${Number(item.quantity) || 0}` : 'Segunda opção de munição preparada.',
+        () => {
+            loadout.ammunition[emptySlot] = item.id;
+            if (becomesActive) loadout.activeAmmunitionSlot = emptySlot;
+        }
+    );
+    showToast(`🏹 ${item.name} equipada em ${owner.name}.`);
 }
 
 function equipShield(owner, item) {
@@ -465,6 +810,13 @@ function equipArmor(owner, item, part) {
         return;
     }
 
+    const equipmentSlot = EQUIPMENT_ARMOR_PART_TO_SLOT[part];
+    const criticalRestriction = window.getCriticalEquipmentSlotRestriction?.(owner, equipmentSlot);
+    if (criticalRestriction) {
+        showToast(`⚠️ ${criticalRestriction}`);
+        return;
+    }
+
     ensureEquipmentDefense(item);
     const previous = findEquipmentItem(owner, loadout.armor[part]);
     const manualDefense = Math.max(0, Number(owner?.armor?.[part]) || 0);
@@ -495,9 +847,10 @@ function performSelectedEquipmentAction() {
     const item = inventory.find(entry => entry.id === selectedInventoryItemId);
     const kind = getEquipmentItemKind(item);
 
-    if (!owner || !item || !kind || kind === 'ammunition') return false;
+    if (!owner || !item || !kind) return false;
 
     if (kind === 'weapon') equipWeapon(owner, item);
+    else if (kind === 'ammunition') equipAmmunition(owner, item);
     else if (kind === 'shield') equipShield(owner, item);
     else equipArmor(owner, item, kind);
 
@@ -522,6 +875,12 @@ function unequipEquipmentItem(itemId) {
                     if (status.slotIndex === loadout.activeWeaponSlot) {
                         const nextSlot = loadout.weapons.findIndex(Boolean);
                         loadout.activeWeaponSlot = nextSlot === -1 ? 0 : nextSlot;
+                    }
+                } else if (status.kind === 'ammunition') {
+                    loadout.ammunition[status.slotIndex] = null;
+                    if (status.slotIndex === loadout.activeAmmunitionSlot) {
+                        const nextSlot = loadout.ammunition.findIndex(Boolean);
+                        loadout.activeAmmunitionSlot = nextSlot === -1 ? 0 : nextSlot;
                     }
                 } else if (status.kind === 'shield') {
                     loadout.shield = null;
@@ -556,11 +915,11 @@ function isItemEquippedForCurrentOwner(itemId) {
 function getSelectedEquipmentActionLabel(item) {
     const owner = window.getCharacterCollectionOwner?.();
     const kind = getEquipmentItemKind(item);
-    if (!owner || !kind || kind === 'ammunition') return null;
+    if (!owner || !kind) return null;
 
     const status = getEquipmentStatus(owner, item.id);
     if (!status) return 'Equipar';
-    if (status.kind === 'weapon' && !status.active) return 'Tornar ativa';
+    if (['weapon', 'ammunition'].includes(status.kind) && !status.active) return 'Tornar ativa';
     return 'Desequipar';
 }
 
@@ -578,7 +937,7 @@ function renderEquipmentDetailsAction(item) {
     const owner = window.getCharacterCollectionOwner?.();
     const status = owner ? getEquipmentStatus(owner, item?.id) : null;
     const kind = getEquipmentItemKind(item);
-    const canRepair = Boolean(
+    const canRepairArmor = Boolean(
         owner &&
         item &&
         kind &&
@@ -586,6 +945,11 @@ function renderEquipmentDetailsAction(item) {
         kind !== 'ammunition' &&
         ensureEquipmentDefense(item) < Math.max(0, Number(item.defense) || 0)
     );
+    const canRepairWeapon = Boolean(
+        owner && item && kind === 'weapon' &&
+        (item.weaponUnusable || Math.max(0, Number(item.durabilityDamage) || 0) > 0)
+    );
+    const canRepair = canRepairArmor || canRepairWeapon;
 
     if (!status && !canRepair) return '';
 
@@ -593,7 +957,9 @@ function renderEquipmentDetailsAction(item) {
         <div class="equipment-details-actions">
             ${canRepair ? `
                 <button type="button" class="equipment-details-repair" onclick="repairEquipmentItem('${escapeEquipmentHtml(item.id)}')">
-                    🔧 Reparar defesa (${ensureEquipmentDefense(item)} → ${Math.max(0, Number(item.defense) || 0)})
+                    ${canRepairWeapon
+                        ? `🔧 Reparar arma${item.weaponUnusable ? ' · inutilizável' : ''}${Number(item.durabilityDamage) ? ` · desgaste ${Number(item.durabilityDamage)}` : ''}`
+                        : `🔧 Reparar defesa (${ensureEquipmentDefense(item)} → ${Math.max(0, Number(item.defense) || 0)})`}
                 </button>
             ` : ''}
             ${status ? `
@@ -610,7 +976,28 @@ function repairEquipmentItem(itemId) {
     const item = owner ? findEquipmentItem(owner, itemId) : null;
     const kind = getEquipmentItemKind(item);
 
-    if (!owner || !item || !kind || kind === 'weapon' || kind === 'ammunition') return;
+    if (!owner || !item || !kind || kind === 'ammunition') return;
+
+    if (kind === 'weapon') {
+        const wear = Math.max(0, Number(item.durabilityDamage) || 0);
+        const unusable = Boolean(item.weaponUnusable);
+        if (!wear && !unusable) {
+            showToast(`⚔️ ${item.name} não precisa de reparo.`);
+            return;
+        }
+        runEquipmentMutation(
+            owner,
+            `${owner.name}: ${item.name} reparada`,
+            `Desgaste removido: ${wear}${unusable ? ' · arma voltou a funcionar' : ''}`,
+            () => {
+                item.durabilityDamage = 0;
+                item.weaponUnusable = false;
+            }
+        );
+        closeItemDetailsModal();
+        showToast(`🔧 ${item.name} foi reparada.`);
+        return;
+    }
 
     const before = ensureEquipmentDefense(item);
     const maximum = Math.max(0, Number(item.defense) || 0);
@@ -790,6 +1177,71 @@ function cycleActiveWeapon(combatantId) {
     activateWeaponSlot(owner, nextSlot);
 }
 
+function cycleActiveAmmunition(combatantId) {
+    const owner = combatants.find(entry => String(entry.id) === String(combatantId));
+    const weapon = owner ? getActiveWeaponEntry(owner)?.item : null;
+    if (!owner || !weapon) return;
+
+    const loadout = ensureEquipmentLoadout(owner);
+    const compatibleSlots = getCompatibleAmmunitionSlots(owner, weapon);
+    if (compatibleSlots.length < 2) {
+        showToast(getRequiredAmmunitionType(weapon) === 'bolt'
+            ? 'Equipe uma segunda seta compatível para realizar a troca.'
+            : 'Equipe uma segunda flecha compatível para realizar a troca.');
+        return;
+    }
+
+    const currentPosition = compatibleSlots.indexOf(loadout.activeAmmunitionSlot);
+    const nextSlot = compatibleSlots[(currentPosition + 1) % compatibleSlots.length];
+    activateAmmunitionSlot(owner, nextSlot);
+}
+
+function consumeActiveAmmunition(combatantId) {
+    const owner = combatants.find(entry => String(entry.id) === String(combatantId));
+    const weapon = owner ? getActiveWeaponEntry(owner)?.item : null;
+    const entry = owner && weapon ? getActiveAmmunitionEntry(owner, weapon) : null;
+    if (!owner || !weapon || !getRequiredAmmunitionType(weapon)) return;
+
+    if (!entry || Number(entry.item.quantity) <= 0) {
+        showToast(getRequiredAmmunitionType(weapon) === 'bolt'
+            ? `⚠️ ${owner.name} não possui uma seta compatível equipada.`
+            : `⚠️ ${owner.name} não possui uma flecha compatível equipada.`);
+        return;
+    }
+
+    const loadout = ensureEquipmentLoadout(owner);
+    const item = entry.item;
+    const before = Math.max(0, Number(item.quantity) || 0);
+    const after = Math.max(0, before - 1);
+    runEquipmentMutation(
+        owner,
+        `${owner.name}: Gastou 1x ${item.name}`,
+        `${weapon.name} · munição ${before} → ${after}${after === 0 ? ' · estoque esgotado' : ''}`,
+        () => {
+            item.quantity = after;
+            if (after > 0) return;
+
+            loadout.ammunition[entry.slotIndex] = null;
+            const currentOwner = window.getCharacterCollectionOwner?.();
+            if (owner === currentOwner && typeof inventory !== 'undefined' && Array.isArray(inventory)) {
+                inventory = inventory.filter(candidate => String(candidate.id) !== String(item.id));
+                owner.inventory = inventory;
+                if (String(selectedInventoryItemId) === String(item.id)) selectedInventoryItemId = null;
+            } else if (Array.isArray(owner.inventory)) {
+                owner.inventory = owner.inventory.filter(candidate => String(candidate.id) !== String(item.id));
+            }
+
+            const nextEntry = getActiveAmmunitionEntry(owner, weapon);
+            loadout.activeAmmunitionSlot = nextEntry?.slotIndex ?? 0;
+        }
+    );
+
+    const replacement = getActiveAmmunitionEntry(owner, weapon)?.item;
+    showToast(after > 0
+        ? `🏹 ${item.name}: ${after} restante${after === 1 ? '' : 's'}.`
+        : `🏹 ${item.name} esgotada.${replacement ? ` ${replacement.name} tornou-se ativa.` : ''}`);
+}
+
 function getWeaponRollMode() {
     if (typeof appPreferences !== 'undefined') {
         return appPreferences.rollModes?.weapons || 'manual';
@@ -863,6 +1315,12 @@ function rollActiveWeapon(combatantId) {
     const combatant = combatants.find(entry => String(entry.id) === String(combatantId));
     const weapon = combatant ? getActiveWeaponEntry(combatant)?.item : null;
     if (!combatant || !weapon) return;
+
+    const restriction = getCriticalWeaponRestriction(combatant, weapon);
+    if (restriction) {
+        showToast(`⚠️ ${restriction}`);
+        return;
+    }
 
     prepareDamageRoll(combatant, weapon.name, weapon.damage);
 }
@@ -1089,6 +1547,7 @@ function renderCombatantEquipmentPanel(combatant) {
     const loadout = ensureEquipmentLoadout(combatant);
     const equippedCount = [
         ...loadout.weapons,
+        ...loadout.ammunition,
         loadout.shield,
         ...EQUIPMENT_ARMOR_PARTS.map(part => loadout.armor[part])
     ].filter(Boolean).length;
@@ -1097,8 +1556,27 @@ function renderCombatantEquipmentPanel(combatant) {
 
     const collapsed = collapsedEquipmentPanels.has(String(combatant.id));
     const activeWeapon = getActiveWeaponEntry(combatant)?.item;
+    const activeWeaponRestriction = getCriticalWeaponRestriction(combatant, activeWeapon);
     const weaponCount = loadout.weapons.filter(Boolean).length;
+    const requiredAmmunitionType = getRequiredAmmunitionType(activeWeapon);
+    const activeAmmunition = requiredAmmunitionType
+        ? getActiveAmmunitionEntry(combatant, activeWeapon)?.item
+        : null;
+    const compatibleAmmunitionCount = requiredAmmunitionType
+        ? getCompatibleAmmunitionSlots(combatant, activeWeapon).length
+        : 0;
+    const ammunitionDetail = activeAmmunition
+        ? [...new Set([activeAmmunition.damage, activeAmmunition.effect]
+            .map(value => String(value || '').trim())
+            .filter(value => value && value !== '0'))].join(' · ') || 'Munição padrão'
+        : '';
     const shield = getEquippedShieldSource(combatant);
+    const equippedWeight = getEquippedWeightBreakdown(combatant);
+    const derived = combatant.creationMode === 'full'
+        ? window.characterSheetModel?.calculateCharacterDerivedValues(combatant, {
+            equippedWeight: equippedWeight.total
+        })
+        : null;
     const armorValues = EQUIPMENT_ARMOR_PARTS.map(part => ({
         part,
         ...getEffectiveArmorBreakdown(combatant, part)
@@ -1113,17 +1591,35 @@ function renderCombatantEquipmentPanel(combatant) {
             ${collapsed ? '' : `
                 <div class="combat-equipment-content">
                     ${activeWeapon ? `
-                        <article class="active-weapon-card ${weaponCount > 1 ? 'has-swap' : ''}">
+                        <article class="active-weapon-card ${weaponCount > 1 ? 'has-swap' : ''} ${activeWeaponRestriction ? 'is-unusable' : ''}">
                             ${renderEquipmentIcon(activeWeapon, 'active-weapon-icon')}
                             <div class="active-weapon-copy">
                                 <strong>${escapeEquipmentHtml(activeWeapon.name)}</strong>
-                                <small>${escapeEquipmentHtml(activeWeapon.damage)}${activeWeapon.effect?.trim() ? ` · ${escapeEquipmentHtml(activeWeapon.effect)}` : ''}</small>
+                                <small>${escapeEquipmentHtml(activeWeapon.damage)}${activeWeapon.effect?.trim() ? ` · ${escapeEquipmentHtml(activeWeapon.effect)}` : ''}${Number(activeWeapon.durabilityDamage) ? ` · desgaste ${Math.max(0, Number(activeWeapon.durabilityDamage) || 0)}` : ''}${activeWeaponRestriction ? ` · ${escapeEquipmentHtml(activeWeaponRestriction)}` : ''}</small>
                             </div>
                             <button type="button" class="equipment-roll-button" onclick="event.stopPropagation(); rollActiveWeapon('${escapeEquipmentHtml(combatant.id)}')" title="${getWeaponRollMode() === 'auto' ? 'Rolar dano' : 'Consultar rolagem'}">🎲</button>
                             ${weaponCount > 1 ? `
                                 <button type="button" class="equipment-swap-button" onclick="event.stopPropagation(); cycleActiveWeapon('${escapeEquipmentHtml(combatant.id)}')" title="Trocar para a próxima arma">🔄</button>
                             ` : ''}
                         </article>
+                        ${requiredAmmunitionType ? `
+                            <article class="active-ammunition-card ${activeAmmunition ? '' : 'is-empty'} ${compatibleAmmunitionCount > 1 ? 'has-swap' : ''}">
+                                ${activeAmmunition
+                                    ? renderEquipmentIcon(activeAmmunition, 'active-ammunition-icon')
+                                    : '<span class="active-ammunition-icon">🏹</span>'}
+                                <div class="active-ammunition-copy">
+                                    <small>${requiredAmmunitionType === 'bolt' ? 'SETA EQUIPADA' : 'FLECHA EQUIPADA'}</small>
+                                    <strong>${escapeEquipmentHtml(activeAmmunition?.name || `Nenhuma ${requiredAmmunitionType === 'bolt' ? 'seta' : 'flecha'} compatível`)}</strong>
+                                    ${activeAmmunition ? `<span>x${Math.max(0, Number(activeAmmunition.quantity) || 0)} · ${escapeEquipmentHtml(ammunitionDetail)}</span>` : ''}
+                                </div>
+                                ${activeAmmunition ? `
+                                    <button type="button" class="equipment-ammunition-use" onclick="event.stopPropagation(); consumeActiveAmmunition('${escapeEquipmentHtml(combatant.id)}')" title="Gastar uma munição">−1</button>
+                                ` : ''}
+                                ${compatibleAmmunitionCount > 1 ? `
+                                    <button type="button" class="equipment-ammunition-swap" onclick="event.stopPropagation(); cycleActiveAmmunition('${escapeEquipmentHtml(combatant.id)}')" title="Trocar para a segunda munição">🔄</button>
+                                ` : ''}
+                            </article>
+                        ` : ''}
                     ` : '<p class="equipment-empty-line">Nenhuma arma ativa.</p>'}
                     <div class="armor-summary-grid">
                         ${armorValues.map(value => `
@@ -1135,6 +1631,12 @@ function renderCombatantEquipmentPanel(combatant) {
                         `).join('')}
                     </div>
                     ${shield ? `<div class="equipped-shield-line">🛡️ ${escapeEquipmentHtml(shield.name)} · +${shield.current} em todas as regiões</div>` : ''}
+                    ${derived ? `
+                        <div class="equipment-derived-line">
+                            <span>⚖️ ${equippedWeight.total}/${derived.carryingCapacity} de carga</span>
+                            <span>👣 Movimento ${derived.movement}</span>
+                        </div>
+                    ` : ''}
                 </div>
             `}
         </section>
@@ -1255,9 +1757,21 @@ function renderMonsterSkillsPanel(combatant) {
 window.getEquipmentItemKind = getEquipmentItemKind;
 window.getEquipmentItemSlot = getEquipmentItemSlot;
 window.getEquipmentSlotLabel = getEquipmentSlotLabel;
+window.getAmmunitionType = getAmmunitionType;
+window.getRequiredAmmunitionType = getRequiredAmmunitionType;
+window.isAmmunitionCompatibleWithWeapon = isAmmunitionCompatibleWithWeapon;
 window.isEquipmentItem = isEquipmentItem;
 window.isTwoHandedWeapon = isTwoHandedWeapon;
 window.ensureEquipmentLoadout = ensureEquipmentLoadout;
+window.getActiveWeaponEntry = getActiveWeaponEntry;
+window.getCriticalWeaponRestriction = getCriticalWeaponRestriction;
+window.applyActiveWeaponDurabilityDamage = applyActiveWeaponDurabilityDamage;
+window.markActiveWeaponUnusable = markActiveWeaponUnusable;
+window.disarmActiveWeapon = disarmActiveWeapon;
+window.consumeActiveAmmunitionForOutcome = consumeActiveAmmunitionForOutcome;
+window.enforceCriticalEquipmentRestrictions = enforceCriticalEquipmentRestrictions;
+window.getEquipmentItemWeight = getEquipmentItemWeight;
+window.getEquippedWeightBreakdown = getEquippedWeightBreakdown;
 window.initializeCombatantEquipment = initializeCombatantEquipment;
 window.initializeEquipmentSystem = initializeEquipmentSystem;
 window.getInventoryEquipmentBadge = getInventoryEquipmentBadge;
@@ -1275,6 +1789,8 @@ window.requestArmorDamageSource = requestArmorDamageSource;
 window.selectArmorDamageSource = selectArmorDamageSource;
 window.closeArmorSourceModal = closeArmorSourceModal;
 window.cycleActiveWeapon = cycleActiveWeapon;
+window.cycleActiveAmmunition = cycleActiveAmmunition;
+window.consumeActiveAmmunition = consumeActiveAmmunition;
 window.rollActiveWeapon = rollActiveWeapon;
 window.rollDiceExpression = rollDiceExpression;
 window.normalizeMonsterAction = normalizeMonsterAction;

@@ -62,14 +62,14 @@ let round = 1;`, context, { filename: 'items.js' });
 vm.runInContext(craftingSource, context, { filename: 'crafting.js' });
 
 const recipes = context.getCraftingRecipes();
-assert.equal(recipes.length, 85, 'A quantidade de produtos com receita mudou sem atualizar a auditoria.');
+assert.equal(recipes.length, 88, 'A quantidade de produtos com receita mudou sem atualizar a auditoria.');
 
 const categoryCounts = recipes.reduce((counts, recipe) => {
     const category = context.getCraftingRecipeCategory(recipe);
     counts[category] = (counts[category] || 0) + 1;
     return counts;
 }, {});
-assert.deepEqual(categoryCounts, { weapons: 29, materials: 5, alchemy: 51 });
+assert.deepEqual(categoryCounts, { weapons: 32, materials: 5, alchemy: 51 });
 assert.equal(context.getCraftingRecipeCategory({ type: 'armor', equipmentSlot: 'body' }), 'armor');
 assert.equal(context.getCraftingRecipeCategory({ category: 'misc' }), 'materials');
 assert.equal(context.getCraftingRecipeCategory({ category: 'usable' }), 'alchemy');
@@ -93,6 +93,10 @@ assert.equal(silverPowder.ingredients[0].item.id, 'prata');
 const arrows = recipes.filter(recipe => ['flechadeaco', 'flechadeferro', 'flechadeprata'].includes(recipe.product.id));
 assert.equal(arrows.length, 3);
 arrows.forEach(recipe => assert.equal(recipe.outputQuantity, 10));
+
+const bolts = recipes.filter(recipe => ['setadeaco', 'setadeferro', 'setadeprata'].includes(recipe.product.id));
+assert.equal(bolts.length, 3);
+bolts.forEach(recipe => assert.equal(recipe.outputQuantity, 10));
 
 const dimeritiumPowder = recipes.find(recipe => recipe.product.id === 'podedimeritio');
 assert.equal(dimeritiumPowder.ingredients.some(ingredient => ingredient.item.id === 'dimeritio'), true);

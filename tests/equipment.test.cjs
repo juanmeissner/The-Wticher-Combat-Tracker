@@ -14,6 +14,7 @@ const inventoryFixture = [
         type: 'weapon',
         weaponType: 'Esgrima',
         damage: '4d6',
+        weight: 2.5,
         description: 'Espada de Uma Mão',
         quantity: 1
     },
@@ -24,9 +25,67 @@ const inventoryFixture = [
         type: 'weapon',
         weaponType: 'Esgrima',
         damage: '4d6',
+        weight: 1.5,
         effect: 'Dano de Prata',
         description: 'Espada de Duas Mãos',
         quantity: 1
+    },
+    {
+        id: 'short-bow',
+        name: 'Arco Curto',
+        category: 'equipment',
+        type: 'weapon',
+        weaponType: 'Arco e Flecha',
+        requiredAmmunitionType: 'arrow',
+        damage: '3d6+3',
+        weight: 2,
+        description: 'Arco',
+        quantity: 1
+    },
+    {
+        id: 'crossbow',
+        name: 'Besta',
+        category: 'equipment',
+        type: 'weapon',
+        weaponType: 'Arco e Flecha',
+        requiredAmmunitionType: 'bolt',
+        damage: '4d6+2',
+        weight: 3,
+        description: 'Besta',
+        quantity: 1
+    },
+    {
+        id: 'iron-arrow',
+        name: 'Flecha de Ferro',
+        category: 'equipment',
+        type: 'weapon',
+        weaponType: 'Flechas',
+        ammunitionType: 'arrow',
+        damage: '0',
+        weight: 1.5,
+        quantity: 2
+    },
+    {
+        id: 'steel-arrow',
+        name: 'Flecha de Aço',
+        category: 'equipment',
+        type: 'weapon',
+        weaponType: 'Flechas',
+        ammunitionType: 'arrow',
+        damage: '1d6 de Dano Adicional',
+        weight: 1.5,
+        quantity: 3
+    },
+    {
+        id: 'iron-bolt',
+        name: 'Seta de Ferro',
+        category: 'equipment',
+        type: 'weapon',
+        weaponType: 'Setas',
+        ammunitionType: 'bolt',
+        damage: '0',
+        weight: 1.5,
+        quantity: 2
     },
     {
         id: 'temerian-shield',
@@ -35,6 +94,7 @@ const inventoryFixture = [
         type: 'armor',
         weaponType: 'Escudo',
         defense: 3,
+        weight: 1.5,
         quantity: 1
     },
     {
@@ -44,6 +104,7 @@ const inventoryFixture = [
         type: 'armor',
         weaponType: 'Armadura Média',
         defense: 5,
+        weight: 2,
         quantity: 1
     },
     {
@@ -54,6 +115,7 @@ const inventoryFixture = [
         weaponType: 'Armadura Média',
         equipmentSlot: 'head',
         defense: 4,
+        weight: 1,
         quantity: 1
     },
     {
@@ -64,6 +126,7 @@ const inventoryFixture = [
         weaponType: 'Armadura Média',
         equipmentSlot: 'arms',
         defense: 3,
+        weight: 2,
         quantity: 1
     },
     {
@@ -74,6 +137,7 @@ const inventoryFixture = [
         weaponType: 'Armadura Média',
         equipmentSlot: 'legs',
         defense: 3,
+        weight: 2,
         quantity: 1
     }
 ];
@@ -162,6 +226,9 @@ vm.runInContext(`
 
 assert.equal(evaluate('combatants[0].equipment.weapons[0]'), 'steel-sword');
 assert.equal(evaluate('combatants[0].equipment.weapons[1]'), 'silver-sword');
+assert.equal(evaluate('combatants[0].equipment.version'), 3);
+assert.deepEqual(evaluate('combatants[0].equipment.ammunition'), [null, null]);
+assert.equal(evaluate('combatants[0].equipment.activeAmmunitionSlot'), 0);
 assert.equal(evaluate('combatants[0].equipment.shield'), 'temerian-shield');
 assert.equal(evaluate('combatants[0].equipment.armor.torso'), 'cuirass');
 assert.equal(evaluate('combatants[0].equipment.armor.head'), 'wolf-helmet');
@@ -171,6 +238,27 @@ assert.equal(evaluate("window.getInventoryEquipmentBadge('wolf-pants').label"), 
 assert.equal(evaluate("window.getInventoryEquipmentBadge('silver-sword').label"), 'RESERVA 1');
 assert.equal(evaluate("window.getEffectiveArmorValue(combatants[0], 'torso')"), 10);
 assert.equal(evaluate("window.getEffectiveArmorValue(combatants[0], 'head')"), 7);
+assert.equal(evaluate('window.getEquippedWeightBreakdown(combatants[0]).total'), 12.5);
+assert.equal(evaluate('window.getEquippedWeightBreakdown(combatants[0]).weapons'), 4);
+assert.equal(
+    evaluate("window.getEquippedWeightBreakdown(combatants[0]).entries.filter(entry => entry.category === 'weapon-reserve').length"),
+    1,
+    'A arma reserva deve contar como peso equipado.'
+);
+vm.runInContext(`
+    combatants[0].creationMode = 'full';
+    window.characterSheetModel = {
+        calculateCharacterDerivedValues: (_combatant, options) => ({
+            carryingCapacity: 20,
+            movement: options.equippedWeight >= 10 ? 7 : 9
+        })
+    };
+`, context);
+assert.match(
+    evaluate('window.renderCombatantEquipmentPanel(combatants[0])'),
+    /12\.5\/20 de carga/
+);
+assert.match(evaluate('window.renderCombatantEquipmentPanel(combatants[0])'), /Movimento 7/);
 
 vm.runInContext('window.cycleActiveWeapon(1)', context);
 
@@ -194,6 +282,19 @@ vm.runInContext(`
 
 assert.equal(evaluate('combatants[0].equipment.activeWeaponSlot'), 0);
 assert.equal(evaluate('combatants[0].equipment.shield'), 'temerian-shield');
+
+const disarmedWeapon = evaluate('window.disarmActiveWeapon(combatants[0])');
+assert.equal(disarmedWeapon.name, 'Espada de Aço');
+assert.equal(disarmedWeapon.replacementName, 'Espada de Prata');
+assert.equal(evaluate('combatants[0].equipment.weapons[0]'), null);
+assert.equal(evaluate('combatants[0].equipment.weapons[1]'), 'silver-sword');
+assert.equal(evaluate('combatants[0].equipment.activeWeaponSlot'), 1);
+assert.equal(evaluate("inventory.some(item => item.id === 'steel-sword')"), true);
+
+vm.runInContext(`
+    combatants[0].equipment.weapons[0] = 'steel-sword';
+    combatants[0].equipment.activeWeaponSlot = 0;
+`, context);
 
 vm.runInContext(`
     window.requestArmorDamageSource(combatants[0], 'torso', 2);
@@ -272,6 +373,76 @@ assert.match(
 vm.runInContext("window.repairEquipmentItem('cuirass')", context);
 assert.equal(evaluate("inventory.find(item => item.id === 'cuirass').equipmentDefense"), 5);
 
+vm.runInContext(`
+    combatants[0].equipment = {
+        version: 3,
+        weapons: [null, null, null],
+        activeWeaponSlot: 0,
+        ammunition: [null, null],
+        activeAmmunitionSlot: 0,
+        shield: null,
+        armor: { head: null, torso: null, arm: null, leg: null }
+    };
+    selectedInventoryItemId = 'short-bow';
+    window.performSelectedEquipmentAction();
+    selectedInventoryItemId = 'iron-arrow';
+    window.performSelectedEquipmentAction();
+    selectedInventoryItemId = 'steel-arrow';
+    window.performSelectedEquipmentAction();
+`, context);
+
+assert.equal(evaluate('combatants[0].equipment.weapons[0]'), 'short-bow');
+assert.deepEqual(evaluate('combatants[0].equipment.ammunition'), ['iron-arrow', 'steel-arrow']);
+assert.equal(evaluate("window.getInventoryEquipmentBadge('iron-arrow').label"), 'MUNIÇÃO ATIVA');
+assert.equal(evaluate("window.getInventoryEquipmentBadge('steel-arrow').label"), 'MUNIÇÃO RESERVA');
+assert.equal(evaluate("window.getRequiredAmmunitionType(inventory.find(item => item.id === 'short-bow'))"), 'arrow');
+assert.equal(evaluate("window.getRequiredAmmunitionType(inventory.find(item => item.id === 'crossbow'))"), 'bolt');
+assert.equal(evaluate("window.isAmmunitionCompatibleWithWeapon(inventory.find(item => item.id === 'iron-arrow'), inventory.find(item => item.id === 'short-bow'))"), true);
+assert.equal(evaluate("window.isAmmunitionCompatibleWithWeapon(inventory.find(item => item.id === 'iron-arrow'), inventory.find(item => item.id === 'crossbow'))"), false);
+assert.match(evaluate('window.renderCombatantEquipmentPanel(combatants[0])'), /Flecha de Ferro/);
+assert.match(evaluate('window.renderCombatantEquipmentPanel(combatants[0])'), /Gastar uma munição/);
+assert.match(evaluate('window.renderCombatantEquipmentPanel(combatants[0])'), /Trocar para a segunda munição/);
+assert.equal(evaluate('window.getEquippedWeightBreakdown(combatants[0]).ammunition'), 3);
+
+vm.runInContext('window.consumeActiveAmmunition(1)', context);
+assert.equal(evaluate("inventory.find(item => item.id === 'iron-arrow').quantity"), 1);
+vm.runInContext('window.cycleActiveAmmunition(1)', context);
+assert.equal(evaluate('combatants[0].equipment.activeAmmunitionSlot'), 1);
+vm.runInContext('window.cycleActiveAmmunition(1)', context);
+assert.equal(evaluate('combatants[0].equipment.activeAmmunitionSlot'), 0);
+vm.runInContext('window.consumeActiveAmmunition(1)', context);
+assert.equal(evaluate("inventory.some(item => item.id === 'iron-arrow')"), false);
+assert.equal(evaluate('combatants[0].equipment.ammunition[0]'), null);
+assert.equal(evaluate('combatants[0].equipment.activeAmmunitionSlot'), 1);
+assert.match(evaluate('messages.at(-1)'), /Flecha de Aço tornou-se ativa/);
+
+vm.runInContext(`
+    combatants[0].equipment.weapons = ['crossbow', null, null];
+    combatants[0].equipment.activeWeaponSlot = 0;
+    combatants[0].equipment.ammunition = ['steel-arrow', 'iron-bolt'];
+    combatants[0].equipment.activeAmmunitionSlot = 0;
+`, context);
+assert.match(evaluate('window.renderCombatantEquipmentPanel(combatants[0])'), /Seta de Ferro/);
+assert.equal(evaluate('combatants[0].equipment.activeAmmunitionSlot'), 1);
+vm.runInContext('window.consumeActiveAmmunition(1)', context);
+assert.equal(evaluate("inventory.find(item => item.id === 'iron-bolt').quantity"), 1);
+
+vm.runInContext(`
+    combatants[0].equipment.armor.arm = 'wolf-bracers';
+    combatants[0].equipment.armor.leg = 'wolf-pants';
+    window.getCriticalEquipmentSlotRestriction = (_owner, slot) =>
+        ['arms', 'legs'].includes(slot) ? 'Membro amputado.' : '';
+    window.enforceCriticalEquipmentRestrictions(combatants[0]);
+`, context);
+assert.equal(evaluate('combatants[0].equipment.armor.arm'), null);
+assert.equal(evaluate('combatants[0].equipment.armor.leg'), null);
+vm.runInContext(`
+    selectedInventoryItemId = 'wolf-bracers';
+    window.performSelectedEquipmentAction();
+`, context);
+assert.equal(evaluate('combatants[0].equipment.armor.arm'), null);
+assert.match(evaluate('messages.at(-1)'), /Membro amputado/i);
+
 const roll = evaluate("window.rollDiceExpression('4d6+2', () => 0)");
 assert.deepEqual(roll.rolls, [1, 1, 1, 1]);
 assert.equal(roll.total, 6);
@@ -316,12 +487,22 @@ assert.equal(attack.details, 'Sangramento');
         const monsterActions = monsterDatabase.flatMap(monster => window.buildMonsterActions(monster.attacks));
         const monsterAbilities = monsterDatabase.flatMap(monster => window.buildMonsterAbilities(monster.abilities));
         const monsterSkills = monsterDatabase.flatMap(monster => window.buildMonsterSkills(monster.skills));
+        const ammunition = equipment.filter(item => window.getEquipmentItemKind(item) === 'ammunition');
+        const rangedWeapons = equipment.filter(item => window.getRequiredAmmunitionType(item));
         return {
             equipmentCount: equipment.length,
             unclassified: unclassified.map(item => item.name),
             missingArmorSlots: armor.filter(item => !item.equipmentSlot).map(item => item.name),
             slotCounts,
             invalidWeaponDamage: invalidWeaponDamage.map(item => item.name),
+            ammunitionCount: ammunition.length,
+            arrowCount: ammunition.filter(item => window.getAmmunitionType(item) === 'arrow').length,
+            boltCount: ammunition.filter(item => window.getAmmunitionType(item) === 'bolt').length,
+            bowCount: rangedWeapons.filter(item => window.getRequiredAmmunitionType(item) === 'arrow').length,
+            crossbowCount: rangedWeapons.filter(item => window.getRequiredAmmunitionType(item) === 'bolt').length,
+            invalidWeights: equipment.filter(item => !Number.isFinite(Number(item.weight)) || Number(item.weight) <= 0).map(item => item.name),
+            officialWeightCount: equipment.filter(item => item.weightSource === 'rules-sheet').length,
+            estimatedWeightCount: equipment.filter(item => item.weightSource === 'estimated').length,
             monsterActionCount: monsterActions.length,
             rollableMonsterActions: monsterActions.filter(action => action.damage).length,
             monsterAbilityCount: monsterAbilities.length,
@@ -331,11 +512,19 @@ assert.equal(attack.details, 'Sangramento');
         };
     })())`, catalogContext));
 
-    assert.equal(catalogAudit.equipmentCount, 147);
+    assert.equal(catalogAudit.equipmentCount, 150);
     assert.deepEqual(catalogAudit.unclassified, []);
     assert.deepEqual(catalogAudit.missingArmorSlots, []);
     assert.deepEqual(catalogAudit.slotCounts, { head: 15, body: 22, arms: 22, legs: 22, shield: 9 });
     assert.deepEqual(catalogAudit.invalidWeaponDamage, []);
+    assert.equal(catalogAudit.ammunitionCount, 6);
+    assert.equal(catalogAudit.arrowCount, 3);
+    assert.equal(catalogAudit.boltCount, 3);
+    assert.equal(catalogAudit.bowCount, 5);
+    assert.equal(catalogAudit.crossbowCount, 5);
+    assert.deepEqual(catalogAudit.invalidWeights, []);
+    assert.equal(catalogAudit.officialWeightCount > 90, true);
+    assert.equal(catalogAudit.estimatedWeightCount > 0, true);
     assert.equal(catalogAudit.monsterActionCount, 73);
     assert.equal(catalogAudit.rollableMonsterActions, 56);
     assert.equal(catalogAudit.monsterAbilityCount, 105);

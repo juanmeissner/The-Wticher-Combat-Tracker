@@ -377,6 +377,8 @@ const predefinedItems = [
         active: 20,
         stack: 1,
         augment: "buff",
+        potion: true,
+        toxicity: 25,
         goldValue: 0,
         shortDescription: 'Envenena criaturas vampíricas e necrófagas que o beberem, 1d6 de dano por rodada até um teste de Tolerância; impede cura natural e exige teste de resistência a cada turno para não ficar atordoado (ND 20).',
         description: 'O sangue do bruxo envenena criaturas vampíricas e necrófagas que o beberem, causando 1d6 de dano por rodada até um teste de Tolerância; impede cura natural e exige teste de resistência a cada turno para não ficar atordoado (ND 20).',
@@ -396,6 +398,8 @@ const predefinedItems = [
         active: 10,
         stack: 1,
         augment: "buff",
+        potion: true,
+        toxicity: 75,
         goldValue: 0,
         shortDescription: '1d6 em todos os sentidos, Reflexo, Defesa, Audição, Percepção, Esquiva, Atletismo, Acrobacias, Lançar Feitiços, Habilidades com armas como Esgrima etc...',
         description: '1d6 em todos os sentidos, Reflexo, Defesa, Audição, Percepção, Esquiva, Atletismo, Acrobacias, Lançar Feitiços, Habilidades com armas como Esgrima etc...',
@@ -415,6 +419,8 @@ const predefinedItems = [
         active: 20,
         stack: 1,
         augment: "buff",
+        potion: true,
+        toxicity: 25,
         goldValue: 0,
         shortDescription: 'Nenhuma penalidade por escuridão ou pouca luz; não pode ser hipnotizado; +5 contra ilusões.',
         description: 'Nenhuma penalidade por escuridão ou pouca luz; não pode ser hipnotizado; +5 contra ilusões.',
@@ -433,6 +439,8 @@ const predefinedItems = [
         active: 20,
         stack: 30,
         augment: "buff",
+        potion: true,
+        toxicity: 75,
         goldValue: 0,
         shortDescription: 'Role 1d20. Fornece +10 PV mais o resultado do dado em PV temporários até o fim da duração. Não acumula.',
         description: 'Role 1d20. Fornece +10 PV mais o resultado do dado em PV temporários até o fim da duração. Não acumula.',
@@ -451,6 +459,8 @@ const predefinedItems = [
         active: 20,
         stack: 1,
         augment: "buff",
+        potion: true,
+        toxicity: 50,
         goldValue: 0,
         shortDescription: 'Fornece imunidade a venenos e neutraliza quaisquer poções no sistema.',
         description: 'Fornece imunidade a venenos e neutraliza quaisquer poções no sistema.',
@@ -469,6 +479,8 @@ const predefinedItems = [
         active: 30,
         stack: 1,
         augment: "buff",
+        potion: true,
+        toxicity: 25,
         goldValue: 0,
         shortDescription: 'Aumenta em 50% a habilidade de segurar a respiração e nega penalidades de visão subaquática.',
         description: 'Aumenta em 50% a habilidade de segurar a respiração e nega penalidades de visão subaquática.',
@@ -487,6 +499,8 @@ const predefinedItems = [
         active: 10,
         stack: 1,
         augment: "buff",
+        potion: true,
+        toxicity: 50,
         goldValue: 0,
         shortDescription: 'Toda vez que ganhar um dado de adrenalina, adicione um dado extra.',
         description: 'Toda vez que ganhar um dado de adrenalina, adicione um dado extra.',
@@ -505,6 +519,8 @@ const predefinedItems = [
         active: 5,
         stack: 6,
         augment: "buff",
+        potion: true,
+        toxicity: 75,
         goldValue: 0,
         shortDescription: 'Role 1d6 e acrescente no EST gasto do sinal, pode ultrapassar os limites dos poderes dos sinais, dura 5 turnos.',
         description: 'Sempre que usar um sinal o sinal terá efeito como se tivesse gasto 1d6 pontos em EST extra, podendo ultrapassar os limites dos poderes dos sinais, dura 5 turnos.',
@@ -523,6 +539,8 @@ const predefinedItems = [
         active: 20,
         stack: 1,
         augment: "buff",
+        potion: true,
+        toxicity: 50,
         goldValue: 0,
         shortDescription: 'Regenera 1d6 PV por rodada. Em rodadas em que for atacado, não regenera. Não acumula.',
         description: 'Regenera 1d6 PV por rodada. Em rodadas em que for atacado, não regenera. Não acumula.',
@@ -541,6 +559,8 @@ const predefinedItems = [
         active: 20,
         stack: 1,
         augment: "buff",
+        potion: true,
+        toxicity: 50,
         goldValue: 0,
         shortDescription: 'A cada turno recupera 1d6 de EST.',
         description: 'A cada turno recupera 1d6 de EST.',
@@ -559,6 +579,8 @@ const predefinedItems = [
         active: 5,
         stack: 1,
         augment: "buff",
+        potion: true,
+        toxicity: 75,
         goldValue: 0,
         shortDescription: 'Recebe bonus crítico +2 em Ataque, Esquiva e Bloqueio.',
         description: 'Recebe bonus crítico +2 em Ataque, Esquiva e Bloqueio.',
@@ -574,6 +596,9 @@ const predefinedItems = [
         name: 'Mel Branco',
         icon: 'https://static.divine-pride.net/images/items/item/12428.png',
         category: 'usable',
+        potion: true,
+        toxicity: 0,
+        clearsToxicity: true,
         goldValue: 0,
         description: 'Remove toxicidade e todos os efeitos de poções.',
         recipe: [
@@ -1034,6 +1059,63 @@ const predefinedItems = [
         description: '10 Flechas por 60 Coroas.',
         recipe: [
             '1x Prata cria 10 Flechas',
+            '',
+            ''
+        ]
+    },
+
+    {
+        id: 'setadeferro',
+        name: 'Seta de Ferro',
+        icon: 'https://static.divine-pride.net/images/items/item/1750.png',
+        category: 'equipment',
+        goldValue: 5,
+        type: 'weapon',
+        weaponType: 'Setas',
+        damage: '0',
+        bonus: '',
+        effect: '',
+        description: 'Um kit com 10 setas para besta custa 1 Coroa.',
+        recipe: [
+            '1x Ferro cria 10 Setas',
+            '',
+            ''
+        ]
+    },
+
+    {
+        id: 'setadeaco',
+        name: 'Seta de Aço',
+        icon: 'https://static.divine-pride.net/images/items/item/1753.png',
+        category: 'equipment',
+        goldValue: 30,
+        type: 'weapon',
+        weaponType: 'Setas',
+        damage: '1d6 de Dano Adicional',
+        bonus: '',
+        effect: '',
+        description: 'Kit com 10 setas de aço para besta.',
+        recipe: [
+            '1x Aço cria 10 Setas',
+            '',
+            ''
+        ]
+    },
+
+    {
+        id: 'setadeprata',
+        name: 'Seta de Prata',
+        icon: 'https://static.divine-pride.net/images/items/item/1751.png',
+        category: 'equipment',
+        goldValue: 60,
+        type: 'weapon',
+        weaponType: 'Setas',
+        damage: 'Dano de Prata',
+        bonus: '',
+        effect: 'Dano de Prata',
+        description: 'Kit com 10 setas de prata para besta.',
+        recipe: [
+            '1x Prata cria 10 Setas',
             '',
             ''
         ]
@@ -4428,9 +4510,151 @@ const PREDEFINED_ARMOR_SLOTS = Object.freeze({
     ]
 });
 
+// Pesos importados da coluna "Peso" da aba Items da planilha de regras.
+// Equipamentos especiais sem peso preenchido na planilha recebem uma estimativa
+// conservadora pela classe da armadura ou pelo número de mãos da arma.
+const PREDEFINED_EQUIPMENT_WEIGHTS = Object.freeze({
+    espadadeacodebruxo: 2.5,
+    espadadepratadebruxo: 1.5,
+    espadalongadeferro: 1.5,
+    espadadecavaleiro: 2.5,
+    gleddyf: 3,
+    falcionedocacador: 2,
+    krigsverd: 2,
+    esboda: 1.5,
+    kord: 1.5,
+    laminadevicovaro: 1.5,
+    torrwr: 2.5,
+    adaga: 0.5,
+    estilete: 0.5,
+    punhal: 1,
+    jambiya: 0.5,
+    machadodemao: 1,
+    machadodebatalha: 2,
+    machadoberserker: 3,
+    soqueira: 0.5,
+    maca: 2,
+    martelodasterrasaltas: 3,
+    lanca: 3.5,
+    achadearma: 3,
+    alabardavermelha: 4,
+    cajado: 3,
+    cajadodepastor: 3.5,
+    cajadodeferro: 4,
+    cajadodecristal: 2.5,
+    arcocurto: 1,
+    arcolongo: 2,
+    arcodeguerra: 3,
+    'bestademão': 0.5,
+    besta: 3,
+    bestadecacadordemonstros: 4,
+    jaquetao: 1,
+    jaquetaodeaedirn: 1,
+    jaquetaodetecidoduplo: 1.5,
+    couraca: 2,
+    armaduradealabardeiroredaniano: 3,
+    jaquetalyrianadecouro: 2,
+    armaduradeplaca: 4,
+    armadurapesadadailhahindar: 5,
+    armaduradeplacanilfgardiana: 5,
+    armaduradeurso: 5,
+    armaduradegato: 0.5,
+    armaduradegrifo: 2,
+    armadurademanticora: 2,
+    armaduradevibora: 1,
+    armaduradelobo: 2,
+    armaduradecorvo: 1,
+    capuzdearqueirodeverden: 0.5,
+    capuzdetecidoduplo: 0.5,
+    capuzcomprotecaodeolhos: 0.5,
+    toucadecotademalha: 1,
+    capuzblindado: 1,
+    armettemeriano: 2,
+    grandeelmo: 2.5,
+    elmoskellige: 2.5,
+    elmonilfgardiano: 3,
+    escudodemadeira: 0.5,
+    broqueldeaco: 1,
+    escudotemeriano: 1.5,
+    escudodesaqueadorskellige: 2,
+    escudokaedweni: 2.5,
+    escudolagrimadeaco: 3,
+    pavise: 4,
+    pavisenilfgardiano: 5,
+    escudopipanilfgardiano: 6,
+    calcasdecavalaria: 1,
+    calcasacolchoadas: 1,
+    calcasdetecidoduplo: 1.5,
+    calcasblindadas: 2,
+    grevasredaniana: 3,
+    calcaslyrianasdecouro: 2,
+    grevasdeplaca: 4,
+    chaussespesadasdehindas: 5,
+    grevasnilfgardianas: 4,
+    calcasdeurso: 5,
+    calcasdegato: 0.5,
+    calcasdegrifo: 2,
+    calcasdemanticora: 2,
+    calcasdevibora: 1,
+    calcasdelobo: 2,
+    calcasdecorvo: 1,
+    braceirasdacavalaria: 0.5,
+    braceirasacolchoadas: 1,
+    braceirasdetecidoduplo: 1,
+    braceirasblindadas: 1.5,
+    armaduradebracosredanianas: 2,
+    braceiraslyrianasdecouro: 1.5,
+    armaduradeplacasparabraco: 3,
+    braceiraspesadasdehindar: 4,
+    armaduradebracosnilfgardianas: 3,
+    braceirasdeurso: 5,
+    braceirasdegato: 0.5,
+    braceirasdegrifo: 2,
+    braceirasdemanticora: 2,
+    braceirasdevibora: 1,
+    braceirasdelobo: 2,
+    braceirasdecorvo: 1
+});
+
+function estimatePredefinedEquipmentWeight(item) {
+    if (item.type === 'weapon') return Number(item.hands) === 2 ? 3 : 1.5;
+
+    const armorClass = `${item.weaponType || ''} ${item.description || ''}`.toLocaleLowerCase('pt-BR');
+    const slot = item.equipmentSlot;
+    if (armorClass.includes('pesada')) return slot === 'head' ? 3 : 5;
+    if (armorClass.includes('média') || armorClass.includes('media')) return slot === 'head' ? 1 : 2;
+    return slot === 'head' ? 0.5 : 1;
+}
+
 Object.entries(PREDEFINED_ARMOR_SLOTS).forEach(([equipmentSlot, itemIds]) => {
     itemIds.forEach(itemId => {
         const item = predefinedItems.find(entry => entry.id === itemId);
         if (item) item.equipmentSlot = equipmentSlot;
     });
 });
+
+predefinedItems.forEach(item => {
+    const weaponType = String(item.weaponType || '').toLocaleLowerCase('pt-BR');
+    const description = `${item.name || ''} ${item.description || ''}`.toLocaleLowerCase('pt-BR');
+
+    if (weaponType === 'flechas') {
+        item.equipmentSlot = 'ammunition';
+        item.ammunitionType = 'arrow';
+    } else if (weaponType === 'setas' || weaponType === 'virotes') {
+        item.equipmentSlot = 'ammunition';
+        item.ammunitionType = 'bolt';
+    } else if (item.type === 'weapon' && weaponType === 'arco e flecha') {
+        item.rangedWeaponType = description.includes('besta') ? 'crossbow' : 'bow';
+        item.requiredAmmunitionType = item.rangedWeaponType === 'crossbow' ? 'bolt' : 'arrow';
+    }
+});
+
+predefinedItems
+    .filter(item => item.category === 'equipment')
+    .forEach(item => {
+        const officialWeight = PREDEFINED_EQUIPMENT_WEIGHTS[item.id];
+        item.weight = Number.isFinite(officialWeight)
+            ? officialWeight
+            : estimatePredefinedEquipmentWeight(item);
+        item.weightSource = Number.isFinite(officialWeight) ? 'rules-sheet' : 'estimated';
+    });

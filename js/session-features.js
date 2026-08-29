@@ -12,6 +12,7 @@ const HISTORY_TYPE_INFO = Object.freeze({
     equipment: { icon: '🛡️', label: 'Equipamento' },
     crafting: { icon: '⚒️', label: 'Criação' },
     transfer: { icon: '🔄', label: 'Transferência' },
+    'skill-test': { icon: '🎲', label: 'Teste' },
     turn: { icon: '⏱️', label: 'Turno' },
     participant: { icon: '🧙', label: 'Participante' },
     undo: { icon: '↶', label: 'Desfeito' },
@@ -236,7 +237,20 @@ function getEffectStateDetails(effect) {
         if (automation.staminaPayerName) {
             details.push(`Conjurador: ${automation.staminaPayerName}`);
         }
-        details.push(`Custo: ${Math.max(0, Number(automation.staminaCost))} EST`);
+        const runeSourceSpent = Math.max(0, Number(automation.runeSourceSpent) || 0);
+        const staminaSpent = Number.isFinite(Number(automation.staminaSpent))
+            ? Math.max(0, Number(automation.staminaSpent))
+            : Math.max(0, Number(automation.staminaCost));
+        details.push(runeSourceSpent > 0
+            ? `Custo: ${runeSourceSpent} Fonte Rúnica + ${staminaSpent} EST`
+            : `Custo: ${staminaSpent} EST`);
+        if (
+            Number.isFinite(Number(automation.runeSourceBefore)) &&
+            Number.isFinite(Number(automation.runeSourceAfter)) &&
+            runeSourceSpent > 0
+        ) {
+            details.push(`Fonte Rúnica do conjurador: ${automation.runeSourceBefore} → ${automation.runeSourceAfter}`);
+        }
         if (
             Number.isFinite(Number(automation.staminaBefore)) &&
             Number.isFinite(Number(automation.staminaAfter))
@@ -516,6 +530,7 @@ function renderSessionStatus() {
 
     const activeCombatant = getActiveCombatant();
     const nextCombatant = getNextCombatant();
+    const preparedCritical = window.getPreparedAttackCritical?.(activeCombatant);
     const bar = document.createElement('div');
 
     bar.id = 'sessionStatusBar';
@@ -525,6 +540,13 @@ function renderSessionStatus() {
             <span class="session-round">R${round}</span>
             <span id="sessionConnectionStatus" class="session-connection-status" aria-label="Status da conexão" title="Online"></span>
             <span class="session-turn-name">${escapeHtml(activeCombatant?.name || 'Sem turno')}</span>
+            ${preparedCritical ? `
+                <span
+                    class="session-critical-ready"
+                    title="20 natural em ${escapeHtml(preparedCritical.skillName || 'ataque')} · margem ${preparedCritical.margin || 0}"
+                    aria-label="Crítico preparado com margem ${preparedCritical.margin || 0}"
+                >💥 ${preparedCritical.margin || 0}</span>
+            ` : ''}
             ${nextCombatant && activeCombatant?.id !== nextCombatant.id
                 ? `<span class="session-next">→ ${escapeHtml(nextCombatant.name)}</span>`
                 : ''}
@@ -625,6 +647,9 @@ function createResourceHistoryMetadata(type, target, value, context = {}) {
                 ? cloneSessionData(context.armorBreakdown)
                 : null,
             ignoredArmor: Boolean(context.ignoredArmor),
+            critical: context.critical && typeof context.critical === 'object'
+                ? cloneSessionData(context.critical)
+                : null,
             before: captureCombatResources(target),
             after: null
         }
@@ -652,6 +677,36 @@ function buildResourceHistoryDetail(metadata) {
     const after = combat.after || {};
     const shieldAbsorbed = Math.max(0, (before.magicShield || 0) - (after.magicShield || 0));
     const temporaryAbsorbed = Math.max(0, (before.temporaryHp || 0) - (after.temporaryHp || 0));
+
+    if (combat.critical) {
+        const critical = combat.critical;
+        detail.push(critical.severityName
+            ? `Crítico ${critical.severityName} · margem ${critical.margin || 0}`
+            : `Crítico por 20 natural · margem ${critical.margin || 0} · sem ferimento adicional`);
+        detail.push(
+            `Cálculo: ${combat.baseDamage} ×2 ×${combat.bodyMultiplier || 1} + ${critical.woundBonus || 0} = ${combat.finalValue}`
+        );
+        if (critical.preparedFromNatural20) {
+            detail.push(`Preparado por: 20 natural em ${critical.preparedSkillName || 'ataque'}`);
+        }
+        if (critical.woundName) detail.push(`Ferimento: ${critical.woundName}`);
+        if (critical.roll) detail.push(`Definição: ${critical.roll}`);
+        if (critical.conditionsApplied?.length) {
+            detail.push(`Condições aplicadas: ${critical.conditionsApplied.join(', ')}`);
+        }
+        if (critical.advancedConsequences?.length) {
+            critical.advancedConsequences.forEach(consequence =>
+                detail.push(`Consequência: ${consequence}`)
+            );
+        }
+        if (critical.sourceName && Number.isFinite(Number(critical.adrenalineAfter))) {
+            detail.push(
+                `Adrenalina de ${critical.sourceName}: ${critical.adrenalineBefore || 0} → ${critical.adrenalineAfter}`
+            );
+            if (critical.adrenalineReused) detail.push('Adrenalina já concedida no teste; nenhum ponto duplicado');
+        }
+        if (critical.deathApplied) detail.push('Consequência: morte imediata');
+    }
 
     if (bodyPart) {
         detail.push(`Local: ${bodyPart} ×${combat.bodyMultiplier || 1}`);
@@ -770,6 +825,9 @@ function getHistoryCondition(entry) {
 function getHistoryEntryIcon(entry, typeInfo) {
     if (getHistoryEntryType(entry) !== 'damage') return typeInfo.icon;
 
+    if (entry?.combat?.critical) return '💥';
+    if (entry?.combat?.criticalWound) return '🩹';
+
     const conditionIcons = {
         '🩸': '🩸',
         '🔥': '🔥',
@@ -785,7 +843,12 @@ function getHistoryEntryHeadline(entry, type) {
     const condition = getHistoryCondition(entry);
 
     if (type === 'damage') {
-        if (entry?.combat?.defeated) return `Derrotou ${targetName}: ${value}`;
+        if (entry?.combat?.defeated) {
+            return entry?.combat?.critical
+                ? `Derrotou ${targetName} com crítico: ${value}`
+                : `Derrotou ${targetName}: ${value}`;
+        }
+        if (entry?.combat?.critical) return `Crítico em ${targetName}: −${value} PV`;
         if (condition?.name) {
             return entry?.target?.name
                 ? `${targetName} — ${condition.name}: −${value} PV`
@@ -963,7 +1026,7 @@ function renderSessionToolsView(view) {
     }
 
     if (view === 'history') {
-        const filterTypes = ['all', 'damage', 'healing', 'effect', 'condition', 'equipment', 'turn'];
+        const filterTypes = ['all', 'damage', 'healing', 'effect', 'condition', 'equipment', 'skill-test', 'turn'];
         const participants = getHistoryParticipantOptions();
         const filterButtons = filterTypes.map(type => {
             const label = type === 'all' ? 'Tudo' : HISTORY_TYPE_INFO[type].label;
@@ -1315,6 +1378,105 @@ function applyRecurringEffects(combatant) {
     return changes;
 }
 
+function applyCriticalWoundRecurringEffects(combatant) {
+    const activeWounds = Array.isArray(combatant?.criticalWounds)
+        ? combatant.criticalWounds.filter(instance => (
+            instance.woundId === 'difficult-torn-stomach' &&
+            (instance.state || 'normal') === 'normal'
+        ) || (
+            instance.woundId === 'deadly-heart-damage' &&
+            (instance.state || 'normal') === 'treated'
+        ))
+        : [];
+    const checkEvents = window.processCriticalWoundTurnChecks?.(combatant) || [];
+    if (!activeWounds.length && !checkEvents.length) return [];
+
+    const changes = activeWounds.map(instance => {
+        const heartBleeding = instance.woundId === 'deadly-heart-damage';
+        const damage = heartBleeding ? 2 : 4;
+        const woundName = heartBleeding ? 'Dano no Coração' : 'Estômago Rasgado';
+        const damageName = heartBleeding ? 'Sangramento permanente' : 'dano ácido';
+        const before = captureCombatResources(combatant);
+        const sourceCombatant = combatants.find(entry =>
+            String(entry.id) === String(instance.sourceId)
+        );
+        const source = sourceCombatant
+            ? { id: sourceCombatant.id, name: sourceCombatant.name }
+            : null;
+
+        combatant.hpCurrent = Math.max(0, combatant.hpCurrent - damage);
+        if (before.hp > 0 && combatant.hpCurrent === 0) {
+            combatant.deathSaves = { success: 0, failures: 0 };
+            combatant.stabilized = false;
+        }
+
+        const after = captureCombatResources(combatant);
+        const defeated = didCombatantBecomeDefeated(combatant, before, after);
+        const sourcePrefix = source && source.id !== combatant.id ? `${source.name} > ` : '';
+
+        return {
+            summary: `${woundName}: ${damage} de ${damageName}`,
+            history: {
+                label: defeated
+                    ? `${sourcePrefix}Derrotou ${combatant.name} com ${woundName}: ${damage}`
+                    : `${sourcePrefix}Dano de ${woundName} em ${combatant.name}: ${damage}`,
+                detail: [
+                    `Ferimento crítico: ${woundName}`,
+                    `${heartBleeding ? 'Sangramento permanente' : 'Dano ácido recorrente'}: ${damage}`,
+                    `PV: ${before.hp} → ${after.hp}`,
+                    ...(defeated ? ['Alvo derrotado'] : [])
+                ].join(' · '),
+                metadata: {
+                    type: 'damage',
+                    source,
+                    target: { id: combatant.id, name: combatant.name },
+                    participants: [source, { id: combatant.id, name: combatant.name }].filter(Boolean),
+                    combat: {
+                        baseDamage: damage,
+                        finalValue: damage,
+                        before,
+                        after,
+                        defeated,
+                        criticalWound: { id: instance.woundId, name: woundName }
+                    }
+                }
+            }
+        };
+    });
+
+    checkEvents.forEach(event => {
+        changes.push({
+            summary: event.summary,
+            history: {
+                label: `${combatant.name}: ${event.woundName} — ação necessária`,
+                detail: [
+                    `Ferimento crítico: ${event.woundName}`,
+                    event.kind === 'suffocation'
+                        ? 'Consequência: resolver Sufocamento neste turno'
+                        : event.kind === 'death-test'
+                            ? 'Consequência: realizar teste de resistência à Morte'
+                            : 'Consequência: realizar teste de resistência a Atordoamento'
+                ].join(' · '),
+                metadata: {
+                    type: 'condition',
+                    target: { id: combatant.id, name: combatant.name },
+                    participants: [{ id: combatant.id, name: combatant.name }],
+                    effect: {
+                        id: event.woundId,
+                        type: 'critical-wound',
+                        name: event.woundName,
+                        action: 'teste necessário'
+                    }
+                }
+            }
+        });
+    });
+
+    savePlayersToStorage();
+    showToast(`🩹 ${combatant.name}: ${changes.map(change => change.summary).join(' · ')}`);
+    return changes;
+}
+
 function saveCombatReport(state) {
     const damageEntries = sessionHistory.filter(entry => getHistoryEntryType(entry) === 'damage');
     const healingEntries = sessionHistory.filter(entry => getHistoryEntryType(entry) === 'healing');
@@ -1474,7 +1636,14 @@ function installActionGuards() {
             if (isHealing) return `${sourcePrefix}Cura em ${target?.name || 'alvo'}: ${value}`;
 
             if (historyMetadata?.combat?.defeated) {
+                if (historyMetadata?.combat?.critical) {
+                    return `${sourcePrefix}Derrotou ${target?.name || 'alvo'} com crítico: ${value}`;
+                }
                 return `${sourcePrefix}Derrotou ${target?.name || 'alvo'}: ${value || 'falha de morte'}`;
+            }
+
+            if (historyMetadata?.combat?.critical) {
+                return `${sourcePrefix}Crítico em ${target?.name || 'alvo'}: ${value}`;
             }
 
             return `${sourcePrefix}Dano em ${target?.name || 'alvo'}: ${value || 'falha de morte'}`;
@@ -1490,7 +1659,16 @@ function installActionGuards() {
                 currentInput = String(value);
             }
 
+            if (!isHealing && historyMetadata?.combat?.critical) {
+                window.applyCriticalDamageBefore?.(target, historyMetadata.combat.critical);
+            }
+
             result = originalApplyHP(isHealing);
+
+            if (!isHealing && historyMetadata?.combat?.critical) {
+                window.applyCriticalDamageAfter?.(target, historyMetadata.combat.critical);
+            }
+
             if (historyMetadata) finalizeResourceHistoryMetadata(historyMetadata, target);
             return result;
         };
@@ -1507,11 +1685,13 @@ function installActionGuards() {
         if (!target) return applyOriginalHP();
 
         openSessionConfirm({
-            title: 'Aplicar dano?',
+            title: historyMetadata?.combat?.critical ? 'Aplicar dano crítico?' : 'Aplicar dano?',
             message: value > 0
-                ? `${target.name} receberá ${value} de dano.`
+                ? historyMetadata?.combat?.critical
+                    ? `${target.name} receberá ${value} de dano${historyMetadata.combat.critical.woundName ? `, ${historyMetadata.combat.critical.woundName}` : ''} e a armadura será ignorada.`
+                    : `${target.name} receberá ${value} de dano.`
                 : `${target.name} receberá uma falha de morte.`,
-            confirmLabel: 'Aplicar dano',
+            confirmLabel: historyMetadata?.combat?.critical ? 'Aplicar crítico' : 'Aplicar dano',
             danger: true,
             onConfirm: () => trackAction(
                 historyLabel,
@@ -1525,9 +1705,40 @@ function installActionGuards() {
     window.applyST = isHealing => {
         const target = combatants.find(combatant => combatant.id === selectedId);
         const value = Number.parseInt(currentInput) || 0;
+        const stBefore = Math.max(0, Number(target?.stCurrent) || 0);
+        const runeSourceMaximum = Math.max(0, Number(target?.runeSourceMax) || 0);
+        const runeSourceBefore = Math.max(0, Number(target?.runeSourceCurrent) || 0);
+        let stAfter = stBefore;
+        let runeSourceAfter = runeSourceBefore;
+        const restoresRuneSource = isHealing && runeSourceMaximum > 0;
+
         return trackAction(
-            `${isHealing ? 'ST recuperado' : 'ST gasto'} em ${target?.name || 'alvo'}: ${value}`,
-            () => originalApplyST(isHealing)
+            `${isHealing
+                ? (restoresRuneSource ? 'Recursos regenerados' : 'ST recuperado')
+                : 'ST gasto'} em ${target?.name || 'alvo'}: ${value}`,
+            () => {
+                const result = originalApplyST(isHealing);
+
+                if (target && restoresRuneSource) {
+                    target.runeSourceCurrent = Math.min(
+                        runeSourceMaximum,
+                        runeSourceBefore + value
+                    );
+                    runeSourceAfter = target.runeSourceCurrent;
+                    savePlayersToStorage();
+                    updateCardTargeted(target);
+                }
+
+                stAfter = Math.max(0, Number(target?.stCurrent) || 0);
+                return result;
+            },
+            () => {
+                const details = [`EST: ${stBefore} → ${stAfter}`];
+                if (restoresRuneSource) {
+                    details.push(`Fonte Rúnica: ${runeSourceBefore} → ${runeSourceAfter}`);
+                }
+                return details.join(' · ');
+            }
         );
     };
 
@@ -1537,7 +1748,13 @@ function installActionGuards() {
 
         const activeCombatant = getActiveCombatant();
         const recurringEffects = applyRecurringEffects(activeCombatant);
-        const recurringChanges = recurringEffects.map(change => change.summary);
+        const criticalWoundEffects = applyCriticalWoundRecurringEffects(activeCombatant);
+        const toxicityEffects = window.processCombatantToxicityTurn?.(activeCombatant) || [];
+        const recurringChanges = [
+            ...recurringEffects,
+            ...criticalWoundEffects,
+            ...toxicityEffects
+        ].map(change => change.summary);
         const automationChanges = window.processAutomatedTurnEffects?.(activeCombatant) || [];
         const expiredEffects = getExpiredEffects(before);
         const detail = [
@@ -1551,6 +1768,16 @@ function installActionGuards() {
             undoStack = undoStack.slice(-MAX_UNDO_ENTRIES);
             addHistoryEntry(`Turno: ${activeCombatant?.name || 'sem participante'}`, detail);
             recurringEffects.forEach(change => {
+                if (change.history) {
+                    addHistoryEntry(change.history.label, change.history.detail, change.history.metadata);
+                }
+            });
+            criticalWoundEffects.forEach(change => {
+                if (change.history) {
+                    addHistoryEntry(change.history.label, change.history.detail, change.history.metadata);
+                }
+            });
+            toxicityEffects.forEach(change => {
                 if (change.history) {
                     addHistoryEntry(change.history.label, change.history.detail, change.history.metadata);
                 }
@@ -1717,11 +1944,25 @@ function installActionGuards() {
 
         if (window.isEquipmentItem?.(item)) return originalUseSelectedItem();
 
+        const itemDefinition = predefinedItems.find(entry => entry.id === item.id) || item;
+        const collectionOwner = window.getCharacterCollectionOwner?.() || null;
+        const appliesActivePotionEffect = Boolean(
+            itemDefinition.potion &&
+            Object.prototype.hasOwnProperty.call(itemDefinition, 'active')
+        );
+        const confirmationMessage = appliesActivePotionEffect
+            ? `${item.name} será consumida e seu efeito será aplicado em ${collectionOwner?.name || 'quem possui este inventário'}. Você poderá desfazer.`
+            : `${item.name} será consumido do inventário. Você poderá desfazer.`;
+
         openSessionConfirm({
             title: 'Usar item?',
-            message: `${item.name} será consumido do inventário. Você poderá desfazer.`,
+            message: confirmationMessage,
             confirmLabel: 'Usar item',
-            onConfirm: () => trackAction(`Item usado: ${item.name}`, originalUseSelectedItem)
+            onConfirm: () => trackAction(
+                `Item usado: ${item.name}`,
+                originalUseSelectedItem,
+                () => window.consumeToxicityItemUseDetail?.() || ''
+            )
         });
     };
 }
@@ -1737,6 +1978,8 @@ window.setHistoryParticipantFilter = setHistoryParticipantFilter;
 window.toggleHistoryDetails = toggleHistoryDetails;
 window.clearSessionHistory = clearSessionHistory;
 window.addCombatHistoryEntry = addHistoryEntry;
+window.trackCombatAction = (label, callback, detail = '', metadata = {}) =>
+    trackAction(label, callback, detail, metadata);
 window.trackEquipmentAction = (label, callback, detail = '', metadata = {}) =>
     trackAction(label, callback, detail, metadata);
 window.describeCombatantChanges = describeCombatantChanges;

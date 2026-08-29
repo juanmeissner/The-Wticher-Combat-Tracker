@@ -2553,40 +2553,6 @@
     },
     
     {
-        id: 'dadiva_da_natureza',
-    
-        name: 'Dádiva da Natureza',
-    
-        icon: '🌿',
-    
-        profession: 'Druida',
-    
-        category: 'Iniciante',
-    
-        type: 'Terra',
-    
-        duration: 'Imediata',
-    
-        defense: 'Nenhuma',
-    
-        damage: 'Nenhum',
-    
-        cost: 'Variável',
-    
-        range: '2m',
-    
-        action: '',
-    
-        unlockCost: 1,
-    
-        shortDescription:
-            'Cria alimento natural.',
-    
-        description:
-            'Cria plantas comestíveis suficientes para sustentar um número de pessoas igual aos pontos de EST gastos durante 1 dia.'
-    },
-    
-    {
         id: 'visao_da_natureza',
     
         name: 'Visão da Natureza',
@@ -5954,3 +5920,5 @@
     },
 
 ];
+
+globalThis.predefinedAbilities = predefinedAbilities;

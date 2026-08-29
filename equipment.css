@@ -54,7 +54,9 @@
 .combat-equipment-panel,
 .monster-actions-panel,
 .monster-abilities-panel,
-.monster-skills-panel {
+.monster-skills-panel,
+.character-skills-panel,
+.character-professional-panel {
     position: relative;
     z-index: 2;
     margin: -2px 8px 8px;
@@ -84,6 +86,16 @@
 .monster-skills-panel {
     border-color: #5b4a2f;
     background: rgba(39, 29, 15, .96);
+}
+
+.character-skills-panel {
+    border-color: #155e75;
+    background: rgba(8, 47, 73, .96);
+}
+
+.character-professional-panel {
+    border-color: #5b3b83;
+    background: rgba(35, 22, 57, .96);
 }
 
 .combat-subpanel-header {
@@ -131,6 +143,16 @@
     color: #fcd34d;
 }
 
+.character-skills-header {
+    background: rgba(14, 116, 144, .5);
+    color: #67e8f9;
+}
+
+.character-professional-header {
+    background: rgba(91, 55, 139, .58);
+    color: #e9d5ff;
+}
+
 .combat-equipment-content {
     display: grid;
     gap: 8px;
@@ -147,6 +169,15 @@
     border: 1px solid #365273;
     border-radius: 11px;
     background: #15233a;
+}
+
+.active-weapon-card.is-unusable {
+    border-color: #ef4444;
+    background: rgba(127, 29, 29, .45);
+}
+
+.active-weapon-card.is-unusable .equipment-roll-button {
+    opacity: .5;
 }
 
 .active-weapon-card:not(.has-swap) {
@@ -199,6 +230,87 @@
     background: #164e63;
 }
 
+.active-ammunition-card {
+    display: grid;
+    grid-template-columns: 30px minmax(0, 1fr) auto auto;
+    align-items: center;
+    gap: 7px;
+    min-height: 48px;
+    padding: 6px 7px;
+    border: 1px solid #475569;
+    border-radius: 11px;
+    background: rgba(15, 23, 42, .88);
+}
+
+.active-ammunition-card.is-empty {
+    grid-template-columns: 30px minmax(0, 1fr);
+    border-style: dashed;
+}
+
+.active-ammunition-icon {
+    display: grid;
+    width: 27px;
+    height: 27px;
+    place-items: center;
+    object-fit: contain;
+    font-size: 1rem;
+}
+
+.active-ammunition-copy {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    gap: 1px;
+}
+
+.active-ammunition-copy small {
+    color: #fbbf24;
+    font-size: .52rem;
+    font-weight: 900;
+    letter-spacing: .07em;
+}
+
+.active-ammunition-copy strong,
+.active-ammunition-copy span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.active-ammunition-copy strong {
+    color: #f8fafc;
+    font-size: .7rem;
+}
+
+.active-ammunition-copy span {
+    color: #94a3b8;
+    font-size: .58rem;
+}
+
+.equipment-ammunition-use,
+.equipment-ammunition-swap {
+    display: grid;
+    min-width: 34px;
+    height: 34px;
+    place-items: center;
+    border: 1px solid #475569;
+    border-radius: 9px;
+    color: #fff;
+    font-size: .72rem;
+    font-weight: 900;
+}
+
+.equipment-ammunition-use {
+    border-color: #92400e;
+    background: #78350f;
+    color: #fde68a;
+}
+
+.equipment-ammunition-swap {
+    border-color: #155e75;
+    background: #164e63;
+}
+
 .armor-summary-grid {
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -237,6 +349,18 @@
     color: #93c5fd;
     font-size: .64rem;
     font-weight: 750;
+}
+
+.equipment-derived-line {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 6px 12px;
+    padding: 5px 7px;
+    border-top: 1px solid rgba(71, 85, 105, .55);
+    color: #a5b4fc;
+    font-size: .63rem;
+    font-weight: 800;
 }
 
 .monster-action-grid {
@@ -356,6 +480,280 @@
     white-space: nowrap;
 }
 
+.character-skill-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 6px;
+    padding: 8px;
+}
+
+.character-skill-card {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto 24px;
+    align-items: center;
+    gap: 7px;
+    min-height: 46px;
+    padding: 7px 8px;
+    border: 1px solid rgba(34, 211, 238, .42);
+    border-radius: 10px;
+    background: rgba(8, 79, 103, .66);
+    color: #ecfeff;
+    text-align: left;
+}
+
+.character-skill-card:active {
+    transform: translateY(1px);
+}
+
+.character-skill-card:focus-visible {
+    outline: 2px solid #67e8f9;
+    outline-offset: 2px;
+}
+
+.character-skill-copy {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.character-skill-copy strong {
+    overflow: hidden;
+    font-size: .7rem;
+    line-height: 1.2;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.character-skill-copy small {
+    color: #a5f3fc;
+    font-size: .56rem;
+    font-weight: 800;
+}
+
+.character-skill-total {
+    color: #67e8f9;
+    font-size: .84rem;
+    font-weight: 950;
+}
+
+.character-skill-roll {
+    font-size: .78rem;
+    text-align: center;
+}
+
+.character-professional-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+    gap: 6px;
+    padding: 8px;
+}
+
+.character-professional-card {
+    display: grid;
+    grid-template-columns: 32px minmax(0, 1fr);
+    align-items: start;
+    gap: 8px;
+    padding: 8px;
+    border: 1px solid rgba(196, 181, 253, .4);
+    border-radius: 10px;
+    background: rgba(76, 29, 149, .26);
+}
+
+.character-professional-level {
+    display: grid;
+    width: 30px;
+    height: 30px;
+    place-items: center;
+    border: 1px solid #8b5cf6;
+    border-radius: 50%;
+    background: #4c1d95;
+    color: #f5f3ff;
+    font-size: .72rem;
+    font-weight: 950;
+}
+
+.character-professional-card strong {
+    display: block;
+    color: #f5f3ff;
+    font-size: .7rem;
+}
+
+.character-professional-card .character-professional-automation-badge {
+    display: inline-flex;
+    margin-left: 4px;
+    padding: 2px 4px;
+    border: 1px solid rgba(52, 211, 153, .45);
+    border-radius: 999px;
+    background: rgba(6, 78, 59, .42);
+    color: #6ee7b7;
+    font-size: .46rem;
+    font-weight: 950;
+    letter-spacing: .04em;
+    line-height: 1;
+    vertical-align: middle;
+}
+
+.character-professional-card .character-professional-automation-badge.is-reference {
+    border-color: rgba(148, 163, 184, .42);
+    background: rgba(51, 65, 85, .48);
+    color: #cbd5e1;
+}
+
+.character-professional-card p {
+    margin: 3px 0 0;
+    color: #ddd6fe;
+    font-size: .62rem;
+    line-height: 1.35;
+}
+
+.character-professional-test-button {
+    display: inline-flex;
+    min-height: 30px;
+    align-items: center;
+    justify-content: center;
+    margin-top: 7px;
+    padding: 5px 9px;
+    border: 1px solid #0e7490;
+    border-radius: 8px;
+    background: rgba(8, 145, 178, .16);
+    color: #67e8f9;
+    font-size: .58rem;
+    font-weight: 900;
+}
+
+.character-professional-test-button:hover,
+.character-professional-test-button:focus-visible {
+    border-color: #22d3ee;
+    background: rgba(8, 145, 178, .3);
+}
+
+.character-professional-test-rule {
+    margin: 10px 0 0;
+    padding: 9px 10px;
+    border: 1px solid rgba(139, 92, 246, .45);
+    border-radius: 10px;
+    background: rgba(76, 29, 149, .18);
+    color: #ddd6fe;
+    font-size: .66rem;
+    line-height: 1.42;
+}
+
+.character-professional-panel.has-relevant-reminders .character-professional-header {
+    border-color: rgba(245, 158, 11, .72);
+}
+
+.character-professional-card.is-contextually-relevant {
+    border-color: rgba(245, 158, 11, .8);
+    background: linear-gradient(135deg, rgba(120, 53, 15, .34), rgba(76, 29, 149, .24));
+}
+
+.character-professional-reminder-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-top: 7px;
+}
+
+.character-professional-reminder-tags span {
+    padding: 3px 6px;
+    border: 1px solid rgba(148, 163, 184, .34);
+    border-radius: 999px;
+    background: rgba(15, 23, 42, .55);
+    color: #94a3b8;
+    font-size: .52rem;
+    font-weight: 850;
+    line-height: 1;
+}
+
+.character-professional-reminder-tags span.is-relevant {
+    border-color: rgba(245, 158, 11, .72);
+    background: rgba(120, 53, 15, .5);
+    color: #fde68a;
+}
+
+.character-skill-test-dialog {
+    width: min(100%, 490px);
+}
+
+.character-skill-test-kicker {
+    color: #22d3ee;
+    font-size: .6rem;
+    font-weight: 950;
+    letter-spacing: .09em;
+}
+
+.character-skill-test-actor {
+    margin-bottom: 10px !important;
+}
+
+.character-skill-breakdown,
+.character-skill-formula {
+    padding: 9px 10px;
+    border: 1px solid #334155;
+    border-radius: 10px;
+    background: #172033;
+    color: #bae6fd;
+    font-size: .68rem;
+    line-height: 1.4;
+}
+
+.character-skill-form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    margin: 14px 0;
+}
+
+.character-skill-field {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.character-skill-field span,
+.character-skill-auto-roll span {
+    color: #cbd5e1;
+    font-size: .66rem;
+    font-weight: 800;
+}
+
+.character-skill-field input,
+.character-skill-field select {
+    width: 100%;
+    min-height: 42px;
+    padding: 8px 10px;
+    border: 1px solid #3b526f;
+    border-radius: 10px;
+    background: #1e293b;
+    color: #f8fafc;
+    font-weight: 750;
+}
+
+.character-skill-auto-roll {
+    display: flex;
+    min-height: 66px;
+    flex-direction: column;
+    justify-content: center;
+    gap: 4px;
+    padding: 8px 10px;
+    border: 1px solid #155e75;
+    border-radius: 10px;
+    background: rgba(8, 145, 178, .12);
+}
+
+.character-skill-auto-roll small {
+    color: #a5f3fc;
+    font-size: .6rem;
+}
+
+.character-skill-formula {
+    border-color: #155e75;
+    color: #67e8f9;
+    text-align: center;
+}
+
 @media (max-width: 520px) {
     .monster-ability-list {
         grid-template-columns: 1fr;
@@ -363,6 +761,17 @@
 
     .monster-skill-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .character-skill-grid,
+    .character-professional-list,
+    .character-skill-form-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .character-skill-test-dialog {
+        width: calc(100% - 20px);
+        padding: 16px;
     }
 }
 
@@ -426,7 +835,22 @@
     }
 
     .equipped-shield-line,
-    .equipment-empty-line {
+    .equipment-empty-line,
+    .equipment-derived-line {
         grid-column: 1 / -1;
     }
+}
+
+.rune-source-container {
+    color: #c4b5fd;
+}
+
+.rune-source-label {
+    color: #a78bfa;
+    font-size: .58rem;
+    font-weight: 800;
+    letter-spacing: .045em;
+    line-height: 1;
+    text-transform: uppercase;
+    white-space: nowrap;
 }

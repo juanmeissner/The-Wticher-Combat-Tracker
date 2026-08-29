@@ -57,6 +57,7 @@ function endCombat() {
         c.statusBrain = false; 
         c.conditions = [];
         c.effects = [];
+        window.restoreCriticalWoundConditions?.(c);
         c.deathSaves = { success: 0, failures: 0 };
         c.stabilized = false;
     });
@@ -294,3 +295,4 @@ function hardResetCombat() {
     window.renderList = renderList;
     window.applyHP = applyHP;
     window.nextTurn = nextTurn;
+    window.sortCombatants = sortCombatants;

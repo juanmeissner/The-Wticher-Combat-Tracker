@@ -1,0 +1,592 @@
+.critical-dialog {
+    width: min(100%, 520px);
+    max-height: calc(100dvh - var(--safe-top, 0px) - var(--safe-bottom, 0px) - 32px);
+    overflow-y: auto;
+    padding: 18px;
+    border: 1px solid #7f1d1d;
+    border-radius: 18px;
+    background: #0f172a;
+    color: #f8fafc;
+    box-shadow: 0 24px 70px rgba(0, 0, 0, .62);
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+}
+
+.critical-dialog-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.critical-dialog-header small,
+.critical-wound-card-heading small {
+    display: block;
+    color: #94a3b8;
+    font-size: .68rem;
+    font-weight: 700;
+}
+
+.critical-dialog-header h2 {
+    margin: 2px 0 0;
+    font-size: 1.2rem;
+    font-weight: 900;
+}
+
+.critical-dialog-close {
+    flex: 0 0 42px;
+    min-height: 42px;
+    border: 1px solid #475569;
+    border-radius: 12px;
+    background: #1e293b;
+    color: #f8fafc;
+    font-size: 1.35rem;
+    font-weight: 900;
+}
+
+.critical-context,
+.critical-rule-summary,
+.critical-severity-banner,
+.critical-margin-preview,
+.critical-review-wound,
+.critical-calculation {
+    border: 1px solid #334155;
+    border-radius: 13px;
+    background: #162033;
+}
+
+.critical-context {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px;
+    color: #cbd5e1;
+    font-size: .78rem;
+    font-weight: 800;
+}
+
+.critical-context strong {
+    color: #fb7185;
+}
+
+.critical-rule-summary {
+    display: grid;
+    gap: 4px;
+    margin-top: 10px;
+    padding: 12px;
+}
+
+.critical-rule-summary strong {
+    color: #fecaca;
+}
+
+.critical-rule-summary span,
+.critical-step-copy {
+    color: #cbd5e1;
+    font-size: .78rem;
+    line-height: 1.45;
+}
+
+.critical-field {
+    display: grid;
+    gap: 7px;
+    margin-top: 14px;
+    color: #e2e8f0;
+    font-size: .78rem;
+    font-weight: 800;
+}
+
+.critical-field input {
+    min-height: 48px;
+    border-color: #64748b;
+    font-size: 1.15rem;
+    font-weight: 900;
+    text-align: center;
+}
+
+.critical-field select {
+    min-height: 46px;
+    width: 100%;
+    padding: 0 12px;
+    border: 1px solid #64748b;
+    border-radius: 11px;
+    background: #1e293b;
+    color: #f8fafc;
+    font-weight: 800;
+}
+
+.critical-inline-roll {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 8px;
+}
+
+.critical-inline-roll button {
+    min-width: 92px;
+    min-height: 46px;
+    padding: 8px 12px;
+    border: 1px solid #0ea5e9;
+    border-radius: 11px;
+    background: #075985;
+    color: #fff;
+    font-size: .74rem;
+    font-weight: 900;
+}
+
+.critical-margin-preview,
+.critical-severity-banner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-top: 10px;
+    padding: 10px 12px;
+}
+
+.critical-margin-preview strong,
+.critical-severity-banner span {
+    color: #fda4af;
+    font-size: .8rem;
+}
+
+.critical-margin-preview span,
+.critical-severity-banner strong {
+    color: #cbd5e1;
+    font-size: .7rem;
+    text-align: right;
+}
+
+.critical-severity-simple { border-color: #0ea5e9; }
+.critical-severity-complicated { border-color: #f59e0b; }
+.critical-severity-difficult { border-color: #f97316; }
+.critical-severity-deadly { border-color: #ef4444; background: rgba(127, 29, 29, .3); }
+
+.critical-step-copy {
+    margin: 16px 2px 12px;
+}
+
+.critical-primary-button,
+.critical-secondary-button,
+.critical-confirm-button,
+.critical-back-button {
+    width: 100%;
+    min-height: 46px;
+    margin-top: 9px;
+    padding: 10px 12px;
+    border: 1px solid transparent;
+    border-radius: 12px;
+    font-size: .8rem;
+    font-weight: 900;
+}
+
+.critical-primary-button {
+    background: #0369a1;
+    color: #fff;
+}
+
+.critical-secondary-button {
+    border-color: #475569;
+    background: #1e293b;
+    color: #f8fafc;
+}
+
+.critical-confirm-button {
+    background: #b91c1c;
+    color: #fff;
+}
+
+.critical-back-button {
+    min-height: 40px;
+    background: transparent;
+    color: #94a3b8;
+}
+
+.critical-wound-choice-list,
+.critical-wound-card-list,
+.critical-outcome-choices {
+    display: grid;
+    gap: 9px;
+}
+
+.critical-outcome-choices {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    margin-top: 10px;
+}
+
+.critical-outcome-choices .critical-wound-choice {
+    min-height: 48px;
+}
+
+.critical-outcome-choices .critical-wound-choice.is-selected {
+    border-color: #22d3ee;
+    background: rgba(8, 145, 178, .25);
+}
+
+@media (max-width: 420px) {
+    .critical-outcome-choices {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+.critical-wound-choice {
+    display: grid;
+    gap: 5px;
+    width: 100%;
+    min-height: 64px;
+    padding: 11px 12px;
+    border: 1px solid #475569;
+    border-radius: 12px;
+    background: #1e293b;
+    color: #f8fafc;
+    text-align: left;
+}
+
+.critical-wound-choice strong {
+    color: #fda4af;
+    font-size: .82rem;
+}
+
+.critical-wound-choice span,
+.critical-review-wound p,
+.critical-wound-card p {
+    margin: 0;
+    color: #cbd5e1;
+    font-size: .72rem;
+    line-height: 1.42;
+}
+
+.critical-review-wound {
+    margin-top: 10px;
+    padding: 12px;
+}
+
+.critical-review-wound > strong {
+    color: #fecaca;
+    font-size: .92rem;
+}
+
+.critical-review-wound p {
+    margin-top: 5px;
+}
+
+.critical-review-wound small {
+    display: block;
+    margin-top: 7px;
+    color: #fbbf24;
+    font-size: .68rem;
+    font-weight: 800;
+}
+
+.critical-review-wound .critical-lethal-warning {
+    color: #f87171;
+}
+
+.critical-calculation {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 7px 12px;
+    margin-top: 10px;
+    padding: 12px;
+    color: #cbd5e1;
+    font-size: .75rem;
+}
+
+.critical-calculation strong {
+    color: #f8fafc;
+    text-align: right;
+}
+
+.critical-calculation .critical-total-label,
+.critical-calculation .critical-total-value {
+    padding-top: 7px;
+    border-top: 1px solid #475569;
+    color: #fb7185;
+    font-weight: 950;
+}
+
+.critical-wounds-panel {
+    position: relative;
+    z-index: 2;
+    margin: -2px 8px 8px;
+    overflow: hidden;
+    border: 1px solid #7f1d1d;
+    border-top: 0;
+    border-radius: 0 0 14px 14px;
+    background: rgba(45, 12, 18, .96);
+    box-shadow: 0 10px 24px rgba(0, 0, 0, .2);
+}
+
+.critical-wounds-header {
+    background: rgba(127, 29, 29, .52);
+    color: #fda4af;
+}
+
+.critical-wound-card-list {
+    padding: 9px;
+}
+
+.critical-wound-card {
+    padding: 10px;
+    border: 1px solid #7f1d1d;
+    border-radius: 11px;
+    background: rgba(30, 41, 59, .84);
+}
+
+.critical-wound-card-heading {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 8px;
+}
+
+.critical-wound-card-heading > span {
+    font-size: 1.25rem;
+}
+
+.critical-wound-card-heading strong {
+    display: block;
+    color: #fecaca;
+    font-size: .76rem;
+}
+
+.critical-wound-card-heading em {
+    padding: 3px 6px;
+    border: 1px solid #64748b;
+    border-radius: 999px;
+    color: #cbd5e1;
+    font-size: .58rem;
+    font-style: normal;
+    font-weight: 900;
+}
+
+.critical-wound-card p {
+    margin-top: 8px;
+}
+
+.critical-wound-impact-list {
+    display: grid;
+    gap: 4px;
+    margin: 8px 0 0;
+    padding: 8px 10px 8px 24px;
+    border-radius: 8px;
+    background: rgba(127, 29, 29, .24);
+    color: #fecaca;
+    font-size: .66rem;
+    line-height: 1.35;
+}
+
+.critical-wound-card > button {
+    width: 100%;
+    min-height: 38px;
+    margin-top: 9px;
+    padding: 7px 10px;
+    border: 1px solid #475569;
+    border-radius: 9px;
+    background: #1e293b;
+    color: #f8fafc;
+    font-size: .68rem;
+    font-weight: 900;
+}
+
+.critical-wound-card > button:disabled {
+    opacity: .55;
+}
+
+.critical-wound-treatment-status {
+    padding: 7px 9px;
+    border: 1px solid rgba(14, 165, 233, .32);
+    border-radius: 8px;
+    background: rgba(3, 105, 161, .16);
+    color: #bae6fd !important;
+    font-weight: 800;
+}
+
+.critical-treatment-dialog {
+    width: min(100%, 560px);
+    max-height: calc(100dvh - var(--safe-top, 0px) - var(--safe-bottom, 0px) - 28px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+}
+
+.critical-treatment-dialog .session-dialog-header small {
+    color: #38bdf8;
+    font-size: .67rem;
+    font-weight: 900;
+    letter-spacing: .08em;
+}
+
+.critical-treatment-patient,
+.critical-treatment-rule,
+.critical-treatment-progress {
+    margin: 8px 0 0;
+    color: #cbd5e1;
+    font-size: .76rem;
+    line-height: 1.45;
+}
+
+.critical-treatment-rule {
+    padding: 10px 12px;
+    border: 1px solid #334155;
+    border-radius: 10px;
+    background: #162033;
+}
+
+.critical-treatment-progress {
+    color: #7dd3fc;
+    text-align: center;
+}
+
+.critical-treatment-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    margin-top: 12px;
+}
+
+.critical-treatment-grid > label {
+    display: grid;
+    align-content: start;
+    gap: 6px;
+    color: #e2e8f0;
+    font-size: .7rem;
+    font-weight: 850;
+}
+
+.critical-treatment-grid > label > small {
+    min-height: 2.5em;
+    color: #94a3b8;
+    font-size: .62rem;
+    font-weight: 700;
+    line-height: 1.3;
+}
+
+.critical-treatment-grid input,
+.critical-treatment-grid select {
+    width: 100%;
+    min-height: 44px;
+    padding: 0 10px;
+    border: 1px solid #475569;
+    border-radius: 10px;
+    background: #1e293b;
+    color: #f8fafc;
+    font-size: .76rem;
+    font-weight: 800;
+}
+
+.critical-treatment-auto-roll {
+    display: grid;
+    align-content: center;
+    gap: 4px;
+    min-height: 66px;
+    padding: 10px;
+    border: 1px solid #075985;
+    border-radius: 10px;
+    background: rgba(3, 105, 161, .16);
+}
+
+.critical-treatment-auto-roll small {
+    color: #94a3b8;
+    font-size: .64rem;
+}
+
+.critical-treatment-recovery {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 104px;
+    gap: 6px;
+}
+
+.critical-wound-state-stabilized { border-color: #0ea5e9; }
+.critical-wound-state-treated { border-color: #10b981; }
+.critical-wound-state-cured { border-color: #475569; opacity: .68; }
+
+.combat-consequences-panel {
+    position: relative;
+    z-index: 2;
+    margin: -2px 8px 8px;
+    overflow: hidden;
+    border: 1px solid #b45309;
+    border-top: 0;
+    border-radius: 0 0 14px 14px;
+    background: rgba(51, 28, 10, .96);
+}
+
+.combat-consequences-header {
+    background: rgba(146, 64, 14, .45);
+    color: #fdba74;
+}
+
+.combat-consequence-list {
+    display: grid;
+    gap: 8px;
+    padding: 9px;
+}
+
+.combat-consequence-card {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 10px;
+    padding: 10px;
+    border: 1px solid #92400e;
+    border-radius: 10px;
+    background: #1e293b;
+}
+
+.combat-consequence-card strong {
+    color: #fed7aa;
+    font-size: .75rem;
+}
+
+.combat-consequence-card p {
+    margin: 3px 0 0;
+    color: #cbd5e1;
+    font-size: .66rem;
+    line-height: 1.35;
+}
+
+.combat-consequence-card button {
+    min-height: 36px;
+    padding: 6px 9px;
+    border: 1px solid #d97706;
+    border-radius: 8px;
+    background: #78350f;
+    color: #fff;
+    font-size: .64rem;
+    font-weight: 900;
+}
+
+@media (max-width: 520px) {
+    .critical-dialog {
+        padding: 14px;
+    }
+
+    .critical-margin-preview,
+    .critical-severity-banner {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .critical-margin-preview span,
+    .critical-severity-banner strong {
+        text-align: left;
+    }
+
+    .critical-wounds-panel {
+        margin-inline: 4px;
+    }
+
+    .combat-consequences-panel {
+        margin-inline: 4px;
+    }
+
+    .critical-treatment-dialog {
+        max-height: calc(100dvh - var(--safe-top, 0px) - var(--safe-bottom, 0px) - 12px);
+    }
+
+    .critical-treatment-grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}

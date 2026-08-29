@@ -15,7 +15,11 @@
     <link rel="stylesheet" href="mobile.css">
     <link rel="stylesheet" href="character-collections.css">
     <link rel="stylesheet" href="equipment.css">
+    <link rel="stylesheet" href="critical-wounds.css">
+    <link rel="stylesheet" href="toxicity.css">
+    <link rel="stylesheet" href="character-spells.css">
     <link rel="stylesheet" href="crafting.css">
+    <link rel="stylesheet" href="character-sheet-wizard.css">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
 
@@ -62,7 +66,7 @@
                     <p id="roundCounter" class="text-xl font-bold text-slate-200">1</p>
                 </div>
                 <div class="grid grid-cols-2 gap-2">
-                    <button onclick="openModal('player')" class="btn-control hover:bg-blue-900/40 border-blue-900/50" title="Add Jogador">🧙‍♂️</button>
+                    <button onclick="createNewCharacterSheet()" class="btn-control hover:bg-blue-900/40 border-blue-900/50" title="Criar personagem">🧙‍♂️</button>
                     <button onclick="openMonsterChoiceModal()" class="btn-control hover:bg-slate-700" title="Add Monstro">👹</button>
                     <button onclick="endCombat()" onmousedown="startEndCombatPress(event)" onmouseup="cancelEndCombatPress(event)" onmouseleave="cancelEndCombatPress(event)" ontouchstart="startEndCombatPress(event)" ontouchend="cancelEndCombatPress(event)" class="btn-control hover:bg-red-600/50 border-red-900/50" title="Terminar Combate (Segure 3s para apagar tudo)">❌</button>
                     <button onclick="nextTurn()" class="btn-control hover:bg-amber-900/40 border-amber-900/50" title="Próximo">⏩</button>
@@ -411,6 +415,10 @@
 
     <script src="js/core/toast.js"></script>
     <script src="js/core/helpers.js"></script>
+    <script src="professional-skills-descriptions.js"></script>
+    <script src="js/professional-skills-data.js"></script>
+    <script src="js/character-sheet-model.js"></script>
+    <script src="js/character-sheet-templates.js"></script>
 
     <script src="js/items.js"></script>
     <script src="js/bestiary.js"></script>
@@ -436,6 +444,10 @@
     <script src="js/abilities/abilities.js"></script>
     <script src="js/character-collections.js"></script>
     <script src="js/equipment.js"></script>
+    <script src="js/critical-wounds.js"></script>
+    <script src="js/toxicity.js"></script>
+    <script src="js/character-skill-tests.js"></script>
+    <script src="js/character-spells.js"></script>
     <script src="js/crafting.js"></script>
     <script src="js/ui/abilities-modal.js"></script>
     <script src="js/abilities/abilities-export.js"></script>
@@ -443,6 +455,7 @@
     <script src="js/app-init.js"></script>
     <script src="js/session-features.js"></script>
     <script src="js/enhancements.js"></script>
+    <script src="js/character-sheet-wizard.js"></script>
     <script src="js/rules-automation.js"></script>
 
 
@@ -1017,6 +1030,11 @@ TRANSFERÊNCIA DE ITEM
             Dano Dobrado
         </button>
 
+        <button onclick="openCriticalDamageFlow()"
+            class="p-4 rounded-xl bg-rose-700 font-bold hover:bg-rose-600 transition-all">
+            💥 Dano Crítico
+        </button>
+
         <button onclick="applyCalculatedDamage(1, true)"
         class="p-4 rounded-xl bg-cyan-600 font-bold hover:bg-cyan-500 transition-all">
             Ignorar Armadura
@@ -1035,6 +1053,19 @@ TRANSFERÊNCIA DE ITEM
     </button>
 
 </div>
+</div>
+
+<div id="criticalDamageModal" class="modal" style="z-index: 84;">
+    <section class="critical-dialog" role="dialog" aria-modal="true" aria-labelledby="criticalDamageTitle">
+        <header class="critical-dialog-header">
+            <div>
+                <small>DANO CONTEXTUAL</small>
+                <h2 id="criticalDamageTitle">Crítico e ferimento</h2>
+            </div>
+            <button type="button" class="critical-dialog-close" onclick="closeCriticalDamageModal(); closeDamageModals();" aria-label="Fechar">×</button>
+        </header>
+        <div id="criticalDamageContent"></div>
+    </section>
 </div>
 
 <div id="armorSourceModal" class="modal" style="z-index: 83;">
@@ -1058,7 +1089,7 @@ TRANSFERÊNCIA DE ITEM
 <div class="bg-slate-900 p-6 rounded-2xl w-full max-w-sm border border-slate-700 text-center">
 
     <h2 class="text-xl font-bold mb-6 text-cyan-400">
-        Gerenciar ST
+        Gerenciar recursos
     </h2>
 
     <div class="flex flex-col gap-3">
@@ -1070,7 +1101,7 @@ TRANSFERÊNCIA DE ITEM
 
         <button onclick="applyST(true)"
             class="p-4 rounded-xl bg-emerald-700 font-bold hover:bg-emerald-600 transition-all">
-            Regenerar ST
+            Regenerar recursos
         </button>
 
     </div>

@@ -286,6 +286,20 @@
         </div>
     </div>
 
+    ${Number(c.runeSourceMax) > 0 ? `
+        <div class="rune-source-container mt-2 text-center" title="Fonte Rúnica exclusiva para Sinais">
+            <div class="text-sm font-bold leading-none">
+                ${c.runeSourceCurrent ?? c.runeSourceMax}/${c.runeSourceMax}
+            </div>
+
+            <div class="rune-source-label mt-1">
+                Fonte Rúnica
+            </div>
+        </div>
+    ` : ''}
+
+    ${window.renderCombatantToxicityIndicator?.(c) || ''}
+
 </div>
                     </div>
                 </div>
@@ -300,16 +314,26 @@
             const monsterActionsPanelHtml = window.renderMonsterActionsPanel?.(c) || '';
             const monsterAbilitiesPanelHtml = window.renderMonsterAbilitiesPanel?.(c) || '';
             const monsterSkillsPanelHtml = window.renderMonsterSkillsPanel?.(c) || '';
+            const characterSkillsPanelHtml = window.renderCharacterSkillsPanel?.(c) || '';
+            const characterProfessionalPanelHtml = window.renderCharacterProfessionalSkillsPanel?.(c) || '';
+            const characterSpellsPanelHtml = window.renderCharacterSpellsPanel?.(c) || '';
+            const criticalWoundsPanelHtml = window.renderCombatantCriticalWoundsPanel?.(c) || '';
+            const combatConsequencesPanelHtml = window.renderCombatantCombatConsequencesPanel?.(c) || '';
 
             if (
                 equipmentPanelHtml ||
                 monsterActionsPanelHtml ||
                 monsterAbilitiesPanelHtml ||
-                monsterSkillsPanelHtml
+                monsterSkillsPanelHtml ||
+                characterSkillsPanelHtml ||
+                characterProfessionalPanelHtml ||
+                characterSpellsPanelHtml ||
+                criticalWoundsPanelHtml ||
+                combatConsequencesPanelHtml
             ) {
                 const subpanels = document.createElement('div');
                 subpanels.className = 'combat-subpanels';
-                subpanels.innerHTML = `${equipmentPanelHtml}${monsterActionsPanelHtml}${monsterAbilitiesPanelHtml}${monsterSkillsPanelHtml}`;
+                subpanels.innerHTML = `${equipmentPanelHtml}${monsterActionsPanelHtml}${monsterAbilitiesPanelHtml}${monsterSkillsPanelHtml}${characterSkillsPanelHtml}${characterProfessionalPanelHtml}${characterSpellsPanelHtml}${criticalWoundsPanelHtml}${combatConsequencesPanelHtml}`;
                 wrapper.appendChild(subpanels);
             }
 
@@ -1027,6 +1051,20 @@
         `;
     }
 
+    const runeSourceContainer = card.querySelector('.rune-source-container');
+
+    if (runeSourceContainer && Number(c.runeSourceMax) > 0) {
+        runeSourceContainer.innerHTML = `
+            <div class="text-sm font-bold leading-none">
+                ${c.runeSourceCurrent ?? c.runeSourceMax}/${c.runeSourceMax}
+            </div>
+
+            <div class="rune-source-label mt-1">
+                Fonte Rúnica
+            </div>
+        `;
+    }
+
     const oldContainer = document.getElementById(`effects-${c.id}`);
 
     const shouldShow =
@@ -1086,9 +1124,8 @@ if (shouldShow) {
 
         // Se clicar novamente no mesmo alvo
         if (selectedId === id) {
-        
-            openEntryActionModal();
-        
+            // O próprio card já alterna a exibição dos efeitos. A antiga
+            // janela de ações foi removida e não deve interromper o toque.
             return;
         }
         

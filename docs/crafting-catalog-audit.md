@@ -2,13 +2,13 @@
 
 ## Resumo
 
-- 308 itens no catálogo após a normalização.
-- 85 produtos com receita cadastrada.
+- 311 itens no catálogo após a normalização.
+- 88 produtos com receita cadastrada.
 - 108 nomes distintos encontrados nas linhas de receita.
 - 26 ingredientes ausentes adicionados ao catálogo.
 - 5 variações de nomenclatura tratadas como equivalências, sem duplicar itens.
 - 1 receita permanece bloqueada por estar incompleta na fonte: **Fissstech** (`?`, `?`, `?`).
-- Classificação atual: 29 receitas de armas, 51 de alquimia e 5 de materiais. Nenhuma armadura possui receita cadastrada no catálogo atual.
+- Classificação atual: 32 receitas de armas, 51 de alquimia e 5 de materiais. Nenhuma armadura possui receita cadastrada no catálogo atual.
 
 ## Ingredientes adicionados
 
@@ -55,6 +55,7 @@
 - Linhas sem quantidade explícita consomem uma unidade do ingrediente.
 - Expressões como `1x Ferro cria 10 Flechas` definem tanto o consumo quanto o rendimento do lote.
 - **Flecha de Aço**, **Flecha de Ferro** e **Flecha de Prata** produzem 10 unidades por lote.
+- **Seta de Aço**, **Seta de Ferro** e **Seta de Prata** produzem 10 unidades por lote e são classificadas como munição de besta.
 - **Pó de Prata** produz 6 unidades por lote.
 - Nenhum ND/CD de criação estava cadastrado no catálogo atual. Números encontrados em descrições de efeitos são resistências do efeito e não foram usados como dificuldade de fabricação.
 - O mecanismo aceita `craftingDifficulty`, `craftDifficulty` ou `ND/CD` escrito na linha da receita para futuras inclusões.
