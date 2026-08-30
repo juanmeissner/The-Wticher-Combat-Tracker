@@ -48,6 +48,24 @@ function closeDamageModals() {
         
         if (!target) return;
         
+        const originalBaseDamage = Math.max(0, Number(pendingDamageBase) || 0);
+        const spellDamageContext = {
+            ...(window.peekPendingAutomationDamageContext?.() || {}),
+            ...(window.getPendingSpellDamageContext?.() || {})
+        };
+        const localizedAutomation = window.prepareAutomatedLocalizedDamage?.(
+            target,
+            originalBaseDamage,
+            spellDamageContext
+        ) || {
+            requestedDamage: originalBaseDamage,
+            adjustedDamage: originalBaseDamage,
+            damageType: spellDamageContext.damageType || '',
+            fireBonus: 0,
+            fireMultiplier: 1,
+            message: ''
+        };
+        const localizedBaseDamage = localizedAutomation.adjustedDamage;
         let armorValue = 0;
         
         // =========================================
@@ -98,16 +116,16 @@ function closeDamageModals() {
         let finalDamage;
         const armorAbsorbed = ignoreArmor
             ? 0
-            : Math.min(pendingDamageBase, armorValue);
+            : Math.min(localizedBaseDamage, armorValue);
 
         if (ignoreArmor) {
         
-            finalDamage = pendingDamageBase;
+            finalDamage = localizedBaseDamage;
         
         } else {
         
             finalDamage =
-                pendingDamageBase - armorValue;
+                localizedBaseDamage - armorValue;
         
             if (finalDamage < 0)
                 finalDamage = 0;
@@ -124,7 +142,8 @@ function closeDamageModals() {
                         target: { id: target.id, name: target.name },
                         participants: [{ id: target.id, name: target.name }],
                         combat: {
-                            baseDamage: pendingDamageBase,
+                            baseDamage: originalBaseDamage,
+                            localizedBaseDamage,
                             finalValue: 0,
                             bodyPart: pendingDamageBodyPart,
                             armorAbsorbed,
@@ -136,6 +155,9 @@ function closeDamageModals() {
                 showToast(
                     '🛡️ A armadura absorveu todo o dano!'
                 );
+
+                window.setPendingAutomationDamageContext?.({});
+                window.completeSpellDamageStep?.();
         
                 return;
             }
@@ -183,18 +205,29 @@ function closeDamageModals() {
         closeDamageModals();
         
         applyDirectDamage(finalDamage, {
-            baseDamage: pendingDamageBase,
+            baseDamage: originalBaseDamage,
+            localizedBaseDamage,
             bodyPart: pendingDamageBodyPart,
             bodyMultiplier,
             typeMultiplier,
             armorAbsorbed,
             ignoredArmor: ignoreArmor,
-            armorBreakdown: armorHistoryBreakdown
+            armorBreakdown: armorHistoryBreakdown,
+            damageType: localizedAutomation.damageType,
+            prelocalizedAutomation: localizedAutomation,
+            damageSource: spellDamageContext.damageSource || null,
+            spellDamage: spellDamageContext.spellDamage || null,
+            itemDamage: spellDamageContext.itemDamage || null
         });
     
     }
 
     function applyArmorDamage() {
+
+        if (window.getPendingSpellDamageContext?.().damageSource) {
+            showToast('Para dano direto de magia, escolha Dano Cheio, Dividido, Dobrado, Crítico ou Ignorar Armadura.');
+            return;
+        }
 
         const target =
             combatants.find(c => c.id === selectedId);

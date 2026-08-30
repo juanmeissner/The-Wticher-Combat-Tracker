@@ -1050,6 +1050,14 @@ html[data-theme="contrast"] .session-dialog {
     box-shadow: none;
 }
 
+.effect-automation-note {
+    display: block;
+    margin-top: 6px;
+    color: #67e8f9;
+    font-size: .72rem;
+    font-weight: 700;
+}
+
 /* Seleção contextual de alvos para consumíveis e bombas. */
 .item-use-target-dialog {
     width: min(560px, calc(100vw - 24px));
@@ -1141,6 +1149,10 @@ html[data-theme="contrast"] .session-dialog {
 #inventoryItemTargetOptions {
     display: grid;
     gap: 8px;
+    max-height: min(34dvh, 280px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding-right: 2px;
 }
 
 .item-use-rule-note,
@@ -1160,7 +1172,8 @@ html[data-theme="contrast"] .session-dialog {
     background: #2b2110;
 }
 
-.item-use-select-field select {
+.item-use-select-field select,
+.item-use-select-field input {
     width: 100%;
     min-height: 40px;
     border: 1px solid #475569;
@@ -1168,6 +1181,16 @@ html[data-theme="contrast"] .session-dialog {
     background: #1e293b;
     color: #f8fafc;
     padding: 7px 9px;
+    font-size: max(16px, .8rem);
+}
+
+.item-use-auto-roll {
+    margin: 0;
+    padding: 9px 11px;
+    border-radius: 10px;
+    background: rgba(8, 145, 178, .16);
+    color: #a5f3fc;
+    font-size: .72rem;
 }
 
 .item-use-mode-field label {
@@ -1175,6 +1198,10 @@ html[data-theme="contrast"] .session-dialog {
     align-items: center;
     gap: 8px;
     min-height: 34px;
+}
+
+.item-use-mode-field label.is-disabled {
+    opacity: .58;
 }
 
 .item-use-mode-field input {

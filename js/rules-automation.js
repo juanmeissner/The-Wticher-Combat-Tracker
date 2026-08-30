@@ -90,6 +90,10 @@ const AUTOMATION_MANAGED_EFFECTS = new Set([
     'item:podelua',
     'item:podedimeritio',
     'item:filtrodepetri',
+    'item:nevasca',
+    'item:gato',
+    'item:baleiaassassina',
+    'item:bosquedemaribor',
     'item:trovoada',
     'item:adesivoalquimico',
     'item:cloroformio',
@@ -121,7 +125,18 @@ const AUTOMATION_DIRECT_INVENTORY_ITEMS = new Set([
     'podelua',
     'podedimeritio',
     'bafodedragao',
-    'samun'
+    'samun',
+    'solucaoacida',
+    'pobasico',
+    'venenonegro',
+    'furiadebredan',
+    'saisaromaticos',
+    'lagrimasdeesposas',
+    'fogodazerikania',
+    'bombadeestilhacos',
+    'tumbadeadda',
+    'tintainvisivel',
+    'amigodoenvenenador'
 ]);
 
 let pendingCharacterSpellEffect = null;
@@ -229,6 +244,48 @@ function getAutomationData(effect) {
     return effect?.automation || {};
 }
 
+function getAutomationAdrenalineGain(combatant, baseGain = 0) {
+    const base = Math.max(0, Math.floor(Number(baseGain) || 0));
+    const effect = getAutomationEffect(combatant, 'item', 'bosquedemaribor');
+    const multiplier = effect
+        ? Math.max(1, Number(getAutomationData(effect).adrenalineGainMultiplier) || 2)
+        : 1;
+    return {
+        base,
+        multiplier,
+        bonus: base * (multiplier - 1),
+        total: base * multiplier,
+        source: multiplier > 1 ? effect?.name || 'Bosque de Maribor' : ''
+    };
+}
+
+function getAutomationEnvironmentBenefits(combatant) {
+    const cat = getAutomationEffect(combatant, 'item', 'gato');
+    const killerWhale = getAutomationEffect(combatant, 'item', 'baleiaassassina');
+    return {
+        ignoresDarknessVisionPenalty: Boolean(cat) && getAutomationData(cat).ignoresDarknessVisionPenalty !== false,
+        hypnosisImmune: Boolean(cat) && getAutomationData(cat).hypnosisImmune !== false,
+        illusionResistanceBonus: cat
+            ? Math.max(0, Number(getAutomationData(cat).illusionResistanceBonus) || 5)
+            : 0,
+        breathHoldMultiplier: killerWhale
+            ? Math.max(1, Number(getAutomationData(killerWhale).breathHoldMultiplier) || 1.5)
+            : 1,
+        ignoresUnderwaterVisionPenalty: Boolean(killerWhale) &&
+            getAutomationData(killerWhale).ignoresUnderwaterVisionPenalty !== false
+    };
+}
+
+function calculateAutomationBreathDuration(combatant, baseDuration = 0) {
+    const base = Math.max(0, Number(baseDuration) || 0);
+    const benefits = getAutomationEnvironmentBenefits(combatant);
+    return {
+        base,
+        multiplier: benefits.breathHoldMultiplier,
+        total: Math.floor(base * benefits.breathHoldMultiplier)
+    };
+}
+
 function normalizeAutomationCombatantCategory(value) {
     return AUTOMATION_COMBATANT_CATEGORIES.includes(value) ? value : '';
 }
@@ -262,6 +319,12 @@ function ensureAutomationMonsterCategories() {
 
 function addAutomationCondition(combatant, icon, parentEffect = null) {
     if (!combatant) return null;
+
+    const block = getAutomationConditionBlock(combatant, icon);
+    if (block) {
+        showToast?.(block);
+        return null;
+    }
 
     const existing = getAutomationEffect(combatant, 'condition', icon);
     if (existing) return existing;
@@ -331,7 +394,10 @@ function isInventoryItemAutomationManaged(itemOrId) {
             AUTOMATION_DIRECT_INVENTORY_ITEMS.has(id) ||
             item?.potion ||
             item?.oil
-        ) && Object.prototype.hasOwnProperty.call(item || {}, 'active')
+        ) && (
+            AUTOMATION_DIRECT_INVENTORY_ITEMS.has(id) ||
+            Object.prototype.hasOwnProperty.call(item || {}, 'active')
+        )
     );
 }
 
@@ -341,10 +407,58 @@ function setPendingAutomationDamageContext(context = {}) {
         : {};
 }
 
+function peekPendingAutomationDamageContext() {
+    return pendingAutomationDamageContext && typeof pendingAutomationDamageContext === 'object'
+        ? { ...pendingAutomationDamageContext }
+        : {};
+}
+
 function consumeAutomationDamageResolution(target) {
     const resolution = target?.automation?.lastDamageResolution || null;
     if (target?.automation) delete target.automation.lastDamageResolution;
     return resolution;
+}
+
+function prepareAutomatedLocalizedDamage(target, damage, context = {}) {
+    if (context.prelocalizedAutomation) {
+        return { ...context.prelocalizedAutomation };
+    }
+    const requestedDamage = Math.max(0, Number(damage) || 0);
+    let adjustedDamage = requestedDamage;
+    const damageType = String(context.damageType || '').toLocaleLowerCase('pt-BR');
+    const hasDragonBreath = hasAutomationEffect(target, 'item', 'bafodedragao');
+    const hasIgniter = hasAutomationEffect(target, 'item', 'inflamador');
+    const hasFireReaction = hasDragonBreath || hasIgniter;
+    const isFireDamage = damageType === 'fire' || damageType === 'fogo' || (
+        !damageType &&
+        hasFireReaction &&
+        window.confirm(`${target.name} possui um efeito que reage a Fogo. Este dano é de Fogo?`)
+    );
+    const messages = [];
+    let fireBonus = 0;
+    let fireMultiplier = 1;
+
+    if (isFireDamage) {
+        if (hasDragonBreath) {
+            adjustedDamage += 20;
+            fireBonus = 20;
+            messages.push('Bafo de Dragão: +20 antes do local de acerto');
+        }
+        if (hasIgniter) {
+            adjustedDamage *= 2;
+            fireMultiplier = 2;
+            messages.push('Inflamador: dano de Fogo dobrado antes do local de acerto');
+        }
+    }
+
+    return {
+        requestedDamage,
+        adjustedDamage: Math.max(0, Math.floor(adjustedDamage)),
+        damageType: isFireDamage ? 'fire' : damageType,
+        fireBonus,
+        fireMultiplier,
+        message: messages.join(' · ')
+    };
 }
 
 function getConfiguredAutomationSpent(options, min, max, requestValue) {
@@ -495,6 +609,48 @@ function getAutomationConfig(type, id, options = {}) {
                 roll
             };
         }
+
+        case 'item:nevasca': {
+            const roll = requestAutomationDice('items', '1d6', 'Nevasca — bônus de perícias');
+            return roll === null ? null : {
+                skillBonus: roll,
+                skillIds: [
+                    'block', 'brawl', 'staff_spear', 'fencing', 'short_blades',
+                    'archery', 'two_handed', 'reflex_dodge', 'athletics',
+                    'acrobatics', 'spellcasting', 'perception'
+                ],
+                roll,
+                note: `+${roll} em sentidos, defesa, esquiva, movimento, feitiços e perícias com armas.`
+            };
+        }
+
+        case 'item:gato':
+            return {
+                ignoresDarknessVisionPenalty: true,
+                hypnosisImmune: true,
+                illusionResistanceBonus: 5,
+                note: 'Sem penalidade visual por escuridão; imune a hipnose; +5 em testes contextuais contra ilusões.'
+            };
+
+        case 'item:baleiaassassina':
+            return {
+                breathHoldMultiplier: 1.5,
+                ignoresUnderwaterVisionPenalty: true,
+                note: 'Respiração submersa ×1,5; sem penalidade de visão subaquática.'
+            };
+
+        case 'item:bosquedemaribor':
+            return {
+                adrenalineGainMultiplier: 2,
+                note: 'Cada ganho de Adrenalina concede 1 dado adicional.'
+            };
+
+        case 'item:trovoada':
+            return {
+                combatSkillBonus: 2,
+                combatSkillGroups: ['meleeAttack', 'rangedAttack', 'block', 'dodge'],
+                note: '+2 em Ataques, Bloqueio e Esquiva.'
+            };
 
         case 'item:andorinha':
             return { turnHealingDice: '1d6', rollGroup: 'items', skipWhenAttacked: true };
@@ -731,6 +887,14 @@ function applyAutomationEffectStart(combatant, effect) {
 
     if (key === 'item:podelua') {
         removeAutomationCondition(combatant, '👻');
+    }
+
+    if (key === 'item:gato') {
+        removeAutomationCondition(combatant, '😍');
+        combatant.effects = combatant.effects.filter(current => !(
+            current.type === 'ability' && ['axii', 'axii_marionete'].includes(current.id)
+        ));
+        clearAutomationLinkedConditions(combatant);
     }
 
     if (key === 'ability:circulo_de_melitele') {
@@ -1029,15 +1193,18 @@ function resolveAutomatedDamage(target, damage) {
     let remainingDamage = Math.max(0, Number(damage) || 0);
     const damageContext = pendingAutomationDamageContext || {};
     pendingAutomationDamageContext = null;
+    const prelocalized = damageContext.prelocalizedAutomation || null;
     const resolution = {
         requestedDamage: remainingDamage,
         damageType: damageContext.damageType || '',
-        fireBonus: 0,
-        fireMultiplier: 1,
+        fireBonus: Math.max(0, Number(prelocalized?.fireBonus) || 0),
+        fireMultiplier: Math.max(1, Number(prelocalized?.fireMultiplier) || 1),
         fissstechSuppressed: 0,
         damageAfterFisstech: remainingDamage,
         remainingDamage
     };
+
+    if (prelocalized?.message) messages.push(prelocalized.message);
 
     target.automation = { ...(target.automation || {}), attackedSinceTurn: true };
 
@@ -1047,13 +1214,14 @@ function resolveAutomatedDamage(target, damage) {
         messages.push(`${oil.effect.name}: +12 contra ${oil.category}`);
     }
 
-    const hasFireReaction =
-        hasAutomationEffect(target, 'item', 'bafodedragao') ||
+    const hasFireReaction = hasAutomationEffect(target, 'item', 'bafodedragao') ||
         hasAutomationEffect(target, 'item', 'inflamador');
-    const isFireDamage = damageContext.damageType === 'fire' || (
-        !damageContext.damageType &&
-        hasFireReaction &&
-        window.confirm(`${target.name} possui um efeito que reage a Fogo. Este dano é de Fogo?`)
+    const isFireDamage = !prelocalized && (
+        damageContext.damageType === 'fire' || (
+            !damageContext.damageType &&
+            hasFireReaction &&
+            window.confirm(`${target.name} possui um efeito que reage a Fogo. Este dano é de Fogo?`)
+        )
     );
 
     if (isFireDamage) {
@@ -1133,11 +1301,17 @@ function renderAutomationCardSummaries() {
         const magicShieldHp = getAutomationMagicShieldHp(combatant);
         const petri = getAutomationEffect(combatant, 'item', 'filtrodepetri');
         const petriBonus = getAutomationData(petri).signalBonus;
+        const blizzardBonus = getAutomationData(getAutomationEffect(combatant, 'item', 'nevasca')).skillBonus;
+        const thunderboltBonus = getAutomationData(getAutomationEffect(combatant, 'item', 'trovoada')).combatSkillBonus;
+        const mariborMultiplier = getAutomationData(getAutomationEffect(combatant, 'item', 'bosquedemaribor')).adrenalineGainMultiplier;
 
         if (magicShieldHp > 0) labels.push(`🜲 Escudo Mágico ${magicShieldHp}`);
         if (temporaryHp > 0) labels.push(`🛡️ ${temporaryHp} PV temporários`);
         if (combatant.type === 'monster' && combatant.monsterCategory) labels.push(`🏷️ ${combatant.monsterCategory}`);
         if (petriBonus) labels.push(`✨ Petri +${petriBonus} EST`);
+        if (blizzardBonus) labels.push(`❄️ Nevasca +${blizzardBonus}`);
+        if (thunderboltBonus) labels.push(`⚡ Trovoada +${thunderboltBonus}`);
+        if (mariborMultiplier > 1) labels.push(`🎲 Adrenalina ×${mariborMultiplier}`);
 
         const current = card.querySelector('.automation-card-summary');
         if (!labels.length) {
@@ -1159,6 +1333,10 @@ function renderAutomationCardSummaries() {
 }
 
 function getAutomationConditionBlock(combatant, icon) {
+    if (icon === '😍' && getAutomationEnvironmentBenefits(combatant).hypnosisImmune) {
+        return 'Gato impede Hipnose e Enfeitiçado enquanto estiver ativo.';
+    }
+
     if (icon === '🐍' && hasEffectBlockingItems(combatant)) {
         return 'Papa-figo impede Veneno enquanto estiver ativo.';
     }
@@ -1297,12 +1475,37 @@ function installRulesAutomation() {
             const target = combatants.find(combatant => combatant.id === selectedId);
             const baseDamage = Math.max(0, Number.parseInt(currentInput, 10) || 0);
             const magicShieldHp = getAutomationMagicShieldHp(target);
+            const spellContext = window.getPendingSpellDamageContext?.() || {};
+            const localized = target && baseDamage > 0 && magicShieldHp > 0
+                ? prepareAutomatedLocalizedDamage(target, baseDamage, spellContext)
+                : null;
 
             // Um golpe totalmente absorvido por Quen não tem localização, armadura
             // ou multiplicador corporal: é sempre dano direto de 1x no escudo.
-            if (target && baseDamage > 0 && baseDamage <= magicShieldHp) {
-                window.applyHP(false);
+            if (target && localized && localized.adjustedDamage <= magicShieldHp) {
+                setPendingAutomationDamageContext({
+                    ...spellContext,
+                    damageType: localized.damageType,
+                    prelocalizedAutomation: localized
+                });
+                window.applyHP(false, localized.adjustedDamage, {
+                    baseDamage,
+                    localizedBaseDamage: localized.adjustedDamage,
+                    damageType: localized.damageType,
+                    prelocalizedAutomation: localized,
+                    damageSource: spellContext.damageSource || null,
+                    spellDamage: spellContext.spellDamage || null,
+                    itemDamage: spellContext.itemDamage || null
+                });
                 return;
+            }
+
+            if (localized) {
+                setPendingAutomationDamageContext({
+                    ...spellContext,
+                    damageType: localized.damageType,
+                    prelocalizedAutomation: localized
+                });
             }
 
             originalOpenDamageBodyModal();
@@ -1344,8 +1547,7 @@ function installRulesAutomation() {
             showToast('Adicione o personagem ao combate antes de consumir um item com efeito ativo.');
             return { applied: false, blocked: true, reason: 'not-in-combat' };
         }
-        const isManagedInventoryItem = AUTOMATION_DIRECT_INVENTORY_ITEMS.has(id) &&
-            Object.prototype.hasOwnProperty.call(item || {}, 'active');
+        const isManagedInventoryItem = AUTOMATION_DIRECT_INVENTORY_ITEMS.has(id);
         if (!isActivePotion && !isActiveOil && !isManagedInventoryItem) {
             return { applied: false, notApplicable: true };
         }
@@ -1425,6 +1627,15 @@ function installRulesAutomation() {
 
         if (type === 'item' && id !== 'papafigo' && hasEffectBlockingItems(combatant)) {
             showToast('Papa-figo neutraliza outras poções neste alvo.');
+            return;
+        }
+
+        if (
+            type === 'ability' &&
+            ['axii', 'axii_marionete'].includes(id) &&
+            getAutomationEnvironmentBenefits(combatant).hypnosisImmune
+        ) {
+            showToast(`Gato protege ${combatant.name} contra a hipnose de ${id === 'axii' ? 'Axii' : 'Axii Marionete'}.`);
             return;
         }
 
@@ -1527,7 +1738,12 @@ function installRulesAutomation() {
 window.rollAutomationDice = rollAutomationDice;
 window.isInventoryItemAutomationManaged = isInventoryItemAutomationManaged;
 window.setPendingAutomationDamageContext = setPendingAutomationDamageContext;
+window.peekPendingAutomationDamageContext = peekPendingAutomationDamageContext;
 window.consumeAutomationDamageResolution = consumeAutomationDamageResolution;
+window.prepareAutomatedLocalizedDamage = prepareAutomatedLocalizedDamage;
+window.getAutomationAdrenalineGain = getAutomationAdrenalineGain;
+window.getAutomationEnvironmentBenefits = getAutomationEnvironmentBenefits;
+window.calculateAutomationBreathDuration = calculateAutomationBreathDuration;
 window.isAutomationRegenerationBlocked = hasEffectBlockingRegeneration;
 window.applyInstantAbilityHealing = applyInstantAbilityHealing;
 window.getRecurringConditionPrevention = getRecurringConditionPrevention;

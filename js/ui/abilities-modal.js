@@ -247,10 +247,8 @@ if (inventoryAbility) {
     `;
 
     button.onclick = () => {
-
         addAbility(id);
-
-        closeAbilityDetailsModal();
+        openAbilityDetails(id);
     };
 }
 

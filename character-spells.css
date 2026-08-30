@@ -268,7 +268,9 @@
 
 .character-spell-cost-summary,
 .character-spell-overload,
-.character-spell-healing {
+.character-spell-healing,
+.character-spell-damage,
+.character-spell-target-field {
     display: grid;
     gap: 7px;
     margin-top: 12px;
@@ -276,6 +278,92 @@
     border: 1px solid #334155;
     border-radius: 12px;
     background: rgba(30, 41, 59, .58);
+}
+
+.character-spell-target-field {
+    min-width: 0;
+}
+
+.character-spell-target-field legend,
+.character-spell-damage > div:first-child strong {
+    color: #fca5a5;
+    font-size: .72rem;
+    font-weight: 900;
+}
+
+.character-spell-target-field > small,
+.character-spell-damage > div:first-child small,
+.character-spell-damage > p {
+    color: #cbd5e1;
+    font-size: .6rem;
+    line-height: 1.4;
+}
+
+.character-spell-target-list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 7px;
+    max-height: 190px;
+    overflow-y: auto;
+}
+
+.character-spell-target-list label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+    min-height: 48px;
+    padding: 8px;
+    border: 1px solid #334155;
+    border-radius: 9px;
+    background: rgba(15, 23, 42, .72);
+}
+
+.character-spell-target-list label:has(input:checked) {
+    border-color: #f87171;
+    background: rgba(127, 29, 29, .28);
+}
+
+.character-spell-target-list input {
+    width: 19px;
+    height: 19px;
+    flex: 0 0 auto;
+    accent-color: #ef4444;
+}
+
+.character-spell-target-list span,
+.character-spell-target-list strong,
+.character-spell-target-list small {
+    min-width: 0;
+    display: block;
+}
+
+.character-spell-target-list strong,
+.character-spell-target-list small {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.character-spell-target-list strong {
+    color: #f8fafc;
+    font-size: .64rem;
+}
+
+.character-spell-target-list small {
+    margin-top: 2px;
+    color: #94a3b8;
+    font-size: .54rem;
+}
+
+.character-spell-damage > div:first-child {
+    display: grid;
+    gap: 2px;
+}
+
+.character-spell-damage-note {
+    margin: 0 !important;
+    color: #fca5a5 !important;
 }
 
 .character-spell-cost-summary > span,
@@ -411,6 +499,10 @@
     }
 
     .character-spell-detail dl {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .character-spell-target-list {
         grid-template-columns: minmax(0, 1fr);
     }
 }

@@ -114,6 +114,7 @@ context.document = {
         if (id === 'characterSpellCastModal') return currentModal;
         if (id === 'characterSpellOverloadRoll') return { value: '20', focus() {} };
         if (id === 'characterSpellHealingRoll') return { value: '4', focus() {} };
+        if (id === 'characterSpellDamageRoll') return { value: '6', focus() {} };
         return null;
     },
     createElement() {
@@ -140,16 +141,36 @@ context.renderList = () => {};
 context.showToast = () => {};
 mage.progression = { luckDice: 0, adrenaline: 0 };
 
+vm.runInContext("selectedId = 'mage-1'", context);
+context.openCharacterSpellCast(encodeURIComponent(mage.id), encodeURIComponent('igni'));
+assert.doesNotMatch(
+    currentModal.markup,
+    /value="mage-1"\s+checked/,
+    'O próprio conjurador deve aparecer, mas não vir marcado em magias de múltiplos alvos.'
+);
+assert.match(currentModal.markup, /value="mage-1"/, 'O conjurador deve continuar disponível como alvo manual.');
+context.closeCharacterSpellCast();
+vm.runInContext("selectedId = 'target-1'", context);
 context.openCharacterSpellCast(encodeURIComponent(mage.id), encodeURIComponent('igni'));
 context.setCharacterSpellOverload('damage');
 const castResult = context.confirmCharacterSpellCast();
 assert.equal(castResult.effective.finalCost, 2);
+assert.equal(castResult.damage.total, 12, 'Sobrecarga deve dobrar o dano informado de Igni.');
 assert.equal(mage.stCurrent, 28);
 assert.equal(mage.progression.luckDice, 1, 'Crítico na Sobrecarga deve conceder Dado da Sorte.');
 assert.equal(mage.progression.adrenaline, 1, 'Crítico na Sobrecarga em combate deve conceder Adrenalina.');
 assert.match(castHistory[0].label, /Yennefer conjurou Igni/);
 assert.match(castHistory[0].detail, /Crítico natural/);
 assert.equal(castHistory[0].metadata.combat.overload.success, true);
+assert.equal(castHistory[0].metadata.combat.spellDamage.total, 12);
+
+const igniDamageRule = casting.getSpellDamageRule(
+    context.predefinedAbilities.find(ability => ability.id === 'igni'),
+    3
+);
+assert.equal(igniDamageRule.notation, '3d6');
+assert.equal(igniDamageRule.multiple, true, 'Cone deve permitir múltiplos alvos.');
+assert.equal(igniDamageRule.damageType, 'fire');
 
 const healer = {
     id: 'healer-1',
@@ -221,8 +242,10 @@ const criticalSource = fs.readFileSync(path.join(projectRoot, 'js', 'critical-wo
 
 assert.match(indexSource, /character-spells\.css/);
 assert.match(indexSource, /js\/character-spells\.js/);
+assert.match(indexSource, /js\/spell-damage-automation\.js/);
 assert.match(serviceWorkerSource, /character-spells\.css/);
 assert.match(serviceWorkerSource, /js\/character-spells\.js/);
+assert.match(serviceWorkerSource, /js\/spell-damage-automation\.js/);
 assert.match(combatRenderSource, /renderCharacterSpellsPanel/);
 assert.match(automationSource, /prepareCharacterSpellEffect/);
 assert.match(automationSource, /prepaidSpellCast/);

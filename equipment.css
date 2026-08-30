@@ -55,6 +55,8 @@
 .monster-actions-panel,
 .monster-abilities-panel,
 .monster-skills-panel,
+.combat-effects-panel,
+.character-resources-panel,
 .character-skills-panel,
 .character-professional-panel {
     position: relative;
@@ -91,6 +93,121 @@
 .character-skills-panel {
     border-color: #155e75;
     background: rgba(8, 47, 73, .96);
+}
+
+.character-resources-panel {
+    border-color: #805b18;
+    background: rgba(54, 36, 8, .96);
+}
+
+.combat-effects-panel {
+    border-color: #4b5563;
+    background: rgba(15, 23, 42, .97);
+}
+
+.combat-effects-header {
+    background: rgba(51, 65, 85, .82);
+    color: #e2e8f0;
+}
+
+.combat-effects-panel .effects-container {
+    gap: 7px;
+    padding: 8px;
+}
+
+.combat-effects-panel .effect-card {
+    margin: 0;
+}
+
+.character-resources-header {
+    background: rgba(113, 63, 18, .62);
+    color: #fde68a;
+}
+
+.character-resources-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 7px;
+    padding: 8px;
+}
+
+.character-resource-card {
+    display: grid;
+    min-width: 0;
+    gap: 8px;
+    padding: 9px;
+    border: 1px solid rgba(251, 191, 36, .38);
+    border-radius: 10px;
+    background: rgba(120, 53, 15, .24);
+}
+
+.character-resource-copy {
+    display: flex;
+    min-width: 0;
+    align-items: center;
+    gap: 7px;
+}
+
+.character-resource-copy > span:last-child {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.character-resource-icon {
+    font-size: 1rem;
+}
+
+.character-resource-copy strong {
+    color: #fef3c7;
+    font-size: .7rem;
+    line-height: 1.2;
+}
+
+.character-resource-copy small {
+    color: #d6b977;
+    font-size: .54rem;
+    line-height: 1.25;
+}
+
+.character-resource-controls {
+    display: grid;
+    grid-template-columns: 38px minmax(34px, 1fr) 38px;
+    align-items: center;
+    gap: 5px;
+}
+
+.character-resource-controls button {
+    min-width: 38px;
+    min-height: 38px;
+    padding: 0;
+    border: 1px solid rgba(251, 191, 36, .42);
+    border-radius: 9px;
+    background: rgba(30, 41, 59, .9);
+    color: #fef3c7;
+    font-size: 1rem;
+    font-weight: 950;
+}
+
+.character-resource-controls button:active {
+    transform: translateY(1px);
+}
+
+.character-resource-controls button:focus-visible {
+    outline: 2px solid #fbbf24;
+    outline-offset: 2px;
+}
+
+.character-resource-controls button:disabled {
+    opacity: .38;
+}
+
+.character-resource-controls output {
+    color: #fcd34d;
+    font-size: .96rem;
+    font-weight: 950;
+    text-align: center;
 }
 
 .character-professional-panel {
@@ -705,6 +822,58 @@
     margin: 14px 0;
 }
 
+.character-skill-context-options {
+    display: grid;
+    gap: 7px;
+    margin: 12px 0 0;
+    padding: 10px;
+    border: 1px solid #155e75;
+    border-radius: 11px;
+    background: rgba(8, 145, 178, .1);
+}
+
+.character-skill-context-options legend {
+    padding: 0 5px;
+    color: #67e8f9;
+    font-size: .62rem;
+    font-weight: 900;
+    letter-spacing: .045em;
+    text-transform: uppercase;
+}
+
+.character-skill-context-options label {
+    display: flex;
+    min-width: 0;
+    align-items: flex-start;
+    gap: 8px;
+    color: #e2e8f0;
+    cursor: pointer;
+}
+
+.character-skill-context-options input {
+    width: 18px;
+    height: 18px;
+    flex: 0 0 auto;
+    margin-top: 1px;
+    accent-color: #06b6d4;
+}
+
+.character-skill-context-options span {
+    display: grid;
+    min-width: 0;
+    gap: 2px;
+}
+
+.character-skill-context-options strong {
+    font-size: .66rem;
+}
+
+.character-skill-context-options small {
+    color: #94a3b8;
+    font-size: .58rem;
+    line-height: 1.35;
+}
+
 .character-skill-field {
     display: flex;
     min-width: 0;
@@ -767,6 +936,14 @@
     .character-professional-list,
     .character-skill-form-grid {
         grid-template-columns: 1fr;
+    }
+
+    .character-resources-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .character-resource-copy small {
+        display: none;
     }
 
     .character-skill-test-dialog {

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'witcher-combat-tracker-v58';
+const CACHE_NAME = 'witcher-combat-tracker-v65';
 
 const APP_SHELL = [
     './',
@@ -63,7 +63,8 @@ const APP_SHELL = [
     './js/enhancements.js',
     './js/character-sheet-wizard.js',
     './js/rules-automation.js',
-    './js/item-use-automation.js'
+    './js/item-use-automation.js',
+    './js/spell-damage-automation.js'
 ];
 
 const OPTIONAL_REMOTE_ASSETS = [

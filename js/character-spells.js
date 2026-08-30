@@ -26,6 +26,7 @@
             attributeLabel: 'Bônus de Inteligência'
         })
     });
+    const NON_DAMAGE_LABELS = /^(?:-|nenhum|indefinido|efeito vari[aá]vel conforme feiti[cç]o)$/i;
     const expandedPanels = new Set();
     const expandedSpellCards = new Set();
     const panelFilters = new Map();
@@ -92,6 +93,118 @@
 
     function getSpellRoleLabel(role) {
         return SPELL_FILTERS.find(filter => filter.id === role)?.label.replace(/s$/, '') || 'Utilidade';
+    }
+
+    function getSpellDamageRule(ability, baseCost = 0) {
+        const raw = String(ability?.damage || '').trim();
+        if (!raw || NON_DAMAGE_LABELS.test(raw)) return null;
+
+        const normalized = normalizeSpellSearch(raw)
+            .replaceAll('×', 'x')
+            .replaceAll('*', 'x');
+        const duration = normalizeSpellSearch(ability?.duration);
+        const recurringOnly = /por turno|por rodada/.test(normalized)
+            && !/imediat/.test(duration)
+            && !/\bou\b/.test(normalized);
+        if (recurringOnly) return null;
+
+        const dice = normalized.match(/(\d+)d(\d+)/);
+        const staminaMultiplier = /(?:x|por)\s*(?:est|st)(?:\s+gasta)?/.test(normalized);
+        const intelligenceBonus = /coef\.?\s*int|bonus\s+de\s+inteligencia/.test(normalized);
+        const isSimple = Boolean(dice) && (
+            /^\d+d\d+$/.test(normalized) ||
+            staminaMultiplier ||
+            intelligenceBonus
+        );
+        const rangeText = normalizeSpellSearch(`${ability?.range || ''} ${ability?.description || ''}`);
+        const multiple = /cone|raio|esfera|em area|em todas as direcoes|tudo atingido|todos os alvos|cada alvo/.test(rangeText);
+        const count = dice ? Math.max(1, Number(dice[1]) || 1) : 0;
+        const sides = dice ? Math.max(2, Number(dice[2]) || 6) : 0;
+        const effectiveCount = staminaMultiplier
+            ? count * Math.max(1, Number(baseCost) || 1)
+            : count;
+
+        return {
+            raw,
+            mode: isSimple ? 'dice' : 'manual-total',
+            count: effectiveCount,
+            sides,
+            notation: isSimple ? `${effectiveCount}d${sides}` : raw,
+            multiple,
+            damageType: normalizeSpellSearch(ability?.type) === 'fogo' ? 'fire' : normalizeSpellSearch(ability?.type),
+            attributeId: intelligenceBonus ? 'intelligence' : '',
+            attributeLabel: intelligenceBonus ? 'Bônus de Inteligência' : ''
+        };
+    }
+
+    function getSpellDamageAttributeBonus(combatant, rule) {
+        if (!rule?.attributeId) return 0;
+        return Number(global.characterSheetModel?.getCharacterAttributeModifier?.(
+            rule.attributeId,
+            combatant?.attributes
+        )) || 0;
+    }
+
+    function getAvailableSpellTargets() {
+        return (typeof combatants !== 'undefined' ? combatants : []).filter(entry => (
+            (entry.type !== 'monster' || entry.hpCurrent === undefined || Number(entry.hpCurrent) > 0) &&
+            (entry.type !== 'player' || Math.max(0, Number(entry.deathSaves?.failures) || 0) < 3)
+        ));
+    }
+
+    function renderSpellTargetField(targets, damageRule) {
+        if (!damageRule) {
+            return `
+                <label class="character-spell-field">
+                    <span>Alvo ou beneficiário</span>
+                    <select onchange="updateCharacterSpellCastTarget(this.value)">
+                        ${targets.map(target => `<option value="${escapeSpellHtml(target.id)}"${String(target.id) === String(pendingCast.targetId) ? ' selected' : ''}>${escapeSpellHtml(target.name)}</option>`).join('')}
+                    </select>
+                </label>
+            `;
+        }
+
+        return `
+            <fieldset class="character-spell-target-field">
+                <legend>${damageRule.multiple ? 'Alvos atingidos' : 'Alvo atingido'}</legend>
+                <small>${damageRule.multiple ? 'Marque todos os participantes alcançados pela área.' : 'Selecione quem receberá o dano.'}</small>
+                <div class="character-spell-target-list">
+                    ${targets.map(target => {
+                        const checked = pendingCast.targetIds.has(String(target.id));
+                        return `
+                            <label>
+                                <input type="${damageRule.multiple ? 'checkbox' : 'radio'}" name="characterSpellDamageTarget" value="${escapeSpellHtml(target.id)}" ${checked ? 'checked' : ''} onchange="updateCharacterSpellCastTarget(this.value, this.checked)">
+                                <span><strong>${escapeSpellHtml(target.name)}</strong><small>HP ${Math.max(0, Number(target.hpCurrent) || 0)}/${Math.max(0, Number(target.hpMax) || 0)}</small></span>
+                            </label>
+                        `;
+                    }).join('')}
+                </div>
+            </fieldset>
+        `;
+    }
+
+    function renderSpellDamageField(combatant, rule) {
+        if (!rule) return '';
+        const attributeBonus = getSpellDamageAttributeBonus(combatant, rule);
+        return `
+            <section class="character-spell-damage">
+                <div>
+                    <strong>⚔️ Dano direto</strong>
+                    <small>${escapeSpellHtml(rule.raw)}${rule.mode === 'dice' ? ` · rolagem efetiva ${escapeSpellHtml(rule.notation)}` : ' · fórmula contextual'}</small>
+                </div>
+                ${rule.attributeId ? `<p>${escapeSpellHtml(rule.attributeLabel)} será somado automaticamente: ${attributeBonus >= 0 ? '+' : ''}${attributeBonus}.</p>` : ''}
+                ${getAbilityRollMode() === 'auto' && rule.mode === 'dice' ? `
+                    <p class="character-spell-auto-roll">🎲 ${escapeSpellHtml(rule.notation)} será rolado automaticamente.</p>
+                ` : `
+                    <label class="character-spell-field">
+                        <span>${rule.mode === 'dice' ? `Resultado total de ${escapeSpellHtml(rule.notation)}` : 'Dano total definido pela mesa'}</span>
+                        <input id="characterSpellDamageRoll" type="number" min="0" inputmode="numeric" placeholder="Informe o dano" value="${escapeSpellHtml(pendingCast.damageInput || '')}" oninput="updateCharacterSpellDamageRoll(this.value)">
+                        <small>Informe o resultado antes de Sobrecarga, Bafo de Dragão, Inflamador e local de acerto.</small>
+                    </label>
+                `}
+                <p class="character-spell-damage-note">Após conjurar, o app abrirá o fluxo normal de local e tipo de dano para cada alvo.</p>
+            </section>
+        `;
     }
 
     function parseSpellCost(abilityOrCost) {
@@ -484,6 +597,33 @@
         };
     }
 
+    function calculateSpellDamage(combatant, rule, enteredValue, overloadResult, random = Math.random) {
+        if (!rule) return null;
+        const automaticDice = getAbilityRollMode() === 'auto' && rule.mode === 'dice';
+        const rolled = automaticDice
+            ? rollDice(rule.count, rule.sides, random)
+            : { rolls: [], total: Number(enteredValue) };
+        if (!Number.isFinite(rolled.total) || rolled.total < 0) return { valid: false };
+
+        const attributeBonus = getSpellDamageAttributeBonus(combatant, rule);
+        const subtotal = Math.max(0, Math.floor(rolled.total) + attributeBonus);
+        const overloadMultiplier = overloadResult?.success !== false && overloadResult?.effect === 'damage' ? 2 : 1;
+        return {
+            valid: true,
+            raw: rule.raw,
+            notation: rule.notation,
+            rollMode: automaticDice ? 'auto' : 'manual',
+            rolls: rolled.rolls,
+            rolledTotal: Math.floor(rolled.total),
+            attributeBonus,
+            subtotal,
+            overloadMultiplier,
+            total: subtotal * overloadMultiplier,
+            damageType: rule.damageType,
+            multiple: rule.multiple
+        };
+    }
+
     function getBacklashDice(ability) {
         const category = normalizeSpellSearch(ability?.category);
         if (/mestre/.test(category)) return 3;
@@ -524,7 +664,8 @@
         const healingRule = getSpellHealingRule(ability);
         const healingRollMode = getAbilityRollMode();
         const healingAttributeBonus = getSpellHealingAttributeBonus(combatant, healingRule);
-        const targets = typeof combatants !== 'undefined' ? combatants : [];
+        const damageRule = getSpellDamageRule(ability, effective.baseCost);
+        const targets = getAvailableSpellTargets();
         const modal = document.createElement('div');
         modal.id = 'characterSpellCastModal';
         modal.className = 'session-overlay character-spell-cast-overlay';
@@ -548,12 +689,7 @@
                         <small>${escapeSpellHtml(parsedCost.raw)} · informe o gasto antes dos modificadores.</small>
                     </label>
                 ` : ''}
-                <label class="character-spell-field">
-                    <span>Alvo ou beneficiário</span>
-                    <select onchange="updateCharacterSpellCastTarget(this.value)">
-                        ${targets.map(target => `<option value="${escapeSpellHtml(target.id)}"${String(target.id) === String(pendingCast.targetId) ? ' selected' : ''}>${escapeSpellHtml(target.name)}</option>`).join('')}
-                    </select>
-                </label>
+                ${renderSpellTargetField(targets, damageRule)}
                 <section class="character-spell-cost-summary">
                     <strong>Custo calculado</strong>
                     ${effective.costSteps.map(step => `<span><b>${escapeSpellHtml(step.label)}</b><em>${step.value === null ? 'aplicado' : `${step.label === 'Custo base' || step.value < 0 ? '' : '+'}${step.value} EST`}</em></span>`).join('')}
@@ -580,6 +716,7 @@
                         `}
                     </section>
                 ` : ''}
+                ${renderSpellDamageField(combatant, damageRule)}
                 ${overload.options.length ? `
                     <section class="character-spell-overload">
                         <div><strong>Sobrecarga Arcana · Nível ${overload.level}</strong><small>Opcional · dobra o custo e exige teste CD 16.</small></div>
@@ -633,12 +770,19 @@
         const selectedTarget = typeof selectedId !== 'undefined'
             ? combatants.find(entry => String(entry.id) === String(selectedId))
             : null;
+        const damageRule = getSpellDamageRule(ability, parsedCost.defaultValue);
+        const selectedIsCaster = String(selectedTarget?.id ?? '') === String(combatant.id);
+        const initialTargetIds = damageRule?.multiple && selectedIsCaster
+            ? []
+            : [String(selectedTarget?.id ?? combatant.id)];
         pendingCast = {
             combatant,
             ability,
             parsedCost,
             baseCost: parsedCost.defaultValue,
             targetId: selectedTarget?.id ?? combatant.id,
+            targetIds: new Set(initialTargetIds),
+            damageInput: '',
             overloadEffect: ''
         };
         renderCharacterSpellCastModal();
@@ -653,11 +797,28 @@
         renderCharacterSpellCastModal();
     }
 
-    function updateCharacterSpellCastTarget(value) {
+    function updateCharacterSpellCastTarget(value, checked = true) {
         if (!pendingCast) return;
         const target = (typeof combatants !== 'undefined' ? combatants : [])
             .find(entry => String(entry.id) === String(value));
-        if (target) pendingCast.targetId = target.id;
+        if (!target) return;
+
+        const rule = getSpellDamageRule(pendingCast.ability, pendingCast.baseCost);
+        if (!rule?.multiple) {
+            pendingCast.targetIds = new Set([String(target.id)]);
+            pendingCast.targetId = target.id;
+            document.querySelectorAll?.('input[name="characterSpellDamageTarget"]')
+                .forEach(input => { input.checked = String(input.value) === String(target.id); });
+            return;
+        }
+
+        if (checked) pendingCast.targetIds.add(String(target.id));
+        else pendingCast.targetIds.delete(String(target.id));
+        pendingCast.targetId = [...pendingCast.targetIds][0] ?? pendingCast.combatant.id;
+    }
+
+    function updateCharacterSpellDamageRoll(value) {
+        if (pendingCast) pendingCast.damageInput = String(value ?? '');
     }
 
     function setCharacterSpellOverload(effectId) {
@@ -668,7 +829,7 @@
         renderCharacterSpellCastModal();
     }
 
-    function buildSpellCastHistoryMetadata(caster, target, ability, effective, energy, overloadResult, healingResult) {
+    function buildSpellCastHistoryMetadata(caster, target, ability, effective, energy, overloadResult, healingResult, damageResult) {
         const participants = [caster, target]
             .filter(Boolean)
             .filter((entry, index, entries) => entries.findIndex(other => String(other.id) === String(entry.id)) === index)
@@ -687,6 +848,7 @@
                 staminaSpent: energy?.staminaSpent || 0,
                 runeSourceSpent: energy?.runeSourceSpent || 0,
                 overload: overloadResult || null,
+                spellDamage: damageResult?.valid ? { ...damageResult } : null,
                 ...(healingResult?.applied ? {
                     finalValue: healingResult.healed,
                     requestedValue: healingResult.total,
@@ -699,6 +861,8 @@
                         attributeBonus: healingResult.attributeBonus,
                         dice: healingResult.dice,
                         roll: healingResult.roll,
+                        multiplier: healingResult.healingMultiplier,
+                        effectiveHealing: healingResult.effectiveHealing,
                         blocked: healingResult.blocked
                     }
                 } : {})
@@ -708,9 +872,22 @@
 
     function confirmCharacterSpellCast(random = Math.random) {
         if (!pendingCast) return null;
-        const { combatant, ability, targetId, overloadEffect } = pendingCast;
+        const { combatant, ability, targetId, targetIds, overloadEffect } = pendingCast;
+        const damageRule = getSpellDamageRule(ability, pendingCast.baseCost);
+        const chosenTargetIds = damageRule
+            ? [...targetIds]
+            : [String(targetId)];
+        if (damageRule && !chosenTargetIds.length) {
+            global.showToast?.('Selecione ao menos um alvo para o dano da magia.');
+            return null;
+        }
+        const chosenTargets = getAvailableSpellTargets().filter(entry => chosenTargetIds.includes(String(entry.id)));
+        if (damageRule && !chosenTargets.length) {
+            global.showToast?.('Os alvos selecionados não estão mais disponíveis no combate.');
+            return null;
+        }
         const target = (typeof combatants !== 'undefined' ? combatants : [])
-            .find(entry => String(entry.id) === String(targetId)) || combatant;
+            .find(entry => String(entry.id) === String(chosenTargetIds[0] ?? targetId)) || combatant;
         const effective = getPendingEffectiveSpell();
         const availability = getSpellEnergyAvailability(combatant, ability);
         if (effective.finalCost > availability.total) {
@@ -770,6 +947,16 @@
             };
         }
 
+        const damageInput = document.getElementById('characterSpellDamageRoll');
+        const spellDamage = damageRule
+            ? calculateSpellDamage(combatant, damageRule, damageInput?.value ?? pendingCast.damageInput, overloadResult, random)
+            : null;
+        if (damageRule && !spellDamage?.valid) {
+            global.showToast?.('Informe o resultado total do dano da magia.');
+            damageInput?.focus();
+            return null;
+        }
+
         const appliesEffect = !healingRule && overloadResult?.success !== false && (
             Object.prototype.hasOwnProperty.call(ability, 'active')
             || global.isAutomationManagedEffect?.('ability', ability.id)
@@ -792,11 +979,15 @@
             if (!energy) return null;
 
             if (overloadResult) {
-                global.characterSkillTests?.applyCharacterSkillTestRewards?.(combatant, {
+                const rewardResult = {
                     valid: true,
                     luckDiceGained: overloadResult.luckDiceGained,
                     adrenalineGained: overloadResult.adrenalineGained
-                });
+                };
+                global.characterSkillTests?.applyCharacterSkillTestRewards?.(combatant, rewardResult);
+                overloadResult.appliedAdrenalineGained = rewardResult.appliedAdrenalineGained ?? overloadResult.adrenalineGained;
+                overloadResult.adrenalineBonusGained = rewardResult.adrenalineBonusGained || 0;
+                overloadResult.adrenalineBonusSource = rewardResult.adrenalineBonusSource || '';
             }
 
             if (overloadResult?.success === false) {
@@ -813,9 +1004,11 @@
                 const targetHpBefore = Math.max(0, Number(target.hpCurrent) || 0);
                 const targetHpMaximum = Math.max(targetHpBefore, Number(target.hpMax) || 0);
                 const blocked = Boolean(global.isAutomationRegenerationBlocked?.(target));
+                const healingMultiplier = Math.max(0, Number(global.getItemConditionHealingMultiplier?.(target)) || 1);
+                const effectiveHealing = Math.floor(healingCalculation.total * healingMultiplier);
                 const targetHpAfter = blocked
                     ? targetHpBefore
-                    : Math.min(targetHpMaximum, targetHpBefore + healingCalculation.total);
+                    : Math.min(targetHpMaximum, targetHpBefore + effectiveHealing);
                 target.hpCurrent = targetHpAfter;
                 if (targetHpAfter > targetHpBefore) {
                     target.deathSaves = { success: 0, failures: 0 };
@@ -825,6 +1018,8 @@
                     ...healingCalculation,
                     applied: true,
                     blocked,
+                    healingMultiplier,
+                    effectiveHealing,
                     healed: targetHpAfter - targetHpBefore,
                     hpBefore: targetHpBefore,
                     hpAfter: targetHpAfter,
@@ -850,7 +1045,9 @@
             if (overloadResult) {
                 lines.push(`Sobrecarga: ${overloadResult.naturalRoll} + ${overloadResult.level} = ${overloadResult.total} contra CD 16`);
                 if (overloadResult.classification === 'critical') {
-                    lines.push('Crítico natural · +1 Dado da Sorte · +1 Adrenalina');
+                    lines.push(
+                        `Crítico natural · +1 Dado da Sorte · +${overloadResult.appliedAdrenalineGained ?? overloadResult.adrenalineGained} Adrenalina${overloadResult.adrenalineBonusGained ? ` (${overloadResult.adrenalineBonusSource}: +${overloadResult.adrenalineBonusGained})` : ''}`
+                    );
                 }
                 lines.push(overloadResult.success
                     ? `Sucesso · ${overloadEffect === 'damage' ? 'dano' : overloadEffect === 'range' ? 'alcance' : 'duração'} dobrado(a)`
@@ -858,10 +1055,22 @@
             }
             if (healingResult) {
                 lines.push(`Fórmula de cura: ${healingResult.base} + ${healingResult.attributeLabel} ${healingResult.attributeBonus} + ${healingResult.dice} ${healingResult.roll} = ${healingResult.total}`);
+                if (healingResult.healingMultiplier !== 1) {
+                    lines.push(`Modificador de cura: ${healingResult.total} ×${healingResult.healingMultiplier} = ${healingResult.effectiveHealing}`);
+                }
                 lines.push(healingResult.blocked
                     ? 'Cura efetiva: 0 PV · regeneração bloqueada'
                     : `Cura efetiva: ${healingResult.healed} PV`);
                 lines.push(`PV de ${target.name}: ${healingResult.hpBefore} → ${healingResult.hpAfter}`);
+            }
+            if (spellDamage?.valid) {
+                lines.push(`Dano preparado: ${spellDamage.notation || spellDamage.raw}`);
+                if (spellDamage.rolls.length) lines.push(`Rolagem: ${spellDamage.rolls.join('+')} = ${spellDamage.rolledTotal}`);
+                else lines.push(`Resultado informado: ${spellDamage.rolledTotal}`);
+                if (spellDamage.attributeBonus) lines.push(`Bônus de atributo: ${spellDamage.attributeBonus >= 0 ? '+' : ''}${spellDamage.attributeBonus}`);
+                if (spellDamage.overloadMultiplier > 1) lines.push(`Sobrecarga ×${spellDamage.overloadMultiplier}`);
+                lines.push(`Dano antes do alvo e local: ${spellDamage.total}`);
+                lines.push(`Alvos: ${chosenTargets.map(entry => entry.name).join(', ')}`);
             }
             return lines.join('\n');
         };
@@ -872,7 +1081,8 @@
             effective,
             energy,
             overloadResult,
-            healingResult
+            healingResult,
+            spellDamage
         );
         const result = global.trackCombatAction
             ? global.trackCombatAction(label, mutate, detail, metadata)
@@ -880,6 +1090,17 @@
 
         if (!result) return null;
         closeCharacterSpellCast();
+        if (spellDamage?.valid && overloadResult?.success !== false) {
+            global.startSpellDamageSequence?.({
+                casterId: combatant.id,
+                abilityId: ability.id,
+                abilityName: ability.name,
+                damage: spellDamage.total,
+                damageType: spellDamage.damageType,
+                targetIds: chosenTargets.map(entry => entry.id),
+                roll: spellDamage
+            });
+        }
         global.showToast?.(overloadResult?.success === false
             ? `💥 Sobrecarga falhou: ${combatant.name} sofreu ${overloadResult.backlash.total} de dano.`
             : healingResult
@@ -887,7 +1108,7 @@
                     ? `🌿 ${ability.name}: a regeneração de ${target.name} está bloqueada.`
                     : `🌿 ${combatant.name} curou ${target.name} em ${healingResult.healed} PV.`
                 : `✨ ${combatant.name} conjurou ${ability.name} por ${effective.finalCost} EST.`);
-        return { energy, effective, overload: overloadResult, target, healing: healingResult };
+        return { energy, effective, overload: overloadResult, target, targets: chosenTargets, healing: healingResult, damage: spellDamage };
     }
 
     global.renderCharacterSpellsPanel = renderCharacterSpellsPanel;
@@ -899,6 +1120,7 @@
     global.closeCharacterSpellCast = closeCharacterSpellCast;
     global.updateCharacterSpellCastBaseCost = updateCharacterSpellCastBaseCost;
     global.updateCharacterSpellCastTarget = updateCharacterSpellCastTarget;
+    global.updateCharacterSpellDamageRoll = updateCharacterSpellDamageRoll;
     global.setCharacterSpellOverload = setCharacterSpellOverload;
     global.confirmCharacterSpellCast = confirmCharacterSpellCast;
     global.characterSpellCasting = Object.freeze({
@@ -916,6 +1138,8 @@
         getSpellHealingRule,
         getSpellHealingAttributeBonus,
         calculateSpellHealing,
+        getSpellDamageRule,
+        calculateSpellDamage,
         renderCharacterSpellsPanel,
         rollDice
     });

@@ -746,6 +746,12 @@
 
 .character-allocation-card > div:first-child,
 .character-skill-row > div:first-child {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.character-wizard-skill-copy,
+.character-wizard-professional-copy {
     min-width: 0;
 }
 
@@ -897,6 +903,8 @@
     color: #cbd5e1;
     font-size: .66rem;
     line-height: 1.42;
+    overflow-wrap: anywhere;
+    white-space: normal;
 }
 
 .character-professional-level-note {
@@ -1222,22 +1230,37 @@
         padding: 16px;
     }
 
-    .character-allocation-card {
+    .character-allocation-card,
+    .character-skill-row {
         align-items: stretch;
         flex-direction: column;
         justify-content: flex-start;
         gap: 8px;
     }
 
-    .character-allocation-card strong {
+    .character-allocation-card strong,
+    .character-skill-row strong {
         overflow: visible;
         line-height: 1.25;
         text-overflow: clip;
         white-space: normal;
+        overflow-wrap: anywhere;
     }
 
-    .character-allocation-card small {
+    .character-allocation-card small,
+    .character-skill-row small {
         line-height: 1.35;
+    }
+
+    .character-wizard-skill-copy,
+    .character-wizard-professional-copy,
+    .character-professional-description {
+        width: 100%;
+    }
+
+    .character-professional-skill-row .character-allocation-control,
+    .character-skill-row .character-skill-control {
+        margin-top: 0;
     }
 
     .character-allocation-control {

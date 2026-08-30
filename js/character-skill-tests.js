@@ -3,6 +3,7 @@
 
     const expandedSkillPanels = new Set();
     const expandedProfessionalPanels = new Set();
+    const expandedResourcePanels = new Set();
 
     function escapeSkillHtml(value) {
         return String(value ?? '')
@@ -135,6 +136,117 @@
         global.renderList?.(false);
     }
 
+    function toggleCharacterResourcesPanel(encodedCombatantId) {
+        const key = decodeURIComponent(String(encodedCombatantId));
+        if (expandedResourcePanels.has(key)) expandedResourcePanels.delete(key);
+        else expandedResourcePanels.add(key);
+        global.renderList?.(false);
+    }
+
+    function renderCharacterResourcesPanel(combatant) {
+        if (!combatant || combatant.type !== 'player') return '';
+
+        const key = String(combatant.id);
+        const encodedId = encodeURIComponent(key);
+        const expanded = expandedResourcePanels.has(key);
+        const luckDice = Math.max(0, Number(combatant.progression?.luckDice) || 0);
+        const adrenaline = Math.max(0, Number(combatant.progression?.adrenaline) || 0);
+
+        const renderResource = ({ key: resourceKey, icon, label, value, hint }) => `
+            <article class="character-resource-card">
+                <div class="character-resource-copy">
+                    <span class="character-resource-icon" aria-hidden="true">${icon}</span>
+                    <span>
+                        <strong>${label}</strong>
+                        <small>${hint}</small>
+                    </span>
+                </div>
+                <div class="character-resource-controls" aria-label="Ajustar ${label}">
+                    <button type="button" onclick="event.stopPropagation(); adjustCharacterCombatResource('${encodedId}', '${resourceKey}', -1)" aria-label="Remover 1 de ${label}" ${value <= 0 ? 'disabled' : ''}>−</button>
+                    <output aria-label="${label} atual">${value}</output>
+                    <button type="button" onclick="event.stopPropagation(); adjustCharacterCombatResource('${encodedId}', '${resourceKey}', 1)" aria-label="Adicionar 1 de ${label}">+</button>
+                </div>
+            </article>
+        `;
+
+        return `
+            <section class="character-resources-panel ${expanded ? '' : 'is-collapsed'}" aria-label="Recursos de ${escapeSkillHtml(combatant.name)}">
+                <button type="button" class="combat-subpanel-header character-resources-header" aria-expanded="${expanded}" onclick="event.stopPropagation(); toggleCharacterResourcesPanel('${encodedId}')">
+                    <span>${expanded ? '▼' : '▶'} RECURSOS</span>
+                    <small>🎲 ${luckDice} · ⚡ ${adrenaline}</small>
+                </button>
+                ${expanded ? `
+                    <div class="character-resources-grid">
+                        ${renderResource({ key: 'luckDice', icon: '🎲', label: 'Dado da Sorte', value: luckDice, hint: 'Recurso de críticos e habilidades' })}
+                        ${renderResource({ key: 'adrenaline', icon: '⚡', label: 'Adrenalina', value: adrenaline, hint: 'Recurso acumulado em combate' })}
+                    </div>
+                ` : ''}
+            </section>
+        `;
+    }
+
+    function adjustCharacterCombatResource(encodedCombatantId, resourceKey, delta) {
+        const combatantId = decodeURIComponent(String(encodedCombatantId));
+        const combatant = (typeof combatants !== 'undefined' ? combatants : [])
+            .find(entry => String(entry.id) === combatantId);
+        const definitions = {
+            luckDice: { label: 'Dado da Sorte', gender: 'atualizado' },
+            adrenaline: { label: 'Adrenalina', gender: 'atualizada' }
+        };
+        const definition = definitions[resourceKey];
+        if (!combatant || combatant.type !== 'player' || !definition) return false;
+
+        const change = Number(delta) < 0 ? -1 : 1;
+        const before = Math.max(0, Number(combatant.progression?.[resourceKey]) || 0);
+        const after = Math.max(0, before + change);
+        if (after === before) {
+            global.showToast?.(`${definition.label} já está em zero.`);
+            return false;
+        }
+
+        const applyChange = () => {
+            combatant.progression = {
+                ...(combatant.progression || {}),
+                [resourceKey]: after
+            };
+            global.savePlayersToStorage?.();
+            global.renderList?.(false);
+        };
+        const label = `${combatant.name}: ${definition.label} ${definition.gender} ${before} → ${after}`;
+        const detail = [
+            `Recurso: ${definition.label}`,
+            `Valor anterior: ${before}`,
+            `Valor atual: ${after}`,
+            `Ajuste manual: ${change > 0 ? '+1' : '-1'}`
+        ].join('\n');
+
+        if (typeof global.trackCombatAction === 'function') {
+            global.trackCombatAction(label, applyChange, detail, {
+                type: 'participant',
+                source: { id: combatant.id, name: combatant.name },
+                target: { id: combatant.id, name: combatant.name },
+                participants: [{ id: combatant.id, name: combatant.name }],
+                resource: {
+                    key: resourceKey,
+                    before,
+                    after,
+                    delta: change
+                }
+            });
+        } else {
+            applyChange();
+            global.addCombatHistoryEntry?.(label, detail, {
+                type: 'participant',
+                source: { id: combatant.id, name: combatant.name },
+                target: { id: combatant.id, name: combatant.name },
+                participants: [{ id: combatant.id, name: combatant.name }]
+            });
+        }
+
+        global.showToast?.(`${definition.label}: ${before} → ${after}.`);
+        return true;
+    }
+
     function renderCharacterSkillsPanel(combatant) {
         const skills = getCharacterSkillEntries(combatant);
         if (!skills.length) return '';
@@ -142,14 +254,12 @@
         const key = String(combatant.id);
         const encodedId = encodeURIComponent(key);
         const expanded = expandedSkillPanels.has(key);
-        const luckDice = Math.max(0, Number(combatant.progression?.luckDice) || 0);
-        const adrenaline = Math.max(0, Number(combatant.progression?.adrenaline) || 0);
 
         return `
             <section class="character-skills-panel ${expanded ? '' : 'is-collapsed'}" aria-label="Perícias de ${escapeSkillHtml(combatant.name)}">
                 <button type="button" class="combat-subpanel-header character-skills-header" aria-expanded="${expanded}" onclick="event.stopPropagation(); toggleCharacterSkillsPanel('${encodedId}')">
                     <span>${expanded ? '▼' : '▶'} PERÍCIAS</span>
-                    <small>${skills.length} ativas · 🎲 ${luckDice} · ⚡ ${adrenaline}</small>
+                    <small>${skills.length} ativas</small>
                 </button>
                 ${expanded ? `
                     <div class="character-skill-grid">
@@ -239,12 +349,23 @@
     function applyCharacterSkillTestRewards(combatant, result) {
         if (!combatant || !result?.valid) return null;
 
+        const baseAdrenaline = Math.max(0, Number(result.adrenalineGained) || 0);
+        const adrenaline = global.getAutomationAdrenalineGain?.(combatant, baseAdrenaline) || {
+            base: baseAdrenaline,
+            bonus: 0,
+            total: baseAdrenaline,
+            source: ''
+        };
+        result.appliedAdrenalineGained = adrenaline.total;
+        result.adrenalineBonusGained = adrenaline.bonus;
+        result.adrenalineBonusSource = adrenaline.source;
+
         combatant.progression = {
             ...(combatant.progression || {}),
             luckDice: Math.max(0, Number(combatant.progression?.luckDice) || 0)
                 + Math.max(0, Number(result.luckDiceGained) || 0),
             adrenaline: Math.max(0, Number(combatant.progression?.adrenaline) || 0)
-                + Math.max(0, Number(result.adrenalineGained) || 0)
+                + adrenaline.total
         };
 
         return combatant.progression;
@@ -263,6 +384,15 @@
         label.textContent = opposed ? 'Resultado do oponente' : 'Dificuldade definida pelo mestre';
         input.placeholder = opposed ? 'Ex.: 18' : 'Ex.: 15';
         input.focus();
+    }
+
+    function getSelectedItemTestContext() {
+        const context = {};
+        document.querySelectorAll?.('[data-item-test-context]')
+            .forEach(input => {
+                if (input.checked) context[input.value] = true;
+            });
+        return context;
     }
 
     function getCharacterTestContext(combatant, skillId, testKind = 'general') {
@@ -320,6 +450,7 @@
             advantage: false,
             disadvantage: false
         };
+        const itemTestOptions = global.getItemConditionTestOptions?.(combatant, skill) || [];
         const modal = document.createElement('div');
         modal.id = 'characterSkillTestModal';
         modal.className = 'session-overlay';
@@ -347,6 +478,17 @@
                     <p class="character-professional-test-rule">🧪 Efeitos ativos: ${itemConditionModifier.total >= 0 ? '+' : ''}${itemConditionModifier.total} · ${escapeSkillHtml(itemConditionModifier.details.join(' · '))}</p>
                 ` : ''}
                 ${professional ? `<p class="character-professional-test-rule">${escapeSkillHtml(skill.description)}</p>` : ''}
+                ${itemTestOptions.length ? `
+                    <fieldset class="character-skill-context-options">
+                        <legend>Contexto das poções</legend>
+                        ${itemTestOptions.map(option => `
+                            <label>
+                                <input type="checkbox" value="${escapeSkillHtml(option.id)}" data-item-test-context>
+                                <span><strong>${escapeSkillHtml(option.label)}</strong><small>${escapeSkillHtml(option.description)}</small></span>
+                            </label>
+                        `).join('')}
+                    </fieldset>
+                ` : ''}
 
                 <div class="character-skill-form-grid">
                     <label class="character-skill-field">
@@ -429,7 +571,8 @@
 
         const rollMode = getSkillRollMode();
         const naturalInput = document.getElementById('characterSkillNaturalRoll');
-        const itemConditionModifier = global.getItemConditionSkillModifier?.(combatant, skill) || {
+        const itemTestContext = getSelectedItemTestContext();
+        const itemConditionModifier = global.getItemConditionSkillModifier?.(combatant, skill, itemTestContext) || {
             total: 0,
             details: [],
             advantage: false,
@@ -511,7 +654,7 @@
                 `Penalidade de toxicidade: ${toxicityModifier.total}`,
                 ...toxicityModifier.details.map(detail => `Toxicidade: ${detail}`)
             ] : []),
-            ...(itemConditionModifier.total || itemConditionModifier.advantage || itemConditionModifier.disadvantage ? [
+            ...(itemConditionModifier.total || itemConditionModifier.advantage || itemConditionModifier.disadvantage || itemConditionModifier.details?.length ? [
                 `Efeitos de item/condição: ${itemConditionModifier.total >= 0 ? '+' : ''}${itemConditionModifier.total}`,
                 ...itemConditionModifier.details.map(detail => `Efeito: ${detail}`)
             ] : []),
@@ -520,7 +663,9 @@
             `${comparison}: ${result.target}`,
             `Margem: ${result.margin >= 0 ? '+' : ''}${result.margin}`,
             `Resultado: ${outcome}`,
-            ...(critical ? ['Recompensas: +1 Dado da Sorte · +1 Adrenalina'] : []),
+            ...(critical ? [
+                `Recompensas: +1 Dado da Sorte · +${result.appliedAdrenalineGained ?? result.adrenalineGained} Adrenalina${result.adrenalineBonusGained ? ` (${result.adrenalineBonusSource}: +${result.adrenalineBonusGained})` : ''}`
+            ] : []),
             ...(combatOutcomeContext ? [
                 `Desdobramento contextual: ${combatOutcomeContext.title}`,
                 ...(opensOutcomeTable ? ['Tabela complementar de 1d10 aberta após o teste'] : [])
@@ -580,7 +725,7 @@
         } else {
             global.showToast?.(
                 critical
-                    ? `🎲 Crítico! ${combatant.name} obteve ${result.finalResult} e ganhou Sorte e Adrenalina.`
+                    ? `🎲 Crítico! ${combatant.name} obteve ${result.finalResult} e ganhou Sorte e ${result.appliedAdrenalineGained ?? result.adrenalineGained} Adrenalina.`
                     : `🎲 ${skill.name}: ${result.finalResult} — ${outcome}.`
             );
         }
@@ -593,8 +738,13 @@
         getCharacterProfessionalSkillEntries,
         getProfessionalReminderPresentation,
         getSkillBonusOriginSummary,
-        applyCharacterSkillTestRewards
+        applyCharacterSkillTestRewards,
+        renderCharacterResourcesPanel,
+        adjustCharacterCombatResource
     });
+    global.toggleCharacterResourcesPanel = toggleCharacterResourcesPanel;
+    global.renderCharacterResourcesPanel = renderCharacterResourcesPanel;
+    global.adjustCharacterCombatResource = adjustCharacterCombatResource;
     global.toggleCharacterSkillsPanel = toggleCharacterSkillsPanel;
     global.toggleCharacterProfessionalSkillsPanel = toggleCharacterProfessionalSkillsPanel;
     global.renderCharacterSkillsPanel = renderCharacterSkillsPanel;

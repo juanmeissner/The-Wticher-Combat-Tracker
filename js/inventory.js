@@ -343,10 +343,7 @@ let longPressTimer = null;
 let ignoreNextInventoryTouch = false;
 
 function addInventoryItemFromModal(itemId) {
-
     addItem(itemId);
-
-    closeInventoryModal();
 }
 
 // =========================================
@@ -602,8 +599,9 @@ function useItem(itemId) {
                 ? ` por ${duration} rodada${duration === 1 ? '' : 's'}`
                 : '';
             const action = effectResult.refreshed ? 'renovado' : 'aplicado';
+            const automationNote = String(effectResult.effect?.automation?.note || '').trim();
             window.appendToxicityItemUseDetail?.(
-                `Efeito ${catalogItem.name} ${action} em ${collectionOwner?.name || 'personagem'}${durationDetail}`
+                `Efeito ${catalogItem.name} ${action} em ${collectionOwner?.name || 'personagem'}${durationDetail}${automationNote ? `\nRegra aplicada: ${automationNote}` : ''}`
             );
         }
     }

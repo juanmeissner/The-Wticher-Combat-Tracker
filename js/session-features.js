@@ -29,6 +29,7 @@ let skipNextEndCombatClick = false;
 let historyFilter = 'all';
 let historyParticipantFilter = 'all';
 let expandedHistoryEntryId = null;
+let pendingSessionCancel = null;
 
 function loadSessionData(key, fallback) {
     try {
@@ -475,10 +476,18 @@ function escapeHtml(value) {
 
 function closeSessionConfirm() {
     document.getElementById('sessionConfirmModal')?.remove();
+    pendingSessionCancel = null;
 }
 
-function openSessionConfirm({ title, message, confirmLabel, danger = false, onConfirm }) {
+function cancelSessionConfirm() {
+    const callback = pendingSessionCancel;
     closeSessionConfirm();
+    callback?.();
+}
+
+function openSessionConfirm({ title, message, confirmLabel, danger = false, onConfirm, onCancel = null }) {
+    closeSessionConfirm();
+    pendingSessionCancel = typeof onCancel === 'function' ? onCancel : null;
 
     const modal = document.createElement('div');
     modal.id = 'sessionConfirmModal';
@@ -488,7 +497,7 @@ function openSessionConfirm({ title, message, confirmLabel, danger = false, onCo
             <h2 id="sessionConfirmTitle">${escapeHtml(title)}</h2>
             <p>${escapeHtml(message)}</p>
             <div class="session-dialog-actions">
-                <button type="button" class="session-secondary" onclick="closeSessionConfirm()">Cancelar</button>
+                <button type="button" class="session-secondary" onclick="cancelSessionConfirm()">Cancelar</button>
                 <button type="button" class="${danger ? 'session-danger' : 'session-primary'}" onclick="confirmSessionAction()">${escapeHtml(confirmLabel)}</button>
             </div>
         </section>
@@ -623,7 +632,12 @@ function getHistoryBodyPartName(part) {
 }
 
 function createResourceHistoryMetadata(type, target, value, context = {}) {
-    const sourceCombatant = combatants.find(combatant => combatant.id === activeTurnId);
+    const contextualSourceId = context.damageSource?.sourceId;
+    const sourceCombatant = combatants.find(combatant => (
+        contextualSourceId
+            ? String(combatant.id) === String(contextualSourceId)
+            : combatant.id === activeTurnId
+    ));
     const source = sourceCombatant
         ? { id: sourceCombatant.id, name: sourceCombatant.name }
         : null;
@@ -639,7 +653,18 @@ function createResourceHistoryMetadata(type, target, value, context = {}) {
         participants,
         combat: {
             baseDamage: Math.max(0, Number(context.baseDamage ?? value) || 0),
+            localizedBaseDamage: Math.max(0, Number(context.localizedBaseDamage ?? context.baseDamage ?? value) || 0),
             finalValue: Math.max(0, Number(value) || 0),
+            damageType: context.damageType || '',
+            spellDamage: context.spellDamage && typeof context.spellDamage === 'object'
+                ? cloneSessionData(context.spellDamage)
+                : null,
+            itemDamage: context.itemDamage && typeof context.itemDamage === 'object'
+                ? cloneSessionData(context.itemDamage)
+                : null,
+            damageSource: context.damageSource && typeof context.damageSource === 'object'
+                ? cloneSessionData(context.damageSource)
+                : null,
             bodyPart: context.bodyPart || '',
             bodyMultiplier: Number(context.bodyMultiplier) || 1,
             typeMultiplier: Number(context.typeMultiplier) || 1,
@@ -694,7 +719,7 @@ function buildResourceHistoryDetail(metadata) {
             ? `Crítico ${critical.severityName} · margem ${critical.margin || 0}`
             : `Crítico por 20 natural · margem ${critical.margin || 0} · sem ferimento adicional`);
         detail.push(
-            `Cálculo: ${combat.baseDamage} ×2 ×${combat.bodyMultiplier || 1} + ${critical.woundBonus || 0} = ${combat.finalValue}`
+            `Cálculo: ${combat.localizedBaseDamage ?? combat.baseDamage} ×2 ×${combat.bodyMultiplier || 1} + ${critical.woundBonus || 0} = ${combat.finalValue}`
         );
         if (critical.preparedFromNatural20) {
             detail.push(`Preparado por: 20 natural em ${critical.preparedSkillName || 'ataque'}`);
@@ -756,9 +781,18 @@ function buildResourceHistoryDetail(metadata) {
     if (temporaryAbsorbed > 0) detail.push(`PV temporários absorveram: ${temporaryAbsorbed}`);
 
     const automationDamage = combat.automationDamage;
+    if (combat.spellDamage?.abilityName) {
+        detail.push(`Magia: ${combat.spellDamage.abilityName}`);
+    }
+    if (combat.itemDamage?.itemName) {
+        detail.push(`Item: ${combat.itemDamage.itemName}`);
+    }
     if (automationDamage?.damageType === 'fire') {
         if (automationDamage.fireBonus > 0) detail.push(`Bafo de Dragão: +${automationDamage.fireBonus} de Fogo`);
         if (automationDamage.fireMultiplier > 1) detail.push(`Inflamador: ×${automationDamage.fireMultiplier}`);
+        if (combat.localizedBaseDamage !== combat.baseDamage) {
+            detail.push(`Base elemental antes do local: ${combat.baseDamage} → ${combat.localizedBaseDamage}`);
+        }
     }
     if (automationDamage?.fissstechSuppressed > 0) {
         detail.push(`Fisstech suprimiu: ${automationDamage.fissstechSuppressed}`);
@@ -1743,12 +1777,19 @@ function installActionGuards() {
                 : `${target.name} receberá uma falha de morte.`,
             confirmLabel: historyMetadata?.combat?.critical ? 'Aplicar crítico' : 'Aplicar dano',
             danger: true,
-            onConfirm: () => trackAction(
-                historyLabel,
-                applyOriginalHP,
-                () => buildResourceHistoryDetail(historyMetadata),
-                () => historyMetadata
-            )
+            onCancel: historyContext?.damageSource
+                ? () => window.cancelSpellDamageSequence?.('Sequência de dano cancelada.')
+                : null,
+            onConfirm: () => {
+                const applied = trackAction(
+                    historyLabel,
+                    applyOriginalHP,
+                    () => buildResourceHistoryDetail(historyMetadata),
+                    () => historyMetadata
+                );
+                if (historyContext?.damageSource) window.completeSpellDamageStep?.();
+                return applied;
+            }
         });
     };
 
@@ -2034,6 +2075,7 @@ function installActionGuards() {
 }
 
 window.closeSessionConfirm = closeSessionConfirm;
+window.cancelSessionConfirm = cancelSessionConfirm;
 window.openSessionConfirm = openSessionConfirm;
 window.undoLastAction = undoLastAction;
 window.openSessionTools = openSessionTools;

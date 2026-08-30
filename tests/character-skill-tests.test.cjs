@@ -13,6 +13,7 @@ const sources = [
 const indexSource = fs.readFileSync(path.join(projectRoot, 'index.html'), 'utf8');
 const serviceWorkerSource = fs.readFileSync(path.join(projectRoot, 'js', 'service-worker.js'), 'utf8');
 const equipmentCss = fs.readFileSync(path.join(projectRoot, 'equipment.css'), 'utf8');
+const combatRenderSource = fs.readFileSync(path.join(projectRoot, 'js', 'combat', 'combat-render.js'), 'utf8');
 
 const context = vm.createContext({ console, encodeURIComponent, decodeURIComponent });
 vm.runInContext('var window = globalThis; var combatants = [];', context);
@@ -48,10 +49,17 @@ assert.equal(skillTests.getCharacterProfessionalSkillEntries(combatant).length, 
 context.toggleCharacterSkillsPanel('7');
 context.toggleCharacterProfessionalSkillsPanel('7');
 assert.match(context.renderCharacterSkillsPanel(combatant), /Percepção/);
-assert.match(context.renderCharacterSkillsPanel(combatant), /🎲 2 · ⚡ 1/);
+assert.match(context.renderCharacterSkillsPanel(combatant), /1 ativas/);
 assert.match(context.renderCharacterProfessionalSkillsPanel(combatant), new RegExp(professionalSkill.name));
 assert.equal(context.renderCharacterSkillsPanel({ ...combatant, creationMode: 'quick' }), '');
 assert.equal(context.renderCharacterSkillsPanel({ ...combatant, type: 'monster' }), '');
+assert.match(context.renderCharacterResourcesPanel(combatant), /🎲 2 · ⚡ 1/);
+assert.match(
+    context.renderCharacterResourcesPanel({ ...combatant, creationMode: 'quick' }),
+    /RECURSOS/,
+    'Fichas rápidas também devem consultar os recursos de combate.'
+);
+assert.equal(context.renderCharacterResourcesPanel({ ...combatant, type: 'monster' }), '');
 
 const assistedProfessionalSkill = model.getCharacterProfessionalSkillDefinition('noble_comando');
 const assistedCombatant = {
@@ -92,8 +100,20 @@ context.addCombatHistoryEntry = (label, detail, metadata) => {
 context.savePlayersToStorage = () => {};
 context.renderList = () => {};
 context.showToast = () => {};
+context.__resourceCombatant = combatant;
 context.__assistedCombatant = assistedCombatant;
-vm.runInContext('combatants.push(__assistedCombatant)', context);
+vm.runInContext('combatants.push(__resourceCombatant, __assistedCombatant)', context);
+
+context.toggleCharacterResourcesPanel('7');
+const expandedResources = context.renderCharacterResourcesPanel(combatant);
+assert.match(expandedResources, /Dado da Sorte/);
+assert.match(expandedResources, /Adrenalina/);
+assert.match(expandedResources, /adjustCharacterCombatResource/);
+assert.equal(context.adjustCharacterCombatResource('7', 'luckDice', 1), true);
+assert.equal(combatant.progression.luckDice, 3);
+assert.match(historyEntries[0].label, /Dado da Sorte atualizado 2 → 3/);
+assert.match(historyEntries[0].detail, /Ajuste manual: \+1/);
+historyEntries.length = 0;
 
 const professionalCritical = context.executeCharacterSkillTest(
     encodeURIComponent('8'),
@@ -154,8 +174,27 @@ const critical = model.resolveCharacterSkillTest({
     inCombat: true
 });
 skillTests.applyCharacterSkillTestRewards(combatant, critical);
-assert.equal(combatant.progression.luckDice, 3);
+assert.equal(combatant.progression.luckDice, 4);
 assert.equal(combatant.progression.adrenaline, 2);
+
+context.getAutomationAdrenalineGain = (_combatant, base) => ({
+    base,
+    multiplier: 2,
+    bonus: base,
+    total: base * 2,
+    source: 'Bosque de Maribor'
+});
+const mariborCritical = model.resolveCharacterSkillTest({
+    naturalRoll: 20,
+    skillTotal: 4,
+    modifier: 0,
+    target: 15,
+    inCombat: true
+});
+skillTests.applyCharacterSkillTestRewards(combatant, mariborCritical);
+assert.equal(combatant.progression.adrenaline, 4, 'Bosque de Maribor deve conceder um dado adicional de Adrenalina.');
+assert.equal(mariborCritical.appliedAdrenalineGained, 2);
+assert.equal(mariborCritical.adrenalineBonusSource, 'Bosque de Maribor');
 
 assert.ok(
     indexSource.indexOf('js/character-sheet-model.js') < indexSource.indexOf('js/character-skill-tests.js'),
@@ -163,8 +202,11 @@ assert.ok(
 );
 assert.match(serviceWorkerSource, /js\/character-skill-tests\.js/);
 assert.match(equipmentCss, /character-skills-panel/);
+assert.match(equipmentCss, /character-resources-panel/);
 assert.match(equipmentCss, /character-skill-test-dialog/);
 assert.match(equipmentCss, /character-professional-test-button/);
 assert.match(equipmentCss, /character-professional-reminder-tags/);
+assert.match(equipmentCss, /character-skill-context-options/);
+assert.match(combatRenderSource, /renderCharacterResourcesPanel/);
 
 console.log('✓ Painéis de ficha completa, testes e recompensas de crítico validados.');

@@ -37,6 +37,15 @@ const wizardCss = fs.readFileSync(
     path.join(projectRoot, 'character-sheet-wizard.css'),
     'utf8'
 );
+const inventorySource = fs.readFileSync(path.join(projectRoot, 'js', 'inventory.js'), 'utf8');
+const abilitiesLogicSource = fs.readFileSync(
+    path.join(projectRoot, 'js', 'abilities', 'abilities.js'),
+    'utf8'
+);
+const abilitiesModalSource = fs.readFileSync(
+    path.join(projectRoot, 'js', 'ui', 'abilities-modal.js'),
+    'utf8'
+);
 
 function createStorage(initial = {}) {
     const values = new Map(Object.entries(initial));
@@ -211,6 +220,9 @@ assert.match(wizardCss, /character-skill-list/);
 assert.match(wizardCss, /character-skill-group-bonus/);
 assert.match(wizardCss, /character-professional-heading/);
 assert.match(wizardCss, /character-professional-description/);
+assert.match(wizardCss, /character-wizard-professional-copy/);
+assert.match(wizardCss, /character-wizard-skill-copy/);
+assert.match(wizardCss, /\.character-allocation-card,\s*\.character-skill-row\s*\{[^}]*flex-direction: column/s);
 assert.match(wizardCss, /character-ability-card/);
 assert.match(wizardCss, /character-ability-toolbar/);
 assert.match(wizardSource, /Bônus de.*aplicado a todas as/);
@@ -221,6 +233,9 @@ assert.match(wizardSource, /getCharacterTrainingSummary/);
 assert.doesNotMatch(wizardSource, /atributo vinculado/);
 assert.match(wizardSource, /getCharacterSkillBreakdown/);
 assert.match(wizardSource, /adjustCharacterWizardProfessionalSkill/);
+assert.match(wizardSource, /renderCharacterWizardStep\(\{ preserveScroll: true \}\)/);
+assert.match(wizardSource, /global\.requestAnimationFrame\(restoreScroll\)/);
+assert.match(wizardSource, /global\.setTimeout\?\.\(restoreScroll, 80\)/);
 assert.match(wizardCss, /character-race-detail/);
 assert.match(wizardCss, /character-review-trait-list/);
 assert.match(wizardCss, /character-derived-grid/);
@@ -232,5 +247,21 @@ assert.match(wizardSource, /EDITAR FICHA COMPLETA/);
 assert.match(wizardSource, /editSheetId/);
 assert.match(wizardSource, /updateFullCharacterSheetFromDraft/);
 assert.match(wizardSource, /Salvar alterações/);
+
+const inventoryModalAdd = inventorySource.slice(
+    inventorySource.indexOf('function addInventoryItemFromModal'),
+    inventorySource.indexOf('function renderInventory()')
+);
+assert.match(inventoryModalAdd, /addItem\(itemId\)/);
+assert.doesNotMatch(inventoryModalAdd, /closeInventoryModal/);
+
+const addAbilityLogic = abilitiesLogicSource.slice(
+    abilitiesLogicSource.indexOf('function addAbility'),
+    abilitiesLogicSource.indexOf('function removeSelectedAbility')
+);
+assert.match(addAbilityLogic, /showToast/);
+assert.doesNotMatch(addAbilityLogic, /closeAbilitiesModal/);
+assert.match(abilitiesModalSource, /addAbility\(id\);\s*openAbilityDetails\(id\);/);
+assert.doesNotMatch(abilitiesModalSource, /addAbility\(id\);\s*closeAbilityDetailsModal\(\);/);
 
 console.log('✓ Fluxo, rascunho, responsividade e recursos offline do assistente validados.');

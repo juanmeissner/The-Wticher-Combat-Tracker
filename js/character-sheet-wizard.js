@@ -525,7 +525,7 @@
 
                         return `
                             <article class="character-skill-row character-professional-skill-row">
-                                <div>
+                                <div class="character-wizard-professional-copy">
                                     <strong>${escapeWizardHtml(skill.name)}${skill.automation?.status === 'implemented'
                                         ? ' <span class="character-professional-automation-badge">AUTOMÁTICO</span>'
                                         : (skill.automation?.mode === 'reference'
@@ -596,7 +596,7 @@
 
                         return `
                             <article class="character-skill-row">
-                                <div>
+                                <div class="character-wizard-skill-copy">
                                     <strong>${escapeWizardHtml(skill.name)}</strong>
                                     <small class="character-skill-cost">${escapeWizardHtml(activeAttribute?.abbreviation || '')}${skill.pointCost === 2 ? ' · custa 2 pontos por nível' : ' · custa 1 ponto por nível'}</small>
                                     <small class="character-skill-math">
@@ -966,11 +966,12 @@
         `;
     }
 
-    function renderCharacterWizardStep() {
+    function renderCharacterWizardStep({ preserveScroll = false } = {}) {
         if (!characterWizardDraft) characterWizardDraft = readCharacterWizardDraft() || createCharacterWizardDraft();
 
         const dialog = getWizardDialog();
         if (!dialog) return;
+        const previousScrollTop = preserveScroll ? Math.max(0, Number(dialog.scrollTop) || 0) : 0;
 
         dialog.classList.add('character-wizard-dialog');
         const stepContent = [
@@ -1006,6 +1007,20 @@
                 ${isReview ? '' : '<button type="button" class="session-primary" onclick="moveCharacterWizard(1)">Continuar</button>'}
             </div>
         `;
+
+        if (preserveScroll) {
+            const restoreScroll = () => {
+                dialog.scrollTop = previousScrollTop;
+            };
+            restoreScroll();
+            if (typeof global.requestAnimationFrame === 'function') {
+                global.requestAnimationFrame(() => {
+                    restoreScroll();
+                    global.requestAnimationFrame(restoreScroll);
+                });
+            }
+            global.setTimeout?.(restoreScroll, 80);
+        }
 
         if (characterWizardDraft.step === 0) {
             dialog.querySelector('#characterWizardName')?.focus();
@@ -1332,7 +1347,7 @@
             invested: Math.min(cap, Math.max(0, current + direction))
         };
         persistCharacterWizardDraft();
-        renderCharacterWizardStep();
+        renderCharacterWizardStep({ preserveScroll: true });
     }
 
     function adjustCharacterWizardProfessionalSkill(skillId, delta) {
@@ -1360,7 +1375,7 @@
             characterWizardDraft.skills
         );
         persistCharacterWizardDraft();
-        renderCharacterWizardStep();
+        renderCharacterWizardStep({ preserveScroll: true });
     }
 
     function selectCharacterWizardAbilityProfession(professionId) {
@@ -1437,7 +1452,7 @@
             getWizardAbilityCatalog()
         );
         persistCharacterWizardDraft();
-        renderCharacterWizardStep();
+        renderCharacterWizardStep({ preserveScroll: true });
     }
 
     function moveCharacterWizard(direction) {

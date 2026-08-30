@@ -264,11 +264,28 @@ O turno ativo funciona como contexto padrão das abas **Itens** e **Habilidades*
 
 - separação entre **Usáveis**, **Equipamentos**, **Diversos** e **Criação**;
 - inclusão de itens a partir do catálogo;
+- catálogo permanece aberto após cada inclusão para permitir adicionar vários itens em sequência, fechando somente pela ação do usuário;
 - busca por nome e filtro por tipo;
 - alteração de quantidade pelos botões `+` e `−`;
 - uso direto de consumíveis;
 - aplicação ou renovação automática do efeito da poção no dono do inventário ao usar o consumível;
 - aplicação ou renovação automática dos óleos de bruxo usados pelo inventário, com duração de 20 rodadas e bônus contra a categoria correspondente;
+- seleção contextual de um ou vários alvos para adesivos, pós, bombas, drogas e outros itens de área;
+- execução completa de **Solução Ácida**, **Fúria de Bredan**, **Fogo da Zerikânia** e **Bomba de Estilhaços**, com seleção múltipla, dano informado uma única vez e resolução individual de local para cada alvo;
+- ablação da Solução Ácida em todas as armaduras equipadas e na arma ativa, além de dano fixo nas proteções atingidas por explosivos;
+- testes de Tolerância automatizados ou informados para **Veneno Negro** e **Fúria de Bredan**, aplicando Envenenado ou Em Chamas somente nas falhas;
+- **Pó Básico** capaz de neutralizar o resíduo ácido ou estabilizar Estômago Rasgado, interrompendo o dano ácido recorrente;
+- **Sais Aromáticos** e **Lágrimas de Esposas** removendo, respectivamente, inconsciência/atordoamento e intoxicação, sem consumir o item quando o alvo não possuir um efeito válido;
+- **Tumba de Adda**, **Tinta Invisível** e **Amigo do Envenenador** tratados como usos narrativos, com confirmação, lembrete de regra e registro no histórico;
+- **Nevasca** rolando `1d6` no consumo e somando o resultado a sentidos/Percepção, Reflexo/Esquiva, Bloqueio, Atletismo, Acrobacias, Lançar Feitiços e perícias de armas;
+- **Gato** anulando hipnose e Enfeitiçado, removendo penalidades visuais de escuridão e oferecendo `+5` contextual contra ilusões no assistente de testes;
+- **Baleia Assassina** calculando respiração submersa em `×1,5` e anulando penalidades visuais subaquáticas nos testes contextuais;
+- **Bosque de Maribor** concedendo um dado adicional sempre que o personagem ganhar Adrenalina, inclusive em críticos, Sobrecarga Arcana e tratamento;
+- **Trovoada** aplicando `+2` automaticamente em ataques corpo a corpo/à distância, Bloqueio e Reflexo/Esquiva;
+- Fisstech com teste de Tolerância ND 20 em todo uso, bônus da perícia somado automaticamente, Vício acumulativo em falhas e Abstinência iniciada 10 turnos após o efeito terminar;
+- redução final de dano pelo Fisstech registrada com o valor exato suprimido;
+- Bafo de Dragão e Inflamador processados antes do local de acerto, na ordem `dano base +20 → ×2 → local/tipo → Fisstech`;
+- Cura Potencializada aplicada apenas a curas reais de HP, sem aumentar PV temporários ou Escudo Mágico;
 - toxicidade exibida nos detalhes de cada poção e aplicada ao consumir;
 - detalhes acessíveis por botão no desktop, duplo clique ou toque prolongado;
 - efeitos de itens aplicáveis a qualquer participante selecionado;
@@ -330,6 +347,7 @@ A rolagem de dano continua **manual por padrão**, respeitando os dados físicos
 - catálogo com busca e filtro por tipo ou elemento cadastrado;
 - detalhes de profissão, categoria, duração, defesa, dano, consumo, alcance e ação;
 - adição, remoção, ativação e desativação;
+- catálogo e detalhes permanecem abertos após adicionar uma habilidade, com confirmação imediata por aviso visual;
 - cálculo do custo total de treino;
 - modificador de **Magia Expandida** persistente;
 - card compacto de **Magias** nas fichas completas, exibindo somente o repertório conhecido pelo personagem;
@@ -338,6 +356,10 @@ A rolagem de dano continua **manual por padrão**, respeitando os dados físicos
 - **Sobrecarga Arcana** opcional durante a conjuração, com escolha válida de dano, alcance ou duração, teste CD 16 e consequências automáticas de sucesso ou falha;
 - **Cura Mágica** automatizada pela fórmula `3 + bônus de Inteligência + 1d6`, com dado físico informado por padrão ou rolagem automática pela preferência de magias;
 - escolha do beneficiário, limitação pelo HP máximo e registro de cura solicitada, cura efetiva, fórmula e PV antes/depois;
+- identificação contextual das magias ofensivas, com rolagem manual ou automática da fórmula de dano;
+- seleção única para ataques direcionados e seleção por caixas para cones, raios, esferas e outras áreas;
+- sequência de dano por alvo usando o fluxo normal de localização, tipo, armadura, crítico, Escudo Mágico e confirmação;
+- reconhecimento automático de dano de Fogo nas conjurações para acionar Bafo de Dragão e Inflamador sem perguntas desnecessárias;
 - efeitos aplicáveis no combate com indicação de **conjurador → alvo**;
 - exportação das habilidades para uma planilha `.xlsx` no desktop;
 - sincronização individual com o participante e sua ficha vinculada.
@@ -351,6 +373,8 @@ Em **⋯ → Fichas → Nova ficha**, é possível escolher entre criação ráp
 - seis atributos com valor base 10 e bônus derivado a cada dois pontos;
 - distribuição de atributos otimizada para celular, com nomes e cálculos completos, controles separados e adaptação automática para uma coluna em telas estreitas;
 - 53 perícias gerais e 280 habilidades profissionais com descrições completas;
+- cards mobile de perícias e habilidades profissionais com texto e controles em áreas separadas, impedindo descrições comprimidas;
+- posição da rolagem preservada ao aumentar ou remover níveis profissionais, perícias ou magias aprendidas;
 - pontos compartilhados entre perícias gerais e profissionais, com limite de investimento validado;
 - aprendizado de magias usando o custo oficial `unlockCost` e pontos de treino;
 - permissões automáticas para Mago, Druida, Sacerdote/Clérigo, Ritual e Hex;
@@ -398,7 +422,11 @@ Uma ficha pode ser ativada para consultar seu inventário e suas habilidades ou 
 
 ### 🎲 Perícias e testes durante o combate
 
-Personagens criados pela ficha completa recebem três painéis independentes abaixo do card principal, todos recolhidos por padrão:
+Os jogadores recebem um painel compacto de **Recursos** abaixo do card principal. Ele começa recolhido, mostra `🎲 Dado da Sorte` e `⚡ Adrenalina` no resumo e oferece controles manuais `−` e `+` ao ser expandido. Cada ajuste é limitado a zero, persiste na ficha vinculada e fica registrado no histórico. O painel também está disponível para fichas rápidas.
+
+Qualquer jogador ou inimigo com condições, magias ou itens ativos recebe também o painel **EFEITOS ATIVOS**. Ele informa a quantidade no cabeçalho, começa recolhido e pode ser aberto independentemente dos demais painéis. Ao expandir, preserva os cards completos, duração, stacks, edição e remoção de cada efeito; recolher o painel não pausa suas automações nem a contagem de rodadas.
+
+Personagens criados pela ficha completa recebem outros três painéis independentes abaixo do card principal, todos recolhidos por padrão:
 
 - **Perícias:** mostra somente totais diferentes de zero, com nome, atributo vinculado e valor pronto para uso;
 - **Habilidades profissionais:** mostra apenas habilidades investidas, mantendo nível e descrição completa disponíveis durante a sessão.
@@ -420,7 +448,7 @@ Ao tocar em uma perícia, o aplicativo abre um assistente compacto que:
 6. informa sucesso, falha, margem e resultado final;
 7. registra todo o cálculo no histórico com um filtro próprio de **Teste**.
 
-Um **20 natural** recebe a classificação **Crítico**, concede `+1 Dado da Sorte` e, durante o combate, `+1 Adrenalina`. Esses recursos ficam persistidos na progressão do personagem e aparecem no cabeçalho do painel de perícias. Quando um teste bem-sucedido de ataque corpo a corpo ou à distância obtém `20 natural`, o aplicativo prepara automaticamente o próximo dano daquele personagem como crítico, transporta a margem contra a defesa e reaproveita a Adrenalina já concedida. Depois de informar o dano e escolher a região, o fluxo crítico abre automaticamente sem conceder a recompensa duas vezes. Bloqueios e Esquivas com `20 natural` continuam abrindo suas próprias tabelas defensivas de `1d10`.
+Um **20 natural** recebe a classificação **Crítico**, concede `+1 Dado da Sorte` e, durante o combate, `+1 Adrenalina`. Esses recursos ficam persistidos na progressão do personagem e aparecem no painel próprio **RECURSOS**, onde também podem ser corrigidos manualmente. Quando um teste bem-sucedido de ataque corpo a corpo ou à distância obtém `20 natural`, o aplicativo prepara automaticamente o próximo dano daquele personagem como crítico, transporta a margem contra a defesa e reaproveita a Adrenalina já concedida. Depois de informar o dano e escolher a região, o fluxo crítico abre automaticamente sem conceder a recompensa duas vezes. Bloqueios e Esquivas com `20 natural` continuam abrindo suas próprias tabelas defensivas de `1d10`.
 
 ### 👹 Bestiário e biblioteca personalizada
 
@@ -517,6 +545,9 @@ O menu **⋯** concentra as ferramentas administrativas:
 10. Use **Posso criar** para esconder receitas ainda incompletas, escolha **Criar** e informe o número de lotes.
 11. Para reunir materiais, selecione o item e use **🔄 Transferir item**; escolha o destinatário e a quantidade.
 12. Ao usar uma poção, acompanhe `☣ TOX` no cartão do personagem; os limiares serão resolvidos automaticamente quando o turno dele começar. Use **Mel Branco** para limpar toxicidade e efeitos de poções.
+13. Para bombas, Solução Ácida ou Fúria de Bredan, marque todos os atingidos, informe o total dos dados e confirme. O aplicativo danificará as proteções, resolverá condições e pedirá o local do dano de cada alvo em sequência.
+14. Para Veneno Negro, informe apenas o resultado natural do `1d20`: o bônus total de Tolerância e o ND 18 são calculados pelo aplicativo. Em modo automático, o dado também é rolado pelo sistema.
+15. Com Gato ou Baleia Assassina ativos, abra um teste compatível e marque o contexto de ilusão, escuridão ou visão subaquática somente quando ele realmente fizer parte da cena.
 
 No combate, abra ou recolha **EQUIPAMENTOS** abaixo do personagem. Use `🔄` para alternar a arma ativa e `🎲` para consultar ou rolar seu dano, conforme a preferência escolhida.
 
@@ -525,6 +556,10 @@ Para monstros predefinidos, abra os painéis **ATAQUES**, **HABILIDADES** ou **P
 Depois de derrotar uma criatura predefinida, expanda **ELIMINADOS** e toque em **🎁 Coletar saque**. Confira as quantidades roladas, marque os testes ND bem-sucedidos, escolha o destinatário de cada item e selecione quem participará da divisão das Coroas. A coleta fica salva e será levada ao relatório pós-combate.
 
 Para jogadores de ficha completa, abra **PERÍCIAS** abaixo do personagem e toque na perícia desejada. Informe a dificuldade ou o resultado do oponente, o d20 rolado na mesa e qualquer modificador temporário. As habilidades de profissão ficam no painel separado **HABILIDADES PROFISSIONAIS**.
+
+Para consultar ou corrigir recursos, abra **RECURSOS** abaixo do jogador. Use `−` ou `+` em **Dado da Sorte** e **Adrenalina**; o novo valor é salvo na ficha e a mudança aparece no histórico da sessão.
+
+Quando houver condições, magias ou itens aplicados, abra **EFEITOS ATIVOS** abaixo do participante para consultar ou editar seus cards. O cabeçalho permanece compacto quando recolhido e mostra quantos efeitos continuam em execução.
 
 Abra **MAGIAS** para consultar o repertório daquele personagem. Expanda `⌄` para ler a regra completa ou use **Conjurar**: escolha o alvo, informe o EST base quando a magia for variável e revise o custo final. Magia Expandida é calculada sem alterar o catálogo original. Se o personagem possuir Sobrecarga Arcana, a decisão e o teste aparecem dentro desse mesmo fluxo; um `20 natural` também concede Dado da Sorte e Adrenalina conforme as regras de testes em combate.
 
@@ -729,9 +764,11 @@ node tests/rune-source.test.cjs
 node tests/items-data.test.cjs
 node tests/equipment.test.cjs
 node tests/crafting.test.cjs
+node tests/item-use-automation.test.cjs
+node tests/spell-damage-automation.test.cjs
 ```
 
-Os testes verificam o isolamento entre personagens, a migração e o backup do armazenamento antigo, a criação completa, os seis modelos prontos, os orçamentos de progressão, o aprendizado de magias, os painéis de perícias e magias, os custos efetivos, Magia Expandida, Sobrecarga Arcana, Cura Mágica, a fórmula e as recompensas dos testes, a integração do `20 natural`, as quatro gravidades e os 24 ferimentos críticos, tratamento médico, vacilos, críticos defensivos, desarme, consequências avançadas, toxicidades das poções, limiares cumulativos sem dano duplicado, Toxicidade Controlada, redução por Tolerância e nível, overdose e Mel Branco, além da aplicação ou renovação segura dos efeitos ativos ao consumir poções pelo inventário. Também validam a sincronização com fichas, a integridade do catálogo, a classificação dos cinco slots de proteção, os três espaços de arma, os dois espaços de munição, a compatibilidade entre arcos/flechas e bestas/setas, troca e consumo de munição, a incompatibilidade entre escudo e arma de duas mãos, a soma das fontes defensivas, o desequipamento, o desgaste, o reparo das proteções, as rolagens, o catálogo de ataques, habilidades e perícias dos monstros, todos os formatos de saque atuais, a divisão de Coroas, a geração de materiais ausentes, a resolução de ingredientes, os rendimentos das receitas, a proteção de itens equipados e a transferência entre personagens.
+Os testes verificam o isolamento entre personagens, a migração e o backup do armazenamento antigo, a criação completa, os seis modelos prontos, os orçamentos de progressão, o aprendizado de magias, os painéis de perícias e magias, os custos efetivos, Magia Expandida, Sobrecarga Arcana, Cura Mágica, dano mágico por alvo, fórmulas ofensivas, áreas, tipo Fogo, Bafo de Dragão, Inflamador, Fisstech e sua Abstinência atrasada. Também cobrem os itens instantâneos, seleção contextual de alvos, ablação em armadura e arma, preparação de dano por item, Veneno Negro e remoção de intoxicação. A suíte valida ainda a fórmula e as recompensas dos testes, a integração do `20 natural`, as quatro gravidades e os 24 ferimentos críticos, tratamento médico, vacilos, críticos defensivos, desarme, consequências avançadas, toxicidades das poções, limiares cumulativos sem dano duplicado, Toxicidade Controlada, redução por Tolerância e nível, overdose e Mel Branco, além da aplicação ou renovação segura dos efeitos ativos ao consumir poções pelo inventário. Por fim, cobre a sincronização com fichas, a integridade do catálogo, equipamentos, munições, defesas, reparos, ataques de monstros, saque, Coroas, receitas, rendimentos e transferências entre personagens.
 
 ## ✅ Estado atual
 

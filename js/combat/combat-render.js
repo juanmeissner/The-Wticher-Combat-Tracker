@@ -311,6 +311,8 @@
             wrapper.appendChild(card);
 
             const equipmentPanelHtml = window.renderCombatantEquipmentPanel?.(c) || '';
+            const characterResourcesPanelHtml = window.renderCharacterResourcesPanel?.(c) || '';
+            const activeEffectsPanelHtml = renderCombatantEffectsPanel(c);
             const monsterActionsPanelHtml = window.renderMonsterActionsPanel?.(c) || '';
             const monsterAbilitiesPanelHtml = window.renderMonsterAbilitiesPanel?.(c) || '';
             const monsterSkillsPanelHtml = window.renderMonsterSkillsPanel?.(c) || '';
@@ -323,6 +325,8 @@
 
             if (
                 equipmentPanelHtml ||
+                characterResourcesPanelHtml ||
+                activeEffectsPanelHtml ||
                 monsterActionsPanelHtml ||
                 monsterAbilitiesPanelHtml ||
                 monsterSkillsPanelHtml ||
@@ -335,56 +339,14 @@
             ) {
                 const subpanels = document.createElement('div');
                 subpanels.className = 'combat-subpanels';
-                subpanels.innerHTML = `${equipmentPanelHtml}${monsterActionsPanelHtml}${monsterAbilitiesPanelHtml}${monsterSkillsPanelHtml}${characterSkillsPanelHtml}${characterProfessionalPanelHtml}${characterSpellsPanelHtml}${criticalWoundsPanelHtml}${combatConsequencesPanelHtml}${monsterLootPanelHtml}`;
+                subpanels.innerHTML = `${equipmentPanelHtml}${characterResourcesPanelHtml}${activeEffectsPanelHtml}${monsterActionsPanelHtml}${monsterAbilitiesPanelHtml}${monsterSkillsPanelHtml}${characterSkillsPanelHtml}${characterProfessionalPanelHtml}${characterSpellsPanelHtml}${criticalWoundsPanelHtml}${combatConsequencesPanelHtml}${monsterLootPanelHtml}`;
                 wrapper.appendChild(subpanels);
             }
 
             card.addEventListener('click', () => {
-
-                // continua sendo o alvo selecionado
                 selectedId = c.id;
-            
-                // abre/fecha o painel de efeitos
-                if (expandedEffectsCombatantId === c.id) {
-            
-                    expandedEffectsCombatantId = null;
-            
-                } else {
-            
-                    expandedEffectsCombatantId = c.id;
-            
-                }
-            
                 renderList(false);
-            
             });
-            
-            const showEffects =
-
-            c.effects &&
-            c.effects.length > 0 &&
-        
-            (
-        
-                activeTurnId === c.id ||
-        
-                expandedEffectsCombatantId === c.id
-        
-            );
-            
-            if (showEffects) {
-            
-                const effectsContainer = document.createElement('div');
-            
-                effectsContainer.className = "effects-container";
-            
-                effectsContainer.id = `effects-${c.id}`;
-            
-                effectsContainer.innerHTML = renderEffects(c);
-            
-                wrapper.appendChild(effectsContainer);
-            
-            }
             
             container.appendChild(wrapper);
         });
@@ -447,6 +409,8 @@
         return allEffects.map(effect => {
 
             const data = getEffectData(effect);
+            if (!data) return '';
+
             const augment = data.augment || "default";
 
             const borderClass = {
@@ -464,9 +428,6 @@
             selectedEffect.type === effect.type;
         
             const canStack = (data.stack ?? 1) >= 2;
-        
-            if (!data)
-                return '';
         
             return `
         
@@ -553,6 +514,10 @@
                 <div class="effect-description">
 
                     ${data.shortDescription}
+
+                    ${effect.automation?.note ? `
+                        <span class="effect-automation-note">${effect.automation.note}</span>
+                    ` : ''}
 
                 </div>
 
@@ -777,6 +742,25 @@
         }).join('');
     }
 
+    function renderCombatantEffectsPanel(combatant) {
+        const effects = Array.isArray(combatant?.effects) ? combatant.effects : [];
+        if (!effects.length) return '';
+
+        const key = String(combatant.id);
+        const expanded = expandedEffectPanelIds.has(key);
+        const effectLabel = effects.length === 1 ? '1 ativo' : `${effects.length} ativos`;
+
+        return `
+            <section class="combat-effects-panel ${expanded ? '' : 'is-collapsed'}" data-effects-combatant-id="${key}" aria-label="Efeitos ativos de ${combatant.name}">
+                <button type="button" class="combat-subpanel-header combat-effects-header" aria-expanded="${expanded}" onclick="event.stopPropagation(); toggleEffects('${encodeURIComponent(key)}')">
+                    <span>${expanded ? '▼' : '▶'} EFEITOS ATIVOS</span>
+                    <small>${effectLabel}</small>
+                </button>
+                ${expanded ? `<div class="effects-container" id="effects-${key}">${renderEffects(combatant)}</div>` : ''}
+            </section>
+        `;
+    }
+
     function getEffectCategory(augment){
 
         switch(augment){
@@ -926,20 +910,11 @@
 
     
 
-    function toggleEffects(combatantId){
-
-        if(expandedEffectsCombatantId === combatantId){
-    
-            expandedEffectsCombatantId = null;
-    
-        }else{
-    
-            expandedEffectsCombatantId = combatantId;
-    
-        }
-    
+    function toggleEffects(encodedCombatantId){
+        const key = decodeURIComponent(String(encodedCombatantId));
+        if (expandedEffectPanelIds.has(key)) expandedEffectPanelIds.delete(key);
+        else expandedEffectPanelIds.add(key);
         renderList(false);
-    
     }
     
     window.toggleEffects = toggleEffects;
@@ -1067,40 +1042,26 @@
         `;
     }
 
-    const oldContainer = document.getElementById(`effects-${c.id}`);
+    const wrapper = card.parentElement;
+    const oldEffectsPanel = wrapper?.querySelector(
+        `.combat-effects-panel[data-effects-combatant-id="${String(c.id)}"]`
+    );
+    const effectsPanelHtml = renderCombatantEffectsPanel(c);
 
-    const shouldShow =
-    activeTurnId === c.id &&
-    c.effects &&
-    c.effects.length > 0;
-
-if (shouldShow) {
-
-    if (oldContainer) {
-
-        oldContainer.innerHTML = renderEffects(c);
-
-    } else {
-
-        const wrapper = card.parentElement;
-
-        const div = document.createElement('div');
-
-        div.className = "effects-container";
-
-        div.id = `effects-${c.id}`;
-
-        div.innerHTML = renderEffects(c);
-
-        wrapper.appendChild(div);
-
+    if (oldEffectsPanel && effectsPanelHtml) {
+        oldEffectsPanel.outerHTML = effectsPanelHtml;
+    } else if (oldEffectsPanel) {
+        oldEffectsPanel.remove();
+        expandedEffectPanelIds.delete(String(c.id));
+    } else if (effectsPanelHtml && wrapper) {
+        let subpanels = wrapper.querySelector('.combat-subpanels');
+        if (!subpanels) {
+            subpanels = document.createElement('div');
+            subpanels.className = 'combat-subpanels';
+            wrapper.appendChild(subpanels);
+        }
+        subpanels.insertAdjacentHTML('beforeend', effectsPanelHtml);
     }
-
-} else {
-
-    oldContainer?.remove();
-
-}
 
     if (isEliminated) {
         card.classList.add('opacity-50', 'grayscale');
@@ -1126,8 +1087,8 @@ if (shouldShow) {
 
         // Se clicar novamente no mesmo alvo
         if (selectedId === id) {
-            // O próprio card já alterna a exibição dos efeitos. A antiga
-            // janela de ações foi removida e não deve interromper o toque.
+            // O painel de efeitos possui seu próprio controle recolhível.
+            // Selecionar novamente o mesmo alvo não precisa abrir outra ação.
             return;
         }
         
@@ -1152,6 +1113,7 @@ if (shouldShow) {
         window.renderList = renderList;
         window.updateCardTargeted = updateCardTargeted;
         window.selectCombatant = selectCombatant;
+        window.renderCombatantEffectsPanel = renderCombatantEffectsPanel;
 
         function selectEffect(combatantId, effectId, type){
 

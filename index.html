@@ -464,6 +464,7 @@
     <script src="js/character-sheet-wizard.js"></script>
     <script src="js/rules-automation.js"></script>
     <script src="js/item-use-automation.js"></script>
+    <script src="js/spell-damage-automation.js"></script>
 
 
     <script>
@@ -1001,7 +1002,7 @@ TRANSFERÊNCIA DE ITEM
 
     </div>
 
-    <button onclick="closeDamageModals()"
+    <button onclick="cancelSpellDamageSequence?.(); closeDamageModals()"
         class="mt-4 w-full p-3 rounded-xl bg-slate-700 hover:bg-slate-600 transition-all">
         Cancelar
     </button>
@@ -1054,7 +1055,7 @@ TRANSFERÊNCIA DE ITEM
 
     </div>
 
-    <button onclick="closeDamageModals()"
+    <button onclick="cancelSpellDamageSequence?.(); closeDamageModals()"
         class="mt-4 w-full p-3 rounded-xl bg-slate-700 hover:bg-slate-600 transition-all">
         Cancelar
     </button>

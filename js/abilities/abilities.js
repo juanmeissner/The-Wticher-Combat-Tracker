@@ -135,8 +135,6 @@ function addAbility(abilityId) {
 
     updateAbilitiesHeader();
 
-    closeAbilitiesModal();
-
     showToast(
         `✨ ${baseAbility.name} adicionada`
     );

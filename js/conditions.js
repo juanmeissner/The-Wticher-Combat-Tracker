@@ -6,6 +6,7 @@ function openConditionMenu() {
         { icon: '😍', name: 'Enfeitiçado.' },
         { icon: '😱', name: 'Medo.' },
         { icon: '🚫', name: 'Incapacitado.' },
+        { icon: '😵', name: 'Inconsciente.' },
         { icon: '👻', name: 'Invisí­vel.' },
         { icon: '🐍', name: 'Envenenado.' },
         { icon: '🧎', name: 'Caí­do' },
@@ -165,6 +166,14 @@ const conditionDescriptions = {
         stack: 1,
         augment: "condition",
         desc: 'O alvo ficará desmaiado até passar em um teste de resistência ND 18.'
+    },
+
+    '😵': {
+        title: 'Inconsciente',
+        active: 0,
+        stack: 1,
+        augment: "debuff",
+        desc: 'O alvo está inconsciente, não pode agir nem se defender até ser despertado ou até que a causa seja removida.'
     },
     
     '👻': {

@@ -602,6 +602,10 @@ function syncPreparedAttackCriticalFromSkillTest(combatant, skill, result) {
     }
 
     const adrenalineAfter = Math.max(0, Number(combatant.progression?.adrenaline) || 0);
+    const adrenalineGained = Math.max(
+        0,
+        Number(result?.appliedAdrenalineGained ?? result?.adrenalineGained) || 0
+    );
     const prepared = {
         id: `prepared-critical-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
         sourceId: String(combatant.id),
@@ -613,8 +617,9 @@ function syncPreparedAttackCriticalFromSkillTest(combatant, skill, result) {
         defenseTarget: Math.max(0, Number(result.target) || 0),
         finalResult: Math.max(0, Number(result.finalResult) || 0),
         adrenalineAlreadyGranted: true,
-        adrenalineBefore: Math.max(0, adrenalineAfter - 1),
+        adrenalineBefore: Math.max(0, adrenalineAfter - adrenalineGained),
         adrenalineAfter,
+        adrenalineGained,
         createdAt: new Date().toISOString()
     };
     combatant.preparedCriticalAttack = prepared;
@@ -1178,7 +1183,24 @@ function updateCriticalMarginPreview(value) {
 function openCriticalDamageFlow(options = {}) {
     const target = combatants.find(combatant => String(combatant.id) === String(selectedId));
     const source = combatants.find(combatant => String(combatant.id) === String(activeTurnId));
-    const baseDamage = Math.max(0, Math.floor(Number(pendingDamageBase) || 0));
+    const originalBaseDamage = Math.max(0, Math.floor(Number(pendingDamageBase) || 0));
+    const spellDamageContext = {
+        ...(window.peekPendingAutomationDamageContext?.() || {}),
+        ...(window.getPendingSpellDamageContext?.() || {})
+    };
+    const localizedAutomation = window.prepareAutomatedLocalizedDamage?.(
+        target,
+        originalBaseDamage,
+        spellDamageContext
+    ) || {
+        requestedDamage: originalBaseDamage,
+        adjustedDamage: originalBaseDamage,
+        damageType: spellDamageContext.damageType || '',
+        fireBonus: 0,
+        fireMultiplier: 1,
+        message: ''
+    };
+    const baseDamage = localizedAutomation.adjustedDamage;
     const bodyPart = pendingDamageBodyPart;
 
     if (!target || !baseDamage || !CRITICAL_REGION_INFO[bodyPart]) {
@@ -1199,6 +1221,11 @@ function openCriticalDamageFlow(options = {}) {
         targetId: String(target.id),
         sourceId: String(source.id),
         baseDamage,
+        originalBaseDamage,
+        localizedAutomation,
+        damageSource: spellDamageContext.damageSource || null,
+        spellDamage: spellDamageContext.spellDamage || null,
+        itemDamage: spellDamageContext.itemDamage || null,
         bodyPart,
         margin: usePrepared ? preparedCritical.margin : 7,
         severityId: '',
@@ -1420,13 +1447,19 @@ function confirmCriticalDamage() {
 
     closeCriticalDamageModal();
     window.applyDirectDamage?.(calculation.finalDamage, {
-        baseDamage: calculation.baseDamage,
+        baseDamage: flow.originalBaseDamage ?? calculation.baseDamage,
+        localizedBaseDamage: calculation.baseDamage,
         bodyPart: flow.bodyPart,
         bodyMultiplier: calculation.bodyMultiplier,
         typeMultiplier: 2,
         armorAbsorbed: 0,
         ignoredArmor: true,
-        critical
+        critical,
+        damageType: flow.localizedAutomation?.damageType || '',
+        prelocalizedAutomation: flow.localizedAutomation || null,
+        damageSource: flow.damageSource || null,
+        spellDamage: flow.spellDamage || null,
+        itemDamage: flow.itemDamage || null
     });
 }
 
@@ -1570,8 +1603,17 @@ function applyCriticalDamageBefore(target, critical) {
             critical.adrenalineReused = true;
         } else {
             critical.adrenalineBefore = Math.max(0, Number(source.progression.adrenaline) || 0);
-            source.progression.adrenaline = critical.adrenalineBefore + 1;
+            const adrenaline = window.getAutomationAdrenalineGain?.(source, 1) || {
+                base: 1,
+                bonus: 0,
+                total: 1,
+                source: ''
+            };
+            source.progression.adrenaline = critical.adrenalineBefore + adrenaline.total;
             critical.adrenalineAfter = source.progression.adrenaline;
+            critical.adrenalineGained = adrenaline.total;
+            critical.adrenalineBonusGained = adrenaline.bonus;
+            critical.adrenalineBonusSource = adrenaline.source;
         }
 
         const prepared = getPreparedAttackCritical(source);
@@ -1914,6 +1956,9 @@ function executeCriticalWoundTreatment(random = Math.random) {
     const recoveryAmount = Math.max(0, Number(document.getElementById('criticalTreatmentRecoveryAmount')?.value) || 0);
     const recoveryUnit = document.getElementById('criticalTreatmentRecoveryUnit')?.value || 'rounds';
     const criticalReward = result.critical && window.characterSkillTests?.applyCharacterSkillTestRewards;
+    const treatmentAdrenaline = result.critical
+        ? window.getAutomationAdrenalineGain?.(healer, 1) || { total: 1, bonus: 0, source: '' }
+        : { total: 0, bonus: 0, source: '' };
     const attempt = {
         id: `critical-treatment-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
         fromState: beforeState,
@@ -1965,7 +2010,9 @@ function executeCriticalWoundTreatment(random = Math.random) {
         `Estado: ${CRITICAL_STATE_INFO[beforeState].name} → ${CRITICAL_STATE_INFO[afterState].name}`,
         ...(recoveryAmount > 0 ? [`Recuperação prevista: ${recoveryAmount} ${recoveryUnit === 'days' ? 'dias' : recoveryUnit === 'hours' ? 'horas' : 'rodadas'}`] : []),
         ...(methodResult.woundDetails || []).map(entry => `Penalidade do responsável: ${entry}`),
-        ...(result.critical ? ['Recompensas do responsável: +1 Dado da Sorte · +1 Adrenalina'] : [])
+        ...(result.critical ? [
+            `Recompensas do responsável: +1 Dado da Sorte · +${treatmentAdrenaline.total} Adrenalina${treatmentAdrenaline.bonus ? ` (${treatmentAdrenaline.source}: +${treatmentAdrenaline.bonus})` : ''}`
+        ] : [])
     ].join('\n');
     const metadata = {
         type: 'condition',

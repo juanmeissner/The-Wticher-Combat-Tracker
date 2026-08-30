@@ -1,7 +1,7 @@
 let combatants = [];
 let activeTurnId = null; 
 let selectedId = null;
-let expandedEffectsCombatantId = null;
+let expandedEffectPanelIds = new Set();
 let round = 1;
 let monsterCounter = 1;
 let playerCounter = 1;

@@ -119,7 +119,7 @@ assert.match(renderSource, /renderCombatantLootPanel/);
 assert.match(sessionSource, /getCollectedLootReport/);
 assert.match(sessionSource, /loot: \{ icon: '🎁'/);
 assert.match(reportSource, /Saques e recompensas/);
-assert.match(workerSource, /witcher-combat-tracker-v58/);
+assert.match(workerSource, /witcher-combat-tracker-v65/);
 assert.match(workerSource, /loot-rewards\.css/);
 assert.match(workerSource, /js\/loot-rewards\.js/);
 
