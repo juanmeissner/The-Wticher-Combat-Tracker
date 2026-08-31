@@ -64,7 +64,9 @@ const vehicleCatalog = items.filter(item => item.transportKind === 'vehicle');
 const mountGearCatalog = items.filter(item => item.transportKind === 'mount-gear');
 assert.equal(mountCatalog.length, 4, 'O catálogo deve oferecer quatro tipos de cavalo.');
 assert.equal(vehicleCatalog.length, 4, 'O catálogo deve oferecer duas carroças e duas carruagens.');
-assert.equal(mountGearCatalog.length, 9, 'O catálogo deve oferecer equipamentos para todos os slots da montaria.');
+assert.equal(mountGearCatalog.length, 11, 'O catálogo deve oferecer equipamentos para todos os slots da montaria.');
+assert.equal(find('ferradurasdecorrida').movementModifier, 2);
+assert.equal(find('ferraduraselficas').movementModifier, 3);
 assert.ok(mountCatalog.every(item => filters.matches(item, 'misc', 'mount')));
 assert.ok(vehicleCatalog.every(item => filters.matches(item, 'misc', 'mount')));
 assert.ok(vehicleCatalog.every(item => filters.matches(item, 'misc', 'vehicle')));
@@ -75,7 +77,7 @@ const workerSource = fs.readFileSync(path.join(projectRoot, 'js', 'service-worke
 const navigationSource = fs.readFileSync(path.join(projectRoot, 'js', 'navigation.js'), 'utf8');
 assert.match(indexSource, /js\/inventory-filters\.js/);
 assert.match(indexSource, /inventoryModalSubfilters/);
-assert.match(workerSource, /witcher-combat-tracker-v85/);
+assert.match(workerSource, /witcher-combat-tracker-v89/);
 assert.match(workerSource, /js\/inventory-filters\.js/);
 assert.doesNotMatch(navigationSource, /addEventListener\(['"]touch(?:start|end)/);
 

@@ -43,7 +43,9 @@ assert.equal(mountCatalog.length, 4);
 assert.ok(mountCatalog.every(item => item.category === 'misc' && item.hp > 0 && item.movement > 0));
 assert.equal(vehicleCatalog.length, 4);
 assert.ok(vehicleCatalog.every(item => item.category === 'misc' && item.hp > 0 && item.capacity > 0));
-assert.equal(mountGearCatalog.length, 9);
+assert.equal(mountGearCatalog.length, 11);
+assert.equal(find('ferradurasdecorrida').movementModifier, 2);
+assert.equal(find('ferraduraselficas').movementModifier, 3);
 assert.deepEqual(
     [...new Set(mountGearCatalog.map(item => item.mountSlot))].sort(),
     ['barding', 'horseshoes', 'saddle', 'saddlebags']
@@ -68,6 +70,18 @@ context.addCombatHistoryEntry = (...args) => history.push(args);
 context.setPendingAutomationDamageContext = () => {};
 context.completeSpellDamageStep = () => {};
 context.showToast = () => {};
+
+const linkedIconItem = {
+    id: 'linked-bow',
+    name: 'Arco com Ícone Externo',
+    icon: 'https://example.com/bow.png',
+    category: 'equipment',
+    type: 'weapon'
+};
+assert.equal(context.getTransportItemTextIcon(linkedIconItem), '⚔️', 'URLs não devem aparecer como texto no seletor de carga.');
+assert.match(context.renderTransportItemIcon(linkedIconItem), /<img[^>]+src="https:\/\/example\.com\/bow\.png"/);
+assert.doesNotMatch(context.getTransportItemTextIcon(linkedIconItem), /https?:\/\//);
+assert.equal(context.getTransportItemTextIcon({ icon: '🪶', category: 'misc' }), '🪶');
 
 const state = context.ensureTransportState(owner);
 assert.equal(state.version, 2);
@@ -274,8 +288,15 @@ assert.match(mountsSource, /swapCargoTransferRoute/);
 assert.match(mountsSource, /sourceKey === destination\.key|source\.key === destination\.key/);
 
 const mountsCss = fs.readFileSync(path.join(projectRoot, 'mounts.css'), 'utf8');
+const equipmentCss = fs.readFileSync(path.join(projectRoot, 'equipment.css'), 'utf8');
 assert.match(mountsCss, /\.transport-transfer-route/);
 assert.match(mountsCss, /@media \(max-width: 640px\)/);
 assert.match(mountsCss, /\.transport-transfer-item-row/);
+assert.match(mountsCss, /\.transport-item-icon/);
+assert.match(
+    equipmentCss,
+    /\.combat-mount-panel,\s*\.combat-equipment-panel,[\s\S]*?margin:\s*-2px 8px 8px/,
+    'O painel de montaria deve usar o mesmo espaçamento vertical dos demais subpainéis.'
+);
 
 console.log('✓ Montarias, alforjes, veículos, movimento e dano validados.');

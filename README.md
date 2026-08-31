@@ -75,11 +75,11 @@ flowchart LR
 | 🎒 Inventário | Itens individuais por personagem, troca pelo turno ativo, catálogo, quantidades, filtros e detalhes |
 | ⚒️ Criação, alquimia e culinária | Receitas funcionais, ingredientes disponíveis/ausentes, lotes, testes e produção automática |
 | 🛡️ Equipamentos | Armas, reservas, flechas/setas, cinco slots de proteção, escudo global, troca rápida e defesa persistente |
-| 🐎 Montarias | Cavalos individuais, equipamento próprio, alforjes, carga, carroças, carruagens e dano independente |
+| 🐎 Montarias | Cavalos individuais, equipamento próprio, alforjes, Central de Carga, carroças, carruagens e dano independente |
 | 📚 Habilidades | Magias individuais por personagem, Magia Expandida, custo de treino, ativação e exportação |
 | 📜 Histórico | Linha do tempo por rodada, filtros, autoria, testes, cálculos, efeitos e golpes finais |
 | ↶ Segurança | Confirmações, desfazer ações, encontros salvos e backup completo em JSON |
-| 📲 PWA | Instalação, modo standalone, cache offline, atualização e reparo do aplicativo |
+| 📲 PWA | Instalação, modo standalone sem zoom acidental, cache offline, atualização e reparo do aplicativo |
 
 ## Sistemas da aplicação
 
@@ -385,7 +385,11 @@ Cavalos, carroças e carruagens são adicionados pelo catálogo de itens e perma
 - sela, alforjes, barda e ferraduras equipados em posições independentes;
 - nenhuma montaria possui capacidade de carga sem alforjes;
 - alforjes pequenos, grandes e reforçados concedem 30, 60 ou 90 de capacidade;
+- Ferraduras de Viagem, de Corrida e Élficas concedem respectivamente `+1`, `+2` ou `+3` de Movimento;
+- os detalhes de cavalos e acessórios mostram HP, Movimento, defesa, capacidade concedida, peso e demais modificadores relevantes;
+- carroças e carruagens exibem nos detalhes a capacidade total, quantidade de cavalos exigida, HP e penalidade de Movimento;
 - **Central de Carga** com origem, destino, item e quantidade selecionáveis, permitindo transferências diretas entre personagem, montarias e veículos sem armazenamento intermediário;
+- ícones locais, emojis e imagens externas são renderizados corretamente na carga; seletores compactos usam um ícone semântico no lugar de exibir o endereço da imagem;
 - ações rápidas preservadas em cada card, com peso e limite conferidos antes de qualquer movimentação;
 - carga de cada montaria separa o peso dos equipamentos próprios do conteúdo guardado nos alforjes;
 - carga de carroças e carruagens é calculada pelo conteúdo de seus inventários independentes;
@@ -396,7 +400,7 @@ Cavalos, carroças e carruagens são adicionados pelo catálogo de itens e perma
 - veículos podem ser desatrelados pelo mesmo painel, liberando imediatamente todos os cavalos vinculados;
 - uma montaria ativa pode ser montada ou desmontada sem acrescentar botões ao pad;
 - enquanto montado, o Movimento efetivo do cavalo substitui o Movimento do personagem e aparece no card principal;
-- o card **MONTARIA** começa recolhido e mostra HP, Movimento, carga e proteção sem poluir o combate;
+- o card **MONTARIA** começa recolhido, usa o mesmo espaçamento visual dos demais painéis e mostra HP, Movimento, carga e proteção sem poluir o combate;
 - ao causar dano em um personagem montado, o aplicativo pergunta se o alvo é o cavaleiro ou a montaria;
 - dano na montaria é absorvido primeiro pela barda, reduz o HP próprio e desmonta automaticamente o personagem quando ela é derrotada;
 - estados de saúde **Saudável**, **Ferida**, **Gravemente ferida** e **Derrotada** são calculados pelo HP e registrados sempre que mudam;
@@ -702,10 +706,10 @@ Quando uma habilidade profissional possuir resolução assistida, use **🎲 Rea
 
 A interface foi construída para sessões presenciais e se adapta ao espaço disponível:
 
-- navegação por toque entre **Combate**, **Itens** e **Habilidades**;
-- gesto horizontal para alternar entre as três telas quando nenhum modal está aberto;
+- navegação por botões entre **Combate**, **Itens** e **Habilidades**, sem gestos horizontais que conflitem com filtros e listas roláveis;
 - pad fixado na parte inferior somente durante o combate;
 - uso da safe area em iPhones com notch e modo standalone;
+- zoom do conteúdo bloqueado globalmente por pinça, duplo toque, atalhos de teclado e roda do mouse, mantendo a rolagem normal dos painéis;
 - notificações posicionadas acima do pad e dentro da área visível;
 - modais centralizados, roláveis e protegidos contra sobreposição da navegação;
 - cards de atributos reorganizados no mobile para preservar nomes, fórmulas e controles sem vazamento horizontal;
@@ -768,6 +772,7 @@ O projeto não exige framework JavaScript, bundler ou etapa de compilação.
 .
 ├── index.html                    # Estrutura da aplicação e modais
 ├── style.css                    # Estilos principais
+├── zoom-lock.css                # Gestos permitidos e proteção visual contra zoom
 ├── mobile.css                   # Responsividade, iOS e acessibilidade
 ├── character-collections.css    # Seletor e contexto das coleções individuais
 ├── equipment.css                # Painéis, armas, armaduras e ações dos monstros
@@ -800,6 +805,7 @@ O projeto não exige framework JavaScript, bundler ou etapa de compilação.
 │   ├── loot-rewards.js            # Rolagem, distribuição, persistência e relatório de saque
 │   ├── equipment.js             # Equipamentos, defesas, rolagens e ataques de monstros
 │   ├── mounts.js                # Montarias, acessórios, carga, veículos, movimento e dano
+│   ├── zoom-lock.js             # Bloqueio global de zoom por gestos e atalhos
 │   ├── crafting.js              # Receitas, testes, produção e transferência de itens
 │   ├── enhancements.js          # Fichas, biblioteca, preferências e manutenção
 │   ├── rules-automation.js      # Automações de magias, itens e categorias
@@ -847,13 +853,14 @@ node tests/item-use-automation.test.cjs
 node tests/spell-damage-automation.test.cjs
 ```
 
-Os testes verificam o isolamento entre personagens, a migração e o backup do armazenamento antigo, a criação completa, os seis modelos prontos, os orçamentos de progressão, o aprendizado de magias, os painéis de perícias e magias, os custos efetivos, Magia Expandida, Sobrecarga Arcana, Cura Mágica, dano mágico por alvo, fórmulas ofensivas, áreas, tipo Fogo, Bafo de Dragão, Inflamador, Fisstech e sua Abstinência atrasada. Também cobrem cuidados e descanso, ciclos diários, contadores de ausência, duração e restauração dos benefícios, recursos temporários, testes de hospedagem, redução profissional de custos, Cuidado Prolongado, Dormir Leve, Balada do Sobrevivente e os benefícios de Freya. A suíte valida ainda os itens instantâneos, seleção contextual de alvos, ablação em armadura e arma, preparação de dano por item, Veneno Negro, remoção de intoxicação, fórmula e recompensas dos testes, integração do `20 natural`, as quatro gravidades e os 24 ferimentos críticos, tratamento médico, vacilos, críticos defensivos, desarme, consequências avançadas, toxicidade, overdose e Mel Branco. Por fim, cobre a sincronização com fichas, a integridade do catálogo, equipamentos, munições, defesas, reparos, ataques de monstros, saque, Coroas, receitas, rendimentos e transferências entre personagens.
+Os testes verificam o isolamento entre personagens, a migração e o backup do armazenamento antigo, a criação completa, os seis modelos prontos, os orçamentos de progressão, o aprendizado de magias, os painéis de perícias e magias, os custos efetivos, Magia Expandida, Sobrecarga Arcana, Cura Mágica, dano mágico por alvo, fórmulas ofensivas, áreas, tipo Fogo, Bafo de Dragão, Inflamador, Fisstech e sua Abstinência atrasada. Também cobrem cuidados e descanso, ciclos diários, contadores de ausência, duração e restauração dos benefícios, recursos temporários, testes de hospedagem, redução profissional de custos, Cuidado Prolongado, Dormir Leve, Balada do Sobrevivente e os benefícios de Freya. A suíte valida ainda os itens instantâneos, seleção contextual de alvos, ablação em armadura e arma, preparação de dano por item, Veneno Negro, remoção de intoxicação, fórmula e recompensas dos testes, integração do `20 natural`, as quatro gravidades e os 24 ferimentos críticos, tratamento médico, vacilos, críticos defensivos, desarme, consequências avançadas, toxicidade, overdose e Mel Branco. Por fim, cobre a sincronização com fichas, a integridade do catálogo, equipamentos, munições, defesas, reparos, ataques de monstros, saque, Coroas, receitas, rendimentos, transferências entre armazenamentos, renderização de ícones na Central de Carga e o bloqueio global de zoom.
 
 ## ✅ Estado atual
 
 - [x] Interface mobile first e responsiva
 - [x] PWA instalável e modo offline
 - [x] Compatibilidade visual com safe areas do iOS
+- [x] Experiência standalone sem zoom acidental por gesto, duplo toque ou atalhos
 - [x] Combate, iniciativa, rodadas e dano localizado
 - [x] Fichas persistentes e encontros salvos
 - [x] Criação completa com raças, profissões, atributos, perícias e aprendizado de magias

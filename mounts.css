@@ -120,6 +120,19 @@
     font-weight: 900;
 }
 .transport-transfer-actions button.primary { border-color: #0891b2; background: #0e7490; }
+.transport-item-icon {
+    display: inline-block;
+    width: 1.15rem;
+    height: 1.15rem;
+    flex: 0 0 1.15rem;
+    object-fit: contain;
+    vertical-align: -0.2rem;
+}
+.transport-item-icon--emoji {
+    width: auto;
+    line-height: 1;
+    text-align: center;
+}
 
 .transport-asset-card {
     margin-bottom: 12px;

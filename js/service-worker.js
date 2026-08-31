@@ -1,9 +1,10 @@
-const CACHE_NAME = 'witcher-combat-tracker-v85';
+const CACHE_NAME = 'witcher-combat-tracker-v89';
 
 const APP_SHELL = [
     './',
     './index.html',
     './style.css',
+    './zoom-lock.css',
     './mobile.css',
     './character-collections.css',
     './equipment.css',
@@ -25,6 +26,7 @@ const APP_SHELL = [
     './img/monsters/ghoul.png',
     './img/monsters/drowner.png',
     './js/state.js',
+    './js/zoom-lock.js',
     './js/core/toast.js',
     './js/core/helpers.js',
     './js/professional-skills-data.js',

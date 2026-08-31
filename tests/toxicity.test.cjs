@@ -179,7 +179,7 @@ const interactionsSource = read(path.join('js', 'interactions.js'));
 const automationSource = read(path.join('js', 'rules-automation.js'));
 assert.match(indexSource, /toxicity\.css/);
 assert.match(indexSource, /js\/toxicity\.js/);
-assert.match(workerSource, /witcher-combat-tracker-v85/);
+assert.match(workerSource, /witcher-combat-tracker-v89/);
 assert.match(workerSource, /toxicity\.css/);
 assert.match(workerSource, /js\/toxicity\.js/);
 assert.match(sessionSource, /processCombatantToxicityTurn/);

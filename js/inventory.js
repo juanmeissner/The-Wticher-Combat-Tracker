@@ -29,6 +29,48 @@ function getInventoryDisplayItem(item) {
     };
 }
 
+function getTransportItemDetailFacts(item) {
+    const transportKind = window.getTransportItemKind?.(item)
+        || String(item?.transportKind || item?.type || '').toLowerCase();
+    const facts = [];
+    const hp = Math.max(0, Number(item?.hp) || 0);
+    const movement = Math.max(0, Number(item?.movement) || 0);
+    const capacity = Math.max(0, Number(item?.capacity) || 0);
+    const requiredMounts = Math.max(0, Number(item?.requiredMounts) || 0);
+    const movementModifier = Number(item?.movementModifier) || 0;
+    const defense = Math.max(0, Number(item?.defense) || 0);
+
+    if (transportKind === 'mount') {
+        if (hp) facts.push(`❤️ ${hp} HP máximo`);
+        if (movement) facts.push(`👣 ${movement} de Movimento`);
+        facts.push('🧳 Capacidade liberada por alforjes');
+    }
+
+    if (transportKind === 'vehicle') {
+        if (hp) facts.push(`❤️ ${hp} HP máximo`);
+        if (capacity) facts.push(`📦 Capacidade: ${capacity} de peso`);
+        if (requiredMounts) facts.push(`🐎 Exige ${requiredMounts} ${requiredMounts === 1 ? 'cavalo' : 'cavalos'}`);
+    }
+
+    if (transportKind === 'mount-gear') {
+        if (String(item?.mountSlot || '') === 'saddlebags' && capacity) {
+            facts.push(`📦 Concede ${capacity} de capacidade de carga`);
+        }
+        if (defense) facts.push(`🛡️ Absorção de dano: ${defense}`);
+    }
+
+    if (movementModifier) {
+        facts.push(`👣 Movimento: ${movementModifier > 0 ? '+' : ''}${movementModifier}`);
+    }
+
+    return facts;
+}
+
+function renderTransportItemDetailFacts(item) {
+    const facts = getTransportItemDetailFacts(item);
+    return facts.map(fact => `<span>${escapeInventoryHtml(fact)}</span>`).join('');
+}
+
 function handleItemTouchEnd(itemId) {
 
     cancelItemLongPress();
@@ -284,6 +326,10 @@ function showItemDetails(itemId) {
                 ⚖️ Peso unitário: ${itemUnitWeight}
                 ${['mount', 'vehicle'].includes(window.getTransportItemKind?.(catalogItem)) ? ' · não entra na carga pessoal' : ''}
             </div>
+
+            ${getTransportItemDetailFacts(catalogItem).length
+                ? `<div class="item-details-facts mb-4">${renderTransportItemDetailFacts(catalogItem)}</div>`
+                : ''}
             
             ${item.bonus
                 ? `
@@ -465,6 +511,7 @@ function showCatalogItemDetails(itemId) {
             ${catalogItem.defense ? `<span>🛡️ ${escapeInventoryHtml(window.getEquipmentDefenseLabel?.(catalogItem) || catalogItem.defense)} DEF</span>` : ''}
             ${catalogItem.weaponType ? `<span>🏷️ ${escapeInventoryHtml(catalogItem.weaponType)}</span>` : ''}
             ${window.getEquipmentSlotLabel?.(catalogItem) ? `<span>📍 ${escapeInventoryHtml(window.getEquipmentSlotLabel(catalogItem))}</span>` : ''}
+            ${renderTransportItemDetailFacts(catalogItem)}
         </div>
         <section class="item-details-section">
             <h3>Descrição</h3>

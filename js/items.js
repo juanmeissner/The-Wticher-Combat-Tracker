@@ -4947,7 +4947,7 @@ predefinedItems.push(
         hp: 35,
         movement: 12,
         goldValue: 100,
-        description: 'Montaria versátil. Enquanto estiver montado, seu Movimento substitui o Movimento do cavaleiro.',
+        description: 'Montaria equilibrada para viagens e deslocamentos cotidianos. Enquanto estiver montado, seu Movimento substitui o Movimento do cavaleiro. Para transportar carga, equipe alforjes.',
         recipe: []
     },
     {
@@ -4960,7 +4960,7 @@ predefinedItems.push(
         hp: 30,
         movement: 15,
         goldValue: 180,
-        description: 'Cavalo leve e veloz, preparado para deslocamentos rápidos.',
+        description: 'Cavalo leve e veloz, criado para percorrer grandes distâncias com rapidez. É a melhor escolha para mobilidade, mas possui menos HP que montarias robustas. Para transportar carga, equipe alforjes.',
         recipe: []
     },
     {
@@ -4973,7 +4973,7 @@ predefinedItems.push(
         hp: 45,
         movement: 10,
         goldValue: 140,
-        description: 'Cavalo robusto. Sua capacidade de carga continua dependendo dos alforjes equipados.',
+        description: 'Cavalo robusto para estradas longas e transporte. Possui mais HP, porém é menos veloz. Sua capacidade de carga depende dos alforjes equipados.',
         recipe: []
     },
     {
@@ -4986,7 +4986,7 @@ predefinedItems.push(
         hp: 55,
         movement: 13,
         goldValue: 300,
-        description: 'Montaria resistente, treinada para permanecer funcional em combate.',
+        description: 'Montaria resistente e treinada para combate, combinando HP elevado e boa mobilidade. Para transportar carga, equipe alforjes.',
         recipe: []
     },
     {
@@ -4999,7 +4999,7 @@ predefinedItems.push(
         mountSlot: 'saddle',
         weight: 5,
         goldValue: 25,
-        description: 'Sela básica para uma montaria.',
+        description: 'Sela básica para montar com segurança. Ocupa a posição de Sela da montaria.',
         recipe: []
     },
     {
@@ -5012,7 +5012,7 @@ predefinedItems.push(
         mountSlot: 'saddle',
         weight: 4,
         goldValue: 55,
-        description: 'Sela confortável e mais leve para viagens longas.',
+        description: 'Sela confortável e mais leve, adequada para viagens longas. Ocupa a posição de Sela da montaria.',
         recipe: []
     },
     {
@@ -5025,7 +5025,7 @@ predefinedItems.push(
         mountSlot: 'saddle',
         weight: 7,
         goldValue: 90,
-        description: 'Sela reforçada para manter o cavaleiro firme durante o combate.',
+        description: 'Sela reforçada para manter o cavaleiro firme durante manobras e combates. Ocupa a posição de Sela da montaria.',
         recipe: []
     },
     {
@@ -5039,7 +5039,7 @@ predefinedItems.push(
         capacity: 30,
         weight: 2,
         goldValue: 30,
-        description: 'Concede 30 de capacidade de carga à montaria.',
+        description: 'Concede 30 pontos de capacidade de carga à montaria, permitindo armazenar até 30 de peso em seu inventário próprio.',
         recipe: []
     },
     {
@@ -5053,7 +5053,7 @@ predefinedItems.push(
         capacity: 60,
         weight: 4,
         goldValue: 65,
-        description: 'Concede 60 de capacidade de carga à montaria.',
+        description: 'Concede 60 pontos de capacidade de carga à montaria, permitindo armazenar até 60 de peso em seu inventário próprio.',
         recipe: []
     },
     {
@@ -5067,7 +5067,7 @@ predefinedItems.push(
         capacity: 90,
         weight: 6,
         goldValue: 110,
-        description: 'Concede 90 de capacidade de carga à montaria.',
+        description: 'Concede 90 pontos de capacidade de carga à montaria, permitindo armazenar até 90 de peso em seu inventário próprio.',
         recipe: []
     },
     {
@@ -5081,7 +5081,7 @@ predefinedItems.push(
         defense: 2,
         weight: 10,
         goldValue: 100,
-        description: 'Proteção leve para a montaria. Absorve 2 de dano.',
+        description: 'Proteção leve para a montaria. Absorve até 2 pontos de cada dano recebido antes de atingir o HP da montaria.',
         recipe: []
     },
     {
@@ -5096,7 +5096,7 @@ predefinedItems.push(
         movementModifier: -1,
         weight: 20,
         goldValue: 220,
-        description: 'Proteção pesada para a montaria. Absorve 5 de dano e reduz o Movimento em 1.',
+        description: 'Proteção pesada para a montaria. Absorve até 5 pontos de cada dano recebido antes de atingir o HP e reduz o Movimento em 1.',
         recipe: []
     },
     {
@@ -5114,6 +5114,34 @@ predefinedItems.push(
         recipe: []
     },
     {
+        id: 'ferradurasdecorrida',
+        name: 'Ferraduras de Corrida',
+        icon: '🏇',
+        category: 'equipment',
+        type: 'mount-gear',
+        transportKind: 'mount-gear',
+        mountSlot: 'horseshoes',
+        movementModifier: 2,
+        weight: 1,
+        goldValue: 90,
+        description: 'Ferraduras leves e bem ajustadas que aumentam o Movimento da montaria em 2.',
+        recipe: []
+    },
+    {
+        id: 'ferraduraselficas',
+        name: 'Ferraduras Élficas',
+        icon: '✨',
+        category: 'equipment',
+        type: 'mount-gear',
+        transportKind: 'mount-gear',
+        mountSlot: 'horseshoes',
+        movementModifier: 3,
+        weight: 1,
+        goldValue: 180,
+        description: 'Ferraduras élficas de acabamento excepcional que aumentam o Movimento da montaria em 3.',
+        recipe: []
+    },
+    {
         id: 'carrocasimples',
         name: 'Carroça Simples',
         icon: '🛒',
@@ -5125,7 +5153,7 @@ predefinedItems.push(
         capacity: 150,
         movementModifier: -2,
         goldValue: 180,
-        description: 'Veículo com inventário próprio. Exige 1 cavalo e suporta 150 de carga.',
+        description: 'Veículo simples com inventário próprio. Exige 1 cavalo atrelado, armazena até 150 de peso e reduz o Movimento do conjunto em 2.',
         recipe: []
     },
     {
@@ -5140,7 +5168,7 @@ predefinedItems.push(
         capacity: 250,
         movementModifier: -3,
         goldValue: 320,
-        description: 'Carroça resistente com inventário próprio. Exige 1 cavalo e suporta 250 de carga.',
+        description: 'Carroça resistente com inventário próprio. Exige 1 cavalo atrelado, armazena até 250 de peso e reduz o Movimento do conjunto em 3.',
         recipe: []
     },
     {
@@ -5155,7 +5183,7 @@ predefinedItems.push(
         capacity: 200,
         movementModifier: -2,
         goldValue: 450,
-        description: 'Carruagem com inventário próprio. Exige 2 cavalos e suporta 200 de carga.',
+        description: 'Carruagem para transporte de passageiros e carga. Exige 2 cavalos atrelados, armazena até 200 de peso e reduz o Movimento do conjunto em 2.',
         recipe: []
     },
     {
@@ -5170,7 +5198,7 @@ predefinedItems.push(
         capacity: 250,
         movementModifier: -2,
         goldValue: 800,
-        description: 'Carruagem luxuosa com inventário próprio. Exige 2 cavalos e suporta 250 de carga.',
+        description: 'Carruagem luxuosa e resistente com inventário próprio. Exige 2 cavalos atrelados, armazena até 250 de peso e reduz o Movimento do conjunto em 2.',
         recipe: []
     }
 );

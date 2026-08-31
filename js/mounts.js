@@ -55,6 +55,48 @@
         return ['mount', 'vehicle', 'mount-gear'].includes(kind) ? kind : null;
     }
 
+    function isTransportImageIcon(icon) {
+        const value = String(icon || '').trim();
+        return /^(https?:\/\/|\.\.?\/|assets\/)/i.test(value)
+            || /\.(png|jpe?g|webp|svg|gif)(?:[?#].*)?$/i.test(value);
+    }
+
+    function getTransportItemFallbackIcon(item, fallback = '📦') {
+        const source = getCatalogItem(item) || item || {};
+        const slot = String(source.equipmentSlot || '').toLowerCase();
+        const type = String(source.type || '').toLowerCase();
+        const category = String(source.category || '').toLowerCase();
+        const consumableKind = String(source.careConsumable?.kind || '').toLowerCase();
+
+        if (slot === 'ammunition' || source.ammunitionType) return '🏹';
+        if (type === 'weapon') return '⚔️';
+        if (type === 'armor' || type === 'shield') return '🛡️';
+        if (consumableKind === 'food') return '🍲';
+        if (consumableKind === 'drink') return '🥤';
+        if (category === 'usable') return '🧪';
+        if (category === 'equipment') return '🎒';
+        return fallback;
+    }
+
+    function getTransportItemTextIcon(item, fallback = '📦') {
+        const source = getCatalogItem(item) || item || {};
+        const icon = String(source.icon || '').trim();
+        return icon && !isTransportImageIcon(icon)
+            ? icon
+            : getTransportItemFallbackIcon(source, fallback);
+    }
+
+    function renderTransportItemIcon(item, fallback = '📦') {
+        const source = getCatalogItem(item) || item || {};
+        const icon = String(source.icon || '').trim();
+
+        if (icon && isTransportImageIcon(icon)) {
+            return `<img src="${escapeHtml(icon)}" class="transport-item-icon" alt="" draggable="false">`;
+        }
+
+        return `<span class="transport-item-icon transport-item-icon--emoji" aria-hidden="true">${escapeHtml(getTransportItemTextIcon(source, fallback))}</span>`;
+    }
+
     function isTransportSystemItem(item) {
         return Boolean(getTransportItemKind(item));
     }
@@ -537,7 +579,7 @@
                             <h4>Inventário do personagem</h4>
                             ${availableItems.length ? availableItems.map(item => `
                                 <div class="transport-cargo-row">
-                                    <span>${escapeHtml(item.icon || '🎒')} ${escapeHtml(item.name)} <small>x${getAvailableInventoryQuantity(owner, item)}</small></span>
+                                    <span>${renderTransportItemIcon(item, '🎒')} ${escapeHtml(item.name)} <small>x${getAvailableInventoryQuantity(owner, item)}</small></span>
                                     <span><button onclick="transferTransportCargo('${escapeHtml(owner.id)}','${kind}','${escapeHtml(asset.id)}','${escapeHtml(item.id)}','to',1)">+1</button><button onclick="transferTransportCargo('${escapeHtml(owner.id)}','${kind}','${escapeHtml(asset.id)}','${escapeHtml(item.id)}','to','all')">Tudo</button></span>
                                 </div>`).join('') : '<p class="transport-empty">Nenhum item livre.</p>'}
                         </div>
@@ -545,7 +587,7 @@
                             <h4>Armazenado</h4>
                             ${cargo.length ? cargo.map(item => `
                                 <div class="transport-cargo-row">
-                                    <span>${escapeHtml(item.icon || '📦')} ${escapeHtml(item.name)} <small>x${item.quantity}</small></span>
+                                    <span>${renderTransportItemIcon(item)} ${escapeHtml(item.name)} <small>x${item.quantity}</small></span>
                                     <span><button onclick="transferTransportCargo('${escapeHtml(owner.id)}','${kind}','${escapeHtml(asset.id)}','${escapeHtml(item.id)}','from',1)">−1</button><button onclick="transferTransportCargo('${escapeHtml(owner.id)}','${kind}','${escapeHtml(asset.id)}','${escapeHtml(item.id)}','from','all')">Tudo</button></span>
                                 </div>`).join('') : '<p class="transport-empty">Carga vazia.</p>'}
                         </div>
@@ -596,7 +638,7 @@
                             ${items.length
                                 ? items.map(item => {
                                     const quantity = getTransferableStorageQuantity(owner, source, item);
-                                    return `<option value="${escapeHtml(item.id)}" ${String(item.id) === String(draft.itemId) ? 'selected' : ''}>${escapeHtml(item.icon || '📦')} ${escapeHtml(item.name)} · x${quantity}</option>`;
+                                    return `<option value="${escapeHtml(item.id)}" ${String(item.id) === String(draft.itemId) ? 'selected' : ''}>${escapeHtml(getTransportItemTextIcon(item))} ${escapeHtml(item.name)} · x${quantity}</option>`;
                                 }).join('')
                                 : '<option value="">Nenhum item transferível</option>'}
                         </select>
@@ -1242,6 +1284,8 @@
     global.ensureTransportState = ensureTransportState;
     global.synchronizeTransportAssets = synchronizeTransportAssets;
     global.getTransportItemKind = getTransportItemKind;
+    global.getTransportItemTextIcon = getTransportItemTextIcon;
+    global.renderTransportItemIcon = renderTransportItemIcon;
     global.isTransportSystemItem = isTransportSystemItem;
     global.canRemoveTransportInventoryItem = canRemoveTransportInventoryItem;
     global.getTransportInventoryBadge = getTransportInventoryBadge;

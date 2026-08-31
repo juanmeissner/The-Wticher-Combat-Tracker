@@ -15,7 +15,9 @@ const context = vm.createContext({
     predefinedItems: [
         { id: 'coroa', name: 'Coroa', category: 'misc', goldValue: 1, description: 'Moeda.', recipe: [] },
         { id: 'pocao', name: 'Poção de Teste', category: 'usable', goldValue: 15, description: 'Descrição do catálogo.', recipe: [] },
-        { id: 'flecha', name: 'Flecha de Ferro', category: 'equipment', goldValue: 5, acquisitionPackSize: 10, acquisitionUnitLabel: 'kit', acquisitionContentLabel: 'flechas', description: 'Kit com 10 flechas.', recipe: [] }
+        { id: 'flecha', name: 'Flecha de Ferro', category: 'equipment', goldValue: 5, acquisitionPackSize: 10, acquisitionUnitLabel: 'kit', acquisitionContentLabel: 'flechas', description: 'Kit com 10 flechas.', recipe: [] },
+        { id: 'alforje', name: 'Alforje', category: 'equipment', type: 'mount-gear', transportKind: 'mount-gear', mountSlot: 'saddlebags', capacity: 60, description: 'Carga.', recipe: [] },
+        { id: 'carroca', name: 'Carroça', category: 'misc', type: 'vehicle', transportKind: 'vehicle', hp: 60, capacity: 150, requiredMounts: 1, movementModifier: -2, description: 'Veículo.', recipe: [] }
     ],
     document: {
         getElementById() { return null; },
@@ -37,7 +39,8 @@ context.getCharacterCollectionOwner = () => ({ id: 'geralt', name: 'Geralt' });
 vm.runInContext(`${inventorySource}
 globalThis.__setInventory = value => { inventory = value; };
 globalThis.__getInventory = () => inventory;
-globalThis.__getInventoryDisplayItem = getInventoryDisplayItem;`, context, { filename: 'inventory.js' });
+globalThis.__getInventoryDisplayItem = getInventoryDisplayItem;
+globalThis.__getTransportItemDetailFacts = getTransportItemDetailFacts;`, context, { filename: 'inventory.js' });
 
 context.__setInventory([{ ...context.predefinedItems[0], quantity: 1, moneyValue: 100 }]);
 
@@ -73,5 +76,9 @@ assert.match(history.at(-1)[1], /Total debitado: 10 Coroas/);
 
 const staleItem = { id: 'pocao', name: 'Poção de Teste', category: 'usable', quantity: 1, description: '' };
 assert.equal(context.__getInventoryDisplayItem(staleItem).description, 'Descrição do catálogo.');
+assert.match(Array.from(context.__getTransportItemDetailFacts(context.predefinedItems[3])).join(' | '), /Concede 60 de capacidade de carga/);
+assert.match(Array.from(context.__getTransportItemDetailFacts(context.predefinedItems[4])).join(' | '), /Capacidade: 150 de peso/);
+assert.match(Array.from(context.__getTransportItemDetailFacts(context.predefinedItems[4])).join(' | '), /Exige 1 cavalo/);
+assert.match(Array.from(context.__getTransportItemDetailFacts(context.predefinedItems[4])).join(' | '), /Movimento: -2/);
 
 console.log('✓ Detalhes, aquisição gratuita e compra com Coroas validados.');
