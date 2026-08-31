@@ -5,6 +5,274 @@
 const predefinedItems = [
 
     // =====================================
+    // ALIMENTOS E BEBIDAS
+    // Cada unidade do inventário representa uma porção.
+    // =====================================
+
+    {
+        id: 'racaodeviagem',
+        name: 'Ração de Viagem',
+        icon: '🥖',
+        category: 'usable',
+        goldValue: 10,
+        description: 'Uma porção simples e resistente para viagens. Conta como Refeição Simples ao ser consumida.',
+        shortDescription: 'Alimento · Refeição Simples · 1 porção',
+        recipe: [
+            '1x Cereais',
+            '1x Carne Seca',
+            '1x Sal'
+        ],
+        craftYield: 2,
+        craftingCategory: 'culinary',
+        careConsumable: {
+            kind: 'food',
+            quality: 'simple',
+            portionsPerUnit: 1,
+            durationCycles: 0,
+            categoryId: 'food',
+            optionId: 'simple_meal'
+        }
+    },
+
+    {
+        id: 'ensopadodeestalagem',
+        name: 'Ensopado de Estalagem',
+        icon: '🍲',
+        category: 'usable',
+        goldValue: 20,
+        description: 'Uma refeição quente e completa. Conta como Refeição Boa ao ser consumida.',
+        shortDescription: 'Alimento · Refeição Boa · 1 porção',
+        recipe: [
+            '1x Carne',
+            '1x Legumes',
+            '1x Ervas Culinárias',
+            '1x Água Potável'
+        ],
+        craftYield: 2,
+        craftingCategory: 'culinary',
+        careConsumable: {
+            kind: 'food',
+            quality: 'good',
+            portionsPerUnit: 1,
+            durationCycles: 1,
+            categoryId: 'food',
+            optionId: 'good_meal'
+        }
+    },
+
+    {
+        id: 'banquetedetoussaint',
+        name: 'Banquete de Toussaint',
+        icon: '🍗',
+        category: 'usable',
+        goldValue: 60,
+        description: 'Uma refeição sofisticada e abundante. Conta como Refeição Sofisticada ao ser consumida.',
+        shortDescription: 'Alimento · Refeição Sofisticada · 1 porção',
+        recipe: [
+            '2x Carne Nobre',
+            '2x Legumes',
+            '1x Ervas Culinárias',
+            '1x Vinho de Toussaint',
+            '1x Mel'
+        ],
+        craftYield: 4,
+        craftingCategory: 'culinary',
+        careConsumable: {
+            kind: 'food',
+            quality: 'sophisticated',
+            portionsPerUnit: 1,
+            durationCycles: 1,
+            categoryId: 'food',
+            optionId: 'sophisticated_meal'
+        }
+    },
+
+    {
+        id: 'aguapotavel',
+        name: 'Água Potável',
+        icon: '💧',
+        category: 'usable',
+        goldValue: 1,
+        description: 'Uma porção de água própria para consumo. O uso é registrado, mas não substitui uma refeição.',
+        shortDescription: 'Bebida · Sem efeito de refeição · 1 porção',
+        recipe: [
+            '2x Água Bruta',
+            '1x Carvão'
+        ],
+        craftYield: 2,
+        craftingCategory: 'culinary',
+        careConsumable: {
+            kind: 'drink',
+            quality: 'simple',
+            portionsPerUnit: 1,
+            durationCycles: 0,
+            effect: 'Hidratação registrada; não substitui uma refeição.'
+        }
+    },
+
+    {
+        id: 'cervejademahakam',
+        name: 'Cerveja de Mahakam',
+        icon: '🍺',
+        category: 'usable',
+        goldValue: 3,
+        description: 'Uma porção de bebida alcoólica anã. O uso é registrado, mas não substitui uma refeição.',
+        shortDescription: 'Bebida alcoólica · 1 porção',
+        recipe: [
+            '2x Cereais',
+            '1x Lúpulo',
+            '1x Levedura',
+            '1x Água Potável'
+        ],
+        craftYield: 2,
+        craftingCategory: 'culinary',
+        careConsumable: {
+            kind: 'drink',
+            quality: 'good',
+            alcoholic: true,
+            portionsPerUnit: 1,
+            durationCycles: 0,
+            effect: 'Consumo alcoólico registrado; efeitos adicionais ficam a critério do mestre.'
+        }
+    },
+
+    {
+        id: 'vinhodetoussaint',
+        name: 'Vinho de Toussaint',
+        icon: '🍷',
+        category: 'usable',
+        goldValue: 10,
+        description: 'Uma porção de vinho refinado. O uso é registrado, mas não substitui uma refeição.',
+        shortDescription: 'Bebida alcoólica sofisticada · 1 porção',
+        recipe: [
+            '2x Uvas de Toussaint',
+            '1x Levedura'
+        ],
+        craftYield: 2,
+        craftingCategory: 'culinary',
+        careConsumable: {
+            kind: 'drink',
+            quality: 'sophisticated',
+            alcoholic: true,
+            portionsPerUnit: 1,
+            durationCycles: 0,
+            effect: 'Consumo alcoólico registrado; efeitos adicionais ficam a critério do mestre.'
+        }
+    },
+
+    {
+        id: 'paorustico',
+        name: 'Pão Rústico',
+        icon: '🍞',
+        category: 'usable',
+        goldValue: 6,
+        description: 'Pão simples de viagem. Conta como Refeição Simples ao ser consumido.',
+        shortDescription: 'Alimento · Refeição Simples · 1 porção',
+        recipe: ['2x Farinha', '1x Levedura', '1x Água Potável', '1x Sal'],
+        craftYield: 3,
+        craftingCategory: 'culinary',
+        careConsumable: { kind: 'food', quality: 'simple', portionsPerUnit: 1, durationCycles: 0, categoryId: 'food', optionId: 'simple_meal' }
+    },
+
+    {
+        id: 'sopadelegumes',
+        name: 'Sopa de Legumes',
+        icon: '🥣',
+        category: 'usable',
+        goldValue: 8,
+        description: 'Sopa leve preparada com vegetais. Conta como Refeição Simples ao ser consumida.',
+        shortDescription: 'Alimento · Refeição Simples · 1 porção',
+        recipe: ['1x Batata', '1x Cenoura', '1x Cebola', '1x Água Potável', '1x Sal'],
+        craftYield: 2,
+        craftingCategory: 'culinary',
+        careConsumable: { kind: 'food', quality: 'simple', portionsPerUnit: 1, durationCycles: 0, categoryId: 'food', optionId: 'simple_meal' }
+    },
+
+    {
+        id: 'coelhoassadocomervas',
+        name: 'Coelho Assado com Ervas',
+        icon: '🍖',
+        category: 'usable',
+        goldValue: 20,
+        description: 'Carne de coelho assada com ervas e manteiga. Conta como Refeição Boa ao ser consumida.',
+        shortDescription: 'Alimento · Refeição Boa · 1 porção',
+        recipe: ['1x Carne de Coelho', '1x Ervas Culinárias', '1x Manteiga', '1x Sal'],
+        craftYield: 2,
+        craftingCategory: 'culinary',
+        careConsumable: { kind: 'food', quality: 'good', portionsPerUnit: 1, durationCycles: 1, categoryId: 'food', optionId: 'good_meal' }
+    },
+
+    {
+        id: 'ensopadodeveado',
+        name: 'Ensopado de Veado',
+        icon: '🍲',
+        category: 'usable',
+        goldValue: 25,
+        description: 'Ensopado nutritivo de caça e vegetais. Conta como Refeição Boa ao ser consumido.',
+        shortDescription: 'Alimento · Refeição Boa · 1 porção',
+        recipe: ['1x Carne de Veado', '1x Batata', '1x Cenoura', '1x Cebola', '1x Ervas Culinárias', '1x Água Potável'],
+        craftYield: 2,
+        craftingCategory: 'culinary',
+        careConsumable: { kind: 'food', quality: 'good', portionsPerUnit: 1, durationCycles: 1, categoryId: 'food', optionId: 'good_meal' }
+    },
+
+    {
+        id: 'porcoassadocomalho',
+        name: 'Porco Assado com Alho',
+        icon: '🥓',
+        category: 'usable',
+        goldValue: 22,
+        description: 'Carne de porco assada com alho e ervas. Conta como Refeição Boa ao ser consumida.',
+        shortDescription: 'Alimento · Refeição Boa · 1 porção',
+        recipe: ['1x Carne de Porco', '1x Alho', '1x Ervas Culinárias', '1x Sal'],
+        craftYield: 2,
+        craftingCategory: 'culinary',
+        careConsumable: { kind: 'food', quality: 'good', portionsPerUnit: 1, durationCycles: 1, categoryId: 'food', optionId: 'good_meal' }
+    },
+
+    {
+        id: 'omeletecomcogumelos',
+        name: 'Omelete com Cogumelos',
+        icon: '🍳',
+        category: 'usable',
+        goldValue: 18,
+        description: 'Omelete reforçada com cogumelos comestíveis. Conta como Refeição Boa ao ser consumida.',
+        shortDescription: 'Alimento · Refeição Boa · 1 porção',
+        recipe: ['2x Ovos', '1x Cogumelos Comestíveis', '1x Manteiga', '1x Sal'],
+        craftYield: 2,
+        craftingCategory: 'culinary',
+        careConsumable: { kind: 'food', quality: 'good', portionsPerUnit: 1, durationCycles: 1, categoryId: 'food', optionId: 'good_meal' }
+    },
+
+    {
+        id: 'tortadecarne',
+        name: 'Torta de Carne',
+        icon: '🥧',
+        category: 'usable',
+        goldValue: 28,
+        description: 'Torta recheada com carne de porco e ovos. Conta como Refeição Boa ao ser consumida.',
+        shortDescription: 'Alimento · Refeição Boa · 1 porção',
+        recipe: ['2x Farinha', '1x Carne de Porco', '1x Ovos', '1x Manteiga', '1x Sal'],
+        craftYield: 2,
+        craftingCategory: 'culinary',
+        careConsumable: { kind: 'food', quality: 'good', portionsPerUnit: 1, durationCycles: 1, categoryId: 'food', optionId: 'good_meal' }
+    },
+
+    {
+        id: 'estufadorealdacaca',
+        name: 'Estufado Real da Caça',
+        icon: '🍛',
+        category: 'usable',
+        goldValue: 60,
+        description: 'Estufado abundante com três carnes, vinho e vegetais. Conta como Refeição Sofisticada ao ser consumido.',
+        shortDescription: 'Alimento · Refeição Sofisticada · 1 porção',
+        recipe: ['1x Carne de Coelho', '1x Carne de Veado', '1x Carne de Porco', '2x Legumes', '1x Ervas Culinárias', '1x Vinho de Toussaint'],
+        craftYield: 4,
+        craftingCategory: 'culinary',
+        careConsumable: { kind: 'food', quality: 'sophisticated', portionsPerUnit: 1, durationCycles: 1, categoryId: 'food', optionId: 'sophisticated_meal' }
+    },
+
+    // =====================================
     // USÁVEIS
     // =====================================
 
@@ -4464,8 +4732,31 @@ const predefinedItems = [
         ['salmineralrefinado', 'Sal Mineral Refinado', '🧂', 'Sal purificado usado em óleos especiais.'],
         ['salitre', 'Salitre', '🧂', 'Reagente explosivo usado na fabricação de bombas.'],
         ['nitratodeprata', 'Nitrato de Prata', '⚗️', 'Sal de prata usado em explosivos especializados.'],
-        ['estilhacosdeferro', 'Estilhaços de Ferro', '🔩', 'Fragmentos metálicos usados em bombas de estilhaços.']
-    ].map(([id, name, icon, description]) => ({
+        ['estilhacosdeferro', 'Estilhaços de Ferro', '🔩', 'Fragmentos metálicos usados em bombas de estilhaços.'],
+        ['cereais', 'Cereais', '🌾', 'Grãos usados em rações, pães e bebidas fermentadas.'],
+        ['carneseca', 'Carne Seca', '🥩', 'Carne conservada para viagens e refeições simples.'],
+        ['sal', 'Sal', '🧂', 'Tempero e conservante básico usado na culinária.'],
+        ['carne', 'Carne', '🥩', 'Porção de carne fresca usada em refeições quentes.'],
+        ['legumes', 'Legumes', '🥕', 'Seleção de vegetais usada em ensopados e banquetes.'],
+        ['ervasculinarias', 'Ervas Culinárias', '🌿', 'Ervas aromáticas usadas para temperar refeições.'],
+        ['carnenobre', 'Carne Nobre', '🍖', 'Corte selecionado para refeições sofisticadas.'],
+        ['aguabruta', 'Água Bruta', '🪣', 'Água coletada que precisa ser tratada antes do consumo.'],
+        ['lupulo', 'Lúpulo', '🌿', 'Flor amarga usada na produção de cerveja.'],
+        ['levedura', 'Levedura', '🧫', 'Fermento usado na produção de bebidas.'],
+        ['uvasdetoussaint', 'Uvas de Toussaint', '🍇', 'Uvas de alta qualidade usadas nos vinhos de Toussaint.'],
+        ['carnedecoelho', 'Carne de Coelho', '🐇', 'Carne de caça leve usada em assados e estufados.'],
+        ['carnedeveado', 'Carne de Veado', '🦌', 'Carne de caça nutritiva usada em ensopados.'],
+        ['carnedeporco', 'Carne de Porco', '🐖', 'Carne versátil usada em assados, tortas e estufados.'],
+        ['batata', 'Batata', '🥔', 'Tubérculo usado em sopas e ensopados.'],
+        ['cebola', 'Cebola', '🧅', 'Ingrediente aromático básico da culinária.'],
+        ['cenoura', 'Cenoura', '🥕', 'Vegetal usado em sopas e ensopados.'],
+        ['alho', 'Alho', '🧄', 'Tempero aromático usado em carnes e molhos.'],
+        ['cogumeloscomestiveis', 'Cogumelos Comestíveis', '🍄', 'Cogumelos seguros para refeições e recheios.'],
+        ['farinha', 'Farinha', '🌾', 'Cereais moídos para pães e massas.', ['2x Cereais'], 2, 'culinary'],
+        ['ovos', 'Ovos', '🥚', 'Ingrediente usado em omeletes, massas e tortas.'],
+        ['leite', 'Leite', '🥛', 'Ingrediente fresco usado em preparos culinários.'],
+        ['manteiga', 'Manteiga', '🧈', 'Gordura culinária produzida a partir de leite.', ['2x Leite'], 1, 'culinary']
+    ].map(([id, name, icon, description, recipe = [], craftYield = 1, craftingCategory = '']) => ({
         id,
         name,
         icon,
@@ -4474,7 +4765,8 @@ const predefinedItems = [
         craftingMaterial: true,
         goldValue: 0,
         description,
-        recipe: []
+        recipe,
+        ...(recipe.length ? { craftYield, craftingCategory } : {})
     }))
 
 ];

@@ -35,6 +35,10 @@ const originalShowToast = window.showToast;
 window.showToast = message => originalShowToast(repairMojibake(message));
 
 function getVisibleInventoryItems() {
+    if (typeof window.getFilteredInventoryItems === 'function') {
+        return window.getFilteredInventoryItems();
+    }
+
     return inventory
         .filter(item => item.category === currentInventoryFilter)
         .sort(sortInventoryItems);
@@ -82,7 +86,7 @@ function useSelectedInventoryItem() {
     const result = useItem(item.id);
     if (result?.used === false) return result;
 
-    showToast(`✅ ${item.name} utilizado.`);
+    if (!result?.care?.applied) showToast(`✅ ${item.name} utilizado.`);
     return result;
 }
 

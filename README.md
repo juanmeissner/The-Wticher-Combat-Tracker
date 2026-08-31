@@ -69,10 +69,11 @@ flowchart LR
 | 👹 Bestiário | Monstros predefinidos, busca, detalhes e painéis rápidos de ataques, habilidades e perícias |
 | 🎁 Saque | Recompensas contextuais, rolagem de quantidades, distribuição de itens e divisão de Coroas |
 | 🌀 Condições | Painel responsivo em grade, duração, stacks e dano recorrente automatizado |
+| 🛏️ Cuidados | Alimentação, higiene, hospedagem, ciclos diários, recuperação e estados persistentes |
 | ☣️ Toxicidade | Poções com valores próprios, limiares cumulativos, Tolerância, overdose e Mel Branco |
 | ✨ Efeitos | Magias e itens ativos vinculados individualmente aos participantes |
 | 🎒 Inventário | Itens individuais por personagem, troca pelo turno ativo, catálogo, quantidades, filtros e detalhes |
-| ⚒️ Criação e alquimia | Receitas funcionais, ingredientes disponíveis/ausentes, lotes, testes e produção automática |
+| ⚒️ Criação, alquimia e culinária | Receitas funcionais, ingredientes disponíveis/ausentes, lotes, testes e produção automática |
 | 🛡️ Equipamentos | Armas, reservas, flechas/setas, cinco slots de proteção, escudo global, troca rápida e defesa persistente |
 | 📚 Habilidades | Magias individuais por personagem, Magia Expandida, custo de treino, ativação e exportação |
 | 📜 Histórico | Linha do tempo por rodada, filtros, autoria, testes, cálculos, efeitos e golpes finais |
@@ -203,6 +204,30 @@ Cada condição ou efeito pode conter:
 
 **Sangramento**, **Em Chamas** e **Envenenado** causam 1d6 por stack no início do turno afetado. As três condições aceitam até 10 stacks, conforme suas regras cadastradas.
 
+### 🛏️ Cuidados, descanso e necessidades
+
+Com o pad zerado, o botão de Coração abre o fluxo contextual **Cuidados e descanso** sem adicionar controles permanentes à interface. O mestre escolhe os beneficiários, alimentação, banho, hospedagem, valores e pagadores; sem pagador selecionado, nenhuma Coroa é removida.
+
+- cada confirmação representa um novo ciclo diário da campanha;
+- dias sem alimentação, banho ou sono permanecem salvos individualmente;
+- `Faminto`, `Falta de Higiene` e `Privação de Sono` acumulam pilhas e alteram testes de perícia;
+- refeições, banhos e hospedagens recuperam HP e EST conforme a qualidade;
+- `Bem Alimentado`, `Revigorado` e `Bem Descansado` concedem benefícios válidos por um ciclo;
+- PV e EST temporários de fontes diferentes coexistem, e o EST temporário é consumido antes do normal;
+- hospedagens simples usam testes assistidos de Físico e Intimidação, com Desconforto e risco de roubo;
+- estado diário, última escolha, benefícios e histórico são preservados nas fichas salvas e restaurados ao voltar ao combate.
+- alimentos e bebidas ficam disponíveis em **Itens → Usáveis**, com tipo, qualidade e quantidade de porções;
+- os 11 alimentos preparados — de Pão Rústico e Sopa de Legumes a Estufado Real da Caça e Banquete de Toussaint — aplicam automaticamente Refeição Simples, Boa ou Sofisticada ao proprietário do inventário;
+- o consumo direto de alimento recupera os recursos correspondentes, atende a necessidade diária, atualiza os efeitos e remove uma unidade do inventário;
+- Água Potável, Cerveja de Mahakam e Vinho de Toussaint têm consumo e histórico próprios, mas não substituem uma refeição enquanto uma regra de hidratação ou álcool não for definida.
+- um **responsável profissional** pode ser escolhido dentro do próprio fluxo, sem acrescentar botões ao pad;
+- **Iniciado dos Deuses** e **Cantar por Moedas** abrem testes assistidos e, em caso de sucesso, reduzem somente os custos compatíveis;
+- **Cuidado Prolongado** aumenta a recuperação de HP dos aliados após hospedagem, enquanto **Dormir Leve** neutraliza Desconfortável para o próprio responsável;
+- **Balada do Sobrevivente**, **Ciclo de Abundância** e **Frutos de Freya** criam benefícios diários persistentes, visíveis em Efeitos Ativos e considerados nos testes correspondentes;
+- o histórico registra responsável, teste, ND, cálculo, redução de Coroas e cada benefício profissional aplicado.
+
+Categorias desmarcadas não aumentam contadores de ausência. Ao iniciar o ciclo seguinte, benefícios diários antigos expiram e somente os escolhidos novamente são renovados.
+
 ### ☣️ Toxicidade de poções
 
 As poções possuem toxicidade própria de **25%, 50% ou 75%**. Ao consumir uma delas pela aba **Itens**, seu efeito ativo é aplicado — ou renovado — automaticamente no personagem dono daquele inventário, incluindo as automações específicas da poção. Em seguida, a toxicidade é somada e um indicador compacto aparece no cartão de combate somente enquanto houver toxicidade.
@@ -263,6 +288,9 @@ O turno ativo funciona como contexto padrão das abas **Itens** e **Habilidades*
 ### 🎒 Inventário e itens
 
 - separação entre **Usáveis**, **Equipamentos**, **Diversos** e **Criação**;
+- filtros contextuais compactos tanto no inventário quanto no catálogo: comidas, bebidas, poções, arremessáveis, poções de Witcher e óleos em **Usáveis**; munições, famílias de armas, escudos e armaduras por região em **Equipamentos**; ingredientes culinários, itens de monstros, ervas, minérios, metais e materiais naturais em **Diversos**;
+- seleção de filtro preservada separadamente por aba, com quantidade disponível e navegação horizontal responsiva no mobile;
+- navegação entre **Combate**, **Itens** e **Habilidades** exclusivamente pelos botões superiores, evitando trocas acidentais de tela ao deslizar os filtros ou o inventário;
 - inclusão de itens a partir do catálogo;
 - catálogo permanece aberto após cada inclusão para permitir adicionar vários itens em sequência, fechando somente pela ação do usuário;
 - busca por nome e filtro por tipo;
@@ -295,12 +323,12 @@ O turno ativo funciona como contexto padrão das abas **Itens** e **Habilidades*
 - catálogo validado para impedir identificadores duplicados entre armas, equipamentos e materiais;
 - sincronização individual com o participante e sua ficha vinculada.
 
-### ⚒️ Criação e alquimia
+### ⚒️ Criação, alquimia e culinária
 
 A categoria **Criação** transforma as receitas do catálogo em uma oficina vinculada ao inventário do personagem consultado:
 
 - lista todas as receitas conhecidas e permite busca por produto;
-- ao tocar no contador, abre um filtro compacto por **Armas**, **Armaduras**, **Alquimia** ou **Materiais**;
+- ao tocar no contador, abre um filtro compacto por **Armas**, **Armaduras**, **Alquimia**, **Culinária** ou **Materiais**;
 - filtro **Posso criar** mostra somente receitas com ingredientes suficientes;
 - cada cartão informa os componentes livres, os ausentes e o rendimento de cada lote;
 - escolha da quantidade de lotes antes de confirmar a produção;
@@ -311,6 +339,8 @@ A categoria **Criação** transforma as receitas do catálogo em uma oficina vin
 - sucesso e falha registrados no histórico com produto, quantidade, ingredientes e resultado do teste;
 - ingredientes preservados em caso de falha, evitando perdas não previstas por uma regra cadastrada;
 - itens equipados ficam reservados e não são consumidos como matéria-prima.
+
+A categoria **Culinária** reutiliza a mesma oficina sem acrescentar botões permanentes. São 16 receitas culinárias, incluindo Ração de Viagem, Pão Rústico, Sopa de Legumes, Coelho Assado com Ervas, Ensopado de Veado, Porco Assado com Alho, Omelete com Cogumelos, Torta de Carne, Estufado Real da Caça, Banquete de Toussaint, bebidas e o processamento de Farinha e Manteiga. Os 23 ingredientes culinários — incluindo Sal, carnes de coelho, veado e porco, vegetais e laticínios — podem ser guardados ou transferidos entre personagens. Assim que uma comida é produzida, ela já pode ser consumida pelo inventário para aplicar a qualidade correspondente no sistema de Cuidados e Descanso.
 
 O catálogo foi normalizado com todos os ingredientes nomeados pelas receitas. Fissstech permanece indisponível porque sua receita original contém apenas ingredientes desconhecidos (`?`). A auditoria completa está em [`docs/crafting-catalog-audit.md`](docs/crafting-catalog-audit.md).
 
@@ -399,7 +429,7 @@ Ao escolher um modelo, o assistente abre no primeiro passo com uma construção 
 
 As fichas rápidas e completas continuam reutilizáveis e podem conter:
 
-- nome, HP máximo, ST máximo e CA;
+- nome, HP máximo, ST máximo, CA e Movimento;
 - HP e ST atuais preservados entre combates;
 - raça ou categoria da criatura;
 - ataque e dano;
@@ -413,8 +443,10 @@ Nas fichas completas, os valores máximos são recalculados a partir da constru�
 - **HP:** `(bônus de Constituição + Físico total) × nível + (10 + Constituição base)`, em que Constituição base começa em 10 e inclui os pontos investidos, sem somar bônus raciais ou temporários novamente;
 - **EST:** usa a fórmula correspondente a Witcher, Mago, Clérigo/Druida ou reserva física;
 - **Carga:** `Força total ÷ 2 + Físico total + bônus de Força`, incluindo `+25` para Anões;
-- **Movimento:** varia entre 5 e 15 e desconta o peso de todos os equipamentos usados;
+- **Movimento:** `(Atletismo total × 2) + 4 − peso equipado + Físico total + bônus de Força`, limitado entre 5 e 15 antes das consequências de ferimentos críticos;
 - **Peso equipado:** soma armaduras, escudo, arma ativa e as duas armas reservas; itens apenas guardados não contam.
+
+Quando o peso equipado ultrapassa a Capacidade de Carga, o aplicativo aplica automaticamente **🏋️ Carregando Peso**. A condição mostra carga, limite, excesso e Movimento atual dentro de **EFEITOS ATIVOS**, sem ocupar a tela quando o personagem está dentro do limite. Ao desequipar peso suficiente, a condição desaparece automaticamente. O Movimento total também fica sempre visível de forma compacta no card principal de jogadores e inimigos; criaturas predefinidas preservam as velocidades terrestre e de voo registradas no bestiário.
 
 Quando um novo cálculo aumenta HP ou EST máximo, o recurso atual é preservado em vez de curar ou restaurar o personagem automaticamente. Se o novo máximo ficar abaixo do atual, o valor é limitado ao novo teto.
 
@@ -469,7 +501,8 @@ Quando um monstro predefinido é derrotado, o card eliminado recebe a ação con
 - mantém a primeira rolagem salva no monstro, mesmo ao fechar e reabrir o modal;
 - destaca itens que exigem um teste `ND/CD` e deixa a confirmação do sucesso com o mestre;
 - permite escolher individualmente quem recebe cada item encontrado;
-- divide a recompensa em Coroas igualmente entre os personagens marcados;
+- permite corrigir a quantidade de cada item e o total de Coroas antes de concluir a coleta;
+- divide as Coroas igualmente entre os personagens marcados, sem entregar valores quando nenhum destinatário for selecionado;
 - adiciona materiais ainda não cadastrados como itens genéricos transferíveis no inventário;
 - impede que o mesmo monstro seja saqueado duas vezes;
 - preserva toda a distribuição em encontros, backups, histórico e desfazer;
@@ -553,13 +586,15 @@ No combate, abra ou recolha **EQUIPAMENTOS** abaixo do personagem. Use `🔄` pa
 
 Para monstros predefinidos, abra os painéis **ATAQUES**, **HABILIDADES** ou **PERÍCIAS** abaixo da criatura. Habilidades e perícias permanecem recolhidas por padrão e não exigem abrir novamente a ficha completa do bestiário.
 
-Depois de derrotar uma criatura predefinida, expanda **ELIMINADOS** e toque em **🎁 Coletar saque**. Confira as quantidades roladas, marque os testes ND bem-sucedidos, escolha o destinatário de cada item e selecione quem participará da divisão das Coroas. A coleta fica salva e será levada ao relatório pós-combate.
+Depois de derrotar uma criatura predefinida, expanda **ELIMINADOS** e toque em **🎁 Coletar saque**. Confira as quantidades roladas, ajuste quanto de cada item e quantas Coroas serão coletados, marque os testes ND bem-sucedidos, escolha o destinatário de cada item e selecione quem participará da divisão das Coroas. Se ninguém for marcado para receber as Coroas, elas não serão entregues. A coleta fica salva e será levada ao relatório pós-combate.
 
 Para jogadores de ficha completa, abra **PERÍCIAS** abaixo do personagem e toque na perícia desejada. Informe a dificuldade ou o resultado do oponente, o d20 rolado na mesa e qualquer modificador temporário. As habilidades de profissão ficam no painel separado **HABILIDADES PROFISSIONAIS**.
 
 Para consultar ou corrigir recursos, abra **RECURSOS** abaixo do jogador. Use `−` ou `+` em **Dado da Sorte** e **Adrenalina**; o novo valor é salvo na ficha e a mudança aparece no histórico da sessão.
 
 Quando houver condições, magias ou itens aplicados, abra **EFEITOS ATIVOS** abaixo do participante para consultar ou editar seus cards. O cabeçalho permanece compacto quando recolhido e mostra quantos efeitos continuam em execução.
+
+O indicador `👣 MOV` no card principal mostra o Movimento total atual. Em fichas completas, equipe ou desequipe itens para recalcular imediatamente peso, capacidade e Movimento. Se surgir **Carregando Peso**, abra **EFEITOS ATIVOS** para conferir exatamente quanto o limite foi ultrapassado.
 
 Abra **MAGIAS** para consultar o repertório daquele personagem. Expanda `⌄` para ler a regra completa ou use **Conjurar**: escolha o alvo, informe o EST base quando a magia for variável e revise o custo final. Magia Expandida é calculada sem alterar o catálogo original. Se o personagem possuir Sobrecarga Arcana, a decisão e o teste aparecem dentro desse mesmo fluxo; um `20 natural` também concede Dado da Sorte e Adrenalina conforme as regras de testes em combate.
 
@@ -757,6 +792,8 @@ node tests/character-sheet-templates.test.cjs
 node tests/character-sheet-wizard.test.cjs
 node tests/character-skill-tests.test.cjs
 node tests/character-spells.test.cjs
+node tests/care-services.test.cjs
+node tests/combat-effects-panel.test.cjs
 node tests/critical-wounds.test.cjs
 node tests/toxicity.test.cjs
 node tests/loot-rewards.test.cjs
@@ -768,7 +805,7 @@ node tests/item-use-automation.test.cjs
 node tests/spell-damage-automation.test.cjs
 ```
 
-Os testes verificam o isolamento entre personagens, a migração e o backup do armazenamento antigo, a criação completa, os seis modelos prontos, os orçamentos de progressão, o aprendizado de magias, os painéis de perícias e magias, os custos efetivos, Magia Expandida, Sobrecarga Arcana, Cura Mágica, dano mágico por alvo, fórmulas ofensivas, áreas, tipo Fogo, Bafo de Dragão, Inflamador, Fisstech e sua Abstinência atrasada. Também cobrem os itens instantâneos, seleção contextual de alvos, ablação em armadura e arma, preparação de dano por item, Veneno Negro e remoção de intoxicação. A suíte valida ainda a fórmula e as recompensas dos testes, a integração do `20 natural`, as quatro gravidades e os 24 ferimentos críticos, tratamento médico, vacilos, críticos defensivos, desarme, consequências avançadas, toxicidades das poções, limiares cumulativos sem dano duplicado, Toxicidade Controlada, redução por Tolerância e nível, overdose e Mel Branco, além da aplicação ou renovação segura dos efeitos ativos ao consumir poções pelo inventário. Por fim, cobre a sincronização com fichas, a integridade do catálogo, equipamentos, munições, defesas, reparos, ataques de monstros, saque, Coroas, receitas, rendimentos e transferências entre personagens.
+Os testes verificam o isolamento entre personagens, a migração e o backup do armazenamento antigo, a criação completa, os seis modelos prontos, os orçamentos de progressão, o aprendizado de magias, os painéis de perícias e magias, os custos efetivos, Magia Expandida, Sobrecarga Arcana, Cura Mágica, dano mágico por alvo, fórmulas ofensivas, áreas, tipo Fogo, Bafo de Dragão, Inflamador, Fisstech e sua Abstinência atrasada. Também cobrem cuidados e descanso, ciclos diários, contadores de ausência, duração e restauração dos benefícios, recursos temporários, testes de hospedagem, redução profissional de custos, Cuidado Prolongado, Dormir Leve, Balada do Sobrevivente e os benefícios de Freya. A suíte valida ainda os itens instantâneos, seleção contextual de alvos, ablação em armadura e arma, preparação de dano por item, Veneno Negro, remoção de intoxicação, fórmula e recompensas dos testes, integração do `20 natural`, as quatro gravidades e os 24 ferimentos críticos, tratamento médico, vacilos, críticos defensivos, desarme, consequências avançadas, toxicidade, overdose e Mel Branco. Por fim, cobre a sincronização com fichas, a integridade do catálogo, equipamentos, munições, defesas, reparos, ataques de monstros, saque, Coroas, receitas, rendimentos e transferências entre personagens.
 
 ## ✅ Estado atual
 
@@ -782,6 +819,7 @@ Os testes verificam o isolamento entre personagens, a migração e o backup do a
 - [x] Seis modelos prontos, editáveis e validados pelos mesmos orçamentos da ficha completa
 - [x] Migração segura com cópia local única das fichas anteriores e resumo atualizado
 - [x] Painéis de perícias e habilidades profissionais para jogadores no combate
+- [x] Cuidados, descanso, necessidades, benefícios diários e integrações profissionais persistentes
 - [x] Painel de magias conhecidas com detalhes, custo efetivo e conjuração direta no combate
 - [x] Magia Expandida e Sobrecarga Arcana integradas ao custo, teste, recursos e histórico
 - [x] Cura Mágica com fórmula, rolagem configurável, escolha de alvo e histórico detalhado
@@ -791,7 +829,7 @@ Os testes verificam o isolamento entre personagens, a migração e o backup do a
 - [x] Tratamento médico assistido com ND, perícia, progresso, recuperação, falha e histórico
 - [x] Vacilos e críticos de Bloqueio/Esquiva com tabelas contextuais, escolhas, desarme e dano complementar
 - [x] Inventários e habilidades individuais vinculados ao personagem do turno
-- [x] Criação e alquimia por personagem, com receitas, lotes e testes configuráveis
+- [x] Criação, alquimia e culinária por personagem, com receitas, lotes e testes configuráveis
 - [x] Transferência de itens e materiais entre personagens
 - [x] Arma ativa, duas reservas e troca rápida por personagem
 - [x] Flechas e setas equipáveis em duas posições, troca compatível e consumo direto no combate

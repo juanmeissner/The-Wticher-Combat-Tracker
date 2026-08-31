@@ -65,9 +65,12 @@ assert.equal(model.CHARACTER_PROFESSIONAL_SKILLS.length, 280);
 assert.equal(Object.keys(model.CHARACTER_PROFESSIONAL_SKILL_TREES).length, 28);
 assert.deepEqual(
     JSON.parse(JSON.stringify(context.characterProfessionalSkillsData.automationSummary)),
-    { automatic: 24, assisted: 68, reminder: 111, reference: 77 },
+    { automatic: 29, assisted: 68, reminder: 108, reference: 75 },
     'Toda habilidade profissional deve pertencer a um lote de automação.'
 );
+assert.equal(model.getCharacterProfessionalSkillDefinition('melitele_cuidado_prolongado').automation.status, 'implemented');
+assert.equal(model.getCharacterProfessionalSkillDefinition('melitele_iniciado_dos_deuses').automation.status, 'implemented');
+assert.equal(model.getCharacterProfessionalSkillDefinition('grey_roads_minstrel_cantar_por_moedas').automation.batch, 5);
 assert.equal(
     model.CHARACTER_PROFESSIONAL_SKILLS.every(skill => (
         ['automatic', 'assisted', 'reminder', 'reference'].includes(skill.automation?.mode)
@@ -436,8 +439,19 @@ assert.equal(mageDerived.breakdown.constitutionBase, 14);
 assert.equal(mageDerived.stMaximum, 41);
 assert.equal(mageDerived.carryingCapacity, 11);
 assert.equal(mageDerived.movement, 7);
+assert.equal(mageDerived.breakdown.movementBeforeWeight, 17);
+assert.equal(mageDerived.breakdown.movementWeightPenalty, 10);
+assert.equal(mageDerived.excessWeight, 0);
+assert.equal(mageDerived.isEncumbered, false);
 assert.equal(mageDerived.breakdown.stClassBonus, 20);
 assert.equal(mageDerived.expandedMagic, 3);
+
+const encumberedMageDerived = model.calculateCharacterDerivedValues(mageDerivedFoundation, {
+    equippedWeight: 20
+});
+assert.equal(encumberedMageDerived.movement, 5, 'O Movimento base não pode ficar abaixo de 5.');
+assert.equal(encumberedMageDerived.excessWeight, 9);
+assert.equal(encumberedMageDerived.isEncumbered, true);
 
 const mageProfessionalBonuses = model.applyCharacterProfessionalSkillBonuses(
     'mage',
@@ -502,7 +516,7 @@ assert.match(
 );
 assert.match(
     fs.readFileSync(path.join(projectRoot, 'js', 'enhancements.js'), 'utf8'),
-    /copyCharacterFoundation\(combatant, sheet\);\s*refreshCharacterDerivedValues\(combatant\);/,
+    /copyCharacterFoundation\(combatant, sheet\);\s*(?:window\.restoreCareStateEffects\?\.\(combatant\);\s*)?refreshCharacterDerivedValues\(combatant\);/,
     'O combatente importado deve receber imediatamente seus recursos derivados.'
 );
 assert.equal(griffinDerived.breakdown.stClassBonus, 0);

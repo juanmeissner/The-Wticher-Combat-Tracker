@@ -67,7 +67,7 @@ function endCombat() {
     activeTurnId = combatants.length > 0 ? combatants[0].id : null;
     round = 1;
     monsterCounter = 1;
-    lastMonsterData = { hp: "", ca: "", atk: "" };
+    lastMonsterData = { hp: "", ca: "", movement: 5, atk: "" };
     selectedId = null;
     deleteVisibleId = null;
     sortCombatants();
@@ -115,6 +115,7 @@ function hardResetCombat() {
         hp: "",
         st: "",
         ca: "",
+        movement: 5,
         atk: "",
         armor: {
             head: 0,
@@ -128,6 +129,7 @@ function hardResetCombat() {
         hp: "",
         st: "",
         ca: "",
+        movement: 5,
         atk: "",
         armor: {
             head: 0,

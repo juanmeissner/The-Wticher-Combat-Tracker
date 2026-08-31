@@ -303,14 +303,15 @@ function closeDamageModals() {
                 c.stCurrent = Math.min(c.stMax, c.stCurrent + value);
         
             } else {
-        
-                c.stCurrent = Math.max(0, c.stCurrent - value);
+                const temporaryPayment = window.spendCareTemporarySt?.(c, value) || { remaining: value };
+                c.stCurrent = Math.max(0, c.stCurrent - Math.max(0, Number(temporaryPayment.remaining) || 0));
         
             }
         
             savePlayersToStorage();
         
             updateCardTargeted(c);
+            window.renderAutomationCardSummaries?.();
         
             clearDisplay();
         

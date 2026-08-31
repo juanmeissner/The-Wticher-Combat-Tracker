@@ -107,6 +107,53 @@
     gap: 7px;
 }
 
+.loot-crown-amount,
+.loot-quantity-editor {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 96px;
+    align-items: center;
+    gap: 10px;
+    color: #cbd5e1;
+    font-size: .74rem;
+    font-weight: 850;
+}
+
+.loot-crown-amount {
+    margin-bottom: 7px;
+}
+
+.loot-quantity-editor {
+    margin-top: 9px;
+}
+
+.loot-crown-amount input,
+.loot-quantity-editor input {
+    width: 100%;
+    min-height: 38px;
+    padding: 7px 9px;
+    border: 1px solid #475569;
+    border-radius: 9px;
+    background: #0f172a;
+    color: #f8fafc;
+    font-size: .82rem;
+    font-weight: 900;
+    text-align: center;
+}
+
+.loot-crown-amount input:focus,
+.loot-quantity-editor input:focus {
+    border-color: #38bdf8;
+    outline: 2px solid rgba(56, 189, 248, .16);
+}
+
+.loot-crown-help {
+    display: block;
+    margin: 0 0 9px;
+    color: #94a3b8;
+    font-size: .66rem;
+    line-height: 1.35;
+}
+
 .loot-recipient-checks label,
 .loot-difficulty-check {
     display: flex;
@@ -233,6 +280,11 @@
 
 .loot-summary-list .loot-result-missed {
     opacity: .6;
+}
+
+.loot-summary-list .loot-result-unassigned {
+    border-color: rgba(245, 158, 11, .38);
+    color: #fde68a;
 }
 
 @media (max-width: 520px) {

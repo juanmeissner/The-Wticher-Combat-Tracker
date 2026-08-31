@@ -45,6 +45,14 @@ assert.deepEqual(
     ]
 );
 assert.equal(loot.parseMonsterReward('1.750 Coroas').amount, 1750);
+assert.equal(loot.normalizeLootCollectionAmount('17.9'), 17);
+assert.equal(loot.normalizeLootCollectionAmount('-4'), 0);
+assert.equal(loot.normalizeLootCollectionAmount('inválido', 6), 6);
+assert.deepEqual(
+    JSON.parse(JSON.stringify(loot.divideCrowns(50, []))),
+    [],
+    'Sem destinatários, nenhuma Coroa deve ser distribuída.'
+);
 
 const resolvedPowder = loot.resolveLootItemDefinition('Poeira Infundida');
 assert.equal(resolvedPowder.id, 'poinfundido');
@@ -113,13 +121,20 @@ const renderSource = read(path.join('js', 'combat', 'combat-render.js'));
 const sessionSource = read(path.join('js', 'session-features.js'));
 const reportSource = read(path.join('js', 'enhancements.js'));
 const workerSource = read(path.join('js', 'service-worker.js'));
+const lootSource = read(path.join('js', 'loot-rewards.js'));
+const lootStyles = read('loot-rewards.css');
 assert.match(indexSource, /loot-rewards\.css/);
 assert.match(indexSource, /js\/loot-rewards\.js/);
 assert.match(renderSource, /renderCombatantLootPanel/);
 assert.match(sessionSource, /getCollectedLootReport/);
 assert.match(sessionSource, /loot: \{ icon: '🎁'/);
 assert.match(reportSource, /Saques e recompensas/);
-assert.match(workerSource, /witcher-combat-tracker-v65/);
+assert.match(lootSource, /id="lootCrownsAmount"/);
+assert.match(lootSource, /id="lootQuantity-\$\{index\}"/);
+assert.doesNotMatch(lootSource, /Escolha ao menos um personagem para receber as Coroas/);
+assert.match(lootSource, /state\.unassignedCrowns = crownRecipientIds\.length \? 0 : collectedCrownsAmount/);
+assert.match(lootStyles, /\.loot-quantity-editor/);
+assert.match(workerSource, /witcher-combat-tracker-v75/);
 assert.match(workerSource, /loot-rewards\.css/);
 assert.match(workerSource, /js\/loot-rewards\.js/);
 

@@ -1,0 +1,414 @@
+.care-services-overlay {
+    align-items: center;
+    padding:
+        max(12px, env(safe-area-inset-top))
+        12px
+        max(12px, env(safe-area-inset-bottom));
+}
+
+.care-services-dialog {
+    width: min(100%, 720px);
+    max-height: min(92dvh, 860px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
+}
+
+.care-services-intro {
+    margin: 0 0 14px;
+    color: #cbd5e1;
+    font-size: 0.88rem;
+    line-height: 1.45;
+}
+
+.care-services-section {
+    display: grid;
+    gap: 10px;
+    margin-top: 14px;
+    padding: 14px;
+    border: 1px solid #334155;
+    border-radius: 16px;
+    background: rgba(15, 23, 42, 0.72);
+}
+
+.care-services-heading {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.care-services-heading div {
+    min-width: 0;
+}
+
+.care-services-heading small,
+.care-services-summary small,
+.care-services-money-summary small {
+    display: block;
+    color: #7dd3fc;
+    font-size: 0.68rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.care-services-heading strong {
+    display: block;
+    margin-top: 2px;
+    color: #f8fafc;
+}
+
+.care-services-checks {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+}
+
+.care-services-checks label,
+.care-category-toggle {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    min-width: 0;
+    min-height: 44px;
+    padding: 10px 12px;
+    border: 1px solid #334155;
+    border-radius: 12px;
+    background: #1e293b;
+    color: #e2e8f0;
+    font-size: 0.82rem;
+    font-weight: 700;
+}
+
+.care-services-checks input,
+.care-category-toggle input {
+    width: 18px;
+    height: 18px;
+    flex: 0 0 auto;
+    accent-color: #0ea5e9;
+}
+
+.care-services-checks span {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.care-persistence-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+}
+
+.care-persistence-card {
+    display: grid;
+    gap: 3px;
+    min-width: 0;
+    padding: 9px 11px;
+    border: 1px solid rgba(14, 116, 144, 0.55);
+    border-radius: 10px;
+    background: rgba(8, 145, 178, 0.08);
+}
+
+.care-persistence-card strong,
+.care-persistence-card small {
+    overflow-wrap: anywhere;
+}
+
+.care-persistence-card strong {
+    color: #e0f2fe;
+    font-size: 0.76rem;
+}
+
+.care-persistence-card small {
+    color: #94a3b8;
+    font-size: 0.68rem;
+}
+
+.care-category-grid {
+    display: grid;
+    gap: 10px;
+}
+
+.care-category-card {
+    display: grid;
+    gap: 10px;
+    padding: 12px;
+    border: 1px solid #334155;
+    border-radius: 14px;
+    background: #111c31;
+}
+
+.care-category-card[data-enabled="false"] .care-category-fields {
+    display: none;
+}
+
+.care-category-toggle {
+    border: 0;
+    padding: 0;
+    background: transparent;
+    font-size: 0.92rem;
+}
+
+.care-category-fields {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(112px, 0.35fr);
+    gap: 10px;
+}
+
+.care-category-fields label,
+.care-services-money-grid label {
+    display: grid;
+    gap: 5px;
+    min-width: 0;
+    color: #cbd5e1;
+    font-size: 0.72rem;
+    font-weight: 800;
+}
+
+.care-category-fields select,
+.care-category-fields input,
+.care-services-money-grid input {
+    width: 100%;
+    min-width: 0;
+    min-height: 42px;
+    padding: 9px 10px;
+    border: 1px solid #475569;
+    border-radius: 10px;
+    background: #1e293b;
+    color: #f8fafc;
+    font-size: 0.84rem;
+}
+
+.care-category-rule {
+    margin: 0;
+    color: #94a3b8;
+    font-size: 0.76rem;
+    line-height: 1.42;
+}
+
+.care-professional-select,
+.care-professional-nd {
+    display: grid;
+    gap: 6px;
+    min-width: 0;
+    color: #cbd5e1;
+    font-size: 0.72rem;
+    font-weight: 800;
+}
+
+.care-professional-select select,
+.care-professional-nd input {
+    width: 100%;
+    min-width: 0;
+    min-height: 42px;
+    padding: 9px 10px;
+    border: 1px solid #475569;
+    border-radius: 10px;
+    background: #1e293b;
+    color: #f8fafc;
+}
+
+.care-professional-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.care-professional-tags span {
+    padding: 6px 9px;
+    border: 1px solid rgba(14, 165, 233, 0.45);
+    border-radius: 999px;
+    background: rgba(14, 165, 233, 0.1);
+    color: #bae6fd;
+    font-size: 0.68rem;
+    font-weight: 800;
+}
+
+.care-professional-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+}
+
+.care-professional-option {
+    display: grid;
+    gap: 8px;
+    min-width: 0;
+    padding: 11px;
+    border: 1px solid #334155;
+    border-radius: 12px;
+    background: #111c31;
+}
+
+.care-professional-option > label:first-child {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    color: #f8fafc;
+    font-size: 0.78rem;
+    font-weight: 800;
+}
+
+.care-professional-option > label:first-child input {
+    width: 18px;
+    height: 18px;
+    flex: 0 0 auto;
+    accent-color: #0ea5e9;
+}
+
+.care-professional-option small {
+    color: #94a3b8;
+    font-size: 0.7rem;
+    line-height: 1.4;
+    overflow-wrap: anywhere;
+}
+
+.care-services-money-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+}
+
+.care-services-money-summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding-top: 4px;
+}
+
+.care-services-money-summary strong {
+    color: #facc15;
+    font-size: 1.15rem;
+}
+
+.care-services-summary {
+    padding: 12px;
+    border: 1px solid #0e7490;
+    border-radius: 12px;
+    background: rgba(8, 145, 178, 0.1);
+    color: #e0f2fe;
+    font-size: 0.78rem;
+    line-height: 1.5;
+}
+
+.care-services-summary p {
+    margin: 5px 0 0;
+}
+
+.care-services-stage-note {
+    margin: 0;
+    color: #94a3b8;
+    font-size: 0.72rem;
+    line-height: 1.4;
+}
+
+.care-tests-list {
+    display: grid;
+    gap: 10px;
+}
+
+.care-test-card {
+    display: grid;
+    gap: 9px;
+    padding: 12px;
+    border: 1px solid #334155;
+    border-radius: 14px;
+    background: #111c31;
+}
+
+.care-test-heading {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.care-test-heading div {
+    min-width: 0;
+}
+
+.care-test-heading strong,
+.care-test-heading small {
+    display: block;
+    overflow-wrap: anywhere;
+}
+
+.care-test-heading strong {
+    color: #f8fafc;
+}
+
+.care-test-heading small,
+.care-test-card > small,
+.care-test-card > p {
+    color: #94a3b8;
+    font-size: 0.72rem;
+    line-height: 1.4;
+}
+
+.care-test-heading b {
+    flex: 0 0 auto;
+    color: #38bdf8;
+}
+
+.care-test-card > p {
+    margin: 0;
+}
+
+.care-test-inputs {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+}
+
+.care-test-inputs label {
+    display: grid;
+    gap: 5px;
+    min-width: 0;
+    color: #cbd5e1;
+    font-size: 0.7rem;
+    font-weight: 800;
+}
+
+.care-test-inputs input {
+    width: 100%;
+    min-width: 0;
+    min-height: 42px;
+    padding: 9px 10px;
+    border: 1px solid #475569;
+    border-radius: 10px;
+    background: #1e293b;
+    color: #f8fafc;
+}
+
+@media (max-width: 560px) {
+    .care-services-overlay {
+        align-items: flex-end;
+        padding-left: 0;
+        padding-right: 0;
+        padding-bottom: 0;
+    }
+
+    .care-services-dialog {
+        width: 100%;
+        max-height: calc(100dvh - max(20px, env(safe-area-inset-top)) - max(12px, env(safe-area-inset-bottom)));
+        border-radius: 22px 22px 0 0;
+        padding-bottom: max(18px, env(safe-area-inset-bottom));
+    }
+
+    .care-services-checks,
+    .care-services-money-grid,
+    .care-persistence-grid,
+    .care-professional-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .care-category-fields {
+        grid-template-columns: 1fr;
+    }
+
+    .care-test-inputs {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}

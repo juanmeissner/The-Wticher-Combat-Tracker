@@ -272,6 +272,12 @@ function removeEffect(combatantId,type,id){
 
     if(!combatant) return;
 
+    const effect = combatant.effects?.find(entry => entry.id === id && entry.type === type);
+    if (effect?.systemManaged === 'encumbrance') {
+        showToast('⚖️ Reduza o peso equipado para remover Carregando Peso.');
+        return;
+    }
+
     combatant.effects =
         combatant.effects.filter(e=>
 

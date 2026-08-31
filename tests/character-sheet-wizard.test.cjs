@@ -28,6 +28,10 @@ const wizardSource = fs.readFileSync(
     path.join(projectRoot, 'js', 'character-sheet-wizard.js'),
     'utf8'
 );
+const enhancementsSource = fs.readFileSync(
+    path.join(projectRoot, 'js', 'enhancements.js'),
+    'utf8'
+);
 const indexSource = fs.readFileSync(path.join(projectRoot, 'index.html'), 'utf8');
 const serviceWorkerSource = fs.readFileSync(
     path.join(projectRoot, 'js', 'service-worker.js'),
@@ -247,6 +251,8 @@ assert.match(wizardSource, /EDITAR FICHA COMPLETA/);
 assert.match(wizardSource, /editSheetId/);
 assert.match(wizardSource, /updateFullCharacterSheetFromDraft/);
 assert.match(wizardSource, /Salvar alterações/);
+assert.match(indexSource, /id="movementInp"/);
+assert.match(enhancementsSource, /id="sheetMovement"/);
 
 const inventoryModalAdd = inventorySource.slice(
     inventorySource.indexOf('function addInventoryItemFromModal'),

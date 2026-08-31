@@ -11,6 +11,7 @@ const CRAFTING_CATEGORY_LABELS = Object.freeze({
     weapons: 'Armas',
     armor: 'Armaduras',
     alchemy: 'Alquimia',
+    culinary: 'Culinária',
     materials: 'Materiais'
 });
 
@@ -230,11 +231,11 @@ function renderCraftingScreen(container) {
 
     if (!owner) {
         container.innerHTML = `
-            <section class="crafting-screen" aria-label="Criação e alquimia">
+            <section class="crafting-screen" aria-label="Criação, alquimia e culinária">
                 <div class="crafting-heading">
                     <div>
                         <span>⚒️ OFICINA</span>
-                        <strong>Criação e Alquimia</strong>
+                        <strong>Criação, Alquimia e Culinária</strong>
                     </div>
                 </div>
                 <div class="crafting-empty">
@@ -247,11 +248,11 @@ function renderCraftingScreen(container) {
     }
 
     container.innerHTML = `
-        <section class="crafting-screen" aria-label="Criação e alquimia de ${escapeCraftingHtml(ownerName)}">
+        <section class="crafting-screen" aria-label="Criação, alquimia e culinária de ${escapeCraftingHtml(ownerName)}">
             <div class="crafting-heading">
                 <div>
                     <span>⚒️ OFICINA</span>
-                    <strong>Criação e Alquimia</strong>
+                    <strong>Criação, Alquimia e Culinária</strong>
                     <small>Inventário de ${escapeCraftingHtml(ownerName)}</small>
                 </div>
                 <div class="crafting-filter-anchor">

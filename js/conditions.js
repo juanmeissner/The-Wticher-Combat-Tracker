@@ -27,7 +27,14 @@ function openConditionMenu() {
         { icon: '💉', name: 'Vício em Fisstech.' },
         { icon: '🥶', name: 'Abstinência de Fisstech.' },
         { icon: '🤪', name: 'Alegria Delirante.' },
-        { icon: '🧴', name: 'Cura Potencializada.' }
+        { icon: '🧴', name: 'Cura Potencializada.' },
+        { icon: '🍽️', name: 'Faminto.' },
+        { icon: '🧼', name: 'Falta de Higiene.' },
+        { icon: '🥱', name: 'Privação de Sono.' },
+        { icon: '🪵', name: 'Desconfortável.' },
+        { icon: '🍲', name: 'Bem Alimentado.' },
+        { icon: '🛁', name: 'Revigorado.' },
+        { icon: '🌙', name: 'Bem Descansado.' }
 ];
 
 const selectedCombatant = combatants.find(comp => comp.id === selectedId);
@@ -143,6 +150,14 @@ function toggleCondition(icon) {
 }
 
 const conditionDescriptions = {
+
+    '🏋️': {
+        title: 'Carregando Peso',
+        active: 0,
+        stack: 1,
+        augment: 'debuff',
+        desc: 'A carga equipada ultrapassou a capacidade do personagem. Todo o peso equipado é descontado do Movimento, respeitando o mínimo base de 5. O status é removido automaticamente ao reduzir a carga.'
+    },
 
     '😍': {
         title: 'Enfeitiçado',
@@ -342,6 +357,62 @@ const conditionDescriptions = {
         stack: 1,
         augment: 'buff',
         desc: 'Toda cura real de HP recebida é dobrada. Não aumenta PV temporários nem Escudo Mágico e nunca ultrapassa o HP máximo.'
+    },
+
+    '🍽️': {
+        title: 'Faminto',
+        active: 0,
+        stack: 99,
+        augment: 'debuff',
+        desc: 'Cada dia sem alimentação adiciona 1 pilha e aplica −1 por pilha nas perícias físicas. Uma refeição remove todas as pilhas.'
+    },
+
+    '🧼': {
+        title: 'Falta de Higiene',
+        active: 0,
+        stack: 99,
+        augment: 'debuff',
+        desc: 'Cada período sem banho adiciona 1 pilha e aplica −1 por pilha em Aparência e Estilo, Persuasão, Sedução e Etiqueta Social.'
+    },
+
+    '🥱': {
+        title: 'Privação de Sono',
+        active: 0,
+        stack: 99,
+        augment: 'debuff',
+        desc: 'Cada período sem dormir adiciona 1 pilha e aplica −1 por pilha nas perícias físicas e de concentração, incluindo Físico.'
+    },
+
+    '🪵': {
+        title: 'Desconfortável',
+        active: 0,
+        stack: 1,
+        augment: 'debuff',
+        desc: 'Descanso inadequado. O personagem realiza todos os testes físicos com desvantagem até descansar adequadamente.'
+    },
+
+    '🍲': {
+        title: 'Bem Alimentado',
+        active: 0,
+        stack: 2,
+        augment: 'buff',
+        desc: 'Refeição Boa concede 1 pilha e Refeição Sofisticada concede 2. Cada pilha concede Adrenalina e recursos temporários conforme o serviço.'
+    },
+
+    '🛁': {
+        title: 'Revigorado',
+        active: 0,
+        stack: 2,
+        augment: 'buff',
+        desc: 'Cada pilha concede +1 em Sedução, Persuasão, Belas Artes e Aparência e Estilo, além dos recursos temporários do banho.'
+    },
+
+    '🌙': {
+        title: 'Bem Descansado',
+        active: 0,
+        stack: 2,
+        augment: 'buff',
+        desc: 'Hospedaria de Qualidade concede 1 pilha e Hospedaria Chique concede 2, com recursos temporários e Adrenalina conforme o serviço.'
     }
     };
 

@@ -673,15 +673,21 @@
             + strengthBonus
             + racialCarryBonus
         ) * 10) / 10);
-        const movementBeforeLimits = (athleticsTotal * 2)
+        const movementBeforeWeight = (athleticsTotal * 2)
             + 4
-            - equippedWeight
             + physiqueTotal
             + strengthBonus;
+        const movementWeightPenalty = equippedWeight;
+        const movementBeforeLimits = movementBeforeWeight - movementWeightPenalty;
         const movement = Math.min(
             CHARACTER_MOVEMENT_MAXIMUM,
             Math.max(CHARACTER_MOVEMENT_MINIMUM, Math.floor(movementBeforeLimits))
         );
+        const excessWeight = Math.max(
+            0,
+            Math.round((equippedWeight - carryingCapacity) * 100) / 100
+        );
+        const isEncumbered = excessWeight > 0;
 
         return {
             level,
@@ -692,6 +698,8 @@
             carryingCapacity,
             movement,
             equippedWeight,
+            excessWeight,
+            isEncumbered,
             stFormula,
             breakdown: {
                 constitutionBonus,
@@ -705,6 +713,8 @@
                 athleticsTotal,
                 stClassBonus,
                 racialCarryBonus,
+                movementBeforeWeight,
+                movementWeightPenalty,
                 movementBeforeLimits
             }
         };

@@ -363,10 +363,11 @@
 
     function getSpellEnergyAvailability(combatant, ability) {
         const stamina = Math.max(0, Number(combatant?.stCurrent) || 0);
+        const temporarySt = Math.max(0, Number(global.getCareTemporarySt?.(combatant)) || 0);
         const runeSource = isWitcherSign(ability)
             ? Math.max(0, Number(combatant?.runeSourceCurrent) || 0)
             : 0;
-        return { stamina, runeSource, total: stamina + runeSource };
+        return { stamina, temporarySt, runeSource, total: stamina + temporarySt + runeSource };
     }
 
     function spendSpellEnergy(combatant, ability, cost) {
@@ -377,12 +378,19 @@
         const runeSourceSpent = isWitcherSign(ability)
             ? Math.min(totalCost, availability.runeSource)
             : 0;
-        const staminaSpent = totalCost - runeSourceSpent;
+        const remainingAfterRune = totalCost - runeSourceSpent;
+        const temporaryResult = global.spendCareTemporarySt?.(combatant, remainingAfterRune)
+            || { spent: 0, availableAfter: availability.temporarySt };
+        const temporaryStSpent = Math.min(remainingAfterRune, Math.max(0, Number(temporaryResult.spent) || 0));
+        const staminaSpent = remainingAfterRune - temporaryStSpent;
         const result = {
             cost: totalCost,
             staminaBefore: availability.stamina,
             staminaSpent,
             staminaAfter: availability.stamina - staminaSpent,
+            temporaryStBefore: availability.temporarySt,
+            temporaryStSpent,
+            temporaryStAfter: Math.max(0, Number(temporaryResult.availableAfter) || 0),
             runeSourceBefore: availability.runeSource,
             runeSourceSpent,
             runeSourceAfter: availability.runeSource - runeSourceSpent
@@ -681,7 +689,7 @@
                     </div>
                     <button type="button" class="session-close" onclick="closeCharacterSpellCast()" aria-label="Fechar">×</button>
                 </div>
-                <p class="character-spell-caster">${escapeSpellHtml(combatant.name)} · EST ${availability.stamina}${availability.runeSource ? ` + ${availability.runeSource} Fonte Rúnica` : ''}</p>
+                <p class="character-spell-caster">${escapeSpellHtml(combatant.name)} · EST ${availability.stamina}${availability.temporarySt ? ` + ${availability.temporarySt} temporário` : ''}${availability.runeSource ? ` + ${availability.runeSource} Fonte Rúnica` : ''}</p>
                 ${parsedCost.mode !== 'fixed' && parsedCost.mode !== 'free' ? `
                     <label class="character-spell-field">
                         <span>EST base utilizada</span>
@@ -846,6 +854,7 @@
                 baseCost: effective.baseCost,
                 finalCost: effective.finalCost,
                 staminaSpent: energy?.staminaSpent || 0,
+                temporaryStSpent: energy?.temporaryStSpent || 0,
                 runeSourceSpent: energy?.runeSourceSpent || 0,
                 overload: overloadResult || null,
                 spellDamage: damageResult?.valid ? { ...damageResult } : null,
@@ -1038,9 +1047,11 @@
                 `Custo base: ${effective.baseCost} EST`,
                 ...effective.modifiers.map(modifier => modifier.label),
                 `Custo final: ${effective.finalCost} EST`,
-                energy?.runeSourceSpent
-                    ? `Fonte Rúnica ${energy.runeSourceBefore} → ${energy.runeSourceAfter} · EST ${energy.staminaBefore} → ${energy.staminaAfter}`
-                    : `EST ${energy?.staminaBefore ?? availability.stamina} → ${energy?.staminaAfter ?? availability.stamina}`
+                [
+                    energy?.runeSourceSpent ? `Fonte Rúnica ${energy.runeSourceBefore} → ${energy.runeSourceAfter}` : '',
+                    energy?.temporaryStSpent ? `EST temporário ${energy.temporaryStBefore} → ${energy.temporaryStAfter}` : '',
+                    `EST ${energy?.staminaBefore ?? availability.stamina} → ${energy?.staminaAfter ?? availability.stamina}`
+                ].filter(Boolean).join(' · ')
             ];
             if (overloadResult) {
                 lines.push(`Sobrecarga: ${overloadResult.naturalRoll} + ${overloadResult.level} = ${overloadResult.total} contra CD 16`);

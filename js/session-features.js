@@ -235,6 +235,9 @@ function getEffectStateDetails(effect) {
     if (Number.isFinite(Number(automation.temporaryHp))) {
         details.push(`PV temporários: ${Math.max(0, Number(automation.temporaryHp))}`);
     }
+    if (Number.isFinite(Number(automation.temporarySt))) {
+        details.push(`EST temporário: ${Math.max(0, Number(automation.temporarySt))}`);
+    }
     if (Number.isFinite(Number(automation.staminaCost)) && Number(automation.staminaCost) > 0) {
         if (automation.staminaPayerName) {
             details.push(`Conjurador: ${automation.staminaPayerName}`);
@@ -274,7 +277,8 @@ function getEffectUpdateDetails(beforeEffect, afterEffect) {
     const afterMaxStacks = Math.max(1, Number(afterEffect?.maxStacks) || 1);
     const automationFields = [
         ['magicShieldHp', 'Escudo mágico'],
-        ['temporaryHp', 'PV temporários']
+        ['temporaryHp', 'PV temporários'],
+        ['temporarySt', 'EST temporário']
     ];
 
     if (beforeTurns !== afterTurns) {
@@ -1801,9 +1805,11 @@ function installActionGuards() {
             : 1;
         const value = isHealing ? Math.floor(requestedValue * recoveryMultiplier) : requestedValue;
         const stBefore = Math.max(0, Number(target?.stCurrent) || 0);
+        const temporaryStBefore = Math.max(0, Number(window.getCareTemporarySt?.(target)) || 0);
         const runeSourceMaximum = Math.max(0, Number(target?.runeSourceMax) || 0);
         const runeSourceBefore = Math.max(0, Number(target?.runeSourceCurrent) || 0);
         let stAfter = stBefore;
+        let temporaryStAfter = temporaryStBefore;
         let runeSourceAfter = runeSourceBefore;
         const restoresRuneSource = isHealing && runeSourceMaximum > 0;
 
@@ -1826,10 +1832,14 @@ function installActionGuards() {
                 }
 
                 stAfter = Math.max(0, Number(target?.stCurrent) || 0);
+                temporaryStAfter = Math.max(0, Number(window.getCareTemporarySt?.(target)) || 0);
                 return result;
             },
             () => {
                 const details = [`EST: ${stBefore} → ${stAfter}`];
+                if (temporaryStBefore !== temporaryStAfter) {
+                    details.push(`EST temporário: ${temporaryStBefore} → ${temporaryStAfter}`);
+                }
                 if (recoveryMultiplier !== 1) {
                     details.push(`Recuperação base ${requestedValue} ×${recoveryMultiplier} = ${value}`);
                 }
@@ -2045,20 +2055,33 @@ function installActionGuards() {
 
         const itemDefinition = predefinedItems.find(entry => entry.id === item.id) || item;
         const collectionOwner = window.getCharacterCollectionOwner?.() || null;
+        const isCareConsumable = Boolean(itemDefinition.careConsumable);
         const appliesActiveInventoryEffect = Boolean(
             window.isInventoryItemAutomationManaged?.(itemDefinition) || (
                 (itemDefinition.potion || itemDefinition.oil) &&
                 Object.prototype.hasOwnProperty.call(itemDefinition, 'active')
             )
         );
-        const confirmationMessage = appliesActiveInventoryEffect
+        const confirmationMessage = isCareConsumable
+            ? `${item.name} será consumido por ${collectionOwner?.name || 'quem possui este inventário'} e removerá uma porção. ${itemDefinition.careConsumable.kind === 'food' ? 'A alimentação e seus efeitos serão atualizados.' : 'O consumo será registrado sem substituir uma refeição.'} Você poderá desfazer.`
+            : appliesActiveInventoryEffect
             ? `${item.name} será consumido e seu efeito será aplicado em ${collectionOwner?.name || 'quem possui este inventário'}. Você poderá desfazer.`
             : `${item.name} será consumido do inventário. Você poderá desfazer.`;
 
         const executeUse = () => trackAction(
-            `Item usado: ${item.name}`,
+            isCareConsumable
+                ? `${collectionOwner?.name || 'Personagem'}: consumiu ${item.name}`
+                : `Item usado: ${item.name}`,
             originalUseSelectedItem,
-            () => window.consumeToxicityItemUseDetail?.() || ''
+            () => window.consumeToxicityItemUseDetail?.() || '',
+            isCareConsumable
+                ? {
+                    type: 'effect',
+                    target: collectionOwner ? { id: collectionOwner.id, name: collectionOwner.name } : undefined,
+                    participants: collectionOwner ? [{ id: collectionOwner.id, name: collectionOwner.name }] : [],
+                    effect: { id: item.id, type: 'care-consumable', name: item.name, action: 'consumido' }
+                }
+                : {}
         );
 
         if (window.beginInventoryItemUseFlow?.(itemDefinition, collectionOwner, executeUse)) {
@@ -2066,9 +2089,9 @@ function installActionGuards() {
         }
 
         openSessionConfirm({
-            title: 'Usar item?',
+            title: isCareConsumable ? 'Consumir item?' : 'Usar item?',
             message: confirmationMessage,
-            confirmLabel: 'Usar item',
+            confirmLabel: isCareConsumable ? 'Consumir' : 'Usar item',
             onConfirm: executeUse
         });
     };

@@ -62,17 +62,18 @@ let round = 1;`, context, { filename: 'items.js' });
 vm.runInContext(craftingSource, context, { filename: 'crafting.js' });
 
 const recipes = context.getCraftingRecipes();
-assert.equal(recipes.length, 88, 'A quantidade de produtos com receita mudou sem atualizar a auditoria.');
+assert.equal(recipes.length, 104, 'A quantidade de produtos com receita mudou sem atualizar a auditoria.');
 
 const categoryCounts = recipes.reduce((counts, recipe) => {
     const category = context.getCraftingRecipeCategory(recipe);
     counts[category] = (counts[category] || 0) + 1;
     return counts;
 }, {});
-assert.deepEqual(categoryCounts, { weapons: 32, materials: 5, alchemy: 51 });
+assert.deepEqual(categoryCounts, { culinary: 16, weapons: 32, materials: 5, alchemy: 51 });
 assert.equal(context.getCraftingRecipeCategory({ type: 'armor', equipmentSlot: 'body' }), 'armor');
 assert.equal(context.getCraftingRecipeCategory({ category: 'misc' }), 'materials');
 assert.equal(context.getCraftingRecipeCategory({ category: 'usable' }), 'alchemy');
+assert.equal(context.getCraftingRecipeCategory({ category: 'usable', craftingCategory: 'culinary' }), 'culinary');
 
 const incomplete = recipes.filter(recipe => !recipe.complete);
 assert.deepEqual(
@@ -102,6 +103,28 @@ const dimeritiumPowder = recipes.find(recipe => recipe.product.id === 'podedimer
 assert.equal(dimeritiumPowder.ingredients.some(ingredient => ingredient.item.id === 'dimeritio'), true);
 assert.equal(dimeritiumPowder.ingredients.some(ingredient => ingredient.item.id === dimeritiumPowder.product.id), false);
 
+const culinaryRecipes = recipes.filter(recipe => context.getCraftingRecipeCategory(recipe) === 'culinary');
+assert.equal(culinaryRecipes.length, 16);
+assert.equal(culinaryRecipes.every(recipe => recipe.complete), true);
+assert.equal(culinaryRecipes.find(recipe => recipe.product.id === 'racaodeviagem').outputQuantity, 2);
+assert.equal(culinaryRecipes.find(recipe => recipe.product.id === 'ensopadodeestalagem').outputQuantity, 2);
+assert.equal(culinaryRecipes.find(recipe => recipe.product.id === 'banquetedetoussaint').outputQuantity, 4);
+assert.equal(
+    culinaryRecipes.find(recipe => recipe.product.id === 'banquetedetoussaint').ingredients.some(ingredient => ingredient.item.id === 'mel'),
+    true
+);
+assert.equal(
+    culinaryRecipes.find(recipe => recipe.product.id === 'cervejademahakam').ingredients.some(ingredient => ingredient.item.id === 'aguapotavel'),
+    true
+);
+assert.equal(culinaryRecipes.find(recipe => recipe.product.id === 'paorustico').outputQuantity, 3);
+assert.equal(culinaryRecipes.find(recipe => recipe.product.id === 'estufadorealdacaca').outputQuantity, 4);
+assert.equal(culinaryRecipes.find(recipe => recipe.product.id === 'farinha').outputQuantity, 2);
+assert.equal(
+    culinaryRecipes.find(recipe => recipe.product.id === 'coelhoassadocomervas').ingredients.some(ingredient => ingredient.item.id === 'carnedecoelho'),
+    true
+);
+
 const parsedDifficulty = context.parseCraftingRecipeLine('2x Ferro (ND 14)');
 assert.equal(parsedDifficulty.ingredientName, 'Ferro');
 assert.equal(parsedDifficulty.ingredientQuantity, 2);
@@ -125,6 +148,20 @@ context.confirmCrafting();
 const craftedInventory = vm.runInContext('JSON.parse(JSON.stringify(inventory))', context);
 assert.equal(craftedInventory.some(item => item.id === 'prata'), false);
 assert.equal(craftedInventory.find(item => item.id === 'podeprata')?.quantity, 12);
+
+vm.runInContext(`
+inventory = ['cereais', 'carneseca', 'sal'].map(id => ({
+    ...predefinedItems.find(item => item.id === id),
+    quantity: 1
+}));
+combatants[0].inventory = inventory;
+`, context);
+context.openCraftingModal('racaodeviagem');
+context.confirmCrafting();
+const culinaryCraft = vm.runInContext('JSON.parse(JSON.stringify(inventory))', context);
+assert.equal(culinaryCraft.some(item => ['cereais', 'carneseca', 'sal'].includes(item.id)), false);
+assert.equal(culinaryCraft.find(item => item.id === 'racaodeviagem')?.quantity, 2);
+assert.equal(culinaryCraft.find(item => item.id === 'racaodeviagem')?.careConsumable?.optionId, 'simple_meal');
 
 vm.runInContext(`
 inventory = [{ ...predefinedItems.find(item => item.id === 'prata'), quantity: 3 }];

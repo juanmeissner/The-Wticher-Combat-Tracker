@@ -19,6 +19,7 @@ let lastMonsterData = {
 hp: "",
 st: "",
 ca: "",
+movement: 5,
 atk: "",
 armor: {
 head: 0,
@@ -32,6 +33,7 @@ let lastPlayerData = {
 hp: "",
 st: "",
 ca: "",
+movement: 5,
 atk: "",
 armor: {
 head: 0,

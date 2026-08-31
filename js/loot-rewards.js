@@ -151,6 +151,14 @@
         })).filter(distribution => distribution.amount > 0);
     }
 
+    function normalizeLootCollectionAmount(value, fallback = 0) {
+        const parsed = Number(value);
+        if (!Number.isFinite(parsed)) {
+            return Math.max(0, Math.floor(Number(fallback) || 0));
+        }
+        return Math.max(0, Math.floor(parsed));
+    }
+
     function getLootCatalog() {
         return typeof predefinedItems !== 'undefined' ? predefinedItems : [];
     }
@@ -220,7 +228,9 @@
             rolledAt: new Date().toISOString(),
             items: rollMonsterLoot(definition),
             crownDistributions: [],
-            itemDistributions: []
+            itemDistributions: [],
+            collectedCrownsAmount: null,
+            unassignedCrowns: 0
         };
 
         combatant.lootCollection = state;
@@ -282,6 +292,16 @@
         const crownLines = (state.crownDistributions || []).map(distribution => `
             <li><span>👑 ${escapeLootHtml(distribution.recipientName)}</span><strong>${distribution.amount}</strong></li>
         `).join('');
+        const unassignedCrowns = normalizeLootCollectionAmount(state.unassignedCrowns);
+        const crownSummary = [
+            crownLines,
+            unassignedCrowns > 0 ? `
+                <li class="loot-result-unassigned">
+                    <span>👑 Sem destinatário</span>
+                    <strong>${unassignedCrowns} não distribuídas</strong>
+                </li>
+            ` : ''
+        ].filter(Boolean).join('');
         const itemLines = (state.itemDistributions || []).map(distribution => `
             <li class="${distribution.status === 'collected' ? '' : 'loot-result-missed'}">
                 <span>${escapeLootHtml(distribution.itemName)}</span>
@@ -297,7 +317,7 @@
                 <button type="button" class="session-close" onclick="closeMonsterLootModal()" aria-label="Fechar">×</button>
             </div>
             <p class="loot-dialog-note">Distribuição concluída em ${new Date(state.collectedAt).toLocaleString('pt-BR')}.</p>
-            ${crownLines ? `<h3>Coroas</h3><ul class="loot-summary-list">${crownLines}</ul>` : ''}
+            ${crownSummary ? `<h3>Coroas</h3><ul class="loot-summary-list">${crownSummary}</ul>` : ''}
             ${itemLines ? `<h3>Itens</h3><ul class="loot-summary-list">${itemLines}</ul>` : ''}
             <button type="button" class="session-secondary session-full" onclick="closeMonsterLootModal()">Fechar</button>
         `;
@@ -344,9 +364,21 @@
         const rewardSection = state.rewardCrowns > 0 ? `
             <section class="loot-reward-section">
                 <div class="loot-section-heading">
-                    <div><small>RECOMPENSA</small><strong>👑 ${state.rewardCrowns} Coroas</strong></div>
-                    <span>Dividir igualmente</span>
+                    <div><small>RECOMPENSA</small><strong>👑 Coroas</strong></div>
+                    <span>Valor original: ${state.rewardCrowns}</span>
                 </div>
+                <label class="loot-crown-amount" for="lootCrownsAmount">
+                    <span>Quantidade a coletar</span>
+                    <input
+                        type="number"
+                        id="lootCrownsAmount"
+                        min="0"
+                        step="1"
+                        inputmode="numeric"
+                        value="${state.rewardCrowns}"
+                    >
+                </label>
+                <small class="loot-crown-help">Selecione quem participará da divisão. Sem destinatários, nenhuma Coroa será entregue.</small>
                 <div class="loot-recipient-checks">
                     ${recipients.map(recipient => `
                         <label>
@@ -358,28 +390,37 @@
             </section>
         ` : '';
         const itemSection = state.items.length ? state.items.map((item, index) => {
-            const found = item.quantity > 0;
+            const rolledQuantity = normalizeLootCollectionAmount(item.quantity);
             return `
-                <article class="loot-result-card ${found ? '' : 'loot-result-missed'}">
+                <article class="loot-result-card">
                     <div class="loot-result-main">
                         <span class="loot-result-icon">${getLootItemIcon(item.name)}</span>
                         <div><strong>${escapeLootHtml(item.name)}</strong><small>${escapeLootHtml(item.rollDetail)}</small></div>
-                        <b>${found ? `×${item.quantity}` : 'Não encontrado'}</b>
+                        <b>Rolado ×${rolledQuantity}</b>
                     </div>
-                    ${found ? `
-                        ${item.difficulty > 0 ? `
-                            <label class="loot-difficulty-check">
-                                <input type="checkbox" id="lootDifficulty-${index}">
-                                <span>Teste ND ${item.difficulty} superado</span>
-                            </label>
-                        ` : ''}
-                        <label class="loot-recipient-select">
-                            <span>Receber</span>
-                            <select id="lootRecipient-${index}">
-                                ${renderLootRecipientOptions(recipients, defaultRecipient?.id)}
-                            </select>
+                    <label class="loot-quantity-editor" for="lootQuantity-${index}">
+                        <span>Quantidade a coletar</span>
+                        <input
+                            type="number"
+                            id="lootQuantity-${index}"
+                            min="0"
+                            step="1"
+                            inputmode="numeric"
+                            value="${rolledQuantity}"
+                        >
+                    </label>
+                    ${item.difficulty > 0 ? `
+                        <label class="loot-difficulty-check">
+                            <input type="checkbox" id="lootDifficulty-${index}">
+                            <span>Teste ND ${item.difficulty} superado</span>
                         </label>
                     ` : ''}
+                    <label class="loot-recipient-select">
+                        <span>Receber</span>
+                        <select id="lootRecipient-${index}">
+                            ${renderLootRecipientOptions(recipients, defaultRecipient?.id)}
+                        </select>
+                    </label>
                 </article>
             `;
         }).join('') : '<p class="loot-empty">Esta criatura não possui itens de saque.</p>';
@@ -455,6 +496,9 @@
                 `${distribution.recipientName} +${distribution.amount}`
             ).join(', ')}`);
         }
+        if (normalizeLootCollectionAmount(state.unassignedCrowns) > 0) {
+            lines.push(`Coroas não distribuídas: ${normalizeLootCollectionAmount(state.unassignedCrowns)} · nenhum destinatário selecionado`);
+        }
         state.itemDistributions.forEach(distribution => {
             if (distribution.status === 'collected') {
                 lines.push(`${distribution.itemName}: ${distribution.quantity} → ${distribution.recipientName} · ${distribution.rollDetail}`);
@@ -479,29 +523,40 @@
 
         const crownRecipientIds = [...document.querySelectorAll('input[name="lootCrownRecipient"]:checked')]
             .map(input => input.value);
-        if (state.rewardCrowns > 0 && !crownRecipientIds.length) {
-            global.showToast?.('Escolha ao menos um personagem para receber as Coroas.');
-            return;
-        }
+        const collectedCrownsAmount = normalizeLootCollectionAmount(
+            document.getElementById('lootCrownsAmount')?.value,
+            state.rewardCrowns
+        );
 
-        const crownPlan = divideCrowns(state.rewardCrowns, crownRecipientIds)
+        const crownPlan = divideCrowns(collectedCrownsAmount, crownRecipientIds)
             .map(distribution => {
                 const recipient = recipients.find(entry => String(entry.id) === distribution.recipientId);
                 return recipient ? { ...distribution, recipient } : null;
             })
             .filter(Boolean);
         const itemPlan = state.items.map((item, index) => {
-            if (item.quantity <= 0) {
-                return { item, status: 'missed', reason: 'Não encontrado na rolagem' };
+            const selectedQuantity = normalizeLootCollectionAmount(
+                document.getElementById(`lootQuantity-${index}`)?.value,
+                item.quantity
+            );
+            if (selectedQuantity <= 0) {
+                return {
+                    item,
+                    quantity: 0,
+                    status: 'missed',
+                    reason: normalizeLootCollectionAmount(item.quantity) > 0
+                        ? 'Quantidade definida como zero'
+                        : 'Não encontrado na rolagem'
+                };
             }
             if (item.difficulty > 0 && !document.getElementById(`lootDifficulty-${index}`)?.checked) {
-                return { item, status: 'skipped', reason: `Teste ND ${item.difficulty} não confirmado` };
+                return { item, quantity: 0, status: 'skipped', reason: `Teste ND ${item.difficulty} não confirmado` };
             }
             const recipientId = document.getElementById(`lootRecipient-${index}`)?.value;
             const recipient = recipients.find(entry => String(entry.id) === String(recipientId));
             return recipient
-                ? { item, status: 'collected', recipient }
-                : { item, status: 'skipped', reason: 'Destinatário não definido' };
+                ? { item, quantity: selectedQuantity, status: 'collected', recipient }
+                : { item, quantity: 0, status: 'skipped', reason: 'Destinatário não definido' };
         });
         const involvedRecipients = [...new Map([
             ...crownPlan.map(plan => plan.recipient),
@@ -512,12 +567,14 @@
             crownPlan.forEach(plan => addCrownsToRecipient(plan.recipient, plan.amount));
             itemPlan.forEach(plan => {
                 if (plan.status === 'collected') {
-                    addLootItemToRecipient(plan.recipient, plan.item.name, plan.item.quantity, combatant.name);
+                    addLootItemToRecipient(plan.recipient, plan.item.name, plan.quantity, combatant.name);
                 }
             });
 
             state.status = 'collected';
             state.collectedAt = new Date().toISOString();
+            state.collectedCrownsAmount = collectedCrownsAmount;
+            state.unassignedCrowns = crownRecipientIds.length ? 0 : collectedCrownsAmount;
             state.crownDistributions = crownPlan.map(plan => ({
                 recipientId: plan.recipient.id,
                 recipientName: plan.recipient.name,
@@ -525,7 +582,8 @@
             }));
             state.itemDistributions = itemPlan.map(plan => ({
                 itemName: plan.item.name,
-                quantity: plan.status === 'collected' ? plan.item.quantity : 0,
+                rolledQuantity: normalizeLootCollectionAmount(plan.item.quantity),
+                quantity: plan.status === 'collected' ? plan.quantity : 0,
                 recipientId: plan.recipient?.id || null,
                 recipientName: plan.recipient?.name || '',
                 status: plan.status,
@@ -593,6 +651,7 @@
         rollMonsterLootEntry,
         rollMonsterLoot,
         divideCrowns,
+        normalizeLootCollectionAmount,
         resolveLootItemDefinition,
         ensureMonsterLootState,
         getCollectedLootReport,

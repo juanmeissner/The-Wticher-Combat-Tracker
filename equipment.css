@@ -1031,3 +1031,33 @@
     text-transform: uppercase;
     white-space: nowrap;
 }
+.movement-container {
+    display: inline-flex;
+    max-width: 112px;
+    min-height: 22px;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    margin-top: 7px;
+    padding: 3px 7px;
+    border: 1px solid rgba(148, 163, 184, .28);
+    border-radius: 999px;
+    background: rgba(15, 23, 42, .58);
+    color: #e2e8f0;
+    font-size: .68rem;
+    line-height: 1;
+}
+
+.movement-container strong {
+    max-width: 70px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.movement-container small {
+    color: #94a3b8;
+    font-size: .5rem;
+    font-weight: 900;
+    letter-spacing: .06em;
+}

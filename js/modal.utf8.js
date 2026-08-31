@@ -3,6 +3,7 @@ function openModal(type) {
     const hpInp = document.getElementById('hpInp');
     const stInp = document.getElementById('stInp');
     const caInp = document.getElementById('caInp');
+    const movementInp = document.getElementById('movementInp');
     const atkInp = document.getElementById('atkInp');
 
     editingId = null;
@@ -15,12 +16,14 @@ function openModal(type) {
         hpInp.value = lastMonsterData.hp;
         stInp.value = lastMonsterData.st;
         caInp.value = lastMonsterData.ca;
+        movementInp.value = Math.max(0, Number(lastMonsterData.movement) || 5);
         atkInp.value = lastMonsterData.atk;
     } else {
         nameInput.value = 'Jogador ' + playerCounter;
         hpInp.value = lastPlayerData.hp;
         stInp.value = lastPlayerData.st;
         caInp.value = lastPlayerData.ca;
+        movementInp.value = Math.max(0, Number(lastPlayerData.movement) || 5);
         atkInp.value = lastPlayerData.atk;
     }
     document.getElementById('entityModal').style.display = 'flex';
@@ -36,6 +39,7 @@ function saveEntity() {
     const hp = parseInt(document.getElementById('hpInp').value) || 1;
     const st = parseInt(document.getElementById('stInp').value) || 0;
     const ca = parseInt(document.getElementById('caInp').value) || 10;
+    const movement = Math.max(0, Number(document.getElementById('movementInp')?.value) || 5);
     const atk = document.getElementById('atkInp').value || '-';
     const armorHead = parseInt(document.getElementById('armorHeadInp').value) || 0;
     const armorTorso = parseInt(document.getElementById('armorTorsoInp').value) || 0;
@@ -57,6 +61,8 @@ function saveEntity() {
             combatants[index].stMax = st;
             if (combatants[index].stCurrent > st) combatants[index].stCurrent = st;
             combatants[index].ca = ca;
+            combatants[index].movement = movement;
+            combatants[index].movementLabel = '';
             combatants[index].atkInfo = atk;
             combatants[index].armor = {
                 head: armorHead,
@@ -86,6 +92,7 @@ function saveEntity() {
             stMax: st,
             stCurrent: st,
             ca,
+            movement,
             atkInfo: atk,
             armor: {
                 head: armorHead,
@@ -107,10 +114,10 @@ function saveEntity() {
 
         if (modalType === 'monster') {
             monsterCounter++;
-            lastMonsterData = { hp, st, ca, atk };
+            lastMonsterData = { hp, st, ca, movement, atk };
         } else {
             playerCounter++;
-            lastPlayerData = { hp, st, ca, atk };
+            lastPlayerData = { hp, st, ca, movement, atk };
             savePlayersToStorage();
         }
     }
@@ -142,6 +149,7 @@ function editCombatant(event, id) {
     document.getElementById('hpInp').value = c.hpMax;
     document.getElementById('stInp').value = c.stMax;
     document.getElementById('caInp').value = c.ca;
+    document.getElementById('movementInp').value = Math.max(0, Number(c.movement) || 5);
     document.getElementById('atkInp').value = c.atkInfo;
 
     document.getElementById('armorHeadInp').value = c.armor?.head || 0;

@@ -929,7 +929,7 @@ function updateInventoryEquipmentAction() {
 
     const item = inventory.find(entry => entry.id === selectedInventoryItemId);
     const equipmentLabel = getSelectedEquipmentActionLabel(item);
-    button.textContent = equipmentLabel || 'Usar';
+    button.textContent = equipmentLabel || (item?.careConsumable ? 'Consumir' : 'Usar');
     button.classList.toggle('equipment-action-button', Boolean(equipmentLabel));
 }
 

@@ -32,6 +32,53 @@
         label.setAttribute('aria-label', `Turno ativo: ${activeName}`);
     }
 
+    function getCombatantStatusIcons(combatant) {
+        const legacyConditions = Array.isArray(combatant?.conditions) ? combatant.conditions : [];
+        const activeConditions = (Array.isArray(combatant?.effects) ? combatant.effects : [])
+            .filter(effect => effect?.type === 'condition')
+            .map(effect => effect.id);
+        const icons = [...legacyConditions, ...activeConditions];
+        if (combatant?.statusBrain) icons.push('🧠');
+        return [...new Set(icons.filter(Boolean))];
+    }
+
+    function getCombatantMovementSummary(combatant) {
+        const monsterDefinition = combatant?.presetMonsterId && typeof monsterDatabase !== 'undefined'
+            ? monsterDatabase.find(monster => String(monster.id) === String(combatant.presetMonsterId))
+            : null;
+        const original = String(combatant?.movementLabel || monsterDefinition?.speed || '').trim();
+        if (combatant?.type === 'monster' && original) {
+            const compact = original
+                .replace(/\s*[\r\n]+\s*/g, ' / ')
+                .replace(/\s*\/\s*/g, ' / ')
+                .replace(/\s+/g, ' ')
+                .replace(/\bTerrestre\b/gi, '')
+                .replace(/\bVoando\b/gi, 'voo')
+                .replace(/\s{2,}/g, ' ')
+                .trim();
+            return { display: compact, title: `Movimento: ${original.replace(/\s+/g, ' ')}` };
+        }
+
+        const numericMovement = Number(combatant?.movement);
+        if (Number.isFinite(numericMovement)) {
+            const value = Math.max(0, Math.round(numericMovement * 10) / 10);
+            return { display: String(value), title: `Movimento total: ${value}` };
+        }
+
+        return { display: '5', title: 'Movimento total: 5' };
+    }
+
+    function renderCombatantMovementIndicator(combatant) {
+        const movement = getCombatantMovementSummary(combatant);
+        return `
+            <div class="movement-container" title="${movement.title}">
+                <span aria-hidden="true">👣</span>
+                <strong>${movement.display}</strong>
+                <small>MOV</small>
+            </div>
+        `;
+    }
+
     function renderList(shouldScroll = false) {
         const container = document.getElementById('combatList');
         updateActiveTurnName();
@@ -180,11 +227,9 @@
             }
 
             const hpColor = c.type === 'monster' ? 'text-red-500' : 'text-emerald-400';
-            let statusHtml = '';
-
-            (c.conditions || []).forEach(icon => {
-                statusHtml += `<span class="status-icon">${icon}</span>`;
-            });
+            const statusHtml = getCombatantStatusIcons(c)
+                .map(icon => `<span class="status-icon">${icon}</span>`)
+                .join('');
 
             let hpDisplayHtml = `
             <div class="hp-text text-xl font-bold leading-none ${hpColor}">
@@ -299,6 +344,8 @@
     ` : ''}
 
     ${window.renderCombatantToxicityIndicator?.(c) || ''}
+
+    ${renderCombatantMovementIndicator(c)}
 
 </div>
                     </div>
@@ -421,7 +468,7 @@
                 default: "effect-border-default"
             }[augment];
 
-            const editing =
+            const editing = effect.systemManaged !== 'encumbrance' &&
 
             selectedEffect.combatantId === c.id &&
             selectedEffect.effectId === effect.id &&
@@ -991,16 +1038,7 @@
 
     const statusContainer = card.querySelector('.status-container');
     if (statusContainer) {
-        let allStatuses =
-
-        (c.effects || [])
-        
-            .filter(e => e.type === 'condition')
-        
-            .map(e => e.id);
-
-    if (c.statusBrain)
-        allStatuses.push('🧠');
+    const allStatuses = getCombatantStatusIcons(c);
 
     let statusHtml = allStatuses.map(icon => `
 
@@ -1039,6 +1077,17 @@
             <div class="rune-source-label mt-1">
                 Fonte Rúnica
             </div>
+        `;
+    }
+
+    const movementContainer = card.querySelector('.movement-container');
+    if (movementContainer) {
+        const movement = getCombatantMovementSummary(c);
+        movementContainer.title = movement.title;
+        movementContainer.innerHTML = `
+            <span aria-hidden="true">👣</span>
+            <strong>${movement.display}</strong>
+            <small>MOV</small>
         `;
     }
 
@@ -1114,6 +1163,7 @@
         window.updateCardTargeted = updateCardTargeted;
         window.selectCombatant = selectCombatant;
         window.renderCombatantEffectsPanel = renderCombatantEffectsPanel;
+        window.getCombatantMovementSummary = getCombatantMovementSummary;
 
         function selectEffect(combatantId, effectId, type){
 

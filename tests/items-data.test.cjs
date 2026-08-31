@@ -25,4 +25,30 @@ assert.notEqual(witcherSteelSword.id, witcherSilverSword.id);
 assert.equal(witcherSilverSword.damage, '4d6');
 assert.equal(witcherSilverSword.effect, 'Dano de Prata');
 
+const careConsumables = items.filter(item => item.careConsumable);
+assert.equal(careConsumables.length, 14);
+assert.equal(items.find(item => item.id === 'racaodeviagem')?.careConsumable?.optionId, 'simple_meal');
+assert.equal(items.find(item => item.id === 'ensopadodeestalagem')?.careConsumable?.optionId, 'good_meal');
+assert.equal(items.find(item => item.id === 'banquetedetoussaint')?.careConsumable?.optionId, 'sophisticated_meal');
+assert.equal(items.find(item => item.id === 'aguapotavel')?.careConsumable?.kind, 'drink');
+careConsumables.forEach(item => {
+    assert.equal(item.category, 'usable');
+    assert.equal(item.careConsumable.portionsPerUnit, 1);
+    assert.ok(Array.isArray(item.recipe));
+    assert.equal(item.craftingCategory, 'culinary');
+    assert.ok(item.recipe.length > 0);
+});
+[
+    'cereais', 'carneseca', 'sal', 'carne', 'legumes', 'ervasculinarias',
+    'carnenobre', 'aguabruta', 'lupulo', 'levedura', 'uvasdetoussaint',
+    'carnedecoelho', 'carnedeveado', 'carnedeporco', 'batata', 'cebola',
+    'cenoura', 'alho', 'cogumeloscomestiveis', 'farinha', 'ovos', 'leite', 'manteiga'
+].forEach(itemId => {
+    const ingredient = items.find(item => item.id === itemId);
+    assert.ok(ingredient, `Ingrediente culinário ausente: ${itemId}`);
+    assert.equal(ingredient.craftingMaterial, true);
+});
+assert.equal(items.find(item => item.id === 'coelhoassadocomervas')?.careConsumable?.optionId, 'good_meal');
+assert.equal(items.find(item => item.id === 'estufadorealdacaca')?.careConsumable?.optionId, 'sophisticated_meal');
+
 console.log(`✓ Catálogo validado: ${items.length} itens com identificadores únicos.`);

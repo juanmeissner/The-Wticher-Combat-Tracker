@@ -150,6 +150,51 @@ const CHARACTER_FOUNDATION_FIELDS = Object.freeze([
     'criticalWoundBaseResources'
 ]);
 
+const CARRYING_WEIGHT_CONDITION_ID = '🏋️';
+
+function syncCarryingWeightCondition(target, derived) {
+    if (!target || target.creationMode !== 'full') return false;
+
+    target.effects = Array.isArray(target.effects) ? target.effects : [];
+    const effectIndex = target.effects.findIndex(effect => (
+        effect?.systemManaged === 'encumbrance'
+        || (effect?.type === 'condition' && effect?.id === CARRYING_WEIGHT_CONDITION_ID)
+    ));
+    const capacity = Math.max(0, Number(derived?.carryingCapacity) || 0);
+    const equippedWeight = Math.max(0, Number(derived?.equippedWeight) || 0);
+    const excessWeight = Math.max(
+        0,
+        Number(derived?.excessWeight)
+        || Math.round((equippedWeight - capacity) * 100) / 100
+    );
+    const isEncumbered = derived?.isEncumbered === true || excessWeight > 0;
+
+    if (!isEncumbered) {
+        if (effectIndex === -1) return false;
+        target.effects.splice(effectIndex, 1);
+        return true;
+    }
+
+    const effect = {
+        id: CARRYING_WEIGHT_CONDITION_ID,
+        type: 'condition',
+        name: 'Carregando Peso',
+        remainingTurns: 0,
+        initialTurns: 0,
+        stacks: 1,
+        maxStacks: 1,
+        augment: 'debuff',
+        systemManaged: 'encumbrance',
+        automation: {
+            note: `Carga ${equippedWeight}/${capacity} · excesso ${excessWeight} · Movimento ${Math.max(0, Number(derived?.movement) || 0)}`
+        }
+    };
+
+    if (effectIndex === -1) target.effects.push(effect);
+    else target.effects[effectIndex] = { ...target.effects[effectIndex], ...effect };
+    return true;
+}
+
 function refreshCharacterDerivedValues(target, options = {}) {
     if (!target || target.creationMode !== 'full') return null;
 
@@ -182,7 +227,10 @@ function refreshCharacterDerivedValues(target, options = {}) {
     target.carryingCapacity = derived.carryingCapacity;
     target.movement = derived.movement;
     target.equippedWeight = derived.equippedWeight;
+    target.excessWeight = derived.excessWeight;
+    target.isEncumbered = derived.isEncumbered;
     target.derivedValues = cloneEnhancementData(derived);
+    syncCarryingWeightCondition(target, derived);
     target.resources = {
         ...(target.resources && typeof target.resources === 'object' ? target.resources : {}),
         hp: { current: target.hpCurrent, max: target.hpMax },
@@ -190,7 +238,9 @@ function refreshCharacterDerivedValues(target, options = {}) {
         runeSource: { current: target.runeSourceCurrent, max: target.runeSourceMax },
         carryingCapacity: target.carryingCapacity,
         movement: target.movement,
-        equippedWeight: target.equippedWeight
+        equippedWeight: target.equippedWeight,
+        excessWeight: target.excessWeight,
+        isEncumbered: target.isEncumbered
     };
 
     if (options.persist === true) {
@@ -277,6 +327,7 @@ function buildSheetFromCombatant(combatant) {
         toxicityCurrent: Math.max(0, Number(combatant.toxicityCurrent) || 0),
         resourceStateSaved: true,
         ca: combatant.ca ?? 10,
+        movement: Math.max(0, Number(combatant.movement) || 5),
         atkInfo: combatant.atkInfo ?? '-',
         monsterCategory: normalizeCombatantRaceCategory(combatant.monsterCategory),
         armor: cloneEnhancementData(combatant.armor || { head: 0, torso: 0, arm: 0, leg: 0 }),
@@ -284,6 +335,7 @@ function buildSheetFromCombatant(combatant) {
         abilities: cloneEnhancementData(combatant.abilities || []),
         expandedMagic: Math.max(0, Number(combatant.expandedMagic) || 0),
         equipment: cloneEnhancementData(combatant.equipment || {}),
+        careState: cloneEnhancementData(window.serializeCareState?.(combatant) || combatant.careState || null),
         criticalWounds: cloneEnhancementData(combatant.criticalWounds || []),
         criticalWoundBaseResources: cloneEnhancementData(combatant.criticalWoundBaseResources || null),
         updatedAt: new Date().toISOString()
@@ -359,6 +411,7 @@ function syncCombatantsToCharacterSheets() {
             toxicityCurrent: Math.max(0, Number(combatant.toxicityCurrent) || 0),
             resourceStateSaved: true,
             ca: combatant.ca ?? 10,
+            movement: Math.max(0, Number(combatant.movement) || 5),
             atkInfo: combatant.atkInfo ?? '-',
             monsterCategory: normalizeCombatantRaceCategory(combatant.monsterCategory),
             armor: cloneEnhancementData(combatant.armor || { head: 0, torso: 0, arm: 0, leg: 0 }),
@@ -366,6 +419,7 @@ function syncCombatantsToCharacterSheets() {
             abilities: cloneEnhancementData(combatant.abilities || []),
             expandedMagic: Math.max(0, Number(combatant.expandedMagic) || 0),
             equipment: cloneEnhancementData(combatant.equipment || {}),
+            careState: cloneEnhancementData(window.serializeCareState?.(combatant) || combatant.careState || null),
             criticalWounds: cloneEnhancementData(combatant.criticalWounds || []),
             criticalWoundBaseResources: cloneEnhancementData(combatant.criticalWoundBaseResources || null),
             updatedAt: new Date().toISOString()
@@ -405,6 +459,7 @@ function buildCharacterSheetRecord(foundation = {}, overrides = {}) {
         toxicityCurrent: 0,
         resourceStateSaved: false,
         ca: 10,
+        movement: 5,
         atkInfo: '-',
         monsterCategory: '',
         armor: { head: 0, torso: 0, arm: 0, leg: 0 },
@@ -414,6 +469,7 @@ function buildCharacterSheetRecord(foundation = {}, overrides = {}) {
         equipment: window.ensureEquipmentLoadout
             ? cloneEnhancementData(window.ensureEquipmentLoadout({ inventory: [] }))
             : {},
+        careState: null,
         criticalWounds: [],
         criticalWoundBaseResources: null,
         updatedAt: new Date().toISOString(),
@@ -473,6 +529,7 @@ function openCharacterSheetEditor(id) {
             <label>HP máximo<input id="sheetHpMax" class="session-input" type="number" min="1" value="${sheet.hpMax}" ${derivedLocked ? 'readonly' : ''}></label>
             <label>ST máximo<input id="sheetStMax" class="session-input" type="number" min="0" value="${sheet.stMax}" ${derivedLocked ? 'readonly' : ''}></label>
             <label>CA<input id="sheetCa" class="session-input" type="number" min="0" value="${sheet.ca}"></label>
+            <label>Movimento<input id="sheetMovement" class="session-input" type="number" min="0" value="${Math.max(0, Number(sheet.movement) || 5)}"></label>
             <label class="enhancement-span-2">Raça / categoria<select id="sheetRaceCategory" class="session-input">${renderCombatantRaceOptions(sheet.monsterCategory)}</select></label>
             <label class="enhancement-span-2">Ataque/Dano<input id="sheetAtk" class="session-input" value="${escapeEnhancementHtml(sheet.atkInfo)}"></label>
             <label>Defesa adicional: Cabeça<input id="sheetArmorHead" class="session-input" type="number" min="0" value="${Number(sheet.armor?.head) || 0}"></label>
@@ -513,6 +570,9 @@ function saveCharacterSheet(id) {
         sheet.stMax = Math.max(0, Number(document.getElementById('sheetStMax')?.value) || 0);
     }
     sheet.ca = Math.max(0, Number(document.getElementById('sheetCa')?.value) || 0);
+    if (sheet.creationMode !== 'full') {
+        sheet.movement = Math.max(0, Number(document.getElementById('sheetMovement')?.value) || 5);
+    }
     sheet.monsterCategory = normalizeCombatantRaceCategory(document.getElementById('sheetRaceCategory')?.value);
     sheet.atkInfo = document.getElementById('sheetAtk')?.value.trim() || '-';
     sheet.armor = {
@@ -534,6 +594,7 @@ function saveCharacterSheet(id) {
         combatant.stMax = sheet.stMax;
         combatant.stCurrent = Math.min(combatant.stCurrent, sheet.stMax);
         combatant.ca = sheet.ca;
+        if (sheet.creationMode !== 'full') combatant.movement = sheet.movement;
         combatant.monsterCategory = sheet.monsterCategory;
         combatant.atkInfo = sheet.atkInfo;
         combatant.armor = cloneEnhancementData(sheet.armor);
@@ -596,6 +657,7 @@ function buildCombatantFromCharacterSheet(sheet, { linkSheet = true } = {}) {
         stCurrent,
         toxicityCurrent: Math.max(0, Number(sheet.toxicityCurrent) || 0),
         ca: sheet.ca ?? 10,
+        movement: Math.max(0, Number(sheet.movement) || 5),
         atkInfo: sheet.atkInfo ?? '-',
         monsterCategory: normalizeCombatantRaceCategory(sheet.monsterCategory),
         armor: cloneEnhancementData(sheet.armor || { head: 0, torso: 0, arm: 0, leg: 0 }),
@@ -603,6 +665,7 @@ function buildCombatantFromCharacterSheet(sheet, { linkSheet = true } = {}) {
         abilities: cloneEnhancementData(sheet.abilities || []),
         expandedMagic: Math.max(0, Number(sheet.expandedMagic) || 0),
         equipment: cloneEnhancementData(sheet.equipment || {}),
+        careState: cloneEnhancementData(sheet.careState || null),
         criticalWounds: cloneEnhancementData(sheet.criticalWounds || []),
         criticalWoundBaseResources: cloneEnhancementData(sheet.criticalWoundBaseResources || null),
         type: 'player',
@@ -614,6 +677,7 @@ function buildCombatantFromCharacterSheet(sheet, { linkSheet = true } = {}) {
     };
 
     copyCharacterFoundation(combatant, sheet);
+    window.restoreCareStateEffects?.(combatant);
     refreshCharacterDerivedValues(combatant);
     return combatant;
 }
@@ -1139,16 +1203,6 @@ function ensureCatalogFilters() {
         filter.addEventListener('change', applyCatalogFilters);
     }
 
-    if (itemSearch && !document.getElementById('itemTypeFilter')) {
-        const filter = document.createElement('select');
-        filter.id = 'itemTypeFilter';
-        filter.className = 'enhancement-filter';
-        const types = [...new Set(predefinedItems.map(item => item.type).filter(Boolean))].sort();
-        filter.innerHTML = `<option value="">Todos os tipos</option>${types.map(type => `<option value="${escapeEnhancementHtml(type)}">${escapeEnhancementHtml(type)}</option>`).join('')}`;
-        itemSearch.parentElement.insertAdjacentElement('afterend', filter);
-        filter.addEventListener('change', applyCatalogFilters);
-    }
-
     applyCatalogFilters();
 }
 
@@ -1533,6 +1587,7 @@ function installEnhancements() {
     migrateCharacterSheetResourceState();
     applyPreferences();
     syncCombatantsToCharacterSheets();
+    window.renderList?.(false);
     installModalAccessibility();
     ensureCatalogFilters();
     updateConnectionStatus();
@@ -1567,6 +1622,7 @@ function installEnhancements() {
 
 window.renderCharacterSheetsView = renderCharacterSheetsView;
 window.refreshCharacterDerivedValues = refreshCharacterDerivedValues;
+window.syncCarryingWeightCondition = syncCarryingWeightCondition;
 window.createNewCharacterSheet = createNewCharacterSheet;
 window.createQuickCharacterSheet = createQuickCharacterSheet;
 window.createFullCharacterSheetFromDraft = createFullCharacterSheetFromDraft;

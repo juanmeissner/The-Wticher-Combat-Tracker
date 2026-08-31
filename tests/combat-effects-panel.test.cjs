@@ -7,6 +7,9 @@ const projectRoot = path.resolve(__dirname, '..');
 const stateSource = fs.readFileSync(path.join(projectRoot, 'js', 'state.js'), 'utf8');
 const renderSource = fs.readFileSync(path.join(projectRoot, 'js', 'combat', 'combat-render.js'), 'utf8');
 const equipmentCss = fs.readFileSync(path.join(projectRoot, 'equipment.css'), 'utf8');
+const enhancementsSource = fs.readFileSync(path.join(projectRoot, 'js', 'enhancements.js'), 'utf8');
+const conditionsSource = fs.readFileSync(path.join(projectRoot, 'js', 'conditions.js'), 'utf8');
+const combatEffectsSource = fs.readFileSync(path.join(projectRoot, 'js', 'combat', 'combat-effects.js'), 'utf8');
 
 const context = vm.createContext({ console, encodeURIComponent, decodeURIComponent });
 vm.runInContext('var window = globalThis;', context);
@@ -57,5 +60,25 @@ assert.match(renderSource, /activeEffectsPanelHtml/);
 assert.doesNotMatch(renderSource, /expandedEffectsCombatantId/);
 assert.match(equipmentCss, /combat-effects-panel/);
 assert.match(equipmentCss, /combat-effects-header/);
+assert.match(equipmentCss, /\.movement-container/);
+assert.deepEqual(
+    JSON.parse(JSON.stringify(context.getCombatantMovementSummary({ type: 'player', movement: 7 }))),
+    { display: '7', title: 'Movimento total: 7' }
+);
+assert.deepEqual(
+    JSON.parse(JSON.stringify(context.getCombatantMovementSummary({
+        type: 'monster',
+        movement: 6,
+        movementLabel: '6 Terrestre\n12 Voando'
+    }))),
+    { display: '6 / 12 voo', title: 'Movimento: 6 Terrestre 12 Voando' }
+);
+assert.match(renderSource, /renderCombatantMovementIndicator\(c\)/);
+assert.match(renderSource, /getCombatantStatusIcons\(c\)/);
+assert.match(enhancementsSource, /function syncCarryingWeightCondition/);
+assert.match(enhancementsSource, /systemManaged: 'encumbrance'/);
+assert.match(enhancementsSource, /excessWeight: target\.excessWeight/);
+assert.match(conditionsSource, /title: 'Carregando Peso'/);
+assert.match(combatEffectsSource, /effect\?\.systemManaged === 'encumbrance'/);
 
 console.log('✓ Painel recolhível de efeitos ativos validado para jogadores e inimigos.');

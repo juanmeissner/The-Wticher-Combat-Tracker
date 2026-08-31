@@ -233,7 +233,17 @@
         'mage_magia_expandida',
         'wolf_school_fonte_magica',
         'griffin_school_fonte_runica',
-        'manticore_school_toxicidade_controlada'
+        'manticore_school_toxicidade_controlada',
+        'melitele_cuidado_prolongado',
+        'grey_roads_minstrel_dormir_leve',
+        'grey_roads_minstrel_balada_do_sobrevivente',
+        'freya_ciclo_de_abundancia',
+        'freya_frutos_de_freya'
+    ]);
+
+    const IMPLEMENTED_ASSISTED_PROFESSIONAL_FEATURES = new Set([
+        'melitele_iniciado_dos_deuses',
+        'grey_roads_minstrel_cantar_por_moedas'
     ]);
 
     const AUTOMATION_LABELS = Object.freeze({
@@ -287,8 +297,8 @@
             return Object.freeze({
                 mode: 'assisted',
                 label: AUTOMATION_LABELS.assisted,
-                status: 'planned',
-                batch: 2
+                status: IMPLEMENTED_ASSISTED_PROFESSIONAL_FEATURES.has(id) ? 'implemented' : 'planned',
+                batch: IMPLEMENTED_ASSISTED_PROFESSIONAL_FEATURES.has(id) ? 5 : 2
             });
         }
 

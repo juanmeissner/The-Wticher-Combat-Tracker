@@ -758,6 +758,9 @@ function spawnPresetMonster(monsterId) {
         stMax: monster.st,
         stCurrent: monster.st,
 
+        movement: Math.max(0, Number(String(monster.speed || '').match(/\d+(?:[.,]\d+)?/)?.[0]?.replace(',', '.')) || 5),
+        movementLabel: String(monster.speed || '').trim(),
+
         ca: monster.ca,
 
         atkInfo: monster.attacks

@@ -1252,6 +1252,17 @@
             result.details.push('Sopro de Súcubo na bebida: −5');
         }
 
+        const careModifier = global.getCareSkillModifier?.(combatant, skill) || {
+            total: 0,
+            details: [],
+            advantage: false,
+            disadvantage: false
+        };
+        result.total += Number(careModifier.total) || 0;
+        result.details.push(...(careModifier.details || []));
+        result.advantage = result.advantage || Boolean(careModifier.advantage);
+        result.disadvantage = result.disadvantage || Boolean(careModifier.disadvantage);
+
         if (result.advantage && result.disadvantage) {
             result.advantage = false;
             result.disadvantage = false;

@@ -748,14 +748,16 @@ function isAutomationWitcherSign(type, id) {
 
 function getAutomationEnergyAvailability(caster, metadata = {}) {
     const stamina = Math.max(0, Number(caster?.stCurrent) || 0);
+    const temporarySt = Math.max(0, Number(window.getCareTemporarySt?.(caster)) || 0);
     const runeSource = metadata.prioritizeRuneSource
         ? Math.max(0, Number(caster?.runeSourceCurrent) || 0)
         : 0;
 
     return {
         stamina,
+        temporarySt,
         runeSource,
-        total: stamina + runeSource
+        total: stamina + temporarySt + runeSource
     };
 }
 
@@ -768,11 +770,18 @@ function spendAutomationEnergy(caster, metadata = {}) {
     const runeSourceSpent = metadata.prioritizeRuneSource
         ? Math.min(cost, availability.runeSource)
         : 0;
-    const staminaSpent = cost - runeSourceSpent;
+    const remainingAfterRune = cost - runeSourceSpent;
+    const temporaryResult = window.spendCareTemporarySt?.(caster, remainingAfterRune)
+        || { spent: 0, availableAfter: availability.temporarySt };
+    const temporaryStSpent = Math.min(remainingAfterRune, Math.max(0, Number(temporaryResult.spent) || 0));
+    const staminaSpent = remainingAfterRune - temporaryStSpent;
 
     metadata.staminaBefore = availability.stamina;
     metadata.staminaSpent = staminaSpent;
     metadata.staminaAfter = availability.stamina - staminaSpent;
+    metadata.temporaryStBefore = availability.temporarySt;
+    metadata.temporaryStSpent = temporaryStSpent;
+    metadata.temporaryStAfter = Math.max(0, Number(temporaryResult.availableAfter) || 0);
 
     if (metadata.prioritizeRuneSource) {
         metadata.runeSourceBefore = availability.runeSource;
@@ -1069,9 +1078,12 @@ function processAutomatedTurnEffects(combatant) {
             const staminaPayer = metadata.staminaPayerId
                 ? combatants.find(current => String(current.id) === String(metadata.staminaPayerId))
                 : combatant;
-            if (staminaPayer && staminaPayer.stCurrent >= metadata.perTurnSt) {
-                staminaPayer.stCurrent -= metadata.perTurnSt;
-                changes.push(`${effect.name}: −${metadata.perTurnSt} EST de ${staminaPayer.name || 'conjurador'}`);
+            const turnCost = Math.max(0, Number(metadata.perTurnSt) || 0);
+            const availability = getAutomationEnergyAvailability(staminaPayer, {});
+            if (staminaPayer && availability.total >= turnCost) {
+                const payment = { staminaCost: turnCost };
+                spendAutomationEnergy(staminaPayer, payment);
+                changes.push(`${effect.name}: −${turnCost} EST de ${staminaPayer.name || 'conjurador'}${payment.temporaryStSpent ? ` (${payment.temporaryStSpent} temporário)` : ''}`);
                 changed = true;
             } else {
                 combatant.effects = combatant.effects.filter(current => current !== effect);
@@ -1298,6 +1310,7 @@ function renderAutomationCardSummaries() {
 
         const labels = [];
         const temporaryHp = getAutomationTemporaryHp(combatant);
+        const temporarySt = Math.max(0, Number(window.getCareTemporarySt?.(combatant)) || 0);
         const magicShieldHp = getAutomationMagicShieldHp(combatant);
         const petri = getAutomationEffect(combatant, 'item', 'filtrodepetri');
         const petriBonus = getAutomationData(petri).signalBonus;
@@ -1307,6 +1320,7 @@ function renderAutomationCardSummaries() {
 
         if (magicShieldHp > 0) labels.push(`🜲 Escudo Mágico ${magicShieldHp}`);
         if (temporaryHp > 0) labels.push(`🛡️ ${temporaryHp} PV temporários`);
+        if (temporarySt > 0) labels.push(`⚡ ${temporarySt} EST temporário`);
         if (combatant.type === 'monster' && combatant.monsterCategory) labels.push(`🏷️ ${combatant.monsterCategory}`);
         if (petriBonus) labels.push(`✨ Petri +${petriBonus} EST`);
         if (blizzardBonus) labels.push(`❄️ Nevasca +${blizzardBonus}`);

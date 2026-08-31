@@ -116,6 +116,10 @@ function setInventoryFilter(category) {
 
     currentInventoryFilter = category;
 
+    if (!inventorySubfilterByCategory[category]) {
+        inventorySubfilterByCategory[category] = 'all';
+    }
+
     updateInventoryTabs();
 
     // =====================================
@@ -124,9 +128,7 @@ function setInventoryFilter(category) {
 
     const filteredItems = category === 'crafting'
         ? []
-        : inventory
-            .filter(item => item.category === currentInventoryFilter)
-            .sort(sortInventoryItems);
+        : getFilteredInventoryItems();
 
     if (filteredItems.length > 0) {
 
@@ -275,6 +277,18 @@ function showItemDetails(itemId) {
                 `
                 : ''}
 
+            ${catalogItem.careConsumable
+                ? `
+                    <div class="text-amber-300 mb-3">
+                        ${catalogItem.careConsumable.kind === 'food' ? '🍽️ Alimento' : '🥤 Bebida'}
+                        · ${Math.max(1, Number(catalogItem.careConsumable.portionsPerUnit) || 1)} porção por unidade
+                        ${catalogItem.careConsumable.kind === 'food'
+                            ? ` · ${window.careServices?.CARE_CATALOG?.food?.options?.find(option => option.id === catalogItem.careConsumable.optionId)?.name || 'Alimentação'}`
+                            : ' · não substitui uma refeição'}
+                    </div>
+                `
+                : ''}
+
         <div class="text-slate-300 mb-4">
 
             ${item.description}
@@ -331,6 +345,11 @@ function closeItemDetailsModal() {
 // ITENS PRÉ DEFINIDOS
 // =========================================
 let currentInventoryFilter = 'usable';
+const inventorySubfilterByCategory = {
+    usable: 'all',
+    equipment: 'all',
+    misc: 'all'
+};
 
 
 // =========================================
@@ -341,6 +360,88 @@ let inventory = [];
 let selectedInventoryItemId = null;
 let longPressTimer = null;
 let ignoreNextInventoryTouch = false;
+
+function getCurrentInventorySubfilter() {
+    return inventorySubfilterByCategory[currentInventoryFilter] || 'all';
+}
+
+function getFilteredInventoryItems(source = inventory) {
+    const filterId = getCurrentInventorySubfilter();
+    const filterSystem = window.inventoryFilterSystem;
+
+    return source
+        .filter(item => filterSystem
+            ? filterSystem.matches(item, currentInventoryFilter, filterId)
+            : item.category === currentInventoryFilter)
+        .sort(sortInventoryItems);
+}
+
+function getInventorySubfilterCount(source, filterId) {
+    const filterSystem = window.inventoryFilterSystem;
+
+    return source.filter(item => filterSystem
+        ? filterSystem.matches(item, currentInventoryFilter, filterId)
+        : item.category === currentInventoryFilter).length;
+}
+
+function renderInventorySubfilterContainer(containerId, source) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+
+    const definitions = window.inventoryFilterSystem?.getDefinitions(currentInventoryFilter) || [];
+
+    if (currentInventoryFilter === 'crafting' || definitions.length === 0) {
+        container.hidden = true;
+        container.innerHTML = '';
+        return;
+    }
+
+    const activeFilter = getCurrentInventorySubfilter();
+    container.hidden = false;
+    container.innerHTML = definitions.map(definition => {
+        const count = getInventorySubfilterCount(source, definition.id);
+        const active = definition.id === activeFilter;
+
+        return `
+            <button
+                type="button"
+                class="inventory-subfilter ${active ? 'is-active' : ''}"
+                aria-pressed="${active}"
+                aria-label="Filtrar por ${definition.label}: ${count} itens"
+                onclick="setInventorySubfilter('${definition.id}')">
+                <span aria-hidden="true">${definition.icon}</span>
+                <span>${definition.label}</span>
+                <span class="inventory-subfilter-count" aria-hidden="true">${count}</span>
+            </button>
+        `;
+    }).join('');
+}
+
+function renderInventorySubfilters() {
+    renderInventorySubfilterContainer('inventorySubfilters', inventory);
+    renderInventorySubfilterContainer('inventoryModalSubfilters', predefinedItems);
+}
+
+function setInventorySubfilter(filterId) {
+    const validFilters = window.inventoryFilterSystem
+        ?.getDefinitions(currentInventoryFilter)
+        .map(filter => filter.id) || ['all'];
+
+    inventorySubfilterByCategory[currentInventoryFilter] = validFilters.includes(filterId)
+        ? filterId
+        : 'all';
+
+    const filteredItems = getFilteredInventoryItems();
+    selectedInventoryItemId = filteredItems[0]?.id || null;
+
+    renderInventory();
+
+    const modal = document.getElementById('inventoryModal');
+    if (modal && !modal.classList.contains('hidden')) renderInventoryItemsModal();
+}
+
+window.getFilteredInventoryItems = getFilteredInventoryItems;
+window.setInventorySubfilter = setInventorySubfilter;
 
 function addInventoryItemFromModal(itemId) {
     addItem(itemId);
@@ -362,16 +463,19 @@ function renderInventory() {
     const actions = document.getElementById('inventoryActions');
     if (actions) actions.hidden = currentInventoryFilter === 'crafting';
 
+    renderInventorySubfilters();
+
     if (currentInventoryFilter === 'crafting') {
         window.renderCraftingScreen?.(container);
         return;
     }
 
-    const filteredInventory = inventory
-    .filter(
-        item => item.category === currentInventoryFilter
-    )
-    .sort(sortInventoryItems);
+    const categoryInventory = inventory.filter(item => item.category === currentInventoryFilter);
+    const filteredInventory = getFilteredInventoryItems();
+
+    if (!filteredInventory.some(item => item.id === selectedInventoryItemId)) {
+        selectedInventoryItemId = filteredInventory[0]?.id || null;
+    }
 
     if (filteredInventory.length === 0) {
 
@@ -382,7 +486,9 @@ function renderInventory() {
 
             <div class="text-center text-slate-500 mt-10">
 
-                Inventário vazio
+                ${categoryInventory.length > 0
+                    ? 'Nenhum item corresponde a este filtro'
+                    : 'Inventário vazio'}
 
                 ${safeOwnerName
                     ? `<div class="text-sm mt-2 text-slate-600">Nenhum item adicionado para ${safeOwnerName}.</div>`
@@ -446,6 +552,10 @@ function renderInventory() {
 
             ${item.type === 'armor'
                 ? `🛡️ ${window.getEquipmentDefenseLabel?.(item) || item.defense} DEF · ${window.getEquipmentSlotLabel?.(item) || 'Proteção'}`
+                : ''}
+
+            ${item.careConsumable
+                ? `${item.careConsumable.kind === 'food' ? '🍽️ Alimento' : '🥤 Bebida'} · ${Math.max(1, Number(item.careConsumable.portionsPerUnit) || 1)} porção`
                 : ''}
 
         </div>
@@ -563,6 +673,21 @@ function useItem(itemId) {
 
     const collectionOwner = window.getCharacterCollectionOwner?.() || null;
     const catalogItem = predefinedItems.find(entry => entry.id === itemId) || item;
+    let careResult = null;
+    if (catalogItem.careConsumable) {
+        if (!collectionOwner) {
+            showToast('Selecione o inventário de um personagem antes de consumir este item.');
+            return { used: false, reason: 'owner-not-found' };
+        }
+        if (typeof window.consumeCareInventoryItem !== 'function') {
+            showToast('O sistema de alimentação ainda está carregando. Tente novamente.');
+            return { used: false, reason: 'care-system-unavailable' };
+        }
+        careResult = window.consumeCareInventoryItem(collectionOwner, catalogItem);
+        if (careResult?.blocked || !careResult?.applied) {
+            return { used: false, reason: careResult?.reason || 'care-not-applied', care: careResult };
+        }
+    }
     const appliesActiveInventoryEffect = Boolean(
         window.isInventoryItemAutomationManaged?.(catalogItem) || (
             (catalogItem.potion || catalogItem.oil) &&
@@ -623,7 +748,8 @@ function useItem(itemId) {
         used: true,
         itemId,
         toxicity: toxicityResult,
-        effect: effectResult
+        effect: effectResult,
+        care: careResult
     };
 }
 
@@ -693,11 +819,6 @@ function renderInventoryItemsModal() {
             ?.value
             .toLowerCase() || '';
 
-    const selectedType =
-        document
-            .getElementById('itemTypeFilter')
-            ?.value || '';
-
     // filtra categoria + nome
     const filteredItems =
     predefinedItems
@@ -711,14 +832,20 @@ function renderInventoryItemsModal() {
                     .toLowerCase()
                     .includes(search);
 
-            const matchesType =
-                !selectedType ||
-                item.type === selectedType;
+            const matchesSubfilter = window.inventoryFilterSystem
+                ? window.inventoryFilterSystem.matches(
+                    item,
+                    currentInventoryFilter,
+                    getCurrentInventorySubfilter()
+                )
+                : sameCategory;
 
-            return sameCategory && matchesSearch && matchesType;
+            return sameCategory && matchesSearch && matchesSubfilter;
         })
 
         .sort(sortInventoryItems);
+
+    renderInventorySubfilterContainer('inventoryModalSubfilters', predefinedItems);
 
         
 
@@ -776,6 +903,10 @@ function renderInventoryItemsModal() {
 
                         ${item.type === 'armor'
                             ? `🛡️ ${window.getEquipmentDefenseLabel?.(item) || item.defense} DEF · ${window.getEquipmentSlotLabel?.(item) || 'Proteção'}`
+                            : ''}
+
+                        ${item.careConsumable
+                            ? `${item.careConsumable.kind === 'food' ? '🍽️ Alimento' : '🥤 Bebida'} · ${Math.max(1, Number(item.careConsumable.portionsPerUnit) || 1)} porção`
                             : ''}
 
                     </div>
