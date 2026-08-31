@@ -24,7 +24,8 @@
             { id: 'armor-body', label: 'Armadura Corpo', icon: '🥋' },
             { id: 'armor-arms', label: 'Armadura Braço', icon: '🦾' },
             { id: 'armor-legs', label: 'Armadura Perna', icon: '🦿' },
-            { id: 'armor-head', label: 'Armadura Cabeça', icon: '⛑️' }
+            { id: 'armor-head', label: 'Armadura Cabeça', icon: '⛑️' },
+            { id: 'mount-gear', label: 'Equipamento de Montaria', icon: '🐴' }
         ]),
         misc: Object.freeze([
             { id: 'all', label: 'Todos', icon: '◉' },
@@ -33,7 +34,9 @@
             { id: 'herb', label: 'Ervas', icon: '🌿' },
             { id: 'ore', label: 'Minérios', icon: '⛏️' },
             { id: 'metal', label: 'Metais', icon: '⚙️' },
-            { id: 'natural', label: 'Naturais', icon: '🪵' }
+            { id: 'natural', label: 'Naturais', icon: '🪵' },
+            { id: 'mount', label: 'Montarias', icon: '🐎' },
+            { id: 'vehicle', label: 'Veículos', icon: '🛒' }
         ])
     });
 
@@ -85,6 +88,8 @@
     function getEquipmentTags(item, text) {
         const slot = String(item?.equipmentSlot || '').toLowerCase();
 
+        if (item?.transportKind === 'mount-gear' || item?.type === 'mount-gear') return ['mount-gear'];
+
         if (slot === 'ammunition') return ['ammunition'];
         if (slot === 'shield') return ['shield'];
         if (slot === 'body') return ['armor-body'];
@@ -109,6 +114,13 @@
 
     function getMiscTags(item, text) {
         const tags = [];
+
+        if (item?.transportKind === 'mount' || item?.type === 'mount') tags.push('mount');
+        if (item?.transportKind === 'vehicle' || item?.type === 'vehicle') {
+            // "Montarias" funciona como o grupo completo de transporte da campanha.
+            // "Veículos" permanece disponível como refinamento para carroças e carruagens.
+            tags.push('mount', 'vehicle');
+        }
 
         if (CULINARY_IDS.has(item.id)) tags.push('culinary');
         if (text.includes('minerio')) tags.push('ore');

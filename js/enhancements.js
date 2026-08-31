@@ -7,6 +7,7 @@ const ENHANCEMENTS_LAST_COMBAT_REPORT_KEY = 'dnd_last_combat_report';
 const DEFAULT_APP_PREFERENCES = {
     theme: 'default',
     reducedMotion: false,
+    carriedWeightMode: 'equipped',
     rollModes: {
         weapons: 'manual',
         crafting: 'manual',
@@ -161,11 +162,11 @@ function syncCarryingWeightCondition(target, derived) {
         || (effect?.type === 'condition' && effect?.id === CARRYING_WEIGHT_CONDITION_ID)
     ));
     const capacity = Math.max(0, Number(derived?.carryingCapacity) || 0);
-    const equippedWeight = Math.max(0, Number(derived?.equippedWeight) || 0);
+    const carriedWeight = Math.max(0, Number(derived?.equippedWeight) || 0);
     const excessWeight = Math.max(
         0,
         Number(derived?.excessWeight)
-        || Math.round((equippedWeight - capacity) * 100) / 100
+        || Math.round((carriedWeight - capacity) * 100) / 100
     );
     const isEncumbered = derived?.isEncumbered === true || excessWeight > 0;
 
@@ -186,7 +187,7 @@ function syncCarryingWeightCondition(target, derived) {
         augment: 'debuff',
         systemManaged: 'encumbrance',
         automation: {
-            note: `Carga ${equippedWeight}/${capacity} · excesso ${excessWeight} · Movimento ${Math.max(0, Number(derived?.movement) || 0)}`
+            note: `Carga ${carriedWeight}/${capacity} · excesso ${excessWeight} · Movimento ${Math.max(0, Number(derived?.movement) || 0)}`
         }
     };
 
@@ -201,8 +202,10 @@ function refreshCharacterDerivedValues(target, options = {}) {
     const model = window.characterSheetModel;
     if (!model?.calculateCharacterDerivedValues) return null;
 
-    const equippedWeight = window.getEquippedWeightBreakdown?.(target)?.total || 0;
-    const baseDerived = model.calculateCharacterDerivedValues(target, { equippedWeight });
+    const carriedWeight = window.getCharacterCarriedWeightBreakdown?.(target)
+        || window.getEquippedWeightBreakdown?.(target)
+        || { total: 0, mode: 'equipped', equippedTotal: 0, inventoryTotal: 0 };
+    const baseDerived = model.calculateCharacterDerivedValues(target, { equippedWeight: carriedWeight.total });
     const derived = window.applyCriticalWoundDerivedModifiers?.(target, baseDerived) || baseDerived;
     const initializeCurrent = options.initializeCurrent === true;
     const previousHpCurrent = Number(target.hpCurrent);
@@ -227,6 +230,10 @@ function refreshCharacterDerivedValues(target, options = {}) {
     target.carryingCapacity = derived.carryingCapacity;
     target.movement = derived.movement;
     target.equippedWeight = derived.equippedWeight;
+    target.carriedWeight = derived.equippedWeight;
+    target.carriedWeightMode = carriedWeight.mode || 'equipped';
+    target.equippedItemsWeight = Math.max(0, Number(carriedWeight.equippedTotal) || 0);
+    target.inventoryWeight = Math.max(0, Number(carriedWeight.inventoryTotal) || 0);
     target.excessWeight = derived.excessWeight;
     target.isEncumbered = derived.isEncumbered;
     target.derivedValues = cloneEnhancementData(derived);
@@ -239,6 +246,10 @@ function refreshCharacterDerivedValues(target, options = {}) {
         carryingCapacity: target.carryingCapacity,
         movement: target.movement,
         equippedWeight: target.equippedWeight,
+        carriedWeight: target.carriedWeight,
+        carriedWeightMode: target.carriedWeightMode,
+        equippedItemsWeight: target.equippedItemsWeight,
+        inventoryWeight: target.inventoryWeight,
         excessWeight: target.excessWeight,
         isEncumbered: target.isEncumbered
     };
@@ -335,6 +346,7 @@ function buildSheetFromCombatant(combatant) {
         abilities: cloneEnhancementData(combatant.abilities || []),
         expandedMagic: Math.max(0, Number(combatant.expandedMagic) || 0),
         equipment: cloneEnhancementData(combatant.equipment || {}),
+        transport: cloneEnhancementData(combatant.transport || {}),
         careState: cloneEnhancementData(window.serializeCareState?.(combatant) || combatant.careState || null),
         criticalWounds: cloneEnhancementData(combatant.criticalWounds || []),
         criticalWoundBaseResources: cloneEnhancementData(combatant.criticalWoundBaseResources || null),
@@ -399,7 +411,13 @@ function syncCombatantsToCharacterSheets() {
             changed = true;
         }
 
+        if (!combatant.transport || typeof combatant.transport !== 'object') {
+            combatant.transport = cloneEnhancementData(sheet.transport || {});
+            changed = true;
+        }
+
         window.ensureEquipmentLoadout?.(combatant);
+        window.ensureTransportState?.(combatant);
         refreshCharacterDerivedValues(combatant);
 
         Object.assign(sheet, {
@@ -419,6 +437,7 @@ function syncCombatantsToCharacterSheets() {
             abilities: cloneEnhancementData(combatant.abilities || []),
             expandedMagic: Math.max(0, Number(combatant.expandedMagic) || 0),
             equipment: cloneEnhancementData(combatant.equipment || {}),
+            transport: cloneEnhancementData(combatant.transport || {}),
             careState: cloneEnhancementData(window.serializeCareState?.(combatant) || combatant.careState || null),
             criticalWounds: cloneEnhancementData(combatant.criticalWounds || []),
             criticalWoundBaseResources: cloneEnhancementData(combatant.criticalWoundBaseResources || null),
@@ -469,6 +488,7 @@ function buildCharacterSheetRecord(foundation = {}, overrides = {}) {
         equipment: window.ensureEquipmentLoadout
             ? cloneEnhancementData(window.ensureEquipmentLoadout({ inventory: [] }))
             : {},
+        transport: {},
         careState: null,
         criticalWounds: [],
         criticalWoundBaseResources: null,
@@ -665,6 +685,7 @@ function buildCombatantFromCharacterSheet(sheet, { linkSheet = true } = {}) {
         abilities: cloneEnhancementData(sheet.abilities || []),
         expandedMagic: Math.max(0, Number(sheet.expandedMagic) || 0),
         equipment: cloneEnhancementData(sheet.equipment || {}),
+        transport: cloneEnhancementData(sheet.transport || {}),
         careState: cloneEnhancementData(sheet.careState || null),
         criticalWounds: cloneEnhancementData(sheet.criticalWounds || []),
         criticalWoundBaseResources: cloneEnhancementData(sheet.criticalWoundBaseResources || null),
@@ -1010,6 +1031,7 @@ function openCustomContentEditor(type, id = null) {
             </select></label>
             <label>Dano da arma<input id="contentDamage" class="session-input" value="${escapeEnhancementHtml(entry.damage)}" placeholder="Ex.: 4d6+2"></label>
             <label>Defesa<input id="contentDefense" class="session-input" type="number" min="0" value="${Math.max(0, Number(entry.defense) || 0)}"></label>
+            <label>Peso unitário<input id="contentWeight" class="session-input" type="number" min="0.01" step="0.01" value="${Math.max(0.01, Number(entry.weight) || 0.1)}"></label>
             <label>Mãos<select id="contentHands" class="session-input"><option value="1">Uma mão</option><option value="2">Duas mãos</option></select></label>
             <label>Duração (rodadas)<input id="contentActive" class="session-input" type="number" min="0" value="${Number(entry.active) || 0}"></label>
             <label>Stacks máximos<input id="contentStack" class="session-input" type="number" min="1" value="${Number(entry.stack) || 1}"></label>
@@ -1098,6 +1120,8 @@ function saveCustomContent(type, id) {
             equipmentSlot: equipmentType === 'armor' ? equipmentSlot : '',
             damage: document.getElementById('contentDamage')?.value.trim() || '',
             defense: Math.max(0, Number(document.getElementById('contentDefense')?.value) || 0),
+            weight: Math.max(0.01, Number(document.getElementById('contentWeight')?.value) || 0.1),
+            weightSource: 'custom',
             hands: Number(document.getElementById('contentHands')?.value) === 2 ? 2 : 1,
             goldValue: 0,
             recipe: [],
@@ -1392,7 +1416,7 @@ function repairCurrentApplicationCache() {
 function restoreDefaultAppPreferences() {
     openSessionConfirm({
         title: 'Restaurar preferências?',
-        message: 'Tema, animações e modos de rolagem voltarão ao padrão. Fichas e combate não serão alterados.',
+        message: 'Tema, animações, cálculo de carga e modos de rolagem voltarão ao padrão. Fichas e combate não serão alterados.',
         confirmLabel: 'Restaurar preferências',
         danger: true,
         onConfirm: () => {
@@ -1402,6 +1426,7 @@ function restoreDefaultAppPreferences() {
             };
             localStorage.removeItem(APP_PREFERENCES_KEY);
             applyPreferences();
+            refreshAllCharacterWeightValues();
             showToast('✓ Preferências restauradas.');
             renderSessionToolsView('app-maintenance');
         }
@@ -1457,7 +1482,7 @@ function renderAppMaintenanceView(dialog) {
             <button type="button" class="session-secondary session-full" onclick="exportSessionBackup()">⇩ Baixar backup completo</button>
             <small>Inclui combate, histórico, fichas, biblioteca, encontros e preferências.</small>
             <button type="button" class="session-secondary session-full enhancement-top-gap" onclick="restoreDefaultAppPreferences()">Restaurar preferências</button>
-            <small>Volta tema e configurações de rolagem ao padrão.</small>
+            <small>Volta tema, cálculo de carga e configurações de rolagem ao padrão.</small>
             <button type="button" class="session-danger session-full enhancement-top-gap" onclick="requestCompleteApplicationReset()">Apagar todos os dados</button>
             <small>Remove todos os dados do aplicativo deste dispositivo. Faça backup antes.</small>
         </section>
@@ -1487,6 +1512,27 @@ function setRollMode(preference, value) {
     renderSessionToolsView('preferences');
 }
 
+function refreshAllCharacterWeightValues() {
+    characterSheets.forEach(sheet => refreshCharacterDerivedValues(sheet));
+    combatants.forEach(combatant => refreshCharacterDerivedValues(combatant));
+    persistCharacterSheets();
+    window.savePlayersToStorage?.();
+    window.persistCharacterCollections?.();
+    window.renderInventory?.();
+    window.renderList?.(false);
+}
+
+function setCarriedWeightMode(value) {
+    const mode = value === 'inventory' ? 'inventory' : 'equipped';
+    appPreferences.carriedWeightMode = mode;
+    localStorage.setItem(APP_PREFERENCES_KEY, JSON.stringify(appPreferences));
+    refreshAllCharacterWeightValues();
+    showToast(mode === 'inventory'
+        ? '⚖️ Todo o inventário agora influencia a carga.'
+        : '⚖️ Somente equipamentos equipados influenciam a carga.');
+    renderSessionToolsView('preferences');
+}
+
 function renderPreferencesView(dialog) {
     const contrastActive = appPreferences.theme === 'contrast';
     const rollModes = {
@@ -1508,7 +1554,7 @@ function renderPreferencesView(dialog) {
             <h2>Preferências</h2>
             <button type="button" class="session-close" onclick="closeSessionTools()" aria-label="Fechar">×</button>
         </div>
-        <p>As escolhas visuais e de rolagem ficam salvas neste dispositivo.</p>
+        <p>As escolhas visuais, de carga e de rolagem ficam salvas neste dispositivo.</p>
         <div class="enhancement-preference-row">
             <div><strong>Contraste alto</strong><small>Melhora leitura em ambientes escuros.</small></div>
             <button type="button" class="session-small-button ${contrastActive ? 'enhancement-active' : ''}" onclick="setAppPreference('theme', '${contrastActive ? 'default' : 'contrast'}')">${contrastActive ? 'Ativo' : 'Ativar'}</button>
@@ -1516,6 +1562,14 @@ function renderPreferencesView(dialog) {
         <div class="enhancement-preference-row">
             <div><strong>Reduzir animações</strong><small>Evita movimentos contínuos e transições.</small></div>
             <button type="button" class="session-small-button ${appPreferences.reducedMotion ? 'enhancement-active' : ''}" onclick="setAppPreference('reducedMotion', ${!appPreferences.reducedMotion})">${appPreferences.reducedMotion ? 'Ativo' : 'Ativar'}</button>
+        </div>
+        <h3 class="enhancement-section-title">Peso e capacidade de carga</h3>
+        <div class="enhancement-preference-row enhancement-preference-stack">
+            <div><strong>Itens que influenciam o peso</strong><small>Itens guardados em alforjes, carroças e carruagens não entram na carga pessoal.</small></div>
+            <div class="enhancement-choice-group">
+                <button type="button" class="session-small-button ${appPreferences.carriedWeightMode !== 'inventory' ? 'enhancement-active' : ''}" onclick="setCarriedWeightMode('equipped')">Somente equipados</button>
+                <button type="button" class="session-small-button ${appPreferences.carriedWeightMode === 'inventory' ? 'enhancement-active' : ''}" onclick="setCarriedWeightMode('inventory')">Todo o inventário</button>
+            </div>
         </div>
         <h3 class="enhancement-section-title">Rolagens</h3>
         ${renderRollMode('weapons', 'Armas e ataques', 'Manual mantém a rolagem na mesa; automática coloca o total no pad.', 'Manual')}
@@ -1603,6 +1657,8 @@ function installEnhancements() {
     };
 
     window.saveInventory = () => {
+        const owner = window.getCharacterCollectionOwner?.();
+        if (owner) refreshCharacterDerivedValues(owner);
         originalSaveInventory();
         syncActiveSheetCollections();
     };

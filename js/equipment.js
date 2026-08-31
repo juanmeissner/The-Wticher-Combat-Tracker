@@ -410,8 +410,66 @@ function getActiveAmmunitionEntry(owner, weapon = getActiveWeaponEntry(owner)?.i
 }
 
 function getEquipmentItemWeight(item) {
-    const weight = Number(item?.weight);
-    return Number.isFinite(weight) ? Math.max(0, weight) : 0;
+    const catalogItem = typeof predefinedItems !== 'undefined'
+        ? predefinedItems.find(entry => String(entry.id) === String(item?.id))
+        : null;
+    const itemWeight = Number(item?.weight);
+    if (Number.isFinite(itemWeight)) return Math.max(0, itemWeight);
+    const catalogWeight = Number(catalogItem?.weight);
+    if (Number.isFinite(catalogWeight)) return Math.max(0, catalogWeight);
+    if (typeof estimatePredefinedInventoryItemWeight === 'function') {
+        return Math.max(0, Number(estimatePredefinedInventoryItemWeight(item)) || 0);
+    }
+    return 0.1;
+}
+
+function getCarriedWeightMode() {
+    let mode = 'equipped';
+    if (typeof appPreferences !== 'undefined') {
+        mode = appPreferences.carriedWeightMode || mode;
+    } else {
+        try {
+            mode = JSON.parse(localStorage.getItem('dnd_app_preferences') || '{}').carriedWeightMode || mode;
+        } catch {
+            mode = 'equipped';
+        }
+    }
+    return mode === 'inventory' ? 'inventory' : 'equipped';
+}
+
+function getInventoryItemWeightQuantity(item) {
+    if (item?.id === 'coroa') return Math.max(0, Number(item.moneyValue) || 0);
+    return Math.max(0, Number(item?.quantity) || 0);
+}
+
+function getInventoryWeightBreakdown(owner) {
+    const entries = [];
+    getEquipmentOwnerInventory(owner).forEach(item => {
+        const transportKind = window.getTransportItemKind?.(item)
+            || String(item?.transportKind || item?.type || '').toLowerCase();
+        if (transportKind === 'mount' || transportKind === 'vehicle') return;
+
+        let quantity = getInventoryItemWeightQuantity(item);
+        if (transportKind === 'mount-gear') {
+            quantity = Math.max(0, quantity - (window.getUsedMountGearQuantity?.(owner, item.id) || 0));
+        }
+        if (quantity <= 0) return;
+
+        const unitWeight = getEquipmentItemWeight(item);
+        entries.push({
+            itemId: item.id,
+            name: item.name,
+            category: item.category || 'misc',
+            quantity,
+            unitWeight,
+            weight: Math.round((unitWeight * quantity + Number.EPSILON) * 100) / 100
+        });
+    });
+
+    return {
+        total: Math.round((entries.reduce((total, entry) => total + entry.weight, 0) + Number.EPSILON) * 100) / 100,
+        entries
+    };
 }
 
 function getEquippedWeightBreakdown(owner) {
@@ -432,11 +490,15 @@ function getEquippedWeightBreakdown(owner) {
     loadout.ammunition.forEach((itemId, slotIndex) => {
         const item = findEquipmentItem(owner, itemId);
         if (!item) return;
+        const quantity = Math.max(0, Number(item.quantity) || 0);
+        const unitWeight = getEquipmentItemWeight(item);
         entries.push({
             itemId: item.id,
             name: item.name,
             category: slotIndex === loadout.activeAmmunitionSlot ? 'ammunition-active' : 'ammunition-reserve',
-            weight: getEquipmentItemWeight(item)
+            quantity,
+            unitWeight,
+            weight: Math.round((unitWeight * quantity + Number.EPSILON) * 100) / 100
         });
     });
     EQUIPMENT_ARMOR_PARTS.forEach(part => {
@@ -474,6 +536,23 @@ function getEquippedWeightBreakdown(owner) {
         armor,
         shield: shieldWeight,
         entries
+    };
+}
+
+function getCharacterCarriedWeightBreakdown(owner) {
+    const mode = getCarriedWeightMode();
+    const equipped = getEquippedWeightBreakdown(owner);
+    const inventoryWeight = getInventoryWeightBreakdown(owner);
+    const selected = mode === 'inventory' ? inventoryWeight : equipped;
+    return {
+        mode,
+        modeLabel: mode === 'inventory' ? 'Todo o inventário' : 'Somente equipamentos equipados',
+        total: selected.total,
+        entries: selected.entries,
+        equippedTotal: equipped.total,
+        inventoryTotal: inventoryWeight.total,
+        equipped,
+        inventory: inventoryWeight
     };
 }
 
@@ -929,8 +1008,17 @@ function updateInventoryEquipmentAction() {
 
     const item = inventory.find(entry => entry.id === selectedInventoryItemId);
     const equipmentLabel = getSelectedEquipmentActionLabel(item);
-    button.textContent = equipmentLabel || (item?.careConsumable ? 'Consumir' : 'Usar');
-    button.classList.toggle('equipment-action-button', Boolean(equipmentLabel));
+    const transportLabel = window.getSelectedTransportActionLabel?.(item);
+    button.textContent = transportLabel || equipmentLabel || (item?.careConsumable ? 'Consumir' : 'Usar');
+    button.classList.toggle('equipment-action-button', Boolean(equipmentLabel || transportLabel));
+    if (typeof button.setAttribute === 'function') {
+        button.setAttribute(
+            'onclick',
+            transportLabel
+                ? `openTransportManager('${String(item?.id || '').replaceAll("'", "\\'")}')`
+                : 'useSelectedInventoryItem()'
+        );
+    }
 }
 
 function renderEquipmentDetailsAction(item) {
@@ -1494,10 +1582,16 @@ function initializeCombatantEquipment(combatant, monsterSource = null) {
 }
 
 function initializeEquipmentSystem() {
-    combatants.forEach(combatant => initializeCombatantEquipment(combatant));
+    combatants.forEach(combatant => {
+        initializeCombatantEquipment(combatant);
+        window.ensureTransportState?.(combatant);
+    });
 
     if (typeof characterSheets !== 'undefined' && Array.isArray(characterSheets)) {
-        characterSheets.forEach(sheet => ensureEquipmentLoadout(sheet));
+        characterSheets.forEach(sheet => {
+            ensureEquipmentLoadout(sheet);
+            window.ensureTransportState?.(sheet);
+        });
     }
 
     window.persistCharacterCollections?.();
@@ -1571,12 +1665,14 @@ function renderCombatantEquipmentPanel(combatant) {
             .filter(value => value && value !== '0'))].join(' · ') || 'Munição padrão'
         : '';
     const shield = getEquippedShieldSource(combatant);
-    const equippedWeight = getEquippedWeightBreakdown(combatant);
+    const carriedWeight = getCharacterCarriedWeightBreakdown(combatant);
     const derived = combatant.creationMode === 'full'
         ? window.characterSheetModel?.calculateCharacterDerivedValues(combatant, {
-            equippedWeight: equippedWeight.total
+            equippedWeight: carriedWeight.total
         })
         : null;
+    const displayedMovement = window.getEffectiveCombatantMovement?.(combatant)?.value
+        ?? derived?.movement;
     const armorValues = EQUIPMENT_ARMOR_PARTS.map(part => ({
         part,
         ...getEffectiveArmorBreakdown(combatant, part)
@@ -1633,8 +1729,8 @@ function renderCombatantEquipmentPanel(combatant) {
                     ${shield ? `<div class="equipped-shield-line">🛡️ ${escapeEquipmentHtml(shield.name)} · +${shield.current} em todas as regiões</div>` : ''}
                     ${derived ? `
                         <div class="equipment-derived-line">
-                            <span>⚖️ ${equippedWeight.total}/${derived.carryingCapacity} de carga</span>
-                            <span>👣 Movimento ${derived.movement}</span>
+                            <span title="${escapeEquipmentHtml(carriedWeight.modeLabel)}">⚖️ ${carriedWeight.total}/${derived.carryingCapacity} de carga</span>
+                            <span>👣 Movimento ${displayedMovement}</span>
                         </div>
                     ` : ''}
                 </div>
@@ -1771,7 +1867,10 @@ window.disarmActiveWeapon = disarmActiveWeapon;
 window.consumeActiveAmmunitionForOutcome = consumeActiveAmmunitionForOutcome;
 window.enforceCriticalEquipmentRestrictions = enforceCriticalEquipmentRestrictions;
 window.getEquipmentItemWeight = getEquipmentItemWeight;
+window.getCarriedWeightMode = getCarriedWeightMode;
+window.getInventoryWeightBreakdown = getInventoryWeightBreakdown;
 window.getEquippedWeightBreakdown = getEquippedWeightBreakdown;
+window.getCharacterCarriedWeightBreakdown = getCharacterCarriedWeightBreakdown;
 window.initializeCombatantEquipment = initializeCombatantEquipment;
 window.initializeEquipmentSystem = initializeEquipmentSystem;
 window.getInventoryEquipmentBadge = getInventoryEquipmentBadge;

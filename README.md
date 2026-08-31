@@ -75,6 +75,7 @@ flowchart LR
 | 🎒 Inventário | Itens individuais por personagem, troca pelo turno ativo, catálogo, quantidades, filtros e detalhes |
 | ⚒️ Criação, alquimia e culinária | Receitas funcionais, ingredientes disponíveis/ausentes, lotes, testes e produção automática |
 | 🛡️ Equipamentos | Armas, reservas, flechas/setas, cinco slots de proteção, escudo global, troca rápida e defesa persistente |
+| 🐎 Montarias | Cavalos individuais, equipamento próprio, alforjes, carga, carroças, carruagens e dano independente |
 | 📚 Habilidades | Magias individuais por personagem, Magia Expandida, custo de treino, ativação e exportação |
 | 📜 Histórico | Linha do tempo por rodada, filtros, autoria, testes, cálculos, efeitos e golpes finais |
 | ↶ Segurança | Confirmações, desfazer ações, encontros salvos e backup completo em JSON |
@@ -288,11 +289,15 @@ O turno ativo funciona como contexto padrão das abas **Itens** e **Habilidades*
 ### 🎒 Inventário e itens
 
 - separação entre **Usáveis**, **Equipamentos**, **Diversos** e **Criação**;
-- filtros contextuais compactos tanto no inventário quanto no catálogo: comidas, bebidas, poções, arremessáveis, poções de Witcher e óleos em **Usáveis**; munições, famílias de armas, escudos e armaduras por região em **Equipamentos**; ingredientes culinários, itens de monstros, ervas, minérios, metais e materiais naturais em **Diversos**;
+- filtros contextuais compactos tanto no inventário quanto no catálogo: comidas, bebidas, poções, arremessáveis, poções de Witcher e óleos em **Usáveis**; munições, famílias de armas, escudos, armaduras por região e **Equipamentos de Montaria** em **Equipamentos**; ingredientes culinários, itens de monstros, ervas, minérios, metais, materiais naturais e **Montarias** em **Diversos** — este último reúne cavalos, carroças e carruagens, com **Veículos** disponível como refinamento;
 - seleção de filtro preservada separadamente por aba, com quantidade disponível e navegação horizontal responsiva no mobile;
 - navegação entre **Combate**, **Itens** e **Habilidades** exclusivamente pelos botões superiores, evitando trocas acidentais de tela ao deslizar os filtros ou o inventário;
-- inclusão de itens a partir do catálogo;
-- catálogo permanece aberto após cada inclusão para permitir adicionar vários itens em sequência, fechando somente pela ação do usuário;
+- cada card do catálogo abre primeiro um modal com descrição, peso, categoria, propriedades, efeitos e receita, evitando inclusões acidentais;
+- aquisição com quantidade configurável, podendo ser gratuita ou marcada como compra;
+- preço unitário sugerido pelo catálogo e editável pelo mestre antes da confirmação;
+- compra atômica: valida o saldo, debita as Coroas e entrega todos os itens juntos; saldo insuficiente não altera o inventário;
+- aquisições gratuitas e compras registradas no histórico com quantidade, preço, total e saldo restante;
+- depois da aquisição, o catálogo permanece aberto para permitir consultar ou adicionar outros itens;
 - busca por nome e filtro por tipo;
 - alteração de quantidade pelos botões `+` e `−`;
 - uso direto de consumíveis;
@@ -372,6 +377,37 @@ A rolagem de dano continua **manual por padrão**, respeitando os dados físicos
 
 > **Exemplo:** uma defesa adicional de tronco 2, uma armadura equipada com 5 e um escudo com 3 fornecem 10 de proteção. Se **Dano Armadura** for escolhido, o mestre decide se o desgaste será aplicado à defesa adicional, à armadura ou ao escudo.
 
+### 🐎 Montarias, veículos e carga
+
+Cavalos, carroças e carruagens são adicionados pelo catálogo de itens e permanecem vinculados ao inventário do personagem. Cada unidade é tratada como um recurso individual: dois Cavalos de Guerra podem ter nomes, HP, equipamentos e cargas diferentes, mesmo que o inventário resuma o item como `x2`.
+
+- quatro tipos de cavalo com HP e Movimento próprios;
+- sela, alforjes, barda e ferraduras equipados em posições independentes;
+- nenhuma montaria possui capacidade de carga sem alforjes;
+- alforjes pequenos, grandes e reforçados concedem 30, 60 ou 90 de capacidade;
+- **Central de Carga** com origem, destino, item e quantidade selecionáveis, permitindo transferências diretas entre personagem, montarias e veículos sem armazenamento intermediário;
+- ações rápidas preservadas em cada card, com peso e limite conferidos antes de qualquer movimentação;
+- carga de cada montaria separa o peso dos equipamentos próprios do conteúdo guardado nos alforjes;
+- carga de carroças e carruagens é calculada pelo conteúdo de seus inventários independentes;
+- transportes com dados legados acima da capacidade exibem **Sobrecarga** e perdem Movimento conforme o excesso;
+- carroças com inventário próprio exigem exatamente um cavalo atrelado;
+- carruagens com inventário próprio exigem exatamente dois cavalos;
+- cavalos já atrelados ou derrotados ficam indisponíveis para outro veículo;
+- veículos podem ser desatrelados pelo mesmo painel, liberando imediatamente todos os cavalos vinculados;
+- uma montaria ativa pode ser montada ou desmontada sem acrescentar botões ao pad;
+- enquanto montado, o Movimento efetivo do cavalo substitui o Movimento do personagem e aparece no card principal;
+- o card **MONTARIA** começa recolhido e mostra HP, Movimento, carga e proteção sem poluir o combate;
+- ao causar dano em um personagem montado, o aplicativo pergunta se o alvo é o cavaleiro ou a montaria;
+- dano na montaria é absorvido primeiro pela barda, reduz o HP próprio e desmonta automaticamente o personagem quando ela é derrotada;
+- estados de saúde **Saudável**, **Ferida**, **Gravemente ferida** e **Derrotada** são calculados pelo HP e registrados sempre que mudam;
+- condições próprias de montaria — **Assustada**, **Atordoada**, **Caída** e **Em fuga** — afetam Movimento e disponibilidade para montar;
+- uma montaria Caída ou derrotada derruba o cavaleiro, aplica **Caído** ao personagem e registra o incidente no histórico;
+- a ação contextual **Fuga** fica dentro do painel recolhível da montaria e impede novo uso até a condição ser removida;
+- montarias com carga, equipamento ou vínculo ativo não podem ser removidas acidentalmente do inventário;
+- todo o estado é preservado na ficha vinculada, nos encontros e na sessão de combate.
+
+Para usar, adicione um cavalo em **Itens → Etc. → Montarias**, selecione-o e toque em **Gerenciar**. No mesmo painel é possível nomear o animal, equipar acessórios, armazenar itens e escolher **Montar**. Veículos ficam em **Itens → Etc. → Veículos** e exibem os cavalos disponíveis para o pareamento exigido.
+
 ### ✨ Habilidades, sinais e magias
 
 - catálogo com busca e filtro por tipo ou elemento cadastrado;
@@ -443,10 +479,12 @@ Nas fichas completas, os valores máximos são recalculados a partir da constru�
 - **HP:** `(bônus de Constituição + Físico total) × nível + (10 + Constituição base)`, em que Constituição base começa em 10 e inclui os pontos investidos, sem somar bônus raciais ou temporários novamente;
 - **EST:** usa a fórmula correspondente a Witcher, Mago, Clérigo/Druida ou reserva física;
 - **Carga:** `Força total ÷ 2 + Físico total + bônus de Força`, incluindo `+25` para Anões;
-- **Movimento:** `(Atletismo total × 2) + 4 − peso equipado + Físico total + bônus de Força`, limitado entre 5 e 15 antes das consequências de ferimentos críticos;
-- **Peso equipado:** soma armaduras, escudo, arma ativa e as duas armas reservas; itens apenas guardados não contam.
+- **Movimento:** `(Atletismo total × 2) + 4 − peso considerado + Físico total + bônus de Força`, limitado entre 5 e 15 antes das consequências de ferimentos críticos;
+- **Peso considerado:** por padrão soma armaduras, escudo, arma ativa, duas armas reservas e as pilhas de munição equipadas. Em `⋯ → Preferências → Peso e capacidade de carga`, pode ser alterado para considerar todo o inventário pessoal.
 
-Quando o peso equipado ultrapassa a Capacidade de Carga, o aplicativo aplica automaticamente **🏋️ Carregando Peso**. A condição mostra carga, limite, excesso e Movimento atual dentro de **EFEITOS ATIVOS**, sem ocupar a tela quando o personagem está dentro do limite. Ao desequipar peso suficiente, a condição desaparece automaticamente. O Movimento total também fica sempre visível de forma compacta no card principal de jogadores e inimigos; criaturas predefinidas preservam as velocidades terrestre e de voo registradas no bestiário.
+Todos os itens do catálogo possuem peso unitário. Valores oficiais são preservados e itens ainda sem peso específico recebem uma estimativa consistente, identificada internamente para facilitar futuras revisões. Flechas, setas, poções e pequenos consumíveis usam peso leve de `0,1` por unidade; ferro, aço, prata e minérios usam ao menos `1`. Itens personalizados também solicitam peso durante a criação.
+
+Quando o peso considerado ultrapassa a Capacidade de Carga, o aplicativo aplica automaticamente **🏋️ Carregando Peso**. A condição mostra carga, limite, excesso e Movimento atual dentro de **EFEITOS ATIVOS**, sem ocupar a tela quando o personagem está dentro do limite. No modo padrão, desequipar peso suficiente remove a condição; no modo de inventário completo, também é possível transferir itens para alforjes, carroças ou carruagens. Esses itens deixam de contar imediatamente na carga pessoal, sem contagem duplicada. O Movimento total também fica sempre visível de forma compacta no card principal de jogadores e inimigos; criaturas predefinidas preservam as velocidades terrestre e de voo registradas no bestiário.
 
 Quando um novo cálculo aumenta HP ou EST máximo, o recurso atual é preservado em vez de curar ou restaurar o personagem automaticamente. Se o novo máximo ficar abaixo do atual, o valor é limitado ao novo teto.
 
@@ -594,7 +632,7 @@ Para consultar ou corrigir recursos, abra **RECURSOS** abaixo do jogador. Use `�
 
 Quando houver condições, magias ou itens aplicados, abra **EFEITOS ATIVOS** abaixo do participante para consultar ou editar seus cards. O cabeçalho permanece compacto quando recolhido e mostra quantos efeitos continuam em execução.
 
-O indicador `👣 MOV` no card principal mostra o Movimento total atual. Em fichas completas, equipe ou desequipe itens para recalcular imediatamente peso, capacidade e Movimento. Se surgir **Carregando Peso**, abra **EFEITOS ATIVOS** para conferir exatamente quanto o limite foi ultrapassado.
+O indicador `👣 MOV` no card principal mostra o Movimento total atual. Em fichas completas, equipar, desequipar, consumir ou transferir itens recalcula imediatamente peso, capacidade e Movimento conforme a preferência da campanha. Se surgir **Carregando Peso**, abra **EFEITOS ATIVOS** para conferir exatamente quanto o limite foi ultrapassado.
 
 Abra **MAGIAS** para consultar o repertório daquele personagem. Expanda `⌄` para ler a regra completa ou use **Conjurar**: escolha o alvo, informe o EST base quando a magia for variável e revise o custo final. Magia Expandida é calculada sem alterar o catálogo original. Se o personagem possuir Sobrecarga Arcana, a decisão e o teste aparecem dentro desse mesmo fluxo; um `20 natural` também concede Dado da Sorte e Adrenalina conforme as regras de testes em combate.
 
@@ -739,6 +777,7 @@ O projeto não exige framework JavaScript, bundler ou etapa de compilação.
 ├── toxicity.css                 # Indicador compacto e níveis visuais de toxicidade
 ├── loot-rewards.css             # Coleta e distribuição responsiva de recompensas
 ├── crafting.css                 # Oficina, receitas, ingredientes e transferência
+├── mounts.css                   # Painel responsivo de montarias, carga e veículos
 ├── manifest.json                # Metadados da PWA
 ├── service-worker.js            # Entrada do Service Worker
 ├── professional-skills-descriptions.js # Descrições profissionais normalizadas em UTF-8
@@ -760,6 +799,7 @@ O projeto não exige framework JavaScript, bundler ou etapa de compilação.
 │   ├── toxicity.js               # Poções, limiares, Tolerância, overdose e Mel Branco
 │   ├── loot-rewards.js            # Rolagem, distribuição, persistência e relatório de saque
 │   ├── equipment.js             # Equipamentos, defesas, rolagens e ataques de monstros
+│   ├── mounts.js                # Montarias, acessórios, carga, veículos, movimento e dano
 │   ├── crafting.js              # Receitas, testes, produção e transferência de itens
 │   ├── enhancements.js          # Fichas, biblioteca, preferências e manutenção
 │   ├── rules-automation.js      # Automações de magias, itens e categorias
@@ -799,7 +839,9 @@ node tests/toxicity.test.cjs
 node tests/loot-rewards.test.cjs
 node tests/rune-source.test.cjs
 node tests/items-data.test.cjs
+node tests/inventory-acquisition.test.cjs
 node tests/equipment.test.cjs
+node tests/mounts.test.cjs
 node tests/crafting.test.cjs
 node tests/item-use-automation.test.cjs
 node tests/spell-damage-automation.test.cjs

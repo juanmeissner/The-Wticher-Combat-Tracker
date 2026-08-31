@@ -43,6 +43,15 @@
     }
 
     function getCombatantMovementSummary(combatant) {
+        const mountedMovement = window.getEffectiveCombatantMovement?.(combatant);
+        if (mountedMovement?.mounted) {
+            const value = Math.max(0, Math.round((Number(mountedMovement.value) || 0) * 10) / 10);
+            return {
+                display: String(value),
+                title: `Movimento montado: ${mountedMovement.mount?.name || 'Montaria'} (${value})`
+            };
+        }
+
         const monsterDefinition = combatant?.presetMonsterId && typeof monsterDatabase !== 'undefined'
             ? monsterDatabase.find(monster => String(monster.id) === String(combatant.presetMonsterId))
             : null;
@@ -358,6 +367,7 @@
             wrapper.appendChild(card);
 
             const equipmentPanelHtml = window.renderCombatantEquipmentPanel?.(c) || '';
+            const mountPanelHtml = window.renderCombatantMountPanel?.(c) || '';
             const characterResourcesPanelHtml = window.renderCharacterResourcesPanel?.(c) || '';
             const activeEffectsPanelHtml = renderCombatantEffectsPanel(c);
             const monsterActionsPanelHtml = window.renderMonsterActionsPanel?.(c) || '';
@@ -372,6 +382,7 @@
 
             if (
                 equipmentPanelHtml ||
+                mountPanelHtml ||
                 characterResourcesPanelHtml ||
                 activeEffectsPanelHtml ||
                 monsterActionsPanelHtml ||
@@ -386,7 +397,7 @@
             ) {
                 const subpanels = document.createElement('div');
                 subpanels.className = 'combat-subpanels';
-                subpanels.innerHTML = `${equipmentPanelHtml}${characterResourcesPanelHtml}${activeEffectsPanelHtml}${monsterActionsPanelHtml}${monsterAbilitiesPanelHtml}${monsterSkillsPanelHtml}${characterSkillsPanelHtml}${characterProfessionalPanelHtml}${characterSpellsPanelHtml}${criticalWoundsPanelHtml}${combatConsequencesPanelHtml}${monsterLootPanelHtml}`;
+                subpanels.innerHTML = `${mountPanelHtml}${equipmentPanelHtml}${characterResourcesPanelHtml}${activeEffectsPanelHtml}${monsterActionsPanelHtml}${monsterAbilitiesPanelHtml}${monsterSkillsPanelHtml}${characterSkillsPanelHtml}${characterProfessionalPanelHtml}${characterSpellsPanelHtml}${criticalWoundsPanelHtml}${combatConsequencesPanelHtml}${monsterLootPanelHtml}`;
                 wrapper.appendChild(subpanels);
             }
 

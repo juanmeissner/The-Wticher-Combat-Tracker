@@ -45,6 +45,7 @@ assert.equal(filters.matches(find('armaduradelobo'), 'equipment', 'armor-body'),
 assert.equal(filters.matches(find('braceirasdelobo'), 'equipment', 'armor-arms'), true);
 assert.equal(filters.matches(find('calcasdelobo'), 'equipment', 'armor-legs'), true);
 assert.equal(filters.matches(find('capuzelficodebruxo'), 'equipment', 'armor-head'), true);
+assert.equal(filters.matches(find('alforjesgrandes'), 'equipment', 'mount-gear'), true);
 
 assert.equal(filters.matches(find('carnedecoelho'), 'misc', 'culinary'), true);
 assert.equal(filters.matches(find('cerebrodeafogador'), 'misc', 'monster'), true);
@@ -53,13 +54,28 @@ assert.equal(filters.matches(find('mineriodeferro'), 'misc', 'ore'), true);
 assert.equal(filters.matches(find('aco'), 'misc', 'metal'), true);
 assert.equal(filters.matches(find('carvao'), 'misc', 'natural'), true);
 assert.equal(filters.matches(find('madeiraendurecida'), 'misc', 'natural'), true);
+assert.equal(filters.matches(find('cavalodeguerra'), 'misc', 'mount'), true);
+assert.equal(filters.matches(find('carrocasimples'), 'misc', 'mount'), true);
+assert.equal(filters.matches(find('carruagemcomum'), 'misc', 'mount'), true);
+assert.equal(filters.matches(find('carruagemcomum'), 'misc', 'vehicle'), true);
+
+const mountCatalog = items.filter(item => item.transportKind === 'mount');
+const vehicleCatalog = items.filter(item => item.transportKind === 'vehicle');
+const mountGearCatalog = items.filter(item => item.transportKind === 'mount-gear');
+assert.equal(mountCatalog.length, 4, 'O catálogo deve oferecer quatro tipos de cavalo.');
+assert.equal(vehicleCatalog.length, 4, 'O catálogo deve oferecer duas carroças e duas carruagens.');
+assert.equal(mountGearCatalog.length, 9, 'O catálogo deve oferecer equipamentos para todos os slots da montaria.');
+assert.ok(mountCatalog.every(item => filters.matches(item, 'misc', 'mount')));
+assert.ok(vehicleCatalog.every(item => filters.matches(item, 'misc', 'mount')));
+assert.ok(vehicleCatalog.every(item => filters.matches(item, 'misc', 'vehicle')));
+assert.ok(mountGearCatalog.every(item => filters.matches(item, 'equipment', 'mount-gear')));
 
 const indexSource = fs.readFileSync(path.join(projectRoot, 'index.html'), 'utf8');
 const workerSource = fs.readFileSync(path.join(projectRoot, 'js', 'service-worker.js'), 'utf8');
 const navigationSource = fs.readFileSync(path.join(projectRoot, 'js', 'navigation.js'), 'utf8');
 assert.match(indexSource, /js\/inventory-filters\.js/);
 assert.match(indexSource, /inventoryModalSubfilters/);
-assert.match(workerSource, /witcher-combat-tracker-v75/);
+assert.match(workerSource, /witcher-combat-tracker-v85/);
 assert.match(workerSource, /js\/inventory-filters\.js/);
 assert.doesNotMatch(navigationSource, /addEventListener\(['"]touch(?:start|end)/);
 

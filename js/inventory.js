@@ -1,4 +1,33 @@
 let wasLongPress = false;
+let pendingInventoryAcquisitionItemId = null;
+
+function escapeInventoryHtml(value) {
+    return String(value ?? '')
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#039;');
+}
+
+function getInventoryCatalogItem(itemId) {
+    return predefinedItems.find(entry => String(entry.id) === String(itemId)) || null;
+}
+
+function getInventoryDisplayItem(item) {
+    const catalogItem = getInventoryCatalogItem(item?.id);
+    if (!catalogItem) return item;
+
+    return {
+        ...catalogItem,
+        ...item,
+        description: String(item?.description || catalogItem.description || '').trim(),
+        shortDescription: String(item?.shortDescription || catalogItem.shortDescription || '').trim(),
+        recipe: Array.isArray(item?.recipe) && item.recipe.length
+            ? item.recipe
+            : (Array.isArray(catalogItem.recipe) ? catalogItem.recipe : [])
+    };
+}
 
 function handleItemTouchEnd(itemId) {
 
@@ -174,12 +203,15 @@ function updateInventoryTabs() {
 
 function showItemDetails(itemId) {
 
-    const item =
+    const inventoryItem =
         inventory.find(i => i.id === itemId);
 
-    if (!item) return;
+    if (!inventoryItem) return;
 
-    const catalogItem = predefinedItems.find(entry => entry.id === item.id) || item;
+    pendingInventoryAcquisitionItemId = null;
+    const item = getInventoryDisplayItem(inventoryItem);
+    const catalogItem = getInventoryCatalogItem(item.id) || item;
+    const itemUnitWeight = window.getEquipmentItemWeight?.(catalogItem) || Math.max(0, Number(catalogItem.weight) || 0);
 
     const content =
         document.getElementById(
@@ -204,7 +236,7 @@ function showItemDetails(itemId) {
             ? `
                 <div class="text-yellow-400 mb-4">
         
-                    💰 ${item.goldValue} Ouro
+                        💰 ${item.goldValue} Coroas
         
                 </div>
             `
@@ -247,6 +279,11 @@ function showItemDetails(itemId) {
                     </div>
                 `
                 : ''}
+
+            <div class="text-slate-400 mb-2">
+                ⚖️ Peso unitário: ${itemUnitWeight}
+                ${['mount', 'vehicle'].includes(window.getTransportItemKind?.(catalogItem)) ? ' · não entra na carga pessoal' : ''}
+            </div>
             
             ${item.bonus
                 ? `
@@ -291,7 +328,7 @@ function showItemDetails(itemId) {
 
         <div class="text-slate-300 mb-4">
 
-            ${item.description}
+            ${escapeInventoryHtml(item.description || 'Nenhuma descrição cadastrada para este item.')}
 
         </div>
 
@@ -303,7 +340,7 @@ function showItemDetails(itemId) {
 
         <div class="space-y-1">
 
-            ${item.recipe.length > 0
+            ${(Array.isArray(item.recipe) ? item.recipe : []).length > 0
 
                 ? item.recipe.map(r => `
 
@@ -327,6 +364,7 @@ function showItemDetails(itemId) {
         </div>
 
         ${window.renderEquipmentDetailsAction?.(item) || ''}
+        ${window.renderTransportDetailsAction?.(item) || ''}
     `;
 
     document
@@ -334,7 +372,250 @@ function showItemDetails(itemId) {
         .classList.remove('hidden');
 }
 
+function getInventoryCrownBalance() {
+    return Math.max(0, Number(inventory.find(item => item.id === 'coroa')?.moneyValue) || 0);
+}
+
+function getInventoryAcquisitionPackSize(item) {
+    return Math.max(1, Math.floor(Number(item?.acquisitionPackSize) || 1));
+}
+
+function getInventoryAcquisitionUnitLabel(item, quantity = 1) {
+    const label = String(item?.acquisitionUnitLabel || 'unidade').trim() || 'unidade';
+    return Number(quantity) === 1 ? label : `${label}s`;
+}
+
+function getInventoryAcquisitionContentLabel(item) {
+    return String(item?.acquisitionContentLabel || 'unidades').trim() || 'unidades';
+}
+
+function renderCatalogItemAcquisition(item) {
+    if (item.id === 'coroa') {
+        return `
+            <section class="item-acquisition-panel">
+                <strong>👑 Moeda do personagem</strong>
+                <p>As Coroas são ajustadas diretamente no inventário do personagem.</p>
+            </section>
+        `;
+    }
+
+    const owner = window.getCharacterCollectionOwner?.();
+    const ownerName = owner?.name || 'inventário atual';
+    const suggestedPrice = Math.max(0, Math.round(Number(item.goldValue) || 0));
+    const packSize = getInventoryAcquisitionPackSize(item);
+    const usesPack = packSize > 1;
+
+    return `
+        <section class="item-acquisition-panel" aria-labelledby="itemAcquisitionTitle">
+            <div class="item-acquisition-heading">
+                <div>
+                    <small>AQUISIÇÃO</small>
+                    <strong id="itemAcquisitionTitle">Adicionar para ${escapeInventoryHtml(ownerName)}</strong>
+                </div>
+                <span>👑 ${getInventoryCrownBalance()} Coroas</span>
+            </div>
+
+            <label class="item-acquisition-field">
+                <span>${usesPack ? 'Quantidade de kits' : 'Quantidade'}</span>
+                <input id="itemAcquisitionQuantity" type="number" min="1" step="1" value="1" inputmode="numeric" oninput="updateInventoryAcquisitionSummary()">
+                ${usesPack ? `<small>Cada kit adiciona ${packSize} ${getInventoryAcquisitionContentLabel(item)} ao inventário.</small>` : ''}
+            </label>
+
+            <label class="item-acquisition-purchase-toggle">
+                <input id="itemAcquisitionPurchase" type="checkbox" onchange="updateInventoryAcquisitionSummary()">
+                <span><strong>Este item está sendo comprado</strong><small>Ative para debitar as Coroas do personagem.</small></span>
+            </label>
+
+            <label class="item-acquisition-field">
+                <span>${usesPack ? 'Preço por kit em Coroas' : 'Preço unitário em Coroas'}</span>
+                <input id="itemAcquisitionUnitPrice" type="number" min="0" step="1" value="${suggestedPrice}" inputmode="numeric" disabled oninput="updateInventoryAcquisitionSummary()">
+            </label>
+
+            <div id="itemAcquisitionSummary" class="item-acquisition-summary" aria-live="polite"></div>
+            <button type="button" class="item-acquisition-confirm" onclick="confirmInventoryItemAcquisition()">
+                Adicionar ao inventário
+            </button>
+        </section>
+    `;
+}
+
+function showCatalogItemDetails(itemId) {
+    const catalogItem = getInventoryCatalogItem(itemId);
+    if (!catalogItem) return;
+
+    pendingInventoryAcquisitionItemId = catalogItem.id;
+    const itemUnitWeight = window.getEquipmentItemWeight?.(catalogItem)
+        || Math.max(0, Number(catalogItem.weight) || 0);
+    const acquisitionPackSize = getInventoryAcquisitionPackSize(catalogItem);
+    const recipe = Array.isArray(catalogItem.recipe) ? catalogItem.recipe.filter(Boolean) : [];
+    const content = document.getElementById('itemDetailsContent');
+
+    content.innerHTML = `
+        <div class="item-details-header">
+            ${renderIcon(catalogItem.icon, 'item-details-icon')}
+            <div>
+                <small>${escapeInventoryHtml(catalogItem.category === 'equipment' ? 'EQUIPAMENTO' : catalogItem.category === 'usable' ? 'USÁVEL' : 'ITEM')}</small>
+                <h2>${escapeInventoryHtml(catalogItem.name)}</h2>
+            </div>
+        </div>
+        <div class="item-details-facts">
+            <span>⚖️ ${itemUnitWeight} de peso</span>
+            <span>👑 ${Math.max(0, Number(catalogItem.goldValue) || 0)} Coroas${acquisitionPackSize > 1 ? ` por kit com ${acquisitionPackSize} ${getInventoryAcquisitionContentLabel(catalogItem)}` : ''}</span>
+            ${catalogItem.damage ? `<span>⚔️ ${escapeInventoryHtml(catalogItem.damage)}</span>` : ''}
+            ${catalogItem.defense ? `<span>🛡️ ${escapeInventoryHtml(window.getEquipmentDefenseLabel?.(catalogItem) || catalogItem.defense)} DEF</span>` : ''}
+            ${catalogItem.weaponType ? `<span>🏷️ ${escapeInventoryHtml(catalogItem.weaponType)}</span>` : ''}
+            ${window.getEquipmentSlotLabel?.(catalogItem) ? `<span>📍 ${escapeInventoryHtml(window.getEquipmentSlotLabel(catalogItem))}</span>` : ''}
+        </div>
+        <section class="item-details-section">
+            <h3>Descrição</h3>
+            <p>${escapeInventoryHtml(catalogItem.description || catalogItem.shortDescription || 'Nenhuma descrição cadastrada para este item.')}</p>
+        </section>
+        ${catalogItem.bonus ? `<section class="item-details-section"><h3>Bônus</h3><p>${escapeInventoryHtml(catalogItem.bonus)}</p></section>` : ''}
+        ${catalogItem.effect ? `<section class="item-details-section"><h3>Efeito</h3><p>${escapeInventoryHtml(catalogItem.effect)}</p></section>` : ''}
+        ${catalogItem.potion ? `<section class="item-details-section"><h3>Toxicidade</h3><p>${Math.max(0, Number(catalogItem.toxicity) || 0)}%</p></section>` : ''}
+        <section class="item-details-section">
+            <h3>Receita</h3>
+            ${recipe.length ? `<ul>${recipe.map(entry => `<li>${escapeInventoryHtml(entry)}</li>`).join('')}</ul>` : '<p>Não possui receita cadastrada.</p>'}
+        </section>
+        ${renderCatalogItemAcquisition(catalogItem)}
+    `;
+
+    document.getElementById('itemDetailsModal').classList.remove('hidden');
+    updateInventoryAcquisitionSummary();
+}
+
+function updateInventoryAcquisitionSummary() {
+    const item = getInventoryCatalogItem(pendingInventoryAcquisitionItemId);
+    const summary = document.getElementById('itemAcquisitionSummary');
+    if (!item || !summary) return;
+
+    const quantityInput = document.getElementById('itemAcquisitionQuantity');
+    const purchaseInput = document.getElementById('itemAcquisitionPurchase');
+    const unitPriceInput = document.getElementById('itemAcquisitionUnitPrice');
+    const quantity = Math.max(1, Math.floor(Number(quantityInput?.value) || 1));
+    const packSize = getInventoryAcquisitionPackSize(item);
+    const acquiredQuantity = quantity * packSize;
+    const purchased = Boolean(purchaseInput?.checked);
+    const unitPrice = Math.max(0, Math.round(Number(unitPriceInput?.value) || 0));
+    const total = purchased ? quantity * unitPrice : 0;
+
+    if (quantityInput) quantityInput.value = quantity;
+    if (unitPriceInput) unitPriceInput.disabled = !purchased;
+
+    summary.classList.toggle('is-insufficient', total > getInventoryCrownBalance());
+    const packSummary = packSize > 1
+        ? `<small>${quantity} ${getInventoryAcquisitionUnitLabel(item, quantity)} = ${acquiredQuantity} ${getInventoryAcquisitionContentLabel(item)} adicionadas.</small>`
+        : '';
+    summary.innerHTML = total > 0
+        ? `<span>Total da compra</span><strong>${total} Coroas</strong>${packSummary}<small>Saldo depois da compra: ${getInventoryCrownBalance() - total}</small>`
+        : `<span>Aquisição gratuita</span><strong>0 Coroas</strong>${packSummary}<small>Nenhuma Coroa será removida.</small>`;
+}
+
+function addItemQuantity(itemId, requestedQuantity = 1, showMessage = true, persist = true) {
+    const amount = Math.max(1, Math.floor(Number(requestedQuantity) || 1));
+    const existing = inventory.find(item => item.id === itemId);
+    const base = getInventoryCatalogItem(itemId);
+    if (!existing && !base) return null;
+
+    if (existing) {
+        if (existing.id === 'coroa') existing.moneyValue = Math.max(0, Number(existing.moneyValue) || 0) + amount;
+        else existing.quantity = Math.max(0, Number(existing.quantity) || 0) + amount;
+    } else {
+        inventory.push({
+            ...base,
+            quantity: amount,
+            moneyValue: itemId === 'coroa' ? amount : undefined
+        });
+    }
+
+    const result = inventory.find(item => item.id === itemId);
+    window.synchronizeTransportAssets?.(window.getCharacterCollectionOwner?.());
+    if (persist) {
+        saveInventory();
+        renderInventory();
+    }
+    if (showMessage) showToast(`🎒 ${result.name} adicionado! (x${amount})`);
+    return result;
+}
+
+function acquireInventoryItem(itemId, requestedQuantity = 1, options = {}) {
+    const item = getInventoryCatalogItem(itemId);
+    if (!item || item.id === 'coroa') return { acquired: false, reason: 'invalid-item' };
+
+    const acquisitionUnits = Math.max(1, Math.floor(Number(requestedQuantity) || 1));
+    const packSize = getInventoryAcquisitionPackSize(item);
+    const quantity = acquisitionUnits * packSize;
+    const purchased = Boolean(options.purchased);
+    const unitPrice = Math.max(0, Math.round(Number(options.unitPrice) || 0));
+    const total = purchased ? acquisitionUnits * unitPrice : 0;
+    const crown = inventory.find(entry => entry.id === 'coroa');
+    const balance = Math.max(0, Number(crown?.moneyValue) || 0);
+
+    if (total > balance) {
+        return { acquired: false, reason: 'insufficient-crowns', required: total, balance };
+    }
+
+    if (total > 0) crown.moneyValue = balance - total;
+    addItemQuantity(item.id, quantity, false, false);
+    saveInventory();
+    renderInventory();
+
+    const owner = window.getCharacterCollectionOwner?.();
+    const acquisitionLabel = total > 0 ? 'comprou' : 'adquiriu';
+    window.addCombatHistoryEntry?.(
+        `${owner?.name || 'Inventário'} ${acquisitionLabel} ${item.name} x${quantity}`,
+        total > 0
+            ? `${packSize > 1 ? `${acquisitionUnits} ${getInventoryAcquisitionUnitLabel(item, acquisitionUnits)} · ${packSize} ${getInventoryAcquisitionContentLabel(item)} por kit\n` : ''}Preço ${packSize > 1 ? 'por kit' : 'unitário'}: ${unitPrice} Coroas\nTotal debitado: ${total} Coroas\nSaldo: ${balance} > ${balance - total}`
+            : `${packSize > 1 ? `${acquisitionUnits} ${getInventoryAcquisitionUnitLabel(item, acquisitionUnits)} · ${packSize} ${getInventoryAcquisitionContentLabel(item)} por kit\n` : ''}Aquisição gratuita · nenhuma Coroa foi debitada.`,
+        {
+            type: 'item',
+            actor: owner ? { id: owner.id, name: owner.name } : null,
+            target: owner ? { id: owner.id, name: owner.name } : null,
+            participants: owner ? [{ id: owner.id, name: owner.name }] : [],
+            item: { id: item.id, name: item.name, quantity, acquisitionUnits, packSize, unitPrice, total }
+        }
+    );
+
+    return {
+        acquired: true,
+        itemId: item.id,
+        quantity,
+        acquisitionUnits,
+        packSize,
+        unitPrice,
+        total,
+        balanceAfter: balance - total
+    };
+}
+
+function confirmInventoryItemAcquisition() {
+    const quantity = document.getElementById('itemAcquisitionQuantity')?.value;
+    const purchased = Boolean(document.getElementById('itemAcquisitionPurchase')?.checked);
+    const unitPrice = document.getElementById('itemAcquisitionUnitPrice')?.value;
+    const result = acquireInventoryItem(pendingInventoryAcquisitionItemId, quantity, { purchased, unitPrice });
+
+    if (!result.acquired) {
+        if (result.reason === 'insufficient-crowns') {
+            showToast(`❌ Coroas insuficientes: possui ${result.balance} e precisa de ${result.required}.`);
+        } else {
+            showToast('❌ Não foi possível adicionar este item.');
+        }
+        return;
+    }
+
+    const item = getInventoryCatalogItem(result.itemId);
+    const quantityLabel = result.packSize > 1
+        ? `${result.acquisitionUnits} ${getInventoryAcquisitionUnitLabel(item, result.acquisitionUnits)} (${result.quantity} unidades)`
+        : `x${result.quantity}`;
+    closeItemDetailsModal();
+    showToast(result.total > 0
+        ? `🛒 ${item.name}: ${quantityLabel} por ${result.total} Coroas.`
+        : `🎒 ${item.name}: ${quantityLabel} adicionado gratuitamente.`);
+}
+
 function closeItemDetailsModal() {
+
+    pendingInventoryAcquisitionItemId = null;
 
     document
         .getElementById('itemDetailsModal')
@@ -444,7 +725,7 @@ window.getFilteredInventoryItems = getFilteredInventoryItems;
 window.setInventorySubfilter = setInventorySubfilter;
 
 function addInventoryItemFromModal(itemId) {
-    addItem(itemId);
+    showCatalogItemDetails(itemId);
 }
 
 // =========================================
@@ -504,8 +785,15 @@ function renderInventory() {
 
     filteredInventory.forEach(item => {
 
-        const equipmentBadge = window.getInventoryEquipmentBadge?.(item.id);
+        const equipmentBadge = window.getInventoryEquipmentBadge?.(item.id)
+            || window.getTransportInventoryBadge?.(item);
         const equipmentKind = window.getEquipmentItemKind?.(item);
+        const transportKind = window.getTransportItemKind?.(item);
+        const unitWeight = window.getEquipmentItemWeight?.(item) || Math.max(0, Number(item.weight) || 0);
+        const weightQuantity = item.id === 'coroa'
+            ? Math.max(0, Number(item.moneyValue) || 0)
+            : Math.max(0, Number(item.quantity) || 0);
+        const inventoryStackWeight = Math.round((unitWeight * weightQuantity + Number.EPSILON) * 100) / 100;
 
         container.innerHTML += `
     
@@ -558,11 +846,25 @@ function renderInventory() {
                 ? `${item.careConsumable.kind === 'food' ? '🍽️ Alimento' : '🥤 Bebida'} · ${Math.max(1, Number(item.careConsumable.portionsPerUnit) || 1)} porção`
                 : ''}
 
+            ${transportKind === 'mount'
+                ? `🐎 ${Math.max(1, Number(item.hp) || 1)} HP · ${Math.max(1, Number(item.movement) || 5)} MOV`
+                : ''}
+
+            ${transportKind === 'vehicle'
+                ? `🛒 ${Math.max(1, Number(item.requiredMounts) || 1)} cavalo${Number(item.requiredMounts) === 1 ? '' : 's'} · ${Math.max(0, Number(item.capacity) || 0)} carga`
+                : ''}
+
+            ${transportKind === 'mount-gear'
+                ? `🐴 ${item.description || 'Equipamento de montaria'}`
+                : ''}
+
         </div>
 
         ${equipmentBadge
             ? `<span class="inventory-equipment-badge ${equipmentBadge.className}">${equipmentBadge.label}</span>`
             : ''}
+
+        <span class="text-xs text-slate-500 mt-1">⚖️ ${unitWeight} cada${!['mount', 'vehicle'].includes(transportKind) ? ` · ${inventoryStackWeight} total` : ' · recurso de transporte'}</span>
 
     </div>
 
@@ -593,66 +895,7 @@ function renderInventory() {
 // =========================================
 
 function addItem(itemId, showMessage = true) {
-
-    let itemName = '';
-    let quantity = 1;
-
-    const existing =
-        inventory.find(i => i.id === itemId);
-
-    if (existing) {
-
-        if (existing.id === 'coroa') {
-
-            existing.moneyValue =
-                (existing.moneyValue || 0) + 1;
-
-        } else {
-
-            existing.quantity++;
-        }
-
-        itemName = existing.name;
-
-        quantity =
-            existing.id === 'coroa'
-                ? existing.moneyValue
-                : existing.quantity;
-
-    } else {
-
-        const base =
-            predefinedItems.find(i => i.id === itemId);
-
-        if (!base) return;
-
-        inventory.push({
-
-            ...base,
-
-            quantity: 1,
-
-            moneyValue:
-                itemId === 'coroa'
-                    ? 0
-                    : undefined
-        });
-
-        itemName = base.name;
-
-        quantity = 1;
-    }
-
-    saveInventory();
-
-    renderInventory();
-
-    if (showMessage) {
-
-        showToast(
-            `🎒 ${itemName} adicionado! (x${quantity})`
-        );
-    }
+    return addItemQuantity(itemId, 1, showMessage);
 }
 
 // =========================================
@@ -739,6 +982,8 @@ function useItem(itemId) {
         inventory =
             inventory.filter(i => i.id !== itemId);
     }
+
+    window.synchronizeTransportAssets?.(window.getCharacterCollectionOwner?.());
 
     saveInventory();
 
@@ -870,7 +1115,7 @@ function renderInventoryItemsModal() {
 
         <button
     
-            onclick="addInventoryItemFromModal('${item.id}')"
+            onclick="showCatalogItemDetails('${item.id}')"
 
             class="w-full
                    bg-slate-800
@@ -917,7 +1162,7 @@ function renderInventoryItemsModal() {
 
             <span class="text-cyan-400 font-bold">
 
-                Adicionar
+                Ver detalhes
 
             </span>
 
@@ -936,6 +1181,12 @@ function selectInventoryItem(itemId) {
 
     window.updateInventoryEquipmentAction?.();
 }
+
+window.showCatalogItemDetails = showCatalogItemDetails;
+window.updateInventoryAcquisitionSummary = updateInventoryAcquisitionSummary;
+window.confirmInventoryItemAcquisition = confirmInventoryItemAcquisition;
+window.acquireInventoryItem = acquireInventoryItem;
+window.addItemQuantity = addItemQuantity;
 
 
 // =========================================
@@ -1020,6 +1271,11 @@ function decreaseSelectedItem(showMessage = true) {
 
     const itemName = item.name;
 
+    if (window.canRemoveTransportInventoryItem && !window.canRemoveTransportInventoryItem(item)) {
+        if (showMessage) showToast('Remova a carga, desatrele ou desequipe este item antes de excluir a unidade.');
+        return;
+    }
+
     if (
         window.isItemEquippedForCurrentOwner?.(item.id) &&
         Math.max(0, Number(item.quantity) || 0) <= 1
@@ -1071,6 +1327,8 @@ function decreaseSelectedItem(showMessage = true) {
 
         selectedInventoryItemId = null;
     }
+
+    window.synchronizeTransportAssets?.(window.getCharacterCollectionOwner?.());
 
     saveInventory();
 

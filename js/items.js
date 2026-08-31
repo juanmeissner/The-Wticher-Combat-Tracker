@@ -1298,7 +1298,7 @@ const predefinedItems = [
         damage: '0',
         bonus: ' ',
         effect: ' ',
-        description: 'Um Kit com 10 Flechas custa 1 Coroa',
+        description: 'Kit com 10 Flechas de Ferro por 5 Coroas.',
         recipe: [
             '1x Ferro cria 10 Flechas',
             '',
@@ -1355,7 +1355,7 @@ const predefinedItems = [
         damage: '0',
         bonus: '',
         effect: '',
-        description: 'Um kit com 10 setas para besta custa 1 Coroa.',
+        description: 'Kit com 10 Setas de Ferro para besta por 5 Coroas.',
         recipe: [
             '1x Ferro cria 10 Setas',
             '',
@@ -4818,6 +4818,12 @@ const PREDEFINED_ARMOR_SLOTS = Object.freeze({
 // Equipamentos especiais sem peso preenchido na planilha recebem uma estimativa
 // conservadora pela classe da armadura ou pelo número de mãos da arma.
 const PREDEFINED_EQUIPMENT_WEIGHTS = Object.freeze({
+    flechadeferro: 0.1,
+    flechadeaco: 0.1,
+    flechadeprata: 0.1,
+    setadeferro: 0.1,
+    setadeaco: 0.1,
+    setadeprata: 0.1,
     espadadeacodebruxo: 2.5,
     espadadepratadebruxo: 1.5,
     espadalongadeferro: 1.5,
@@ -4930,6 +4936,245 @@ function estimatePredefinedEquipmentWeight(item) {
     return slot === 'head' ? 0.5 : 1;
 }
 
+predefinedItems.push(
+    {
+        id: 'cavalocomum',
+        name: 'Cavalo Comum',
+        icon: '🐴',
+        category: 'misc',
+        type: 'mount',
+        transportKind: 'mount',
+        hp: 35,
+        movement: 12,
+        goldValue: 100,
+        description: 'Montaria versátil. Enquanto estiver montado, seu Movimento substitui o Movimento do cavaleiro.',
+        recipe: []
+    },
+    {
+        id: 'cavalodemontaria',
+        name: 'Cavalo de Montaria',
+        icon: '🏇',
+        category: 'misc',
+        type: 'mount',
+        transportKind: 'mount',
+        hp: 30,
+        movement: 15,
+        goldValue: 180,
+        description: 'Cavalo leve e veloz, preparado para deslocamentos rápidos.',
+        recipe: []
+    },
+    {
+        id: 'cavalodecarga',
+        name: 'Cavalo de Carga',
+        icon: '🐎',
+        category: 'misc',
+        type: 'mount',
+        transportKind: 'mount',
+        hp: 45,
+        movement: 10,
+        goldValue: 140,
+        description: 'Cavalo robusto. Sua capacidade de carga continua dependendo dos alforjes equipados.',
+        recipe: []
+    },
+    {
+        id: 'cavalodeguerra',
+        name: 'Cavalo de Guerra',
+        icon: '🐴',
+        category: 'misc',
+        type: 'mount',
+        transportKind: 'mount',
+        hp: 55,
+        movement: 13,
+        goldValue: 300,
+        description: 'Montaria resistente, treinada para permanecer funcional em combate.',
+        recipe: []
+    },
+    {
+        id: 'selasimples',
+        name: 'Sela Simples',
+        icon: '🪑',
+        category: 'equipment',
+        type: 'mount-gear',
+        transportKind: 'mount-gear',
+        mountSlot: 'saddle',
+        weight: 5,
+        goldValue: 25,
+        description: 'Sela básica para uma montaria.',
+        recipe: []
+    },
+    {
+        id: 'seladeviagem',
+        name: 'Sela de Viagem',
+        icon: '🪑',
+        category: 'equipment',
+        type: 'mount-gear',
+        transportKind: 'mount-gear',
+        mountSlot: 'saddle',
+        weight: 4,
+        goldValue: 55,
+        description: 'Sela confortável e mais leve para viagens longas.',
+        recipe: []
+    },
+    {
+        id: 'seladeguerra',
+        name: 'Sela de Guerra',
+        icon: '⚔️',
+        category: 'equipment',
+        type: 'mount-gear',
+        transportKind: 'mount-gear',
+        mountSlot: 'saddle',
+        weight: 7,
+        goldValue: 90,
+        description: 'Sela reforçada para manter o cavaleiro firme durante o combate.',
+        recipe: []
+    },
+    {
+        id: 'alforjespequenos',
+        name: 'Alforjes Pequenos',
+        icon: '🧳',
+        category: 'equipment',
+        type: 'mount-gear',
+        transportKind: 'mount-gear',
+        mountSlot: 'saddlebags',
+        capacity: 30,
+        weight: 2,
+        goldValue: 30,
+        description: 'Concede 30 de capacidade de carga à montaria.',
+        recipe: []
+    },
+    {
+        id: 'alforjesgrandes',
+        name: 'Alforjes Grandes',
+        icon: '🧳',
+        category: 'equipment',
+        type: 'mount-gear',
+        transportKind: 'mount-gear',
+        mountSlot: 'saddlebags',
+        capacity: 60,
+        weight: 4,
+        goldValue: 65,
+        description: 'Concede 60 de capacidade de carga à montaria.',
+        recipe: []
+    },
+    {
+        id: 'alforjesreforcados',
+        name: 'Alforjes Reforçados',
+        icon: '🧳',
+        category: 'equipment',
+        type: 'mount-gear',
+        transportKind: 'mount-gear',
+        mountSlot: 'saddlebags',
+        capacity: 90,
+        weight: 6,
+        goldValue: 110,
+        description: 'Concede 90 de capacidade de carga à montaria.',
+        recipe: []
+    },
+    {
+        id: 'bardaleve',
+        name: 'Barda Leve',
+        icon: '🛡️',
+        category: 'equipment',
+        type: 'mount-gear',
+        transportKind: 'mount-gear',
+        mountSlot: 'barding',
+        defense: 2,
+        weight: 10,
+        goldValue: 100,
+        description: 'Proteção leve para a montaria. Absorve 2 de dano.',
+        recipe: []
+    },
+    {
+        id: 'bardapesada',
+        name: 'Barda Pesada',
+        icon: '🛡️',
+        category: 'equipment',
+        type: 'mount-gear',
+        transportKind: 'mount-gear',
+        mountSlot: 'barding',
+        defense: 5,
+        movementModifier: -1,
+        weight: 20,
+        goldValue: 220,
+        description: 'Proteção pesada para a montaria. Absorve 5 de dano e reduz o Movimento em 1.',
+        recipe: []
+    },
+    {
+        id: 'ferradurasdeviagem',
+        name: 'Ferraduras de Viagem',
+        icon: '🧲',
+        category: 'equipment',
+        type: 'mount-gear',
+        transportKind: 'mount-gear',
+        mountSlot: 'horseshoes',
+        movementModifier: 1,
+        weight: 1,
+        goldValue: 45,
+        description: 'Aumenta o Movimento da montaria em 1.',
+        recipe: []
+    },
+    {
+        id: 'carrocasimples',
+        name: 'Carroça Simples',
+        icon: '🛒',
+        category: 'misc',
+        type: 'vehicle',
+        transportKind: 'vehicle',
+        hp: 60,
+        requiredMounts: 1,
+        capacity: 150,
+        movementModifier: -2,
+        goldValue: 180,
+        description: 'Veículo com inventário próprio. Exige 1 cavalo e suporta 150 de carga.',
+        recipe: []
+    },
+    {
+        id: 'carrocareforcada',
+        name: 'Carroça Reforçada',
+        icon: '🛒',
+        category: 'misc',
+        type: 'vehicle',
+        transportKind: 'vehicle',
+        hp: 80,
+        requiredMounts: 1,
+        capacity: 250,
+        movementModifier: -3,
+        goldValue: 320,
+        description: 'Carroça resistente com inventário próprio. Exige 1 cavalo e suporta 250 de carga.',
+        recipe: []
+    },
+    {
+        id: 'carruagemcomum',
+        name: 'Carruagem Comum',
+        icon: '🚋',
+        category: 'misc',
+        type: 'vehicle',
+        transportKind: 'vehicle',
+        hp: 70,
+        requiredMounts: 2,
+        capacity: 200,
+        movementModifier: -2,
+        goldValue: 450,
+        description: 'Carruagem com inventário próprio. Exige 2 cavalos e suporta 200 de carga.',
+        recipe: []
+    },
+    {
+        id: 'carruagemluxuosa',
+        name: 'Carruagem Luxuosa',
+        icon: '👑',
+        category: 'misc',
+        type: 'vehicle',
+        transportKind: 'vehicle',
+        hp: 80,
+        requiredMounts: 2,
+        capacity: 250,
+        movementModifier: -2,
+        goldValue: 800,
+        description: 'Carruagem luxuosa com inventário próprio. Exige 2 cavalos e suporta 250 de carga.',
+        recipe: []
+    }
+);
+
 Object.entries(PREDEFINED_ARMOR_SLOTS).forEach(([equipmentSlot, itemIds]) => {
     itemIds.forEach(itemId => {
         const item = predefinedItems.find(entry => entry.id === itemId);
@@ -4944,9 +5189,15 @@ predefinedItems.forEach(item => {
     if (weaponType === 'flechas') {
         item.equipmentSlot = 'ammunition';
         item.ammunitionType = 'arrow';
+        item.acquisitionPackSize = 10;
+        item.acquisitionUnitLabel = 'kit';
+        item.acquisitionContentLabel = 'flechas';
     } else if (weaponType === 'setas' || weaponType === 'virotes') {
         item.equipmentSlot = 'ammunition';
         item.ammunitionType = 'bolt';
+        item.acquisitionPackSize = 10;
+        item.acquisitionUnitLabel = 'kit';
+        item.acquisitionContentLabel = 'setas';
     } else if (item.type === 'weapon' && weaponType === 'arco e flecha') {
         item.rangedWeaponType = description.includes('besta') ? 'crossbow' : 'bow';
         item.requiredAmmunitionType = item.rangedWeaponType === 'crossbow' ? 'bolt' : 'arrow';
@@ -4956,9 +5207,50 @@ predefinedItems.forEach(item => {
 predefinedItems
     .filter(item => item.category === 'equipment')
     .forEach(item => {
+        if (item.type === 'mount-gear') return;
         const officialWeight = PREDEFINED_EQUIPMENT_WEIGHTS[item.id];
         item.weight = Number.isFinite(officialWeight)
             ? officialWeight
             : estimatePredefinedEquipmentWeight(item);
         item.weightSource = Number.isFinite(officialWeight) ? 'rules-sheet' : 'estimated';
     });
+
+function estimatePredefinedInventoryItemWeight(item) {
+    const normalized = `${item?.id || ''} ${item?.name || ''} ${item?.type || ''}`
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase();
+    const transportKind = String(item?.transportKind || '').toLowerCase();
+
+    // Estes valores representam o peso próprio do recurso. Montarias e veículos
+    // nunca entram na carga pessoal, mas mantêm peso cadastrado para usos futuros.
+    if (transportKind === 'mount') return Math.max(250, (Number(item?.hp) || 35) * 10);
+    if (transportKind === 'vehicle') return Math.max(150, (Number(item?.capacity) || 100) * 1.5);
+
+    if (item?.id === 'coroa') return 0.01;
+    if (item?.category === 'usable') {
+        if (item?.careConsumable?.kind === 'food') return 0.5;
+        if (item?.careConsumable?.kind === 'drink') return 0.5;
+        if (/(bomba|solucao acida|furia de bredan|fogo da zerikania|po de lua|po de dimeritio|bafo de dragao|samun)/.test(normalized)) return 1;
+        return 0.1;
+    }
+
+    if (item?.category === 'misc') {
+        if (/(minerio|ferro|aco|prata|ouro|meteorito|dimeritio|carvao|pedra|cristal)/.test(normalized)) return 1;
+        if (/(madeira|couro|ossos|argila|linho|linha|cera|sebo|gordura|carne|cereais|farinha|legumes|batata|cebola|cenoura|ovos|leite|manteiga|sal)/.test(normalized)) return 0.5;
+        if (/(agua|alcool|hidromel|vinho|cerveja)/.test(normalized)) return 0.5;
+        if (/(folha|petala|raiz|erva|cogumelo|verbena|visco|aconito|ginatia|heleboro|quelidonia|mandragora)/.test(normalized)) return 0.1;
+        return 0.25;
+    }
+
+    return 0.1;
+}
+
+predefinedItems.forEach(item => {
+    if (Number.isFinite(Number(item.weight))) {
+        if (!item.weightSource) item.weightSource = 'catalog';
+        return;
+    }
+    item.weight = Math.round(estimatePredefinedInventoryItemWeight(item) * 100) / 100;
+    item.weightSource = 'estimated';
+});

@@ -1485,9 +1485,23 @@ function installRulesAutomation() {
         (typeof openDamageBodyModal === 'function' ? openDamageBodyModal : null);
 
     if (originalOpenDamageBodyModal) {
-        window.openDamageBodyModal = () => {
+        window.openDamageBodyModal = (options = {}) => {
             const target = combatants.find(combatant => combatant.id === selectedId);
             const baseDamage = Math.max(0, Number.parseInt(currentInput, 10) || 0);
+
+            if (
+                !options.skipMountedChoice
+                && target
+                && baseDamage > 0
+                && window.requestMountedDamageTarget?.(
+                    target,
+                    baseDamage,
+                    () => window.openDamageBodyModal({ skipMountedChoice: true })
+                )
+            ) {
+                return;
+            }
+
             const magicShieldHp = getAutomationMagicShieldHp(target);
             const spellContext = window.getPendingSpellDamageContext?.() || {};
             const localized = target && baseDamage > 0 && magicShieldHp > 0
@@ -1522,7 +1536,7 @@ function installRulesAutomation() {
                 });
             }
 
-            originalOpenDamageBodyModal();
+            originalOpenDamageBodyModal({ skipMountedChoice: true });
         };
     }
 

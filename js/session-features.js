@@ -2051,6 +2051,11 @@ function installActionGuards() {
 
         if (!item || item.id === 'coroa') return originalUseSelectedItem();
 
+        if (
+            window.isTransportSystemItem?.(item)
+            || ['mount', 'vehicle', 'mount-gear'].includes(String(item.transportKind || item.type || ''))
+        ) return originalUseSelectedItem();
+
         if (window.isEquipmentItem?.(item)) return originalUseSelectedItem();
 
         const itemDefinition = predefinedItems.find(entry => entry.id === item.id) || item;

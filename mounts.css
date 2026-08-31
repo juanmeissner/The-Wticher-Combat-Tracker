@@ -1,0 +1,278 @@
+.transport-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 10080;
+    display: grid;
+    place-items: center;
+    padding: max(12px, env(safe-area-inset-top)) 12px max(12px, env(safe-area-inset-bottom));
+    background: rgb(2 6 23 / 82%);
+    backdrop-filter: blur(7px);
+}
+
+.transport-modal.hidden { display: none; }
+
+.transport-dialog {
+    width: min(920px, 100%);
+    max-height: min(880px, calc(100dvh - max(24px, env(safe-area-inset-top)) - max(24px, env(safe-area-inset-bottom))));
+    overflow: auto;
+    overscroll-behavior: contain;
+    border: 1px solid #334155;
+    border-radius: 20px;
+    padding: 18px;
+    color: #e2e8f0;
+    background: #0f172a;
+    box-shadow: 0 24px 70px rgb(0 0 0 / 55%);
+}
+
+.transport-dialog.compact { width: min(560px, 100%); }
+
+.transport-modal-header,
+.transport-section-title,
+.transport-asset-heading,
+.transport-asset-heading > div,
+.transport-asset-actions,
+.combat-mount-stats,
+.combat-mount-actions,
+.transport-summary {
+    display: flex;
+    align-items: center;
+}
+
+.transport-modal-header { justify-content: space-between; gap: 16px; }
+.transport-modal-header small { color: #38bdf8; font-weight: 900; letter-spacing: .08em; }
+.transport-modal-header h2 { margin: 2px 0 0; font-size: 1.35rem; font-weight: 900; }
+.transport-modal-header > button {
+    flex: 0 0 42px;
+    width: 42px;
+    height: 42px;
+    border: 1px solid #475569;
+    border-radius: 12px;
+    color: #f8fafc;
+    background: #1e293b;
+    font-size: 1.5rem;
+}
+
+.transport-intro { margin: 12px 0; color: #94a3b8; line-height: 1.45; }
+.transport-summary { gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+.transport-summary span {
+    border: 1px solid #334155;
+    border-radius: 999px;
+    padding: 6px 10px;
+    color: #bae6fd;
+    background: #172033;
+    font-size: .78rem;
+    font-weight: 800;
+}
+.transport-assets > h3 { margin: 20px 0 8px; color: #7dd3fc; font-size: .82rem; letter-spacing: .08em; }
+
+.transport-transfer-hub {
+    margin: 14px 0 18px;
+    border: 1px solid #0e7490;
+    border-radius: 16px;
+    padding: 14px;
+    background: linear-gradient(145deg, rgb(8 47 73 / 55%), rgb(15 23 42 / 92%));
+}
+.transport-transfer-hub .transport-section-title { align-items: flex-start; gap: 12px; }
+.transport-transfer-hub .transport-section-title > div { display: grid; gap: 2px; }
+.transport-transfer-hub .transport-section-title small { color: #94a3b8; font-size: .7rem; font-weight: 600; }
+.transport-transfer-hub .transport-section-title > span { color: #67e8f9; font-size: .7rem; font-weight: 900; white-space: nowrap; }
+.transport-transfer-route {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    align-items: end;
+    gap: 8px;
+}
+.transport-swap-button {
+    width: 40px;
+    height: 40px;
+    border: 1px solid #0891b2;
+    border-radius: 10px;
+    color: #cffafe;
+    background: #164e63;
+    font-size: 1.2rem;
+    font-weight: 900;
+}
+.transport-transfer-item-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 110px auto;
+    align-items: end;
+    gap: 8px;
+    margin-top: 10px;
+}
+.transport-quantity-field input {
+    width: 100%;
+    height: 40px;
+    border: 1px solid #475569;
+    border-radius: 10px;
+    padding: 0 10px;
+    color: #f8fafc;
+    background: #0f172a;
+}
+.transport-transfer-actions { display: flex; gap: 6px; }
+.transport-transfer-actions button {
+    min-height: 40px;
+    border: 1px solid #475569;
+    border-radius: 9px;
+    padding: 8px 11px;
+    color: #e2e8f0;
+    background: #26344a;
+    font-size: .72rem;
+    font-weight: 900;
+}
+.transport-transfer-actions button.primary { border-color: #0891b2; background: #0e7490; }
+
+.transport-asset-card {
+    margin-bottom: 12px;
+    border: 1px solid #334155;
+    border-radius: 16px;
+    padding: 14px;
+    background: #172033;
+}
+.transport-asset-card.is-active { border-color: #22d3ee; box-shadow: inset 3px 0 #22d3ee; }
+.transport-asset-heading { justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+.transport-asset-heading > div { gap: 10px; min-width: 0; }
+.transport-asset-heading div div { display: grid; min-width: 0; }
+.transport-asset-heading strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #f8fafc; }
+.transport-asset-heading small { color: #94a3b8; }
+.transport-asset-heading > span { color: #34d399; font-size: .68rem; font-weight: 900; }
+.transport-asset-icon { font-size: 1.7rem; }
+
+.transport-inline-fields,
+.transport-gear-grid,
+.transport-cargo-columns {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+}
+.transport-field,
+.transport-inline-fields label { display: grid; gap: 5px; color: #94a3b8; font-size: .72rem; font-weight: 800; }
+.transport-field select,
+.transport-inline-fields input {
+    min-width: 0;
+    height: 40px;
+    border: 1px solid #475569;
+    border-radius: 10px;
+    padding: 0 10px;
+    color: #f8fafc;
+    background: #0f172a;
+}
+.transport-gear-grid { margin-top: 10px; }
+.transport-asset-actions { gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+.transport-asset-actions button,
+.transport-hitch-list button,
+.transport-cargo-row button,
+.combat-mount-actions button,
+.transport-details-button {
+    border: 1px solid #475569;
+    border-radius: 9px;
+    padding: 8px 11px;
+    color: #e2e8f0;
+    background: #26344a;
+    font-size: .75rem;
+    font-weight: 900;
+}
+.transport-asset-actions button.primary { border-color: #0891b2; background: #0e7490; }
+button:disabled { opacity: .45; cursor: not-allowed; }
+.transport-warning { color: #fbbf24; font-size: .72rem; }
+
+.transport-mount-status {
+    display: grid;
+    gap: 8px;
+    margin-top: 12px;
+    border: 1px solid rgb(51 65 85 / 70%);
+    border-radius: 12px;
+    padding: 10px;
+    background: rgb(2 6 23 / 35%);
+}
+.transport-mount-condition-list,
+.transport-mount-condition-actions {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+.transport-condition-chip {
+    border: 1px solid #475569;
+    border-radius: 999px;
+    padding: 5px 8px;
+    color: #e2e8f0;
+    background: #26344a;
+    font-size: .68rem;
+    font-weight: 800;
+}
+.transport-condition-chip.is-health {
+    border-color: #0e7490;
+    color: #cffafe;
+    background: #164e63;
+}
+.transport-mount-condition-actions select {
+    min-width: 145px;
+    min-height: 38px;
+    flex: 1 1 180px;
+    border: 1px solid #475569;
+    border-radius: 9px;
+    padding: 0 9px;
+    color: #f8fafc;
+    background: #0f172a;
+    font-size: .72rem;
+}
+.transport-mount-condition-actions button {
+    min-height: 38px;
+    border: 1px solid #475569;
+    border-radius: 9px;
+    padding: 7px 10px;
+    color: #e2e8f0;
+    background: #26344a;
+    font-size: .7rem;
+    font-weight: 900;
+}
+.transport-mount-condition-actions button.warning { border-color: #b45309; color: #fde68a; background: #78350f; }
+
+.transport-cargo { margin-top: 14px; border-top: 1px solid #334155; padding-top: 12px; }
+.transport-cargo.is-overloaded .transport-section-title span { color: #f87171; }
+.transport-section-title { justify-content: space-between; margin-bottom: 8px; }
+.transport-cargo-columns h4 { margin-bottom: 6px; color: #94a3b8; font-size: .7rem; text-transform: uppercase; }
+.transport-cargo-row { display: flex; justify-content: space-between; gap: 8px; border-top: 1px solid rgb(51 65 85 / 65%); padding: 7px 0; font-size: .78rem; }
+.transport-cargo-row > span:first-child { min-width: 0; overflow-wrap: anywhere; }
+.transport-cargo-row > span:last-child { display: flex; gap: 4px; flex: 0 0 auto; }
+.transport-cargo-row button { padding: 4px 7px; font-size: .65rem; }
+.transport-note, .transport-empty { color: #94a3b8; font-size: .75rem; }
+.transport-empty-block { border: 1px dashed #334155; border-radius: 14px; padding: 18px; color: #64748b; text-align: center; }
+
+.transport-hitch-list { display: grid; gap: 6px; margin-top: 12px; border: 1px solid #334155; border-radius: 12px; padding: 10px; }
+.transport-hitch-list legend { padding: 0 5px; color: #7dd3fc; font-size: .72rem; font-weight: 800; }
+.transport-hitch-list label { color: #cbd5e1; font-size: .78rem; }
+.transport-hitch-list button { justify-self: start; margin-top: 5px; }
+.transport-hitch-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+
+.combat-mount-panel { border-left: 3px solid #a16207; }
+.mount-panel-header small { color: #fde68a; }
+.combat-mount-content { padding: 10px 12px 12px; background: rgb(120 53 15 / 12%); }
+.combat-mount-stats { gap: 7px; flex-wrap: wrap; }
+.combat-mount-stats span { border: 1px solid #475569; border-radius: 999px; padding: 4px 8px; color: #e2e8f0; font-size: .7rem; }
+.combat-mount-actions { gap: 7px; margin-top: 9px; }
+
+.mounted-damage-options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.mounted-damage-options button { display: grid; justify-items: center; gap: 5px; border: 1px solid #334155; border-radius: 16px; padding: 18px 12px; color: #f8fafc; background: #172033; }
+.mounted-damage-options button:hover { border-color: #22d3ee; background: #1e293b; }
+.mounted-damage-options span { font-size: 2rem; }
+.mounted-damage-options small { color: #94a3b8; text-align: center; }
+
+@media (max-width: 640px) {
+    .transport-dialog { padding: 14px; border-radius: 17px; }
+    .transport-inline-fields,
+    .transport-gear-grid,
+    .transport-cargo-columns { grid-template-columns: 1fr; }
+    .transport-asset-heading { align-items: flex-start; }
+    .transport-transfer-hub .transport-section-title { display: grid; }
+    .transport-transfer-hub .transport-section-title > span { white-space: normal; }
+    .transport-transfer-route { grid-template-columns: minmax(0, 1fr) 38px; }
+    .transport-transfer-route .transport-field:last-child { grid-column: 1 / -1; grid-row: 2; }
+    .transport-swap-button { grid-column: 2; grid-row: 1; }
+    .transport-transfer-item-row { grid-template-columns: minmax(0, 1fr) 88px; }
+    .transport-transfer-actions { grid-column: 1 / -1; }
+    .transport-transfer-actions button { flex: 1 1 0; }
+    .mounted-damage-options { grid-template-columns: 1fr; }
+    .mounted-damage-options button { grid-template-columns: auto 1fr; justify-items: start; text-align: left; }
+    .mounted-damage-options button span { grid-row: span 2; }
+}

@@ -2,7 +2,7 @@
 // SISTEMA DE DANO LOCALIZADO
 // =========================================
 
-function openDamageBodyModal() {
+function openDamageBodyModal(options = {}) {
 
     if (!selectedId) {
         showToast('Por favor, Selecione um alvo!');
@@ -16,7 +16,16 @@ function openDamageBodyModal() {
         return;
     }
     
-    document.getElementById('damageBodyModal').style.display = 'flex';
+    const target = combatants.find(c => String(c.id) === String(selectedId));
+    const continueWithCharacter = () => {
+        document.getElementById('damageBodyModal').style.display = 'flex';
+    };
+
+    if (!options.skipMountedChoice && window.requestMountedDamageTarget?.(target, pendingDamageBase, continueWithCharacter)) {
+        return;
+    }
+
+    continueWithCharacter();
     }
 
 function closeDamageModals() {

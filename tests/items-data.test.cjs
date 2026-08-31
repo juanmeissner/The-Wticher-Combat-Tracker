@@ -51,4 +51,21 @@ careConsumables.forEach(item => {
 assert.equal(items.find(item => item.id === 'coelhoassadocomervas')?.careConsumable?.optionId, 'good_meal');
 assert.equal(items.find(item => item.id === 'estufadorealdacaca')?.careConsumable?.optionId, 'sophisticated_meal');
 
+const itemsWithoutWeight = items.filter(item => !Number.isFinite(Number(item.weight)) || Number(item.weight) <= 0);
+assert.equal(itemsWithoutWeight.length, 0, `Itens sem peso válido: ${itemsWithoutWeight.map(item => item.id).join(', ')}`);
+assert.ok(items.every(item => ['rules-sheet', 'catalog', 'estimated'].includes(item.weightSource)));
+assert.equal(items.find(item => item.id === 'coroa')?.weight, 0.01);
+['flechadeferro', 'flechadeaco', 'flechadeprata', 'setadeferro', 'setadeaco', 'setadeprata'].forEach(itemId => {
+    const ammunition = items.find(item => item.id === itemId);
+    assert.equal(ammunition?.weight, 0.1, `${itemId} deve pesar 0.1 por unidade.`);
+    assert.equal(ammunition?.acquisitionPackSize, 10, `${itemId} deve ser adquirido em kits de 10.`);
+    assert.equal(ammunition?.acquisitionUnitLabel, 'kit');
+    assert.ok(['flechas', 'setas'].includes(ammunition?.acquisitionContentLabel));
+});
+assert.equal(items.find(item => item.id === 'flechadeferro')?.goldValue, 5);
+assert.equal(items.find(item => item.id === 'setadeferro')?.goldValue, 5);
+['mineriodeferro', 'ferro', 'mineriodeprata', 'prata'].forEach(itemId => {
+    assert.equal(items.find(item => item.id === itemId)?.weight, 1, `${itemId} deve pesar 1 por unidade.`);
+});
+
 console.log(`✓ Catálogo validado: ${items.length} itens com identificadores únicos.`);

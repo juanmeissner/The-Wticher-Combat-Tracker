@@ -139,6 +139,33 @@ const inventoryFixture = [
         defense: 3,
         weight: 2,
         quantity: 1
+    },
+    {
+        id: 'spare-saddlebags',
+        name: 'Alforjes de Teste',
+        category: 'equipment',
+        type: 'mount-gear',
+        transportKind: 'mount-gear',
+        weight: 4,
+        quantity: 2
+    },
+    {
+        id: 'test-horse',
+        name: 'Cavalo de Teste',
+        category: 'misc',
+        type: 'mount',
+        transportKind: 'mount',
+        weight: 400,
+        quantity: 1
+    },
+    {
+        id: 'test-cart',
+        name: 'Carroça de Teste',
+        category: 'misc',
+        type: 'vehicle',
+        transportKind: 'vehicle',
+        weight: 200,
+        quantity: 1
     }
 ];
 
@@ -199,6 +226,7 @@ vm.runInContext(`
         combatants[0].inventory = JSON.parse(JSON.stringify(inventory));
     };
     window.savePlayersToStorage = () => {};
+    window.getUsedMountGearQuantity = (_owner, itemId) => itemId === 'spare-saddlebags' ? 1 : 0;
     window.trackEquipmentAction = (_label, callback) => callback();
     window.openSessionConfirm = options => options.onConfirm();
 `, context);
@@ -240,6 +268,13 @@ assert.equal(evaluate("window.getEffectiveArmorValue(combatants[0], 'torso')"), 
 assert.equal(evaluate("window.getEffectiveArmorValue(combatants[0], 'head')"), 7);
 assert.equal(evaluate('window.getEquippedWeightBreakdown(combatants[0]).total'), 12.5);
 assert.equal(evaluate('window.getEquippedWeightBreakdown(combatants[0]).weapons'), 4);
+assert.equal(evaluate('window.getCarriedWeightMode()'), 'equipped');
+assert.equal(evaluate('window.getCharacterCarriedWeightBreakdown(combatants[0]).total'), 12.5);
+assert.equal(evaluate('window.getInventoryWeightBreakdown(combatants[0]).total'), 32);
+vm.runInContext("appPreferences.carriedWeightMode = 'inventory'", context);
+assert.equal(evaluate('window.getCarriedWeightMode()'), 'inventory');
+assert.equal(evaluate('window.getCharacterCarriedWeightBreakdown(combatants[0]).total'), 32);
+vm.runInContext("appPreferences.carriedWeightMode = 'equipped'", context);
 assert.equal(
     evaluate("window.getEquippedWeightBreakdown(combatants[0]).entries.filter(entry => entry.category === 'weapon-reserve').length"),
     1,
@@ -402,7 +437,7 @@ assert.equal(evaluate("window.isAmmunitionCompatibleWithWeapon(inventory.find(it
 assert.match(evaluate('window.renderCombatantEquipmentPanel(combatants[0])'), /Flecha de Ferro/);
 assert.match(evaluate('window.renderCombatantEquipmentPanel(combatants[0])'), /Gastar uma munição/);
 assert.match(evaluate('window.renderCombatantEquipmentPanel(combatants[0])'), /Trocar para a segunda munição/);
-assert.equal(evaluate('window.getEquippedWeightBreakdown(combatants[0]).ammunition'), 3);
+assert.equal(evaluate('window.getEquippedWeightBreakdown(combatants[0]).ammunition'), 7.5);
 
 vm.runInContext('window.consumeActiveAmmunition(1)', context);
 assert.equal(evaluate("inventory.find(item => item.id === 'iron-arrow').quantity"), 1);
@@ -472,7 +507,7 @@ assert.equal(attack.details, 'Sangramento');
     );
 
     const catalogAudit = JSON.parse(vm.runInContext(`JSON.stringify((() => {
-        const equipment = predefinedItems.filter(item => item.category === 'equipment');
+        const equipment = predefinedItems.filter(item => item.category === 'equipment' && item.type !== 'mount-gear');
         const unclassified = equipment.filter(item => !window.getEquipmentItemKind(item));
         const armor = equipment.filter(item => item.type === 'armor');
         const slotCounts = armor.reduce((counts, item) => {

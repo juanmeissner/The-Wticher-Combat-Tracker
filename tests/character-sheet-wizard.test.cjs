@@ -258,7 +258,7 @@ const inventoryModalAdd = inventorySource.slice(
     inventorySource.indexOf('function addInventoryItemFromModal'),
     inventorySource.indexOf('function renderInventory()')
 );
-assert.match(inventoryModalAdd, /addItem\(itemId\)/);
+assert.match(inventoryModalAdd, /showCatalogItemDetails\(itemId\)/);
 assert.doesNotMatch(inventoryModalAdd, /closeInventoryModal/);
 
 const addAbilityLogic = abilitiesLogicSource.slice(

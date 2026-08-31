@@ -8,6 +8,8 @@ const stateSource = fs.readFileSync(path.join(projectRoot, 'js', 'state.js'), 'u
 const renderSource = fs.readFileSync(path.join(projectRoot, 'js', 'combat', 'combat-render.js'), 'utf8');
 const equipmentCss = fs.readFileSync(path.join(projectRoot, 'equipment.css'), 'utf8');
 const enhancementsSource = fs.readFileSync(path.join(projectRoot, 'js', 'enhancements.js'), 'utf8');
+const equipmentSource = fs.readFileSync(path.join(projectRoot, 'js', 'equipment.js'), 'utf8');
+const itemsSource = fs.readFileSync(path.join(projectRoot, 'js', 'items.js'), 'utf8');
 const conditionsSource = fs.readFileSync(path.join(projectRoot, 'js', 'conditions.js'), 'utf8');
 const combatEffectsSource = fs.readFileSync(path.join(projectRoot, 'js', 'combat', 'combat-effects.js'), 'utf8');
 
@@ -78,6 +80,13 @@ assert.match(renderSource, /getCombatantStatusIcons\(c\)/);
 assert.match(enhancementsSource, /function syncCarryingWeightCondition/);
 assert.match(enhancementsSource, /systemManaged: 'encumbrance'/);
 assert.match(enhancementsSource, /excessWeight: target\.excessWeight/);
+assert.match(enhancementsSource, /carriedWeightMode: 'equipped'/);
+assert.match(enhancementsSource, /function setCarriedWeightMode/);
+assert.match(enhancementsSource, /Todo o inventário/);
+assert.match(enhancementsSource, /id="contentWeight"/);
+assert.match(equipmentSource, /function getCharacterCarriedWeightBreakdown/);
+assert.match(equipmentSource, /function getInventoryWeightBreakdown/);
+assert.match(itemsSource, /estimatePredefinedInventoryItemWeight/);
 assert.match(conditionsSource, /title: 'Carregando Peso'/);
 assert.match(combatEffectsSource, /effect\?\.systemManaged === 'encumbrance'/);
 

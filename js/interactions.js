@@ -73,6 +73,14 @@ function useSelectedInventoryItem() {
 
     if (!item) return;
 
+    if (
+        window.isTransportSystemItem?.(item)
+        || ['mount', 'vehicle', 'mount-gear'].includes(String(item.transportKind || item.type || ''))
+    ) {
+        window.openTransportManager?.(item.id);
+        return;
+    }
+
     if (window.isEquipmentItem?.(item)) {
         window.performSelectedEquipmentAction?.();
         return;

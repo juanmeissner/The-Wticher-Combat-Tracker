@@ -1,5 +1,5 @@
 const CHARACTER_COLLECTIONS_VERSION_KEY = 'dnd_character_collections_version';
-const CHARACTER_COLLECTIONS_VERSION = 3;
+const CHARACTER_COLLECTIONS_VERSION = 4;
 
 let characterCollectionsReady = false;
 let characterCollectionContextKey = 'legacy';
@@ -98,6 +98,10 @@ function ensureCharacterCollectionFields(owner, fallback = {}) {
         owner.equipment = cloneCharacterCollection(fallback.equipment, {});
     }
 
+    if (!owner.transport && fallback.transport) {
+        owner.transport = cloneCharacterCollection(fallback.transport, {});
+    }
+
 }
 
 function getDefaultCharacterCollectionContextKey() {
@@ -133,6 +137,7 @@ function syncCombatantCollectionsToLinkedSheet(combatant) {
     sheet.abilities = cloneCharacterCollection(combatant.abilities, []);
     sheet.expandedMagic = Math.max(0, Number(combatant.expandedMagic) || 0);
     sheet.equipment = cloneCharacterCollection(combatant.equipment, {});
+    sheet.transport = cloneCharacterCollection(combatant.transport, {});
     sheet.updatedAt = new Date().toISOString();
     return true;
 }
@@ -210,6 +215,7 @@ function loadCharacterCollectionContext(key, { persistPrevious = true } = {}) {
         abilitiesInventory = cloneCharacterCollection(owner.abilities, []);
         expandedMagic = Math.max(0, Number(owner.expandedMagic) || 0);
         window.ensureEquipmentLoadout?.(owner);
+        window.ensureTransportState?.(owner);
     } else {
         const savedInventory = JSON.parse(localStorage.getItem('inventory') || '[]');
         const savedAbilities = JSON.parse(localStorage.getItem('abilitiesInventory') || '[]');
@@ -239,7 +245,8 @@ function migrateCharacterCollections(legacyState = {}, { forceLegacyMigration = 
                 inventory: sheet.inventory,
                 abilities: sheet.abilities,
                 expandedMagic: sheet.expandedMagic,
-                equipment: sheet.equipment
+                equipment: sheet.equipment,
+                transport: sheet.transport
             }
             : {};
 
@@ -256,6 +263,7 @@ function migrateCharacterCollections(legacyState = {}, { forceLegacyMigration = 
 
         ensureCharacterCollectionFields(combatant, fallback);
         window.ensureEquipmentLoadout?.(combatant);
+        window.ensureTransportState?.(combatant);
     });
 
     if ((!hadMigration || forceLegacyMigration) && !foundExistingCollections && (legacyInventory.length || legacyAbilities.length || legacyExpandedMagic)) {
