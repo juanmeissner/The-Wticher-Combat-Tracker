@@ -15,7 +15,7 @@ const context = vm.createContext({
     predefinedItems: [
         { id: 'coroa', name: 'Coroa', category: 'misc', goldValue: 1, description: 'Moeda.', recipe: [] },
         { id: 'pocao', name: 'Poção de Teste', category: 'usable', goldValue: 15, description: 'Descrição do catálogo.', recipe: [] },
-        { id: 'flecha', name: 'Flecha de Ferro', category: 'equipment', goldValue: 5, acquisitionPackSize: 10, acquisitionUnitLabel: 'kit', acquisitionContentLabel: 'flechas', description: 'Kit com 10 flechas.', recipe: [] },
+        { id: 'flecha', name: 'Flecha de Ferro', category: 'equipment', goldValue: 5, weight: 0.1, weightSource: 'rules-sheet', acquisitionPackSize: 10, acquisitionUnitLabel: 'kit', acquisitionContentLabel: 'flechas', description: 'Kit com 10 flechas.', recipe: [] },
         { id: 'alforje', name: 'Alforje', category: 'equipment', type: 'mount-gear', transportKind: 'mount-gear', mountSlot: 'saddlebags', capacity: 60, description: 'Carga.', recipe: [] },
         { id: 'carroca', name: 'Carroça', category: 'misc', type: 'vehicle', transportKind: 'vehicle', hp: 60, capacity: 150, requiredMounts: 1, movementModifier: -2, description: 'Veículo.', recipe: [] }
     ],
@@ -40,7 +40,8 @@ vm.runInContext(`${inventorySource}
 globalThis.__setInventory = value => { inventory = value; };
 globalThis.__getInventory = () => inventory;
 globalThis.__getInventoryDisplayItem = getInventoryDisplayItem;
-globalThis.__getTransportItemDetailFacts = getTransportItemDetailFacts;`, context, { filename: 'inventory.js' });
+globalThis.__getTransportItemDetailFacts = getTransportItemDetailFacts;
+globalThis.__synchronizeInventoryCatalogWeights = synchronizeInventoryCatalogWeights;`, context, { filename: 'inventory.js' });
 
 context.__setInventory([{ ...context.predefinedItems[0], quantity: 1, moneyValue: 100 }]);
 
@@ -80,5 +81,10 @@ assert.match(Array.from(context.__getTransportItemDetailFacts(context.predefined
 assert.match(Array.from(context.__getTransportItemDetailFacts(context.predefinedItems[4])).join(' | '), /Capacidade: 150 de peso/);
 assert.match(Array.from(context.__getTransportItemDetailFacts(context.predefinedItems[4])).join(' | '), /Exige 1 cavalo/);
 assert.match(Array.from(context.__getTransportItemDetailFacts(context.predefinedItems[4])).join(' | '), /Movimento: -2/);
+
+const legacyAmmunition = [{ id: 'flecha', name: 'Flecha de Ferro', weight: 1.5, weightSource: 'estimated' }];
+assert.equal(context.__synchronizeInventoryCatalogWeights(legacyAmmunition), 1);
+assert.equal(legacyAmmunition[0].weight, 0.1);
+assert.equal(legacyAmmunition[0].weightSource, 'rules-sheet');
 
 console.log('✓ Detalhes, aquisição gratuita e compra com Coroas validados.');

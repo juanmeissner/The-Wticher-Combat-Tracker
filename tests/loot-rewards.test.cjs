@@ -134,7 +134,7 @@ assert.match(lootSource, /id="lootQuantity-\$\{index\}"/);
 assert.doesNotMatch(lootSource, /Escolha ao menos um personagem para receber as Coroas/);
 assert.match(lootSource, /state\.unassignedCrowns = crownRecipientIds\.length \? 0 : collectedCrownsAmount/);
 assert.match(lootStyles, /\.loot-quantity-editor/);
-assert.match(workerSource, /witcher-combat-tracker-v89/);
+assert.match(workerSource, /witcher-combat-tracker-v91/);
 assert.match(workerSource, /loot-rewards\.css/);
 assert.match(workerSource, /js\/loot-rewards\.js/);
 

@@ -29,6 +29,31 @@ function getInventoryDisplayItem(item) {
     };
 }
 
+function synchronizeInventoryCatalogWeights(items) {
+    if (!Array.isArray(items)) return 0;
+
+    let correctedItems = 0;
+
+    items.forEach(item => {
+        const catalogItem = getInventoryCatalogItem(item?.id);
+        const catalogWeight = Number(catalogItem?.weight);
+        if (!Number.isFinite(catalogWeight)) return;
+
+        const normalizedWeight = Math.max(0, catalogWeight);
+        const catalogWeightSource = String(catalogItem.weightSource || 'catalog');
+        if (
+            Number(item.weight) === normalizedWeight
+            && String(item.weightSource || '') === catalogWeightSource
+        ) return;
+
+        item.weight = normalizedWeight;
+        item.weightSource = catalogWeightSource;
+        correctedItems++;
+    });
+
+    return correctedItems;
+}
+
 function getTransportItemDetailFacts(item) {
     const transportKind = window.getTransportItemKind?.(item)
         || String(item?.transportKind || item?.type || '').toLowerCase();
@@ -1072,6 +1097,10 @@ function loadInventory() {
     if (!saved) return;
 
     inventory = JSON.parse(saved);
+
+    if (synchronizeInventoryCatalogWeights(inventory) > 0) {
+        localStorage.setItem('inventory', JSON.stringify(inventory));
+    }
 }
 
 // =========================================

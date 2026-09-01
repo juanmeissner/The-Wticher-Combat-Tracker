@@ -413,10 +413,10 @@ function getEquipmentItemWeight(item) {
     const catalogItem = typeof predefinedItems !== 'undefined'
         ? predefinedItems.find(entry => String(entry.id) === String(item?.id))
         : null;
-    const itemWeight = Number(item?.weight);
-    if (Number.isFinite(itemWeight)) return Math.max(0, itemWeight);
     const catalogWeight = Number(catalogItem?.weight);
     if (Number.isFinite(catalogWeight)) return Math.max(0, catalogWeight);
+    const itemWeight = Number(item?.weight);
+    if (Number.isFinite(itemWeight)) return Math.max(0, itemWeight);
     if (typeof estimatePredefinedInventoryItemWeight === 'function') {
         return Math.max(0, Number(estimatePredefinedInventoryItemWeight(item)) || 0);
     }

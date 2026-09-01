@@ -1,5 +1,8 @@
 const CHARACTER_SHEETS_KEY = 'dnd_character_sheets';
 const CHARACTER_SHEETS_STAGE_10_BACKUP_KEY = 'dnd_character_sheets_backup_stage10_v11';
+const CHARACTER_SHEET_TRANSFER_FORMAT = 'witcher-combat-character-sheet';
+const CHARACTER_SHEET_TRANSFER_VERSION = 1;
+const CHARACTER_SHEET_IMPORT_MAX_BYTES = 3 * 1024 * 1024;
 const ACTIVE_SHEET_KEY = 'dnd_active_character_sheet';
 const CUSTOM_LIBRARY_KEY = 'dnd_custom_library';
 const APP_PREFERENCES_KEY = 'dnd_app_preferences';
@@ -115,6 +118,186 @@ function mergeCustomLibrary() {
 
 function persistCharacterSheets() {
     localStorage.setItem(CHARACTER_SHEETS_KEY, JSON.stringify(characterSheets));
+}
+
+function sanitizeCharacterSheetTransferValue(value, depth = 0) {
+    if (depth > 20) return null;
+    if (value === null || typeof value === 'boolean') return value;
+    if (typeof value === 'number') return Number.isFinite(value) ? value : 0;
+    if (typeof value === 'string') return value.replace(/[<>]/g, '').slice(0, 20000);
+    if (Array.isArray(value)) {
+        return value.slice(0, 5000).map(entry => sanitizeCharacterSheetTransferValue(entry, depth + 1));
+    }
+    if (!value || typeof value !== 'object') return null;
+
+    return Object.entries(value).reduce((result, [key, entry]) => {
+        if (['__proto__', 'prototype', 'constructor'].includes(key)) return result;
+        result[key] = sanitizeCharacterSheetTransferValue(entry, depth + 1);
+        return result;
+    }, {});
+}
+
+function getUniqueImportedCharacterSheetName(requestedName) {
+    const baseName = String(requestedName || 'Personagem importado').trim().slice(0, 80)
+        || 'Personagem importado';
+    const names = new Set(characterSheets.map(sheet => String(sheet.name || '').trim().toLocaleLowerCase('pt-BR')));
+    if (!names.has(baseName.toLocaleLowerCase('pt-BR'))) return baseName;
+
+    let suffix = 1;
+    let candidate = `${baseName} (Importada)`;
+    while (names.has(candidate.toLocaleLowerCase('pt-BR'))) {
+        suffix++;
+        candidate = `${baseName} (Importada ${suffix})`;
+    }
+    return candidate;
+}
+
+function buildCharacterSheetExportPackage(id) {
+    window.flushCharacterCollectionContext?.({ persist: true });
+    syncCombatantsToCharacterSheets();
+    const sheet = characterSheets.find(entry => String(entry.id) === String(id));
+    if (!sheet) return null;
+
+    return {
+        format: CHARACTER_SHEET_TRANSFER_FORMAT,
+        version: CHARACTER_SHEET_TRANSFER_VERSION,
+        exportedAt: new Date().toISOString(),
+        appRulesVersion: window.characterSheetModel?.CHARACTER_RULES_VERSION || Number(sheet.rulesVersion) || 11,
+        sheet: cloneEnhancementData(sheet)
+    };
+}
+
+function getCharacterSheetExportFilename(sheet) {
+    const slug = String(sheet?.name || 'personagem')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/(^-|-$)/g, '')
+        .slice(0, 48) || 'personagem';
+    return `witcher-ficha-${slug}-${new Date().toISOString().slice(0, 10)}.json`;
+}
+
+function exportCharacterSheet(id) {
+    const payload = buildCharacterSheetExportPackage(id);
+    if (!payload) {
+        showToast('Não foi possível encontrar esta ficha.');
+        return false;
+    }
+
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = getCharacterSheetExportFilename(payload.sheet);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+    showToast(`⇩ Ficha de ${payload.sheet.name} exportada.`);
+    return true;
+}
+
+function prepareImportedCharacterSheet(payload) {
+    if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
+        throw new Error('O arquivo não contém uma ficha válida.');
+    }
+    if (payload.format !== CHARACTER_SHEET_TRANSFER_FORMAT) {
+        throw new Error('Este arquivo não é uma ficha exportada pelo aplicativo.');
+    }
+    if (Number(payload.version) > CHARACTER_SHEET_TRANSFER_VERSION) {
+        throw new Error('Esta ficha foi criada em uma versão mais recente do aplicativo.');
+    }
+    if (!payload.sheet || typeof payload.sheet !== 'object' || Array.isArray(payload.sheet)) {
+        throw new Error('Os dados da ficha estão ausentes ou inválidos.');
+    }
+
+    const safeSource = sanitizeCharacterSheetTransferValue(payload.sheet);
+    const originalName = String(safeSource?.name || safeSource?.identity?.name || '').trim();
+    if (!originalName) throw new Error('A ficha importada não possui nome.');
+
+    if (
+        safeSource.creationMode === 'full'
+        && (!safeSource.identity || !safeSource.attributes || !safeSource.skills)
+    ) {
+        throw new Error('A ficha completa está sem dados obrigatórios de criação.');
+    }
+
+    const model = window.characterSheetModel;
+    const normalized = model?.normalizeCharacterSheet
+        ? model.normalizeCharacterSheet(safeSource)
+        : normalizeCharacterSheetFoundation(safeSource);
+    const importedName = getUniqueImportedCharacterSheetName(originalName);
+    const now = new Date().toISOString();
+
+    normalized.id = `sheet-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+    normalized.name = importedName;
+    if (normalized.identity && typeof normalized.identity === 'object') {
+        normalized.identity.name = importedName;
+    }
+    normalized.hpMax = Math.max(1, Number(normalized.hpMax) || 1);
+    normalized.hpCurrent = Math.min(normalized.hpMax, Math.max(0, Number(normalized.hpCurrent) || normalized.hpMax));
+    normalized.stMax = Math.max(0, Number(normalized.stMax) || 0);
+    normalized.stCurrent = Math.min(normalized.stMax, Math.max(0, Number(normalized.stCurrent) || normalized.stMax));
+    normalized.inventory = Array.isArray(normalized.inventory) ? normalized.inventory : [];
+    normalized.abilities = Array.isArray(normalized.abilities) ? normalized.abilities : [];
+    normalized.armor = normalized.armor && typeof normalized.armor === 'object'
+        ? normalized.armor
+        : { head: 0, torso: 0, arm: 0, leg: 0 };
+    normalized.equipment = normalized.equipment && typeof normalized.equipment === 'object' ? normalized.equipment : {};
+    normalized.transport = normalized.transport && typeof normalized.transport === 'object' ? normalized.transport : {};
+    normalized.resourceStateSaved = true;
+    normalized.importedAt = now;
+    normalized.importedFromSheetId = String(safeSource.id || '');
+    normalized.updatedAt = now;
+
+    window.synchronizeInventoryCatalogWeights?.(normalized.inventory);
+    window.ensureEquipmentLoadout?.(normalized);
+    window.ensureTransportState?.(normalized);
+    refreshCharacterDerivedValues(normalized);
+    return normalized;
+}
+
+function importCharacterSheetPackage(payload) {
+    const sheet = prepareImportedCharacterSheet(payload);
+    characterSheets.unshift(sheet);
+    persistCharacterSheets();
+    renderSessionToolsView('sheets');
+    showToast(`⇧ ${sheet.name} importado para as fichas.`);
+    return sheet;
+}
+
+async function importCharacterSheetFile(event) {
+    const input = event?.target;
+    const file = input?.files?.[0];
+    if (!file) return;
+
+    try {
+        if (Number(file.size) > CHARACTER_SHEET_IMPORT_MAX_BYTES) {
+            throw new Error('O arquivo excede o limite de 3 MB.');
+        }
+        const payload = JSON.parse(await file.text());
+        const sheet = prepareImportedCharacterSheet(payload);
+        const level = sheet.creationMode === 'full'
+            ? ` · Nível ${Math.max(1, Number(sheet.identity?.level) || 1)}`
+            : '';
+
+        openSessionConfirm({
+            title: 'Importar ficha?',
+            message: `${sheet.name}${level} será adicionada como uma nova ficha neste dispositivo. Nenhuma ficha existente será substituída.`,
+            confirmLabel: 'Importar',
+            onConfirm: () => {
+                characterSheets.unshift(sheet);
+                persistCharacterSheets();
+                renderSessionToolsView('sheets');
+                showToast(`⇧ ${sheet.name} importado para as fichas.`);
+            }
+        });
+    } catch (error) {
+        showToast(`❌ ${error?.message || 'Não foi possível importar esta ficha.'}`);
+    } finally {
+        input.value = '';
+    }
 }
 
 function ensureCharacterSheetStage10Backup(sheets = characterSheets) {
@@ -917,6 +1100,7 @@ function renderCharacterSheetsView(dialog) {
                         <button type="button" class="session-small-button ${sheet.id === activeCharacterSheetId ? 'enhancement-active' : ''}" onclick="activateCharacterSheet('${sheet.id}')">Usar</button>
                         <button type="button" class="session-small-button" onclick="addCharacterSheetToCombat('${sheet.id}')">+ Combate</button>
                         <button type="button" class="session-small-button" onclick="openCharacterSheetEditor('${sheet.id}')">Editar</button>
+                        <button type="button" class="session-small-button character-sheet-export-button" onclick="exportCharacterSheet('${sheet.id}')" aria-label="Exportar ${escapeEnhancementHtml(sheet.name)}">⇩ Exportar</button>
                         <button type="button" class="session-small-button session-small-danger" onclick="deleteCharacterSheet('${sheet.id}')" aria-label="Excluir ${escapeEnhancementHtml(sheet.name)}">×</button>
                     </div>
                 </li>
@@ -1690,6 +1874,11 @@ window.saveCharacterSheet = saveCharacterSheet;
 window.activateCharacterSheet = activateCharacterSheet;
 window.addCharacterSheetToCombat = addCharacterSheetToCombat;
 window.deleteCharacterSheet = deleteCharacterSheet;
+window.buildCharacterSheetExportPackage = buildCharacterSheetExportPackage;
+window.exportCharacterSheet = exportCharacterSheet;
+window.prepareImportedCharacterSheet = prepareImportedCharacterSheet;
+window.importCharacterSheetPackage = importCharacterSheetPackage;
+window.importCharacterSheetFile = importCharacterSheetFile;
 window.renderContentLibraryView = renderContentLibraryView;
 window.renderCustomContentList = renderCustomContentList;
 window.openCustomContentEditor = openCustomContentEditor;

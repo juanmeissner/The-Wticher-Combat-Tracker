@@ -754,6 +754,7 @@ assert.match(renderedSheetList, /Completa · Nv\. 4/);
 assert.match(renderedSheetList, /Regras v11/);
 assert.match(renderedSheetList, /Movimento/);
 assert.match(renderedSheetList, /Carga/);
+assert.match(renderedSheetList, /Exportar/);
 
 vm.runInContext(`
     (() => {
@@ -791,6 +792,37 @@ assert.equal(
     JSON.parse(integrationStorage.getItem('dnd_character_sheets')).length,
     savedCountBeforeCombatOnly,
     'Uma ficha usada somente no combate não deve ser salva implicitamente.'
+);
+
+const exportedSheetPackage = JSON.parse(vm.runInContext(
+    `JSON.stringify(buildCharacterSheetExportPackage(${JSON.stringify(savedFullSheet.id)}))`,
+    integrationContext
+));
+assert.equal(exportedSheetPackage.format, 'witcher-combat-character-sheet');
+assert.equal(exportedSheetPackage.version, 1);
+assert.equal(exportedSheetPackage.sheet.id, savedFullSheet.id);
+assert.equal(exportedSheetPackage.sheet.creationMode, 'full');
+assert.equal(exportedSheetPackage.sheet.hpCurrent, 5);
+
+const sheetsBeforeImport = JSON.parse(integrationStorage.getItem('dnd_character_sheets')).length;
+const importedSheet = JSON.parse(vm.runInContext(
+    `JSON.stringify(importCharacterSheetPackage(${JSON.stringify(exportedSheetPackage)}))`,
+    integrationContext
+));
+assert.notEqual(importedSheet.id, savedFullSheet.id, 'A importação deve gerar um ID próprio.');
+assert.equal(importedSheet.name, 'Yennefer (Importada)');
+assert.equal(importedSheet.identity.name, 'Yennefer (Importada)');
+assert.equal(importedSheet.creationMode, 'full');
+assert.equal(importedSheet.identity.level, 4);
+assert.equal(importedSheet.hpCurrent, 5);
+assert.equal(
+    JSON.parse(integrationStorage.getItem('dnd_character_sheets')).length,
+    sheetsBeforeImport + 1,
+    'A ficha importada deve ser adicionada sem substituir as existentes.'
+);
+assert.throws(
+    () => vm.runInContext(`prepareImportedCharacterSheet({ format: 'outro-formato', version: 1, sheet: {} })`, integrationContext),
+    /não é uma ficha exportada/
 );
 
 console.log('✓ Modelo, orçamentos, migração e persistência das fichas validados.');

@@ -65,7 +65,7 @@ flowchart LR
 |---|---|
 | ⚔️ Combate | Iniciativa, turnos, rodadas, alvos, HP, ST, armadura, dano localizado e testes de morte |
 | 💥 Críticos | Margem, gravidade, 24 ferimentos, vacilos, defesas críticas, consequências avançadas, tratamento e histórico |
-| 🧙 Fichas | Criação rápida ou completa com raça, profissão, atributos, perícias, progressão, inventário e equipamentos |
+| 🧙 Fichas | Criação rápida ou completa, progressão, inventário, equipamentos e transferência individual entre dispositivos |
 | 👹 Bestiário | Monstros predefinidos, busca, detalhes e painéis rápidos de ataques, habilidades e perícias |
 | 🎁 Saque | Recompensas contextuais, rolagem de quantidades, distribuição de itens e divisão de Coroas |
 | 🌀 Condições | Painel responsivo em grade, duração, stacks e dano recorrente automatizado |
@@ -456,6 +456,15 @@ Em **⋯ → Fichas → Nova ficha**, é possível escolher entre criação ráp
 - rascunho persistente e opções para salvar, salvar e adicionar ao combate ou usar somente na sessão.
 - edição completa pelo mesmo assistente: ao tocar em **Editar** numa ficha completa, os nove passos reabrem preenchidos desde o início para alterar nível, atributos, perícias e magias sem perder inventário, equipamentos, ferimentos ou recursos atuais.
 
+Cada ficha salva também pode ser transferida individualmente entre dispositivos:
+
+1. abra **⋯ → Fichas** e toque em **⇩ Exportar** no personagem desejado;
+2. envie o arquivo `.json` gerado para o jogador ou mestre;
+3. no outro dispositivo, abra **⋯ → Fichas → Nova ficha → Importar ficha** e selecione o arquivo;
+4. revise o nome e o nível exibidos e confirme a importação.
+
+A transferência preserva a ficha completa, recursos atuais, progressão, magias, inventário, equipamentos, montarias e demais dados vinculados. O arquivo é validado e atualizado para as regras atuais durante a leitura. A ficha recebida ganha uma nova identificação e nunca sobrescreve uma ficha existente; nomes repetidos recebem automaticamente o sufixo **(Importada)**.
+
 Os seis modelos prontos aceleram a preparação sem bloquear nenhuma escolha:
 
 - Bruxo da Escola do Lobo;
@@ -581,6 +590,7 @@ O menu **⋯** concentra as ferramentas administrativas:
 - `↶` desfaz ações recentes;
 - salva e carrega encontros completos;
 - exporta e restaura backup em JSON;
+- exporta e importa fichas individuais em JSON sem substituir personagens existentes;
 - gera relatório pós-combate com rodadas, participantes, derrotas, dano, cura, itens e Coroas distribuídas;
 - configura contraste, animações e modos de rolagem;
 - instala ou atualiza a PWA;
@@ -595,7 +605,7 @@ O menu **⋯** concentra as ferramentas administrativas:
 1. Abra **⚔️ Combate**.
 2. Toque em `🧙‍♂️` para criar um jogador ou em `👹` para criar/escolher um monstro.
 3. Se preferir um personagem reutilizável, abra `⋯ → Fichas → Nova ficha`.
-4. Escolha **⚡ Criação rápida**, **📜 Criação completa** ou **🧭 Modelo pronto**.
+4. Escolha **⚡ Criação rápida**, **📜 Criação completa**, **🧭 Modelo pronto** ou **⇧ Importar ficha**.
 5. Nos modelos prontos, selecione a função desejada, revise a construção desde o primeiro passo e personalize o nome.
 6. Conclua com **Salvar ficha**, **Salvar e adicionar ao combate** ou **Somente combate**.
 
@@ -749,6 +759,8 @@ Não existe conta, servidor ou banco de dados remoto. Os dados são mantidos no 
 
 Na primeira consolidação da Etapa 10, o aplicativo cria uma cópia local única das fichas existentes antes de normalizá-las para as regras atuais. Essa cópia também participa do backup completo do aplicativo e não é sobrescrita em recarregamentos posteriores.
 
+O **backup JSON completo** reúne toda a campanha. Para compartilhar somente um personagem, use **⋯ → Fichas → ⇩ Exportar**; o destinatário pode recebê-lo por mensagem, e-mail ou armazenamento em nuvem e importá-lo por **Nova ficha → Importar ficha** sem afetar os demais dados do aplicativo.
+
 > [!IMPORTANT]
 > Limpar os dados do site ou remover o armazenamento do navegador pode apagar a campanha local. Exporte periodicamente um **backup JSON completo**, principalmente antes de trocar de dispositivo.
 
@@ -853,7 +865,7 @@ node tests/item-use-automation.test.cjs
 node tests/spell-damage-automation.test.cjs
 ```
 
-Os testes verificam o isolamento entre personagens, a migração e o backup do armazenamento antigo, a criação completa, os seis modelos prontos, os orçamentos de progressão, o aprendizado de magias, os painéis de perícias e magias, os custos efetivos, Magia Expandida, Sobrecarga Arcana, Cura Mágica, dano mágico por alvo, fórmulas ofensivas, áreas, tipo Fogo, Bafo de Dragão, Inflamador, Fisstech e sua Abstinência atrasada. Também cobrem cuidados e descanso, ciclos diários, contadores de ausência, duração e restauração dos benefícios, recursos temporários, testes de hospedagem, redução profissional de custos, Cuidado Prolongado, Dormir Leve, Balada do Sobrevivente e os benefícios de Freya. A suíte valida ainda os itens instantâneos, seleção contextual de alvos, ablação em armadura e arma, preparação de dano por item, Veneno Negro, remoção de intoxicação, fórmula e recompensas dos testes, integração do `20 natural`, as quatro gravidades e os 24 ferimentos críticos, tratamento médico, vacilos, críticos defensivos, desarme, consequências avançadas, toxicidade, overdose e Mel Branco. Por fim, cobre a sincronização com fichas, a integridade do catálogo, equipamentos, munições, defesas, reparos, ataques de monstros, saque, Coroas, receitas, rendimentos, transferências entre armazenamentos, renderização de ícones na Central de Carga e o bloqueio global de zoom.
+Os testes verificam o isolamento entre personagens, a migração e o backup do armazenamento antigo, a criação completa, a exportação e importação individual sem sobrescrita, os seis modelos prontos, os orçamentos de progressão, o aprendizado de magias, os painéis de perícias e magias, os custos efetivos, Magia Expandida, Sobrecarga Arcana, Cura Mágica, dano mágico por alvo, fórmulas ofensivas, áreas, tipo Fogo, Bafo de Dragão, Inflamador, Fisstech e sua Abstinência atrasada. Também cobrem cuidados e descanso, ciclos diários, contadores de ausência, duração e restauração dos benefícios, recursos temporários, testes de hospedagem, redução profissional de custos, Cuidado Prolongado, Dormir Leve, Balada do Sobrevivente e os benefícios de Freya. A suíte valida ainda os itens instantâneos, seleção contextual de alvos, ablação em armadura e arma, preparação de dano por item, Veneno Negro, remoção de intoxicação, fórmula e recompensas dos testes, integração do `20 natural`, as quatro gravidades e os 24 ferimentos críticos, tratamento médico, vacilos, críticos defensivos, desarme, consequências avançadas, toxicidade, overdose e Mel Branco. Por fim, cobre a sincronização com fichas, a integridade do catálogo, equipamentos, munições, defesas, reparos, ataques de monstros, saque, Coroas, receitas, rendimentos, transferências entre armazenamentos, renderização de ícones na Central de Carga e o bloqueio global de zoom.
 
 ## ✅ Estado atual
 
@@ -863,6 +875,7 @@ Os testes verificam o isolamento entre personagens, a migração e o backup do a
 - [x] Experiência standalone sem zoom acidental por gesto, duplo toque ou atalhos
 - [x] Combate, iniciativa, rodadas e dano localizado
 - [x] Fichas persistentes e encontros salvos
+- [x] Exportação e importação individual de fichas entre dispositivos
 - [x] Criação completa com raças, profissões, atributos, perícias e aprendizado de magias
 - [x] Distribuição responsiva de atributos com controles legíveis e grade adaptável no mobile
 - [x] Seis modelos prontos, editáveis e validados pelos mesmos orçamentos da ficha completa

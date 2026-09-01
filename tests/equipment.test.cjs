@@ -506,6 +506,12 @@ assert.equal(attack.details, 'Sangramento');
         { filename: 'bestiary.js' }
     );
 
+    assert.equal(
+        vm.runInContext("window.getEquipmentItemWeight({ id: 'flechadeaco', weight: 1.5 })", catalogContext),
+        0.1,
+        'O peso atual do catálogo deve corrigir munições antigas salvas com 1.5.'
+    );
+
     const catalogAudit = JSON.parse(vm.runInContext(`JSON.stringify((() => {
         const equipment = predefinedItems.filter(item => item.category === 'equipment' && item.type !== 'mount-gear');
         const unclassified = equipment.filter(item => !window.getEquipmentItemKind(item));

@@ -1062,6 +1062,12 @@
                     <strong>Modelo pronto</strong>
                     <small>Comece com uma construção equilibrada e personalize tudo antes de salvar.</small>
                 </button>
+                <button type="button" class="character-mode-card character-mode-card-import" onclick="document.getElementById('characterSheetImportInput')?.click()">
+                    <span class="character-mode-icon">⇧</span>
+                    <strong>Importar ficha</strong>
+                    <small>Receba uma ficha criada em outro dispositivo sem substituir as que já existem.</small>
+                </button>
+                <input id="characterSheetImportInput" type="file" accept="application/json,.json" hidden onchange="importCharacterSheetFile(event)">
             </div>
             ${hasCharacterWizardProgress(savedDraft) ? `
                 <button type="button" class="character-draft-resume" onclick="startCharacterSheetWizard()">

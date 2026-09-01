@@ -84,6 +84,8 @@ function ensureCharacterCollectionFields(owner, fallback = {}) {
         owner.inventory = cloneCharacterCollection(fallback.inventory, []);
     }
 
+    window.synchronizeInventoryCatalogWeights?.(owner.inventory);
+
     if (!Array.isArray(owner.abilities)) {
         owner.abilities = cloneCharacterCollection(fallback.abilities, []);
     }
