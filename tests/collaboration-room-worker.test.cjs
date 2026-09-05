@@ -110,6 +110,15 @@ test('sala experimental cria mestre, exige senha e vincula jogador', async () =>
     assert.ok((await ticketResponse.json()).socketTicket.length > 20);
 });
 
+test('iterações PBKDF2 respeitam o limite aceito pelo Cloudflare Workers', async () => {
+    const moduleUrl = pathToFileURL(path.resolve(__dirname, '..', 'cloudflare', 'src', 'worker.mjs')).href;
+    const worker = await import(moduleUrl);
+    assert.equal(worker.normalizePbkdf2Iterations(), 100_000);
+    assert.equal(worker.normalizePbkdf2Iterations('120000'), 100_000);
+    assert.equal(worker.normalizePbkdf2Iterations('75000'), 75_000);
+    assert.equal(worker.normalizePbkdf2Iterations('500'), 1_000);
+});
+
 test('comando de recurso respeita o personagem vinculado', async () => {
     const moduleUrl = pathToFileURL(path.resolve(__dirname, '..', 'cloudflare', 'src', 'worker.mjs')).href;
     const worker = await import(moduleUrl);

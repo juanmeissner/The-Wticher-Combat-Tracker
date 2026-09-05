@@ -3,6 +3,9 @@ const MAX_BODY_BYTES = 3 * 1024 * 1024;
 const MAX_SEEN_COMMANDS = 500;
 const TICKET_LIFETIME_MS = 45_000;
 const ROOM_CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+const DEFAULT_PBKDF2_ITERATIONS = 100_000;
+const MIN_PBKDF2_ITERATIONS = 1_000;
+const MAX_PBKDF2_ITERATIONS = 100_000;
 
 const COMMANDS = Object.freeze({
     'participant.resource.adjust': { player: 'allow', conflict: 'delta' },
@@ -45,6 +48,14 @@ export function validatePassword(value) {
     if (password.length < 6) return 'Use uma senha com pelo menos 6 caracteres.';
     if (password.length > 128) return 'A senha pode ter no máximo 128 caracteres.';
     return '';
+}
+
+export function normalizePbkdf2Iterations(value) {
+    const configured = Number(value);
+    const iterations = Number.isFinite(configured) && configured > 0
+        ? Math.trunc(configured)
+        : DEFAULT_PBKDF2_ITERATIONS;
+    return Math.min(MAX_PBKDF2_ITERATIONS, Math.max(MIN_PBKDF2_ITERATIONS, iterations));
 }
 
 async function sha256(value) {
@@ -265,13 +276,14 @@ export class CampaignRoom {
         await this.ready;
         const url = new URL(request.url);
         try {
-            if (request.method === 'POST' && url.pathname.endsWith('/internal/create')) return this.create(request);
-            if (request.method === 'POST' && url.pathname.endsWith('/internal/join')) return this.join(request);
-            if (request.method === 'POST' && url.pathname.endsWith('/internal/ticket')) return this.issueTicket(request);
-            if (request.method === 'GET' && url.pathname.endsWith('/internal/socket')) return this.openSocket(request);
+            if (request.method === 'POST' && url.pathname.endsWith('/internal/create')) return await this.create(request);
+            if (request.method === 'POST' && url.pathname.endsWith('/internal/join')) return await this.join(request);
+            if (request.method === 'POST' && url.pathname.endsWith('/internal/ticket')) return await this.issueTicket(request);
+            if (request.method === 'GET' && url.pathname.endsWith('/internal/socket')) return await this.openSocket(request);
             if (request.method === 'GET' && url.pathname.endsWith('/internal/status')) return this.status();
             return errorResponse('not_found', 'Rota da sala não encontrada.', 404);
         } catch (error) {
+            console.error('Falha ao processar sala de colaboração.', error);
             if (error?.message === 'payload_too_large') return errorResponse('payload_too_large', 'A campanha ultrapassa o limite de 3 MB.', 413);
             if (error instanceof SyntaxError) return errorResponse('invalid_json', 'Os dados enviados são inválidos.', 400);
             return errorResponse('room_error', 'Não foi possível processar a sala.', 500);
@@ -287,7 +299,7 @@ export class CampaignRoom {
         if (!campaign) return errorResponse('invalid_campaign', 'A campanha enviada é inválida.');
 
         const salt = randomSecret(18);
-        const iterations = Math.max(1_000, Number(this.env?.PBKDF2_ITERATIONS) || 120_000);
+        const iterations = normalizePbkdf2Iterations(this.env?.PBKDF2_ITERATIONS);
         const token = randomSecret();
         const master = normalizeMember({
             name: body.actorName || 'Mestre',
@@ -618,28 +630,37 @@ export default {
         }
 
         let response;
-        const createMatch = request.method === 'POST' && url.pathname === '/api/rooms';
-        const roomMatch = url.pathname.match(/^\/api\/rooms\/([A-Z0-9]{6,12})\/(join|ticket|socket|status)$/i);
-        if (createMatch) {
-            const body = await readJson(request).catch(() => null);
-            if (!body) return errorResponse('invalid_json', 'Os dados enviados são inválidos.', 400, {}, headers);
-            let lastResponse = null;
-            for (let attempt = 0; attempt < 5; attempt++) {
-                const code = createRoomCode();
-                const forwarded = new Request(`${url.origin}/internal/create`, {
-                    method: 'POST', headers: { 'content-type': 'application/json' },
-                    body: JSON.stringify({ ...body, roomCode: code })
-                });
-                lastResponse = await routeToRoom(env, code, forwarded, '/internal/create');
-                if (lastResponse.status !== 409) break;
+        try {
+            const createMatch = request.method === 'POST' && url.pathname === '/api/rooms';
+            const roomMatch = url.pathname.match(/^\/api\/rooms\/([A-Z0-9]{6,12})\/(join|ticket|socket|status)$/i);
+            if (createMatch) {
+                const body = await readJson(request).catch(() => null);
+                if (!body) return errorResponse('invalid_json', 'Os dados enviados são inválidos.', 400, {}, headers);
+                let lastResponse = null;
+                for (let attempt = 0; attempt < 5; attempt++) {
+                    const code = createRoomCode();
+                    const forwarded = new Request(`${url.origin}/internal/create`, {
+                        method: 'POST', headers: { 'content-type': 'application/json' },
+                        body: JSON.stringify({ ...body, roomCode: code })
+                    });
+                    lastResponse = await routeToRoom(env, code, forwarded, '/internal/create');
+                    if (lastResponse.status !== 409) break;
+                }
+                response = lastResponse || errorResponse('room_code_failed', 'Não foi possível gerar o código da sala.', 503);
+            } else if (roomMatch) {
+                const code = normalizeRoomCode(roomMatch[1]);
+                const action = roomMatch[2].toLowerCase();
+                response = await routeToRoom(env, code, request, `/internal/${action}`);
+            } else {
+                response = errorResponse('not_found', 'Rota não encontrada.', 404);
             }
-            response = lastResponse || errorResponse('room_code_failed', 'Não foi possível gerar o código da sala.', 503);
-        } else if (roomMatch) {
-            const code = normalizeRoomCode(roomMatch[1]);
-            const action = roomMatch[2].toLowerCase();
-            response = await routeToRoom(env, code, request, `/internal/${action}`);
-        } else {
-            response = errorResponse('not_found', 'Rota não encontrada.', 404);
+        } catch (error) {
+            console.error('Falha de comunicação com a sala persistente.', error);
+            response = errorResponse(
+                'room_unavailable',
+                'A sala está temporariamente indisponível. Tente novamente em instantes.',
+                503
+            );
         }
         if (response.status === 101) return response;
         const outgoing = new Response(response.body, response);
