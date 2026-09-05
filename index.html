@@ -25,6 +25,7 @@
     <link rel="stylesheet" href="crafting.css">
     <link rel="stylesheet" href="character-sheet-wizard.css">
     <link rel="stylesheet" href="campaign-clock.css">
+    <link rel="stylesheet" href="collaboration.css">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
 
@@ -71,12 +72,12 @@
                     <p id="roundCounter" class="text-xl font-bold text-slate-200">1</p>
                 </div>
                 <div class="grid grid-cols-2 gap-2">
-                    <button onclick="createNewCharacterSheet()" class="btn-control hover:bg-blue-900/40 border-blue-900/50" title="Criar personagem">🧙‍♂️</button>
-                    <button onclick="openMonsterChoiceModal()" class="btn-control hover:bg-slate-700" title="Add Monstro">👹</button>
-                    <button onclick="endCombat()" onmousedown="startEndCombatPress(event)" onmouseup="cancelEndCombatPress(event)" onmouseleave="cancelEndCombatPress(event)" ontouchstart="startEndCombatPress(event)" ontouchend="cancelEndCombatPress(event)" class="btn-control hover:bg-red-600/50 border-red-900/50" title="Terminar Combate (Segure 3s para apagar tudo)">❌</button>
-                    <button onclick="nextTurn()" class="btn-control hover:bg-amber-900/40 border-amber-900/50" title="Próximo">⏩</button>
-                    <button onclick="openCampaignClock()" class="btn-control hover:bg-slate-700" title="Relógio da campanha">🕰️</button>
-                    <button onclick="openEffectModal()" class="btn-control hover:bg-slate-700" title="Magias, itens e status">✨</button>
+                    <button data-master-only onclick="createNewCharacterSheet()" class="btn-control hover:bg-blue-900/40 border-blue-900/50" title="Criar personagem">🧙‍♂️</button>
+                    <button data-master-only onclick="openMonsterChoiceModal()" class="btn-control hover:bg-slate-700" title="Add Monstro">👹</button>
+                    <button data-master-only onclick="endCombat()" onmousedown="startEndCombatPress(event)" onmouseup="cancelEndCombatPress(event)" onmouseleave="cancelEndCombatPress(event)" ontouchstart="startEndCombatPress(event)" ontouchend="cancelEndCombatPress(event)" class="btn-control hover:bg-red-600/50 border-red-900/50" title="Terminar Combate (Segure 3s para apagar tudo)">❌</button>
+                    <button data-master-only onclick="nextTurn()" class="btn-control hover:bg-amber-900/40 border-amber-900/50" title="Próximo">⏩</button>
+                    <button data-master-only onclick="openCampaignClock()" class="btn-control hover:bg-slate-700" title="Relógio da campanha">🕰️</button>
+                    <button data-master-only onclick="openEffectModal()" class="btn-control hover:bg-slate-700" title="Magias, itens e status">✨</button>
                 </div>
             </div>
 
@@ -137,18 +138,18 @@
             </div>
 
             <div class="flex flex-col gap-2 w-16 shrink-0 py-1">
-                <button onclick="handleHeartAction()" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl flex items-center justify-center shadow-lg" title="Curar / Sucesso contra a morte / Cuidados com pad zerado">
+                <button data-master-only onclick="handleHeartAction()" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl flex items-center justify-center shadow-lg" title="Curar / Sucesso contra a morte / Cuidados com pad zerado">
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
                 </button>
-                <button onclick="openDamageBodyModal()" class="flex-1 bg-red-600 hover:bg-red-500 text-white rounded-xl flex items-center justify-center shadow-lg text-2xl" title="Dano / Add Falha (0 HP)">
+                <button data-master-only onclick="openDamageBodyModal()" class="flex-1 bg-red-600 hover:bg-red-500 text-white rounded-xl flex items-center justify-center shadow-lg text-2xl" title="Dano / Add Falha (0 HP)">
                     ☠️
                 </button>
-                <button onclick="openSTModal()"
+                <button data-master-only onclick="openSTModal()"
                 class="flex-1 bg-cyan-600 hover:bg-cyan-500 text-white rounded-xl flex items-center justify-center shadow-lg text-2xl"
                 title="Gerenciar ST">
                 🔷
                 </button>
-                <button onclick="applyInitiative()" onmousedown="startInitPress(event)" onmouseup="cancelInitPress(event)" onmouseleave="cancelInitPress(event)" ontouchstart="startInitPress(event)" ontouchend="cancelInitPress(event)" class="flex-1 bg-blue-600 hover:bg-blue-500 text-white rounded-xl flex items-center justify-center shadow-lg" title="Definir Iniciativa">
+                <button data-master-only onclick="applyInitiative()" onmousedown="startInitPress(event)" onmouseup="cancelInitPress(event)" onmouseleave="cancelInitPress(event)" ontouchstart="startInitPress(event)" ontouchend="cancelInitPress(event)" class="flex-1 bg-blue-600 hover:bg-blue-500 text-white rounded-xl flex items-center justify-center shadow-lg" title="Definir Iniciativa">
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M13 10h7l-9 11v-7H4l9-11v7z"/></svg>
                 </button>
             </div>
@@ -427,6 +428,12 @@
 <!-- ========================================= -->
     <script src="js/zoom-lock.js"></script>
     <script src="js/state.js"></script>
+    <script src="js/collaboration/protocol.js"></script>
+    <script src="js/collaboration/permissions.js"></script>
+    <script src="js/campaign/campaign-migrations.js"></script>
+    <script src="js/campaign/campaign-store.js"></script>
+    <script src="js/collaboration/collaboration-session.js"></script>
+    <script src="js/collaboration/realtime-client.js"></script>
 
 
     <script src="js/core/toast.js"></script>

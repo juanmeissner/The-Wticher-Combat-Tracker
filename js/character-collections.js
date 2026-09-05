@@ -107,6 +107,17 @@ function ensureCharacterCollectionFields(owner, fallback = {}) {
 }
 
 function getDefaultCharacterCollectionContextKey() {
+    const collaboration = window.collaborationSession?.getSession?.();
+    if (collaboration?.role === 'player') {
+        const linkedCombatant = combatants.find(entry =>
+            String(entry.id) === String(collaboration.linkedParticipantId));
+        if (linkedCombatant) return buildCharacterCollectionContextKey('combatant', linkedCombatant.id);
+
+        const linkedSheet = getAvailableCharacterSheets().find(entry =>
+            String(entry.id) === String(collaboration.linkedSheetId));
+        if (linkedSheet) return buildCharacterCollectionContextKey('sheet', linkedSheet.id);
+    }
+
     const activeCombatant = combatants.find(entry => String(entry.id) === String(activeTurnId));
 
     if (activeCombatant) {
@@ -393,14 +404,22 @@ function isCombatantEliminated(combatant) {
 }
 
 function getCharacterCollectionOptions() {
+    const collaboration = window.collaborationSession?.getSession?.();
+    const playerMode = collaboration?.role === 'player';
+
     if (combatants.length > 0) {
-        return combatants.map(combatant => ({
+        const availableCombatants = playerMode
+            ? combatants.filter(combatant => String(combatant.id) === String(collaboration.linkedParticipantId))
+            : combatants;
+        return availableCombatants.map(combatant => ({
             key: buildCharacterCollectionContextKey('combatant', combatant.id),
             label: `${String(combatant.id) === String(activeTurnId) ? '⚔ ' : ''}${combatant.name}${isCombatantEliminated(combatant) ? ' — eliminado' : ''}`
         }));
     }
 
-    const sheets = getAvailableCharacterSheets();
+    const sheets = playerMode
+        ? getAvailableCharacterSheets().filter(sheet => String(sheet.id) === String(collaboration.linkedSheetId))
+        : getAvailableCharacterSheets();
     if (sheets.length > 0) {
         return sheets.map(sheet => ({
             key: buildCharacterCollectionContextKey('sheet', sheet.id),

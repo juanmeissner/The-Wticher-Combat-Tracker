@@ -189,6 +189,19 @@
         const combatantId = decodeURIComponent(String(encodedCombatantId));
         const combatant = (typeof combatants !== 'undefined' ? combatants : [])
             .find(entry => String(entry.id) === combatantId);
+        let collaborationCommand = null;
+        if (global.collaborationSession?.isPlayer?.()) {
+            const permission = global.collaborationSession.authorize(
+                'participant.resource.adjust',
+                combatantId,
+                { resource: resourceKey, delta }
+            );
+            if (permission.decision !== 'allow') {
+                global.showToast?.('🔒 Você só pode ajustar recursos do seu personagem.');
+                return false;
+            }
+            collaborationCommand = permission.command;
+        }
         const definitions = {
             luckDice: { label: 'Dado da Sorte', gender: 'atualizado' },
             adrenaline: { label: 'Adrenalina', gender: 'atualizada' }
@@ -202,6 +215,12 @@
         if (after === before) {
             global.showToast?.(`${definition.label} já está em zero.`);
             return false;
+        }
+
+        if (collaborationCommand && global.collaborationSession?.isOnlineRoom?.()) {
+            const sent = global.collaborationRealtime?.submitCommand?.(collaborationCommand);
+            if (sent) global.showToast?.(`${definition.label}: alteração enviada para a sala.`);
+            return Boolean(sent);
         }
 
         const applyChange = () => {

@@ -5,6 +5,8 @@ const vm = require('node:vm');
 
 const projectRoot = path.resolve(__dirname, '..');
 const source = fs.readFileSync(path.join(projectRoot, 'js', 'character-collections.js'), 'utf8');
+assert.match(source, /collaborationSession\?\.getSession/);
+assert.match(source, /linkedParticipantId/);
 const equipmentSource = fs.readFileSync(path.join(projectRoot, 'js', 'equipment.js'), 'utf8');
 
 function createStorage(initial = {}) {

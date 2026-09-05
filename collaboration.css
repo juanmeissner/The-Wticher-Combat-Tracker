@@ -1,0 +1,289 @@
+.collaboration-eyebrow {
+    display: block;
+    margin-bottom: 3px;
+    color: #38bdf8;
+    font-size: .66rem;
+    font-weight: 900;
+    letter-spacing: .12em;
+}
+
+.collaboration-status-card,
+.collaboration-next-stage {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 16px;
+    padding: 12px;
+    border: 1px solid #334155;
+    border-radius: 12px;
+    background: #172033;
+}
+
+.collaboration-field,
+.collaboration-field > span {
+    display: block;
+}
+
+.collaboration-field > span {
+    margin-bottom: 6px;
+    color: #cbd5e1;
+    font-size: .72rem;
+    font-weight: 800;
+}
+
+.collaboration-online-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    margin: 14px 0;
+}
+
+.collaboration-online-card {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    gap: 8px;
+    padding: 13px;
+    border: 1px solid #334155;
+    border-radius: 14px;
+    background: #172033;
+}
+
+.collaboration-online-card > small {
+    min-height: 2.2rem;
+    color: #94a3b8;
+    font-size: .72rem;
+    line-height: 1.45;
+}
+
+.collaboration-online-card .session-input,
+.collaboration-online-card button {
+    width: 100%;
+    margin: 0;
+}
+
+.collaboration-card-icon {
+    font-size: 1.35rem;
+}
+
+.collaboration-code-input {
+    font-weight: 900;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+}
+
+.collaboration-local-preview {
+    margin: 12px 0;
+    border: 1px solid #334155;
+    border-radius: 12px;
+    background: rgba(15, 23, 42, .45);
+}
+
+.collaboration-local-preview summary {
+    padding: 11px 12px;
+    color: #94a3b8;
+    cursor: pointer;
+    font-size: .74rem;
+    font-weight: 800;
+}
+
+.collaboration-local-preview .collaboration-role-grid {
+    margin: 0;
+    padding: 0 10px 10px;
+}
+
+.collaboration-room-code {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    gap: 2px 12px;
+    margin: 12px 0;
+    padding: 12px;
+    border: 1px solid rgba(14, 165, 233, .5);
+    border-radius: 13px;
+    background: rgba(14, 165, 233, .08);
+}
+
+.collaboration-room-code small {
+    grid-column: 1;
+    color: #7dd3fc;
+    font-size: .62rem;
+    font-weight: 900;
+    letter-spacing: .08em;
+}
+
+.collaboration-room-code strong {
+    grid-column: 1;
+    color: #f8fafc;
+    font-size: 1.35rem;
+    letter-spacing: .16em;
+}
+
+.collaboration-room-code button {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+    min-height: 40px;
+    padding: 8px 12px;
+    border: 1px solid #0ea5e9;
+    border-radius: 10px;
+    background: #075985;
+    color: #f8fafc;
+    font-weight: 800;
+}
+
+.collaboration-presence {
+    padding: 12px;
+    border: 1px solid #334155;
+    border-radius: 12px;
+    background: #172033;
+}
+
+.collaboration-presence > div {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 8px;
+}
+
+.collaboration-presence span {
+    padding: 5px 8px;
+    border-radius: 999px;
+    background: #263449;
+    color: #e2e8f0;
+    font-size: .69rem;
+    font-weight: 700;
+}
+
+.collaboration-live-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    margin: 12px 0;
+}
+
+.collaboration-live-actions > :only-child {
+    grid-column: 1 / -1;
+}
+
+.collaboration-status-dot.is-synced { background: #22c55e; }
+.collaboration-status-dot.is-connecting { background: #38bdf8; }
+.collaboration-status-dot.is-pending { background: #f59e0b; }
+.collaboration-status-dot.is-conflict,
+.collaboration-status-dot.is-revoked { background: #ef4444; }
+
+.collaboration-status-card div,
+.collaboration-next-stage {
+    min-width: 0;
+}
+
+.collaboration-status-card strong,
+.collaboration-status-card small,
+.collaboration-next-stage strong,
+.collaboration-next-stage small {
+    display: block;
+}
+
+.collaboration-status-card small,
+.collaboration-next-stage small,
+.collaboration-role-card small {
+    margin-top: 3px;
+    color: #94a3b8;
+    font-size: .72rem;
+    line-height: 1.4;
+}
+
+.collaboration-status-dot {
+    flex: 0 0 10px;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #f59e0b;
+    box-shadow: 0 0 9px rgba(245, 158, 11, .55);
+}
+
+.collaboration-role-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    margin: 14px 0;
+}
+
+.collaboration-role-card {
+    min-width: 0;
+    padding: 12px;
+    border: 1px solid #334155;
+    border-radius: 14px;
+    background: #1e293b;
+    color: #f8fafc;
+    text-align: left;
+}
+
+.collaboration-role-card.is-active {
+    border-color: #0ea5e9;
+    background: linear-gradient(145deg, rgba(14, 165, 233, .2), #1e293b 65%);
+    box-shadow: inset 0 0 0 1px rgba(14, 165, 233, .2);
+}
+
+.collaboration-role-card > span,
+.collaboration-role-card > strong,
+.collaboration-role-card > small {
+    display: block;
+}
+
+.collaboration-role-card > span {
+    margin-bottom: 8px;
+    font-size: 1.4rem;
+}
+
+.collaboration-role-card select,
+.collaboration-role-card button {
+    width: 100%;
+    margin-top: 10px;
+}
+
+.collaboration-next-stage {
+    display: block;
+    margin-bottom: 16px;
+    border-color: rgba(14, 165, 233, .38);
+    background: rgba(14, 165, 233, .08);
+}
+
+.session-role-chip {
+    flex: 0 0 auto;
+    padding: 2px 5px;
+    border: 1px solid rgba(56, 189, 248, .35);
+    border-radius: 999px;
+    color: #7dd3fc;
+    font-size: .56rem;
+    font-weight: 900;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+}
+
+.session-connection-status.is-synced { background: #22c55e; }
+.session-connection-status.is-connecting { background: #38bdf8; }
+.session-connection-status.is-pending { background: #f59e0b; }
+.session-connection-status.is-conflict,
+.session-connection-status.is-revoked { background: #ef4444; }
+
+html[data-collaboration-role="player"] [data-master-only] {
+    display: none !important;
+}
+
+html[data-collaboration-role="player"] #inventoryActions,
+html[data-collaboration-role="player"] .abilities-actions,
+html[data-collaboration-role="player"] #exportAbilitiesBtn,
+html[data-collaboration-role="player"] button[onclick="openExpandedMagicModal()"] {
+    display: none !important;
+}
+
+@media (max-width: 430px) {
+    .collaboration-role-grid,
+    .collaboration-online-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .collaboration-online-card > small {
+        min-height: 0;
+    }
+}

@@ -6,6 +6,7 @@ const CHARACTER_SHEET_IMPORT_MAX_BYTES = 3 * 1024 * 1024;
 const ACTIVE_SHEET_KEY = 'dnd_active_character_sheet';
 const CUSTOM_LIBRARY_KEY = 'dnd_custom_library';
 const APP_PREFERENCES_KEY = 'dnd_app_preferences';
+const CAMPAIGN_PREFERENCES_KEY = 'dnd_campaign_preferences';
 const ENHANCEMENTS_LAST_COMBAT_REPORT_KEY = 'dnd_last_combat_report';
 const DEFAULT_APP_PREFERENCES = {
     theme: 'default',
@@ -43,12 +44,15 @@ let customLibrary = readEnhancementData(CUSTOM_LIBRARY_KEY, {
     monsters: []
 });
 const savedAppPreferences = readEnhancementData(APP_PREFERENCES_KEY, {});
+const savedCampaignPreferences = readEnhancementData(CAMPAIGN_PREFERENCES_KEY, {});
 let appPreferences = {
     ...DEFAULT_APP_PREFERENCES,
     ...savedAppPreferences,
+    ...savedCampaignPreferences,
     rollModes: {
         ...DEFAULT_APP_PREFERENCES.rollModes,
-        ...(savedAppPreferences.rollModes || {})
+        ...(savedAppPreferences.rollModes || {}),
+        ...(savedCampaignPreferences.rollModes || {})
     }
 };
 let deferredInstallPrompt = null;
@@ -493,6 +497,12 @@ function migrateCharacterSheetSchema() {
 
 function getActiveCharacterSheet() {
     return characterSheets.find(sheet => sheet.id === activeCharacterSheetId) || null;
+}
+
+function reloadCharacterSheetsFromStorage() {
+    characterSheets = readEnhancementData(CHARACTER_SHEETS_KEY, []);
+    migrateCharacterSheetSchema();
+    return cloneEnhancementData(characterSheets);
 }
 
 function getSheetResourceCurrent(sheet, currentKey, maximum) {
@@ -1839,6 +1849,11 @@ function updateConnectionStatus() {
 
     if (!indicator) return;
 
+    if (window.collaborationSession?.updateConnectionIndicator) {
+        window.collaborationSession.updateConnectionIndicator();
+        return;
+    }
+
     const online = navigator.onLine;
     indicator.classList.toggle('is-offline', !online);
     indicator.title = online ? 'Online' : 'Offline';
@@ -1940,6 +1955,7 @@ function restoreDefaultAppPreferences() {
                 rollModes: { ...DEFAULT_APP_PREFERENCES.rollModes }
             };
             localStorage.removeItem(APP_PREFERENCES_KEY);
+            localStorage.removeItem(CAMPAIGN_PREFERENCES_KEY);
             applyPreferences();
             refreshAllCharacterWeightValues();
             showToast('✓ Preferências restauradas.');
@@ -2010,9 +2026,29 @@ function applyPreferences() {
     document.documentElement.dataset.reducedMotion = String(Boolean(appPreferences.reducedMotion));
 }
 
+function persistDevicePreferences() {
+    // O formato legado permanece completo enquanto os módulos são migrados.
+    // O contêiner de campanha nunca sincroniza esta chave; as regras canônicas
+    // ficam separadas em dnd_campaign_preferences.
+    localStorage.setItem(APP_PREFERENCES_KEY, JSON.stringify(appPreferences));
+}
+
+function persistCampaignPreferences() {
+    localStorage.setItem(CAMPAIGN_PREFERENCES_KEY, JSON.stringify({
+        carriedWeightMode: appPreferences.carriedWeightMode === 'inventory' ? 'inventory' : 'equipped',
+        rollModes: {
+            ...DEFAULT_APP_PREFERENCES.rollModes,
+            ...(appPreferences.rollModes || {})
+        }
+    }));
+
+    // Espelho temporário para os módulos antigos que ainda consultam esta chave.
+    localStorage.setItem(APP_PREFERENCES_KEY, JSON.stringify(appPreferences));
+}
+
 function setAppPreference(key, value) {
     appPreferences[key] = value;
-    localStorage.setItem(APP_PREFERENCES_KEY, JSON.stringify(appPreferences));
+    persistDevicePreferences();
     applyPreferences();
     renderSessionToolsView('preferences');
 }
@@ -2023,7 +2059,7 @@ function setRollMode(preference, value) {
         ...(appPreferences.rollModes || {}),
         [preference]: value
     };
-    localStorage.setItem(APP_PREFERENCES_KEY, JSON.stringify(appPreferences));
+    persistCampaignPreferences();
     renderSessionToolsView('preferences');
 }
 
@@ -2040,7 +2076,7 @@ function refreshAllCharacterWeightValues() {
 function setCarriedWeightMode(value) {
     const mode = value === 'inventory' ? 'inventory' : 'equipped';
     appPreferences.carriedWeightMode = mode;
-    localStorage.setItem(APP_PREFERENCES_KEY, JSON.stringify(appPreferences));
+    persistCampaignPreferences();
     refreshAllCharacterWeightValues();
     showToast(mode === 'inventory'
         ? '⚖️ Todo o inventário agora influencia a carga.'
@@ -2204,6 +2240,7 @@ window.canUndoLastCharacterLevelUp = canUndoLastCharacterLevelUp;
 window.undoLastCharacterLevelUp = undoLastCharacterLevelUp;
 window.addFullCharacterDraftToCombat = addFullCharacterDraftToCombat;
 window.getCharacterSheetForEditing = id => characterSheets.find(sheet => sheet.id === id) || null;
+window.reloadCharacterSheetsFromStorage = reloadCharacterSheetsFromStorage;
 window.openCharacterSheetEditor = openCharacterSheetEditor;
 window.saveCharacterSheet = saveCharacterSheet;
 window.activateCharacterSheet = activateCharacterSheet;

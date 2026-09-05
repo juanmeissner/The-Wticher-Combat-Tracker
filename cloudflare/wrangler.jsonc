@@ -1,0 +1,27 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "witcher-combat-collaboration",
+  "main": "src/worker.mjs",
+  "compatibility_date": "2026-09-05",
+  "compatibility_flags": ["nodejs_compat"],
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "CAMPAIGN_ROOMS",
+        "class_name": "CampaignRoom"
+      }
+    ]
+  },
+  "migrations": [
+    {
+      "tag": "v1",
+      "new_sqlite_classes": ["CampaignRoom"]
+    }
+  ],
+  "vars": {
+    "ALLOWED_ORIGINS": "http://localhost:4173,http://127.0.0.1:4173,https://juanmeissner.github.io"
+  },
+  "observability": {
+    "enabled": true
+  }
+}

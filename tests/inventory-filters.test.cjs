@@ -77,7 +77,7 @@ const workerSource = fs.readFileSync(path.join(projectRoot, 'js', 'service-worke
 const navigationSource = fs.readFileSync(path.join(projectRoot, 'js', 'navigation.js'), 'utf8');
 assert.match(indexSource, /js\/inventory-filters\.js/);
 assert.match(indexSource, /inventoryModalSubfilters/);
-assert.match(workerSource, /witcher-combat-tracker-v102/);
+assert.match(workerSource, /witcher-combat-tracker-v105/);
 assert.match(workerSource, /js\/inventory-filters\.js/);
 assert.doesNotMatch(navigationSource, /addEventListener\(['"]touch(?:start|end)/);
 

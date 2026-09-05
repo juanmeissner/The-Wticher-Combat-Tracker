@@ -1,4 +1,4 @@
-const CACHE_NAME = 'witcher-combat-tracker-v102';
+const CACHE_NAME = 'witcher-combat-tracker-v105';
 
 const APP_SHELL = [
     './',
@@ -17,6 +17,7 @@ const APP_SHELL = [
     './crafting.css',
     './character-sheet-wizard.css',
     './campaign-clock.css',
+    './collaboration.css',
     './manifest.json',
     './service-worker.js',
     './image.png',
@@ -27,6 +28,12 @@ const APP_SHELL = [
     './img/monsters/ghoul.png',
     './img/monsters/drowner.png',
     './js/state.js',
+    './js/collaboration/protocol.js',
+    './js/collaboration/permissions.js',
+    './js/collaboration/collaboration-session.js',
+    './js/collaboration/realtime-client.js',
+    './js/campaign/campaign-migrations.js',
+    './js/campaign/campaign-store.js',
     './js/zoom-lock.js',
     './js/core/toast.js',
     './js/core/helpers.js',

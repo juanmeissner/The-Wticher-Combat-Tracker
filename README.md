@@ -811,9 +811,39 @@ Se ainda houver arquivos antigos:
 
 O reparo baixa novamente os arquivos da aplicação e preserva fichas, combate e preferências.
 
+## 🌐 Salas experimentais em tempo real
+
+Em **⋯ → Sala**, o Mestre pode criar uma sala protegida por senha e compartilhar
+o código com os jogadores. Cada jogador entra pelo próprio dispositivo, escolhe
+uma das fichas disponíveis e recebe uma visualização atualizada da campanha.
+
+- o modo Mestre conserva todas as ferramentas da campanha;
+- o modo Jogador oculta configurações, backups, edição global, controle de turno
+  e demais ações exclusivas do mestre;
+- alterações do Mestre são distribuídas automaticamente pelo WebSocket;
+- o jogador pode ajustar Adrenalina e Dado da Sorte apenas da ficha vinculada;
+- a presença mostra quem está conectado à sala;
+- quedas de rede iniciam reconexão automática com um novo ticket temporário;
+- alterações permanentes estão classificadas como propostas que exigirão
+  aprovação do mestre nas próximas etapas;
+- o indicador da sessão informa papel, conexão, envio pendente ou conflito;
+- o modo offline continua sendo o padrão e não exige conta.
+
+Cada sala utiliza um **Cloudflare Durable Object SQLite**. A senha é derivada no
+servidor com PBKDF2 e nunca é salva em texto aberto; o dispositivo recebe um
+token próprio e abre o WebSocket com um ticket curto de uso único. A projeção do
+Jogador remove preferências, anotações privadas e fichas alheias antes do envio.
+
+> [!NOTE]
+> O backend precisa ser publicado na conta Cloudflare e seu endereço informado
+> no painel Sala. Consulte [o guia de publicação](docs/cloudflare-room-deployment.md).
+
 ## 💾 Dados, privacidade e backup
 
-Não existe conta, servidor ou banco de dados remoto. Os dados são mantidos no `localStorage` do navegador e incluem:
+Sem entrar em uma sala, todos os dados continuam exclusivamente no dispositivo.
+Ao utilizar a colaboração opcional, um snapshot projetado da campanha é mantido
+no Durable Object da sala; o backup local continua disponível. O `localStorage`
+preserva:
 
 - combate atual;
 - fichas e recursos atuais;
@@ -838,6 +868,7 @@ O **backup JSON completo** reúne toda a campanha. Para compartilhar somente um 
 | Aplicação | JavaScript Vanilla organizado por domínio |
 | Persistência | LocalStorage e backups JSON |
 | PWA | Web App Manifest, Service Worker e Cache API |
+| Colaboração | Contrato versionado, campanhas locais, papéis e permissões |
 | Exportação | SheetJS para arquivos Excel |
 | Compatibilidade | APIs modernas de navegador, UTF-8, safe areas e modo standalone |
 
@@ -855,6 +886,8 @@ O projeto não exige framework JavaScript, bundler ou etapa de compilação.
 ├── equipment.css                # Painéis, armas, armaduras e ações dos monstros
 ├── character-sheet-wizard.css   # Assistente responsivo da ficha completa
 ├── campaign-clock.css           # Relógio, avanços temporais e seletor unificado de efeitos
+├── collaboration.css            # Sala, papéis, presença e estados de sincronização
+├── cloudflare/                  # Worker, Durable Object e configuração da sala experimental
 ├── character-spells.css         # Repertório e fluxo de conjuração no combate
 ├── critical-wounds.css          # Críticos, tratamentos, tabelas e consequências
 ├── toxicity.css                 # Indicador compacto e níveis visuais de toxicidade
@@ -870,6 +903,8 @@ O projeto não exige framework JavaScript, bundler ou etapa de compilação.
 │   ├── abilities/               # Catálogo, inventário e exportação de habilidades
 │   ├── combat/                  # Turnos, dano, renderização, efeitos e persistência
 │   ├── core/                    # Utilitários e notificações
+│   ├── campaign/                # Contêiner, migração e checkpoints da campanha
+│   ├── collaboration/           # Protocolo, permissões, sessão e cliente WebSocket
 │   ├── ui/                      # Componentes de interface e modais
 │   ├── character-collections.js # Inventários e habilidades por participante
 │   ├── character-sheet-model.js # Regras, progressão e cálculos puros da ficha completa
@@ -934,9 +969,14 @@ node tests/mounts.test.cjs
 node tests/crafting.test.cjs
 node tests/item-use-automation.test.cjs
 node tests/spell-damage-automation.test.cjs
+node tests/collaboration-protocol.test.cjs
+node tests/campaign-store.test.cjs
+node tests/collaboration-session.test.cjs
+node tests/collaboration-realtime-client.test.cjs
+node tests/collaboration-room-worker.test.cjs
 ```
 
-Os testes verificam o isolamento entre personagens, a migração e o backup do armazenamento antigo, a criação completa, nascimento, idade, aniversários sincronizados, exportação e importação individual sem sobrescrita, a evolução de nível sem regressão de investimentos, a preservação de recursos, o histórico e o desfazer da última evolução, os seis modelos prontos, os orçamentos de progressão, o aprendizado de magias, os painéis de perícias e magias, os custos efetivos, Magia Expandida, Sobrecarga Arcana, Cura Mágica, dano mágico por alvo, fórmulas ofensivas, áreas, tipo Fogo, Bafo de Dragão, Inflamador, Fisstech e sua Abstinência atrasada. Também cobrem a integridade dos 83 acontecimentos históricos, das 13 celebrações anuais, de seus dias adicionais, descrições e datas organizacionais, além do parsing de datas completas, ambíguas e relativas, ordenação AR/DR, busca, filtros e integração da cronologia com o calendário. O relógio da campanha continua validado em seu início em 1276 DR, ciclos lunares, conversões de minutos, passagem entre dias, nomes medievais, persistência, backup, efeitos em horas e dias, expiração vinculada, recompensas de eventos sem duplicidade e integração com turnos e sono. Cuidados e descanso, ciclos diários, contadores de ausência, duração e restauração dos benefícios, recursos temporários, testes de hospedagem, redução profissional de custos, Cuidado Prolongado, Dormir Leve, Balada do Sobrevivente e os benefícios de Freya também são validados. A suíte cobre ainda os itens instantâneos, seleção contextual de alvos, ablação em armadura e arma, preparação de dano por item, Veneno Negro, remoção de intoxicação, fórmula e recompensas dos testes, integração do `20 natural`, as quatro gravidades e os 24 ferimentos críticos, tratamento médico, vacilos, críticos defensivos, desarme, consequências avançadas, toxicidade, overdose e Mel Branco. Por fim, cobre a sincronização com fichas, a integridade do catálogo, equipamentos, munições, defesas, reparos, ataques de monstros, saque, Coroas, receitas, rendimentos, transferências entre armazenamentos, renderização de ícones na Central de Carga e o bloqueio global de zoom.
+Os testes verificam o isolamento entre personagens, a migração e o backup do armazenamento antigo, a criação completa, nascimento, idade, aniversários sincronizados, exportação e importação individual sem sobrescrita, a evolução de nível sem regressão de investimentos, a preservação de recursos, o histórico e o desfazer da última evolução, os seis modelos prontos, os orçamentos de progressão, o aprendizado de magias, os painéis de perícias e magias, os custos efetivos, Magia Expandida, Sobrecarga Arcana, Cura Mágica, dano mágico por alvo, fórmulas ofensivas, áreas, tipo Fogo, Bafo de Dragão, Inflamador, Fisstech e sua Abstinência atrasada. Também cobrem a integridade dos 83 acontecimentos históricos, das 13 celebrações anuais, de seus dias adicionais, descrições e datas organizacionais, além do parsing de datas completas, ambíguas e relativas, ordenação AR/DR, busca, filtros e integração da cronologia com o calendário. O relógio da campanha continua validado em seu início em 1276 DR, ciclos lunares, conversões de minutos, passagem entre dias, nomes medievais, persistência, backup, efeitos em horas e dias, expiração vinculada, recompensas de eventos sem duplicidade e integração com turnos e sono. Cuidados e descanso, ciclos diários, contadores de ausência, duração e restauração dos benefícios, recursos temporários, testes de hospedagem, redução profissional de custos, Cuidado Prolongado, Dormir Leve, Balada do Sobrevivente e os benefícios de Freya também são validados. A suíte cobre ainda os itens instantâneos, seleção contextual de alvos, ablação em armadura e arma, preparação de dano por item, Veneno Negro, remoção de intoxicação, fórmula e recompensas dos testes, integração do `20 natural`, as quatro gravidades e os 24 ferimentos críticos, tratamento médico, vacilos, críticos defensivos, desarme, consequências avançadas, toxicidade, overdose e Mel Branco. Por fim, cobre a sincronização com fichas, a integridade do catálogo, equipamentos, munições, defesas, reparos, ataques de monstros, saque, Coroas, receitas, rendimentos, transferências entre armazenamentos, renderização de ícones na Central de Carga, o bloqueio global de zoom e a colaboração: campanhas versionadas, checkpoints, papéis, propostas, conflitos, projeções seguras, criação protegida de salas, autenticação por dispositivo e comandos de recursos em tempo real.
 
 ## ✅ Estado atual
 
@@ -957,6 +997,10 @@ Os testes verificam o isolamento entre personagens, a migração e o backup do a
 - [x] Seletor unificado de Magias, Itens e Status com botão dedicado ao relógio
 - [x] Fichas persistentes e encontros salvos
 - [x] Exportação e importação individual de fichas entre dispositivos
+- [x] Contêiner local de campanha com ID, versão, revisões e migração compatível
+- [x] Contrato colaborativo com comandos idempotentes, propostas e conflitos
+- [x] Prévia local dos modos Mestre e Jogador com permissões por ficha
+- [x] Sala experimental com código, senha, presença, reconexão e WebSockets via Cloudflare
 - [x] Assistente de evolução com múltiplos níveis, pontos protegidos, novas magias, histórico e desfazer
 - [x] Criação completa com raças, profissões, atributos, perícias e aprendizado de magias
 - [x] Nascimento, idade dinâmica e aniversário anual sincronizado entre fichas e calendário

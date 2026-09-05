@@ -64,7 +64,7 @@ assert.match(whiteFrost.chronologyNote, /nenhum ano absoluto foi calculado/);
 const indexSource = fs.readFileSync(path.join(projectRoot, 'index.html'), 'utf8');
 const workerSource = fs.readFileSync(path.join(projectRoot, 'js', 'service-worker.js'), 'utf8');
 assert.match(indexSource, /js\/campaign-timeline-data\.js[\s\S]+js\/campaign-clock\.js/);
-assert.match(workerSource, /witcher-combat-tracker-v102/);
+assert.match(workerSource, /witcher-combat-tracker-v105/);
 assert.match(workerSource, /js\/campaign-timeline-data\.js/);
 
 console.log('✓ Cronologia oficial, incertezas, ordenação AR/DR, filtros e calendário validados.');

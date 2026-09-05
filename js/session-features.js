@@ -461,6 +461,37 @@ function restoreSessionState(state) {
     refreshSessionStatus();
 }
 
+function applyRemoteCampaignView(campaign) {
+    const remoteCombat = campaign?.state?.combat;
+    if (!remoteCombat || !Array.isArray(remoteCombat.combatants)) return false;
+
+    combatants = cloneSessionData(remoteCombat.combatants);
+    activeTurnId = remoteCombat.activeTurnId ?? null;
+    selectedId = remoteCombat.selectedId ?? null;
+    round = Math.max(1, Number(remoteCombat.round) || 1);
+    monsterCounter = Math.max(1, Number(remoteCombat.monsterCounter) || 1);
+    playerCounter = Math.max(1, Number(remoteCombat.playerCounter) || 1);
+    sessionHistory = loadSessionData(SESSION_HISTORY_KEY, []);
+
+    inventory = [];
+    abilitiesInventory = [];
+    if (typeof loadInventory === 'function') loadInventory();
+    if (typeof loadAbilities === 'function') loadAbilities();
+    expandedMagic = Math.max(0, Number(localStorage.getItem('expandedMagic')) || 0);
+    window.reloadCharacterSheetsFromStorage?.();
+    window.initializeCharacterCollections?.({ inventory, abilities: abilitiesInventory, expandedMagic });
+    if (campaign.state?.campaignClock) window.campaignClock?.restoreSnapshot?.(campaign.state.campaignClock);
+
+    renderList(false);
+    renderInventory();
+    renderAbilities();
+    updateAbilitiesHeader();
+    refreshSessionStatus();
+    return true;
+}
+
+window.applyRemoteCampaignView = applyRemoteCampaignView;
+
 function undoLastAction() {
     const lastAction = undoStack.pop();
 
@@ -550,6 +581,7 @@ function renderSessionStatus() {
     const activeCombatant = getActiveCombatant();
     const nextCombatant = getNextCombatant();
     const preparedCritical = window.getPreparedAttackCritical?.(activeCombatant);
+    const collaborationRole = window.collaborationSession?.getRoleLabel?.() || 'Mestre';
     const bar = document.createElement('div');
 
     bar.id = 'sessionStatusBar';
@@ -558,6 +590,7 @@ function renderSessionStatus() {
         <div class="session-turn-summary" aria-live="polite">
             <span class="session-round">R${round}</span>
             <span id="sessionConnectionStatus" class="session-connection-status" aria-label="Status da conexão" title="Online"></span>
+            <span class="session-role-chip">${escapeHtml(collaborationRole)}</span>
             <span class="session-turn-name">${escapeHtml(activeCombatant?.name || 'Sem turno')}</span>
             ${preparedCritical ? `
                 <span
@@ -571,12 +604,13 @@ function renderSessionStatus() {
                 : ''}
         </div>
         <div class="session-status-actions">
-            <button type="button" class="session-icon-button" onclick="undoLastAction()" aria-label="Desfazer última ação" title="Desfazer">↶</button>
+            <button type="button" data-master-only class="session-icon-button" onclick="undoLastAction()" aria-label="Desfazer última ação" title="Desfazer">↶</button>
             <button type="button" class="session-icon-button" onclick="openSessionTools()" aria-label="Abrir ferramentas da sessão" title="Ferramentas da sessão">⋯</button>
         </div>
     `;
 
     container.prepend(bar);
+    window.collaborationSession?.updateConnectionIndicator?.();
 }
 
 function refreshSessionStatus() {
@@ -1064,6 +1098,16 @@ function renderSessionToolsView(view) {
 
     if (!dialog) return;
 
+    const masterOnlyViews = new Set([
+        'sheets', 'library', 'preferences', 'save-encounter', 'load-encounter',
+        'app-maintenance'
+    ]);
+    if (window.collaborationSession?.isPlayer?.() && masterOnlyViews.has(view)) {
+        showToast('🔒 Esta ferramenta pertence ao mestre da sala.');
+        renderSessionToolsView('menu');
+        return;
+    }
+
     if (view === 'sheets' && typeof window.renderCharacterSheetsView === 'function') {
         window.renderCharacterSheetsView(dialog);
         return;
@@ -1076,6 +1120,11 @@ function renderSessionToolsView(view) {
 
     if (view === 'preferences' && typeof window.renderPreferencesView === 'function') {
         window.renderPreferencesView(dialog);
+        return;
+    }
+
+    if (view === 'collaboration' && typeof window.renderCollaborationView === 'function') {
+        window.renderCollaborationView(dialog);
         return;
     }
 
@@ -1170,6 +1219,17 @@ function renderSessionToolsView(view) {
         return;
     }
 
+    const playerMode = window.collaborationSession?.isPlayer?.() === true;
+    const masterTools = playerMode ? '' : `
+            <button type="button" onclick="renderSessionToolsView('save-encounter')">💾 Salvar encontro</button>
+            <button type="button" onclick="renderSessionToolsView('load-encounter')">⚔️ Carregar encontro</button>
+            <button type="button" onclick="exportSessionBackup()">⇩ Backup JSON</button>
+            <button type="button" onclick="document.getElementById('sessionImportInput').click()">⇧ Restaurar JSON</button>
+            <button type="button" onclick="renderSessionToolsView('sheets')">🧙 Fichas</button>
+            <button type="button" onclick="renderSessionToolsView('library')">✎ Biblioteca</button>
+            <button type="button" onclick="renderSessionToolsView('preferences')">⚙ Preferências</button>
+    `;
+
     dialog.innerHTML = `
         <div class="session-dialog-header">
             <h2>Sessão de combate</h2>
@@ -1177,15 +1237,10 @@ function renderSessionToolsView(view) {
         </div>
         <p class="session-tools-summary">R${round} · ${combatants.length} participantes</p>
         <div class="session-tool-grid">
+            <button type="button" onclick="renderSessionToolsView('collaboration')">🌐 Sala</button>
             <button type="button" onclick="renderSessionToolsView('history')">📜 Histórico</button>
-            <button type="button" onclick="renderSessionToolsView('save-encounter')">💾 Salvar encontro</button>
-            <button type="button" onclick="renderSessionToolsView('load-encounter')">⚔️ Carregar encontro</button>
-            <button type="button" onclick="exportSessionBackup()">⇩ Backup JSON</button>
-            <button type="button" onclick="document.getElementById('sessionImportInput').click()">⇧ Restaurar JSON</button>
-            <button type="button" onclick="renderSessionToolsView('sheets')">🧙 Fichas</button>
-            <button type="button" onclick="renderSessionToolsView('library')">✎ Biblioteca</button>
+            ${masterTools}
             <button type="button" onclick="renderSessionToolsView('report')">▤ Relatório</button>
-            <button type="button" onclick="renderSessionToolsView('preferences')">⚙ Preferências</button>
             <button type="button" onclick="renderSessionToolsView('install')">⌄ Aplicativo</button>
         </div>
         <input id="sessionImportInput" type="file" accept="application/json,.json" hidden onchange="importSessionBackup(event)">
@@ -2124,6 +2179,7 @@ window.undoLastAction = undoLastAction;
 window.openSessionTools = openSessionTools;
 window.closeSessionTools = closeSessionTools;
 window.renderSessionToolsView = renderSessionToolsView;
+window.refreshSessionStatus = refreshSessionStatus;
 window.setHistoryFilter = setHistoryFilter;
 window.setHistoryParticipantFilter = setHistoryParticipantFilter;
 window.toggleHistoryDetails = toggleHistoryDetails;

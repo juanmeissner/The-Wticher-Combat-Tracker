@@ -21,14 +21,21 @@ const APP_STORAGE_KEYS = new Set([
     'dnd_character_sheet_draft',
     'dnd_active_character_sheet',
     'dnd_custom_library',
-    'dnd_app_preferences'
+    'dnd_app_preferences',
+    'dnd_campaign_preferences',
+    'dnd_campaign_registry_v1',
+    'dnd_active_campaign_v1',
+    'dnd_collaboration_session_v1',
+    'dnd_collaboration_endpoint_v1'
 ]);
 
 let applicationRegistrationPromise = null;
 let reloadingForServiceWorker = false;
 
 function isApplicationStorageKey(key) {
-    return APP_STORAGE_KEYS.has(key) || key.endsWith('_backup_corrompido');
+    return APP_STORAGE_KEYS.has(key)
+        || key.startsWith('dnd_campaign_state_v1:')
+        || key.endsWith('_backup_corrompido');
 }
 
 function getApplicationStorageSnapshot() {
