@@ -231,7 +231,27 @@ O relógio possui um motor temporal persistente e independente do horário real 
 - eventos programados alcançados por turno ou salto aparecem na prévia, no aviso e nos detalhes agrupados do histórico;
 - cada ocorrência é identificada individualmente para não ser processada duas vezes, inclusive em eventos anuais.
 
-A aba **Linha do Tempo** mantém conhecimento histórico separado da agenda operacional. Marcos podem ser cadastrados em qualquer data AR ou DR, agrupados por ano, pesquisados por nome, descrição ou referência e filtrados por era. A ordem alterna entre antigos e recentes, cada registro indica sua posição em relação ao ano atual da campanha e um atalho abre diretamente o dia correspondente no calendário. Como são referências, marcos históricos nunca disparam alertas, recompensas ou efeitos ao avançar o relógio. Já **Datas comemorativas** são eventos anuais processáveis e estão prontas para receber a lista oficial do universo e da campanha sem alterar a estrutura do calendário.
+A aba **Linha do Tempo** mantém conhecimento histórico separado da agenda operacional. A fonte oficial reúne **83 acontecimentos** entre 2700 AR, a mudança de era, 1373 DR e a Geada Branca descrita como 3000 anos no futuro. Os textos fornecidos permanecem integrais em uma fonte de dados dedicada, inclusive duplicidades legítimas e as marcações `1`, `??`, apenas mês/ano ou futuro relativo; nenhuma delas recebe dia, era ou ano absoluto inventado.
+
+Os grupos anuais são recolhíveis e a consulta oferece busca tolerante a acentos e pontuação, filtros por era, faixa histórica e categoria, além de ordem antiga/recente. A interface diferencia **Cronologia oficial** somente leitura, **Anotações da campanha** editáveis e **Eventos anuais** processáveis do Calendário/Agenda. Registros com ano ou mês conhecido podem abrir o período correspondente no calendário; referências sem dia exato aparecem em uma seção histórica própria e nunca disparam alertas, recompensas ou efeitos temporais.
+
+O calendário também incorpora **13 celebrações recorrentes do Continente**, preservadas separadamente das anotações da campanha. Elas aparecem no dia correspondente, entram na Agenda, participam da prévia de saltos temporais e geram somente uma ocorrência por ano. Seus cards são somente leitura e oferecem descrição completa, contexto regional, observações de data e referências quando disponíveis.
+
+- **1º de janeiro:** Dia da Ressurreição;
+- **2 de fevereiro:** Imbaelk;
+- **22 de março:** Birke;
+- **1º de maio:** Belleteyn;
+- **22 de junho:** Midaëte;
+- **15 de julho:** Biruta — Grande Torneio de Cavaleiros;
+- **1º de agosto:** Lammas;
+- **8 de setembro:** Conclave dos Magos;
+- **23 de setembro:** Velen;
+- **15 de outubro:** Festa do Vinho Novo;
+- **31 de outubro:** Saovine e Noite dos Antepassados — Dziady;
+- **1º de novembro:** continuação de Saovine e Ano Novo Élfico;
+- **21 de dezembro:** Midinváerne.
+
+As datas de **Biruta**, **Conclave dos Magos** e **Festa do Vinho Novo** são escolhas organizacionais explícitas para a campanha, pois os relatos fornecidos não determinam um dia anual fixo. Saovine ocupa os dois dias da celebração no calendário, mas seu lembrete temporal é processado apenas no início, em 31 de outubro.
 
 O motor oferece uma interface única para os processadores de efeitos temporais. Magias, itens e condições com duração narrativa recebem horário exato de início e expiração; seus cards mostram o tempo restante e a data final. Ao atingir o prazo, o efeito e suas condições vinculadas são encerrados juntos. Efeitos genuinamente táticos continuam em rodadas e não são convertidos silenciosamente. Fichas antigas com Elixir de Pantagran são migradas de `120 rodadas` para `2 horas`, e Poção de Perfume utiliza as horas efetivamente roladas.
 
@@ -855,6 +875,7 @@ O projeto não exige framework JavaScript, bundler ou etapa de compilação.
 │   ├── character-sheet-model.js # Regras, progressão e cálculos puros da ficha completa
 │   ├── character-sheet-templates.js # Modelos prontos e rascunhos independentes
 │   ├── character-sheet-wizard.js # Assistente responsivo de criação completa
+│   ├── campaign-timeline-data.js  # Cronologia oficial, incertezas, categorias e filtros
 │   ├── campaign-clock.js         # Estado, conversões e transações do tempo da campanha
 │   ├── temporal-effects.js        # Prazos, migração e expiração de efeitos em horas e dias
 │   ├── character-skill-tests.js  # Painéis e testes de perícia durante o combate
@@ -898,6 +919,7 @@ node tests/character-sheet-templates.test.cjs
 node tests/character-sheet-wizard.test.cjs
 node tests/character-skill-tests.test.cjs
 node tests/character-spells.test.cjs
+node tests/campaign-timeline-data.test.cjs
 node tests/campaign-clock.test.cjs
 node tests/care-services.test.cjs
 node tests/combat-effects-panel.test.cjs
@@ -914,7 +936,7 @@ node tests/item-use-automation.test.cjs
 node tests/spell-damage-automation.test.cjs
 ```
 
-Os testes verificam o isolamento entre personagens, a migração e o backup do armazenamento antigo, a criação completa, nascimento, idade, aniversários sincronizados, exportação e importação individual sem sobrescrita, a evolução de nível sem regressão de investimentos, a preservação de recursos, o histórico e o desfazer da última evolução, os seis modelos prontos, os orçamentos de progressão, o aprendizado de magias, os painéis de perícias e magias, os custos efetivos, Magia Expandida, Sobrecarga Arcana, Cura Mágica, dano mágico por alvo, fórmulas ofensivas, áreas, tipo Fogo, Bafo de Dragão, Inflamador, Fisstech e sua Abstinência atrasada. Também cobrem o relógio da campanha, início em 1276 DR, eras AR/DR, ciclos lunares, conversões de minutos, passagem entre dias, nomes medievais, persistência, backup, efeitos em horas e dias, expiração vinculada, recompensas de eventos sem duplicidade e integração com turnos e sono. Cuidados e descanso, ciclos diários, contadores de ausência, duração e restauração dos benefícios, recursos temporários, testes de hospedagem, redução profissional de custos, Cuidado Prolongado, Dormir Leve, Balada do Sobrevivente e os benefícios de Freya também são validados. A suíte cobre ainda os itens instantâneos, seleção contextual de alvos, ablação em armadura e arma, preparação de dano por item, Veneno Negro, remoção de intoxicação, fórmula e recompensas dos testes, integração do `20 natural`, as quatro gravidades e os 24 ferimentos críticos, tratamento médico, vacilos, críticos defensivos, desarme, consequências avançadas, toxicidade, overdose e Mel Branco. Por fim, cobre a sincronização com fichas, a integridade do catálogo, equipamentos, munições, defesas, reparos, ataques de monstros, saque, Coroas, receitas, rendimentos, transferências entre armazenamentos, renderização de ícones na Central de Carga e o bloqueio global de zoom.
+Os testes verificam o isolamento entre personagens, a migração e o backup do armazenamento antigo, a criação completa, nascimento, idade, aniversários sincronizados, exportação e importação individual sem sobrescrita, a evolução de nível sem regressão de investimentos, a preservação de recursos, o histórico e o desfazer da última evolução, os seis modelos prontos, os orçamentos de progressão, o aprendizado de magias, os painéis de perícias e magias, os custos efetivos, Magia Expandida, Sobrecarga Arcana, Cura Mágica, dano mágico por alvo, fórmulas ofensivas, áreas, tipo Fogo, Bafo de Dragão, Inflamador, Fisstech e sua Abstinência atrasada. Também cobrem a integridade dos 83 acontecimentos históricos, das 13 celebrações anuais, de seus dias adicionais, descrições e datas organizacionais, além do parsing de datas completas, ambíguas e relativas, ordenação AR/DR, busca, filtros e integração da cronologia com o calendário. O relógio da campanha continua validado em seu início em 1276 DR, ciclos lunares, conversões de minutos, passagem entre dias, nomes medievais, persistência, backup, efeitos em horas e dias, expiração vinculada, recompensas de eventos sem duplicidade e integração com turnos e sono. Cuidados e descanso, ciclos diários, contadores de ausência, duração e restauração dos benefícios, recursos temporários, testes de hospedagem, redução profissional de custos, Cuidado Prolongado, Dormir Leve, Balada do Sobrevivente e os benefícios de Freya também são validados. A suíte cobre ainda os itens instantâneos, seleção contextual de alvos, ablação em armadura e arma, preparação de dano por item, Veneno Negro, remoção de intoxicação, fórmula e recompensas dos testes, integração do `20 natural`, as quatro gravidades e os 24 ferimentos críticos, tratamento médico, vacilos, críticos defensivos, desarme, consequências avançadas, toxicidade, overdose e Mel Branco. Por fim, cobre a sincronização com fichas, a integridade do catálogo, equipamentos, munições, defesas, reparos, ataques de monstros, saque, Coroas, receitas, rendimentos, transferências entre armazenamentos, renderização de ícones na Central de Carga e o bloqueio global de zoom.
 
 ## ✅ Estado atual
 
@@ -925,7 +947,7 @@ Os testes verificam o isolamento entre personagens, a migração e o backup do a
 - [x] Combate, iniciativa, rodadas e dano localizado
 - [x] Motor temporal com data, horário, dia da campanha, avanço por turno, saltos manuais, histórico e desfazer
 - [x] Calendário mensal com notas, missões, lembretes, recompensas, aniversários, prazos e marcadores por dia
-- [x] Linha do Tempo histórica com eras AR/DR, busca, filtros, agrupamento anual e navegação para o calendário
+- [x] Linha do Tempo com 83 acontecimentos oficiais, incertezas explícitas, eras AR/DR, busca, filtros, grupos recolhíveis e navegação para o calendário
 - [x] Datas comemorativas anuais separadas de marcos históricos informativos
 - [x] Conclusão de eventos com distribuição segura de Coroas, recompensa pendente e prevenção de crédito duplicado
 - [x] Eras AR/DR, calendário inicial em 1276 DR e ciclo lunar integrado

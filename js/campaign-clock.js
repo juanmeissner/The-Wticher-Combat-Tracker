@@ -48,7 +48,10 @@
     let eventEditorReturnView = 'calendar';
     let timelineSearch = '';
     let timelineEra = 'all';
+    let timelinePeriod = 'all';
+    let timelineCategory = 'all';
     let timelineOrder = 'asc';
+    let focusedTimelineEntryId = '';
     const EVENT_TYPES = Object.freeze({
         note: Object.freeze({ icon: '📝', name: 'Nota', scheduled: false }),
         reminder: Object.freeze({ icon: '🔔', name: 'Lembrete', scheduled: true }),
@@ -471,15 +474,34 @@
         return clone(clockState.events);
     }
 
+    function getAnnualCalendarEvents() {
+        const entries = global.campaignTimelineData?.ANNUAL_EVENTS;
+        return Array.isArray(entries) ? entries.map(clone) : [];
+    }
+
+    function getCalendarEvents() {
+        const customEvents = getEvents();
+        const customIds = new Set(customEvents.map(event => event.id));
+        return [
+            ...customEvents,
+            ...getAnnualCalendarEvents().filter(event => !customIds.has(event.id))
+        ];
+    }
+
     function eventMatchesDate(event, dateValue, era = 'DR') {
         if (!event || !dateValue) return false;
         const normalizedEra = String(era || 'DR').toUpperCase() === 'AR' ? 'AR' : 'DR';
         if (event.date === dateValue && event.era === normalizedEra) return true;
-        return Boolean(event.annual && event.date.slice(5) === String(dateValue).slice(5));
+        if (!event.annual) return false;
+        const annualDate = String(dateValue).slice(5);
+        const dates = Array.isArray(event.calendarDates) && event.calendarDates.length
+            ? event.calendarDates
+            : [event.date.slice(5)];
+        return dates.includes(annualDate);
     }
 
     function getEventsForDate(dateValue, era = 'DR') {
-        return clockState.events
+        return getCalendarEvents()
             .filter(event => eventMatchesDate(event, dateValue, era))
             .sort((left, right) => {
                 if (left.allDay !== right.allDay) return left.allDay ? -1 : 1;
@@ -512,7 +534,7 @@
         const lastYear = getDateParts(after).astronomicalYear;
         const occurrences = [];
 
-        clockState.events.forEach(event => {
+        getCalendarEvents().forEach(event => {
             if (!getEventType(event.type).scheduled || event.completed) return;
             const years = event.annual
                 ? Array.from({ length: Math.max(0, lastYear - firstYear + 1) }, (_, index) => firstYear + index)
@@ -550,7 +572,7 @@
     }
 
     function getAgendaEvents() {
-        return clockState.events
+        return getCalendarEvents()
             .filter(event => getEventType(event.type).scheduled && !event.completed)
             .map(event => ({ ...clone(event), occurrenceMinute: getNextOccurrenceMinute(event) }))
             .filter(event => event.occurrenceMinute !== null)
@@ -562,7 +584,8 @@
             .normalize('NFD')
             .replace(/[\u0300-\u036f]/g, '')
             .trim()
-            .toLocaleLowerCase('pt-BR');
+            .toLocaleLowerCase('pt-BR')
+            .replace(/[^a-z0-9]+/g, '');
     }
 
     function getTimelineEvents(options = {}) {
@@ -591,6 +614,109 @@
                 left.occurrenceMinute - right.occurrenceMinute
                 || left.title.localeCompare(right.title, 'pt-BR')
             ));
+    }
+
+    function getTimelinePeriodId(year, era) {
+        if (era === 'AR') return 'ar';
+        if (year <= 999) return 'dr-1-999';
+        if (year <= 1199) return 'dr-1000-1199';
+        if (year <= 1299) return 'dr-1200-1299';
+        return 'dr-1300-plus';
+    }
+
+    function getOfficialTimelineEntries(options = {}) {
+        const data = global.campaignTimelineData;
+        if (!data?.filterTimelineEntries) return [];
+        return data.filterTimelineEntries(options).map(entry => ({
+            ...entry,
+            id: `official:${entry.id}`,
+            dataId: entry.id,
+            sourceKind: 'official',
+            sourceLabel: 'Cronologia oficial',
+            title: entry.text,
+            description: '',
+            contact: '',
+            groupKey: entry.parsedDate.kind === 'dated'
+                ? `${entry.year}-${entry.era}`
+                : entry.parsedDate.kind,
+            groupLabel: entry.parsedDate.kind === 'dated'
+                ? `${entry.year} ${entry.era}`
+                : entry.parsedDate.kind === 'ambiguous-year'
+                    ? 'Mudança de era'
+                    : entry.parsedDate.kind === 'relative-future'
+                        ? 'Futuro distante'
+                        : 'Data desconhecida',
+            datePrimary: entry.parsedDate.kind === 'dated'
+                ? (entry.month ? MONTHS[entry.month - 1].slice(0, 3).toUpperCase() : String(entry.year))
+                : entry.parsedDate.kind === 'ambiguous-year'
+                    ? String(entry.year)
+                    : entry.parsedDate.kind === 'relative-future'
+                        ? '≈3000'
+                        : '??',
+            dateSecondary: entry.parsedDate.kind === 'dated'
+                ? (entry.month ? `${entry.year} ${entry.era}` : entry.era)
+                : entry.parsedDate.kind === 'ambiguous-year'
+                    ? 'era incerta'
+                    : entry.parsedDate.kind === 'relative-future'
+                        ? 'no futuro'
+                        : 'sem data',
+            calendarNavigable: entry.parsedDate.kind === 'dated'
+        }));
+    }
+
+    function getCombinedTimelineEntries(options = {}) {
+        const era = ['AR', 'DR'].includes(String(options.era || '').toUpperCase())
+            ? String(options.era).toUpperCase()
+            : 'all';
+        const category = String(options.category || 'all');
+        const period = String(options.period || 'all');
+        const official = category === 'campaign'
+            ? []
+            : getOfficialTimelineEntries({
+                era,
+                category,
+                period,
+                order: 'asc'
+            });
+        const campaign = getTimelineEvents({ era, order: 'asc' })
+            .map((event, index) => {
+                const parts = getDateParts(event.occurrenceMinute);
+                return {
+                    ...event,
+                    sourceKind: 'campaign',
+                    sourceLabel: 'Anotação da campanha',
+                    year: parts.year,
+                    era: parts.era,
+                    month: parts.month,
+                    day: parts.day,
+                    precision: 'day',
+                    category: 'campaign',
+                    categoryLabel: 'Campanha',
+                    period: getTimelinePeriodId(parts.year, parts.era),
+                    displayDate: `${pad(parts.day)}/${pad(parts.month)}/${parts.year} ${parts.era}`,
+                    groupKey: `${parts.year}-${parts.era}`,
+                    groupLabel: `${parts.year} ${parts.era}`,
+                    datePrimary: `${pad(parts.day)}/${pad(parts.month)}`,
+                    dateSecondary: `${parts.year} ${parts.era}`,
+                    chronologyNote: '',
+                    references: [],
+                    sortValue: parts.astronomicalYear * 12 + (parts.month - 1) + (parts.day / 32),
+                    sourceOrder: 10000 + index,
+                    calendarNavigable: true
+                };
+            })
+            .filter(entry => category === 'all' || category === 'campaign')
+            .filter(entry => period === 'all' || entry.period === period);
+        const direction = options.order === 'desc' ? -1 : 1;
+        return [...official, ...campaign].sort((left, right) => direction * (
+            Number(left.sortValue) - Number(right.sortValue)
+            || Number(left.sourceOrder || 0) - Number(right.sourceOrder || 0)
+            || left.title.localeCompare(right.title, 'pt-BR')
+        ));
+    }
+
+    function getOfficialTimelineEntriesForCalendar(year, era, month, day) {
+        return global.campaignTimelineData?.getEntriesForCalendar?.({ year, era, month, day }) || [];
     }
 
     function normalizeCharacterBirthDate(value) {
@@ -849,30 +975,37 @@
         const info = getEventType(event.type);
         const occurrenceMinute = options.occurrenceMinute ?? getEventOccurrenceMinute(event);
         const status = getEventStatus(event, occurrenceMinute);
+        const isOfficialAnnual = event.sourceKind === 'annual-official' || event.readonly;
         const pendingReward = getEventRewardPending(event);
         const distributedReward = Math.max(0, Math.floor(Number(event.rewardDistribution?.totalDistributed) || 0));
         const details = [
-            event.allDay ? 'Dia inteiro' : event.time,
+            event.dateLabel || (event.allDay ? 'Dia inteiro' : event.time),
             event.annual ? 'Repete anualmente' : '',
+            event.groupLabel || '',
             event.contact ? `Contato: ${event.contact}` : '',
             event.reward ? `${event.reward} Coroas${distributedReward ? ` · ${distributedReward} entregue${pendingReward ? ` · ${pendingReward} pendente` : ''}` : (event.completed ? ' · pendente' : '')}` : ''
         ].filter(Boolean);
-        const canComplete = info.scheduled && event.type !== 'birthday';
+        const canComplete = !isOfficialAnnual && info.scheduled && event.type !== 'birthday';
+        const description = event.description
+            ? (isOfficialAnnual
+                ? `<details class="campaign-annual-description"><summary>Ver descrição</summary><p>${escapeHtml(event.description)}</p>${event.scheduleNote ? `<small>${escapeHtml(event.scheduleNote)}</small>` : ''}${renderTimelineReferences(event.references)}</details>`
+                : `<p>${escapeHtml(event.description)}</p>`)
+            : '';
 
         return `
-            <article class="campaign-event-card ${event.completed ? 'is-completed' : ''}" data-event-type="${event.type}">
-                <div class="campaign-event-icon" aria-hidden="true">${info.icon}</div>
+            <article class="campaign-event-card ${event.completed ? 'is-completed' : ''} ${isOfficialAnnual ? 'is-official-annual' : ''}" data-event-type="${event.type}">
+                <div class="campaign-event-icon" aria-hidden="true">${escapeHtml(event.icon || info.icon)}</div>
                 <div class="campaign-event-content">
                     <div class="campaign-event-heading"><strong>${escapeHtml(event.title)}</strong><span class="campaign-event-status ${status.className}">${status.label}</span></div>
-                    <small>${escapeHtml(info.name)} · ${escapeHtml(details.join(' · '))}</small>
-                    ${event.description ? `<p>${escapeHtml(event.description)}</p>` : ''}
+                    <small>${escapeHtml(isOfficialAnnual ? 'Celebração do Continente' : info.name)} · ${escapeHtml(details.join(' · '))}</small>
+                    ${description}
                 </div>
-                <div class="campaign-event-actions">
+                ${isOfficialAnnual ? '' : `<div class="campaign-event-actions">
                     ${event.completed && pendingReward > 0 ? `<button type="button" class="reward" onclick="openCampaignEventReward('${event.id}')" title="Distribuir ${pendingReward} Coroas">💰</button>` : ''}
                     ${canComplete ? `<button type="button" onclick="toggleCampaignEventCompleted('${event.id}')" title="${event.completed ? 'Reabrir' : 'Concluir'}">${event.completed ? '↶' : '✓'}</button>` : ''}
                     <button type="button" onclick="openCampaignEventEditor('${event.id}')" title="Editar">✎</button>
                     <button type="button" class="danger" onclick="requestDeleteCampaignEvent('${event.id}')" title="Excluir">×</button>
-                </div>
+                </div>`}
             </article>`;
     }
 
@@ -1087,6 +1220,29 @@
             </details>`;
     }
 
+    function renderTimelineReferences(references) {
+        if (!Array.isArray(references) || !references.length) return '';
+        return `<span class="campaign-timeline-links">${references.map(reference => (
+            `<a href="${escapeHtml(reference.url)}" target="_blank" rel="noreferrer">${escapeHtml(reference.label)}</a>`
+        )).join('')}</span>`;
+    }
+
+    function renderOfficialCalendarReference(entry) {
+        const precision = entry.precision === 'month'
+            ? 'Mês informado; dia não informado na fonte'
+            : 'Ano informado; dia e mês não informados na fonte';
+        return `
+            <article class="campaign-calendar-official-card">
+                <div>
+                    <span class="campaign-timeline-source official">Cronologia oficial</span>
+                    <strong>${escapeHtml(entry.text)}</strong>
+                    <small>${escapeHtml(entry.displayDate)} · ${escapeHtml(entry.categoryLabel)} · ${precision}</small>
+                    ${renderTimelineReferences(entry.references)}
+                </div>
+                <button type="button" onclick="showCampaignTimelineEntry('official:${entry.id}')" title="Localizar na Linha do Tempo">↗</button>
+            </article>`;
+    }
+
     function renderCalendarView(current) {
         ensureCalendarSelection();
         const { astronomicalYear, month } = calendarCursor;
@@ -1120,6 +1276,15 @@
         const selectedEvents = getEventsForDate(selectedCalendarDate, selectedCalendarEra);
         const selectedMinute = minuteFromInputs(selectedCalendarDate, '00:00', selectedCalendarEra);
         const selectedMoon = selectedMinute === null ? null : getMoonPhase(selectedMinute);
+        const selectedParts = selectedMinute === null ? null : getDateParts(selectedMinute);
+        const officialReferences = selectedParts
+            ? getOfficialTimelineEntriesForCalendar(
+                selectedParts.year,
+                selectedParts.era,
+                selectedParts.month,
+                selectedParts.day
+            )
+            : [];
         return `
             <section class="campaign-calendar-layout">
                 <div class="campaign-calendar-panel">
@@ -1142,6 +1307,13 @@
                             ? selectedEvents.map(event => renderEventCard(event)).join('')
                             : '<p class="campaign-clock-empty">Nenhuma nota ou evento neste dia.</p>'}
                     </div>
+                    ${officialReferences.length ? `
+                        <details class="campaign-calendar-official">
+                            <summary>📜 Cronologia oficial deste período (${officialReferences.length})</summary>
+                            <p>Referências históricas sem dia exato não são transformadas em eventos agendados.</p>
+                            <div>${officialReferences.map(renderOfficialCalendarReference).join('')}</div>
+                        </details>
+                    ` : ''}
                 </div>
             </section>`;
     }
@@ -1167,84 +1339,121 @@
             </section>`;
     }
 
-    function getTimelineRelation(occurrenceMinute) {
-        const current = clockState.currentMinute;
-        const currentParts = getDateParts(current);
-        const eventParts = getDateParts(occurrenceMinute);
-        if (eventParts.astronomicalYear === currentParts.astronomicalYear) {
+    function getTimelineRelation(entry) {
+        if (entry.precision === 'unknown' || entry.precision === 'ambiguous-year') {
+            return { label: 'Data incerta', className: 'uncertain' };
+        }
+        if (entry.precision === 'relative-future') {
+            return { label: 'Futuro relativo', className: 'future' };
+        }
+        const currentParts = getDateParts(clockState.currentMinute);
+        if (entry.year === currentParts.year && entry.era === currentParts.era) {
             return { label: 'Ano atual da campanha', className: 'current' };
         }
-        return occurrenceMinute < current
+        const currentSortValue = currentParts.astronomicalYear * 12 + (currentParts.month - 1) + (currentParts.day / 32);
+        return entry.sortValue < currentSortValue
             ? { label: 'Antes da campanha', className: 'past' }
             : { label: 'Depois da campanha', className: 'future' };
     }
 
-    function renderTimelineCard(event) {
-        const relation = getTimelineRelation(event.occurrenceMinute);
-        const searchText = normalizeTimelineSearch([
-            event.title, event.description, event.contact, event.date, event.era
+    function getTimelineSearchText(entry) {
+        return normalizeTimelineSearch([
+            entry.title,
+            entry.description,
+            entry.contact,
+            entry.displayDate,
+            entry.era,
+            entry.categoryLabel,
+            entry.sourceLabel,
+            entry.chronologyNote,
+            ...(entry.references || []).map(reference => reference.label)
         ].filter(Boolean).join(' '));
+    }
+
+    function renderTimelineCard(entry) {
+        const relation = getTimelineRelation(entry);
+        const searchText = getTimelineSearchText(entry);
         const filtered = timelineSearch && !searchText.includes(normalizeTimelineSearch(timelineSearch));
+        const focused = entry.id === focusedTimelineEntryId;
+        const sourceClass = entry.sourceKind === 'official' ? 'official' : 'campaign';
         return `
-            <article class="campaign-timeline-card ${filtered ? 'is-filtered' : ''}" data-timeline-search="${escapeHtml(searchText)}">
+            <article id="campaignTimeline-${escapeHtml(entry.id)}" class="campaign-timeline-card ${filtered ? 'is-filtered' : ''} ${focused ? 'is-focused' : ''}" data-timeline-search="${escapeHtml(searchText)}" data-timeline-id="${escapeHtml(entry.id)}">
                 <div class="campaign-timeline-marker" aria-hidden="true"><span></span></div>
                 <div class="campaign-timeline-date">
-                    <strong>${pad(getDateParts(event.occurrenceMinute).day)}/${pad(getDateParts(event.occurrenceMinute).month)}</strong>
-                    <span>${getDateParts(event.occurrenceMinute).year} ${event.era}</span>
+                    <strong>${escapeHtml(entry.datePrimary)}</strong>
+                    <span>${escapeHtml(entry.dateSecondary)}</span>
                 </div>
                 <div class="campaign-timeline-content">
                     <div class="campaign-timeline-heading">
-                        <strong>${escapeHtml(event.title)}</strong>
+                        <span class="campaign-timeline-source ${sourceClass}">${escapeHtml(entry.sourceLabel)}</span>
                         <span class="campaign-timeline-relation ${relation.className}">${relation.label}</span>
                     </div>
-                    ${event.description ? `<p>${escapeHtml(event.description)}</p>` : '<p class="is-empty">Sem descrição registrada.</p>'}
-                    ${event.contact ? `<small>Referência: ${escapeHtml(event.contact)}</small>` : ''}
+                    <strong class="campaign-timeline-event-title">${escapeHtml(entry.title)}</strong>
+                    ${entry.description ? `<p>${escapeHtml(entry.description)}</p>` : ''}
+                    ${entry.chronologyNote ? `<p class="campaign-timeline-uncertainty">${escapeHtml(entry.chronologyNote)}</p>` : ''}
+                    <small>${escapeHtml(entry.displayDate)} · ${escapeHtml(entry.categoryLabel)}${entry.contact ? ` · Referência: ${escapeHtml(entry.contact)}` : ''}</small>
+                    ${renderTimelineReferences(entry.references)}
                 </div>
                 <div class="campaign-timeline-actions">
-                    <button type="button" onclick="goToCampaignEventDate('${event.id}')" title="Abrir esta data no calendário">↗</button>
-                    <button type="button" onclick="openCampaignEventEditor('${event.id}')" title="Editar marco">✎</button>
-                    <button type="button" class="danger" onclick="requestDeleteCampaignEvent('${event.id}')" title="Excluir marco">×</button>
+                    ${entry.calendarNavigable ? `<button type="button" onclick="${entry.sourceKind === 'official' ? `goToOfficialTimelineCalendar('${entry.dataId}')` : `goToCampaignEventDate('${entry.id}')`}" title="Abrir este período no calendário">↗</button>` : ''}
+                    ${entry.sourceKind === 'campaign' ? `
+                        <button type="button" onclick="openCampaignEventEditor('${entry.id}')" title="Editar anotação histórica">✎</button>
+                        <button type="button" class="danger" onclick="requestDeleteCampaignEvent('${entry.id}')" title="Excluir anotação histórica">×</button>
+                    ` : ''}
                 </div>
             </article>`;
     }
 
     function renderTimelineView() {
-        const events = getTimelineEvents({ era: timelineEra, order: timelineOrder });
+        const entries = getCombinedTimelineEntries({
+            era: timelineEra,
+            period: timelinePeriod,
+            category: timelineCategory,
+            order: timelineOrder
+        });
         const normalizedSearch = normalizeTimelineSearch(timelineSearch);
         const groups = new Map();
-        events.forEach(event => {
-            const parts = getDateParts(event.occurrenceMinute);
-            const key = `${parts.year}-${parts.era}`;
-            if (!groups.has(key)) groups.set(key, { label: `${parts.year} ${parts.era}`, events: [] });
-            groups.get(key).events.push(event);
+        entries.forEach(entry => {
+            if (!groups.has(entry.groupKey)) groups.set(entry.groupKey, { label: entry.groupLabel, entries: [] });
+            groups.get(entry.groupKey).entries.push(entry);
         });
-        const matchesSearch = event => !normalizedSearch || normalizeTimelineSearch([
-            event.title, event.description, event.contact, event.date, event.era
-        ].filter(Boolean).join(' ')).includes(normalizedSearch);
-        const visibleCount = events.filter(matchesSearch).length;
+        const matchesSearch = entry => !normalizedSearch || getTimelineSearchText(entry).includes(normalizedSearch);
+        const visibleCount = entries.filter(matchesSearch).length;
+        const categories = global.campaignTimelineData?.CATEGORIES || [];
+        const periods = global.campaignTimelineData?.PERIODS || [];
 
         return `
             <section class="campaign-timeline-panel">
                 <div class="campaign-clock-section-title campaign-timeline-title">
-                    <div><small>CRONOLOGIA DO CONTINENTE</small><h3><span id="campaignTimelineVisibleCount">${visibleCount}</span> marco${visibleCount === 1 ? '' : 's'} histórico${visibleCount === 1 ? '' : 's'}</h3></div>
-                    <button type="button" class="campaign-event-add" onclick="openCampaignEventEditor('', 'history')">+ Marco</button>
+                    <div><small>LINHA DO TEMPO DA CAMPANHA</small><h3><span id="campaignTimelineVisibleCount">${visibleCount}</span> acontecimento${visibleCount === 1 ? '' : 's'}</h3></div>
+                    <button type="button" class="campaign-event-add" onclick="openCampaignEventEditor('', 'history')">+ Anotação</button>
                 </div>
-                <p class="campaign-timeline-intro">Consulte acontecimentos por data sem misturá-los com lembretes e compromissos da campanha.</p>
+                <p class="campaign-timeline-intro">A cronologia oficial é somente leitura. Anotações históricas da campanha são editáveis; aniversários e datas anuais continuam no Calendário e na Agenda.</p>
+                <div class="campaign-timeline-legend" aria-label="Tipos de registro">
+                    <span class="campaign-timeline-source official">Cronologia oficial</span>
+                    <span class="campaign-timeline-source campaign">Anotação da campanha</span>
+                    <span class="campaign-timeline-annual">↻ Evento anual: Calendário/Agenda</span>
+                </div>
                 <div class="campaign-timeline-filters">
-                    <label class="campaign-timeline-search"><span>Buscar</span><input type="search" value="${escapeHtml(timelineSearch)}" placeholder="Nome, descrição ou referência" oninput="updateCampaignTimelineSearch(this.value)"></label>
-                    <label><span>Era</span><select onchange="setCampaignTimelineEra(this.value)"><option value="all" ${timelineEra === 'all' ? 'selected' : ''}>AR e DR</option><option value="AR" ${timelineEra === 'AR' ? 'selected' : ''}>AR</option><option value="DR" ${timelineEra === 'DR' ? 'selected' : ''}>DR</option></select></label>
+                    <label class="campaign-timeline-search"><span>Buscar</span><input type="search" value="${escapeHtml(timelineSearch)}" placeholder="Acontecimento, pessoa ou lugar" oninput="updateCampaignTimelineSearch(this.value)"></label>
+                    <label><span>Era</span><select onchange="setCampaignTimelineEra(this.value)"><option value="all" ${timelineEra === 'all' ? 'selected' : ''}>Todas</option><option value="AR" ${timelineEra === 'AR' ? 'selected' : ''}>AR</option><option value="DR" ${timelineEra === 'DR' ? 'selected' : ''}>DR</option></select></label>
+                    <label><span>Período</span><select onchange="setCampaignTimelinePeriod(this.value)"><option value="all" ${timelinePeriod === 'all' ? 'selected' : ''}>Todos</option>${periods.map(period => `<option value="${period.id}" ${timelinePeriod === period.id ? 'selected' : ''}>${escapeHtml(period.label)}</option>`).join('')}</select></label>
+                    <label><span>Categoria</span><select onchange="setCampaignTimelineCategory(this.value)"><option value="all" ${timelineCategory === 'all' ? 'selected' : ''}>Todas</option>${categories.map(category => `<option value="${category.id}" ${timelineCategory === category.id ? 'selected' : ''}>${escapeHtml(category.label)}</option>`).join('')}<option value="campaign" ${timelineCategory === 'campaign' ? 'selected' : ''}>Campanha</option></select></label>
                     <label><span>Ordem</span><select onchange="setCampaignTimelineOrder(this.value)"><option value="asc" ${timelineOrder === 'asc' ? 'selected' : ''}>Mais antigos</option><option value="desc" ${timelineOrder === 'desc' ? 'selected' : ''}>Mais recentes</option></select></label>
                 </div>
                 <div class="campaign-timeline-list">
-                    ${events.length ? [...groups.values()].map(group => {
-                        const groupVisibleCount = group.events.filter(matchesSearch).length;
+                    ${entries.length ? [...groups.values()].map(group => {
+                        const groupVisibleCount = group.entries.filter(matchesSearch).length;
+                        const shouldOpen = Boolean(normalizedSearch)
+                            || group.entries.some(entry => entry.id === focusedTimelineEntryId)
+                            || group.entries.some(entry => getTimelineRelation(entry).className === 'current');
                         return `
-                        <section class="campaign-timeline-group" ${groupVisibleCount ? '' : 'hidden'}>
-                            <header><strong>${escapeHtml(group.label)}</strong><span data-timeline-group-count>${groupVisibleCount} marco${groupVisibleCount === 1 ? '' : 's'}</span></header>
-                            <div>${group.events.map(renderTimelineCard).join('')}</div>
-                        </section>`;
-                    }).join('') : '<p class="campaign-clock-empty">Nenhum marco histórico cadastrado. A estrutura está pronta para receber a cronologia oficial da campanha.</p>'}
-                    <p id="campaignTimelineFilteredEmpty" class="campaign-clock-empty campaign-timeline-filtered-empty" ${visibleCount || !events.length ? 'hidden' : ''}>Nenhum marco corresponde aos filtros informados.</p>
+                        <details class="campaign-timeline-group" ${groupVisibleCount ? '' : 'hidden'} ${shouldOpen ? 'open' : ''}>
+                            <summary><strong>${escapeHtml(group.label)}</strong><span data-timeline-group-count>${groupVisibleCount} acontecimento${groupVisibleCount === 1 ? '' : 's'}</span></summary>
+                            <div>${group.entries.map(renderTimelineCard).join('')}</div>
+                        </details>`;
+                    }).join('') : '<p class="campaign-clock-empty">Nenhum acontecimento corresponde aos filtros informados.</p>'}
+                    <p id="campaignTimelineFilteredEmpty" class="campaign-clock-empty campaign-timeline-filtered-empty" ${visibleCount || !entries.length ? 'hidden' : ''}>Nenhum acontecimento corresponde à busca informada.</p>
                 </div>
             </section>`;
     }
@@ -1376,6 +1585,7 @@
         pendingAdvance = null;
         editingEventId = null;
         eventEditorPreferredType = '';
+        if (activeClockView !== 'timeline') focusedTimelineEntryId = '';
         ensureCalendarSelection();
         renderCampaignClock();
     }
@@ -1420,8 +1630,40 @@
         renderCampaignClock();
     }
 
+    function goToOfficialTimelineCalendar(id) {
+        const entry = global.campaignTimelineData?.getEntry?.(id);
+        if (!entry || entry.parsedDate.kind !== 'dated') return;
+        const month = entry.month || 1;
+        const date = `${String(entry.year).padStart(4, '0')}-${pad(month)}-01`;
+        const minute = minuteFromInputs(date, '00:00', entry.era);
+        if (minute === null) return;
+        const parts = getDateParts(minute);
+        calendarCursor = { astronomicalYear: parts.astronomicalYear, month: parts.month };
+        selectedCalendarDate = date;
+        selectedCalendarEra = entry.era;
+        activeClockView = 'calendar';
+        focusedTimelineEntryId = '';
+        renderCampaignClock();
+    }
+
+    function showCampaignTimelineEntry(id) {
+        const safeId = String(id || '');
+        if (!safeId) return;
+        activeClockView = 'timeline';
+        timelineSearch = '';
+        timelineEra = 'all';
+        timelinePeriod = 'all';
+        timelineCategory = 'all';
+        focusedTimelineEntryId = safeId;
+        renderCampaignClock();
+        setTimeout(() => {
+            global.document?.querySelector(`[data-timeline-id="${safeId}"]`)?.scrollIntoView?.({ block: 'center' });
+        }, 0);
+    }
+
     function updateCampaignTimelineSearch(value) {
         timelineSearch = String(value || '');
+        focusedTimelineEntryId = '';
         const normalized = normalizeTimelineSearch(timelineSearch);
         const cards = [...(global.document?.querySelectorAll('.campaign-timeline-card') || [])];
         let visibleTotal = 0;
@@ -1434,8 +1676,9 @@
             const visible = [...group.querySelectorAll('.campaign-timeline-card')]
                 .filter(card => !card.classList.contains('is-filtered')).length;
             group.hidden = visible === 0;
+            if (normalized && visible > 0) group.open = true;
             const count = group.querySelector('[data-timeline-group-count]');
-            if (count) count.textContent = `${visible} marco${visible === 1 ? '' : 's'}`;
+            if (count) count.textContent = `${visible} acontecimento${visible === 1 ? '' : 's'}`;
         });
         const count = global.document?.getElementById('campaignTimelineVisibleCount');
         if (count) count.textContent = String(visibleTotal);
@@ -1447,6 +1690,21 @@
         timelineEra = ['AR', 'DR'].includes(String(value || '').toUpperCase())
             ? String(value).toUpperCase()
             : 'all';
+        renderCampaignClock();
+    }
+
+    function setCampaignTimelinePeriod(value) {
+        const valid = global.campaignTimelineData?.PERIODS?.some(period => period.id === value);
+        timelinePeriod = valid ? value : 'all';
+        focusedTimelineEntryId = '';
+        renderCampaignClock();
+    }
+
+    function setCampaignTimelineCategory(value) {
+        const valid = value === 'campaign'
+            || global.campaignTimelineData?.CATEGORIES?.some(category => category.id === value);
+        timelineCategory = valid ? value : 'all';
+        focusedTimelineEntryId = '';
         renderCampaignClock();
     }
 
@@ -1747,10 +2005,13 @@
         formatCharacterBirthDate,
         getCharacterAge,
         getEvents,
+        getAnnualCalendarEvents,
         getEventsForDate,
         getScheduledOccurrences,
         getAgendaEvents,
         getTimelineEvents,
+        getCombinedTimelineEntries,
+        getOfficialTimelineEntriesForCalendar,
         upsertEvent,
         removeEvent,
         setEventCompleted,
@@ -1772,8 +2033,12 @@
     global.selectCampaignCalendarDate = selectCampaignCalendarDate;
     global.goToCurrentCampaignDate = goToCurrentCampaignDate;
     global.goToCampaignEventDate = goToCampaignEventDate;
+    global.goToOfficialTimelineCalendar = goToOfficialTimelineCalendar;
+    global.showCampaignTimelineEntry = showCampaignTimelineEntry;
     global.updateCampaignTimelineSearch = updateCampaignTimelineSearch;
     global.setCampaignTimelineEra = setCampaignTimelineEra;
+    global.setCampaignTimelinePeriod = setCampaignTimelinePeriod;
+    global.setCampaignTimelineCategory = setCampaignTimelineCategory;
     global.setCampaignTimelineOrder = setCampaignTimelineOrder;
     global.openCampaignEventEditor = openCampaignEventEditor;
     global.closeCampaignEventEditor = closeCampaignEventEditor;

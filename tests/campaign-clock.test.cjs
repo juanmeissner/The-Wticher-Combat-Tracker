@@ -9,6 +9,7 @@ global.localStorage = {
     setItem(key, value) { storage.set(key, String(value)); },
     removeItem(key) { storage.delete(key); }
 };
+global.campaignTimelineData = require(path.join(projectRoot, 'js', 'campaign-timeline-data.js'));
 
 const clock = require(path.join(projectRoot, 'js', 'campaign-clock.js'));
 assert.equal(clock.STATE_VERSION, 4);
@@ -122,6 +123,31 @@ assert.equal(clock.getTimelineEvents({ era: 'DR' }).length, 0);
 assert.equal(clock.getTimelineEvents({ search: 'HISTORICA' })[0].id, ancientEvent.id);
 assert.equal(clock.EVENT_TYPES.history.scheduled, false);
 assert.equal(clock.EVENT_TYPES.festival.scheduled, true);
+assert.equal(clock.getAnnualCalendarEvents().length, 13);
+assert.equal(
+    clock.getEventsForDate('1272-05-01', 'DR').some(event => event.id === 'builtin-annual-belleteyn'),
+    true,
+    'Belleteyn deve aparecer em qualquer ano do calendário.'
+);
+assert.equal(
+    clock.getEventsForDate('1272-11-01', 'DR').some(event => event.id === 'builtin-annual-saovine'),
+    true,
+    'O segundo dia de Saovine deve continuar visível no calendário.'
+);
+assert.equal(
+    clock.getEventsForDate('0230-10-31', 'AR').filter(event => event.sourceKind === 'annual-official').length,
+    2,
+    'Celebrações anuais devem funcionar também em anos AR.'
+);
+
+const beforeMidinvaerne = clock.minuteFromInputs('1272-12-20', '23:59', 'DR');
+const atMidinvaerne = clock.minuteFromInputs('1272-12-21', '00:00', 'DR');
+assert.equal(
+    clock.getScheduledOccurrences(beforeMidinvaerne, atMidinvaerne, { includeProcessed: true })
+        .some(entry => entry.event.id === 'builtin-annual-midinvaerne'),
+    true,
+    'Midinváerne deve ser processado pelo relógio como evento anual.'
+);
 
 const eventPreview = clock.previewAdvance(6, { source: 'manual-jump' });
 assert.equal(eventPreview.impacts.some(impact => /1 evento programado será alcançado/.test(impact.summary)), true);
@@ -198,7 +224,9 @@ assert.match(sessionSource, /window\.campaignClock\?\.restoreSnapshot/);
 assert.match(sessionSource, /advanceByMinutes\?\.\(1, \{ source: 'combat-turn' \}\)/);
 assert.match(sessionSource, /time: \{ icon: '🕰️', label: 'Tempo' \}/);
 assert.match(appInitSource, /'dnd_campaign_clock'/);
-assert.match(workerSource, /witcher-combat-tracker-v100/);
+assert.match(workerSource, /witcher-combat-tracker-v102/);
+assert.match(workerSource, /js\/campaign-timeline-data\.js/);
+assert.match(indexSource, /js\/campaign-timeline-data\.js[\s\S]+js\/campaign-clock\.js/);
 assert.match(workerSource, /js\/campaign-daily-processing\.js/);
 assert.match(indexSource, /js\/campaign-daily-processing\.js/);
 assert.match(workerSource, /campaign-clock\.css/);
@@ -225,8 +253,18 @@ assert.match(clockSource, /openCampaignEventEditor\('', 'history'\)/);
 assert.match(clockSource, /openCampaignEventReward/);
 assert.match(clockSource, /campaignRewardRecipient/);
 assert.match(clockStyles, /campaign-reward-recipients/);
+assert.equal(clock.getCombinedTimelineEntries().filter(event => event.sourceKind === 'official').length, 83);
+assert.equal(clock.getCombinedTimelineEntries().filter(event => event.sourceKind === 'campaign').length, 1);
+assert.equal(clock.getOfficialTimelineEntriesForCalendar(1267, 'DR', 7, 1).length, 7);
+assert.equal(clock.getOfficialTimelineEntriesForCalendar(1268, 'DR', 3, 1).length, 5);
+assert.match(clockSource, /Cronologia oficial/);
+assert.match(clockSource, /setCampaignTimelinePeriod/);
+assert.match(clockSource, /setCampaignTimelineCategory/);
+assert.match(clockStyles, /campaign-calendar-official/);
+assert.match(clockStyles, /campaign-timeline-source\.official/);
 
 delete global.combatants;
 delete global.localStorage;
+delete global.campaignTimelineData;
 
 console.log('✓ Motor temporal, persistência, integração de turnos e interface do relógio validados.');
