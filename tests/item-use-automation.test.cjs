@@ -221,8 +221,8 @@ const addicted = {
     automation: { fissstechWithdrawalPending: true }
 };
 context.processAutomatedTurnEffects(addicted);
-assert.equal(addicted.automation.fissstechWithdrawalDelay, 10);
-for (let turn = 0; turn < 10; turn += 1) {
+assert.equal(addicted.automation.fissstechWithdrawalDelay, 9);
+for (let turn = 0; turn < 9; turn += 1) {
     context.processAutomatedTurnEffects(addicted);
 }
 assert.equal(addicted.effects.find(effect => effect.id === '🥶').stacks, 1);

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'witcher-combat-tracker-v91';
+const CACHE_NAME = 'witcher-combat-tracker-v100';
 
 const APP_SHELL = [
     './',
@@ -16,6 +16,7 @@ const APP_SHELL = [
     './character-spells.css',
     './crafting.css',
     './character-sheet-wizard.css',
+    './campaign-clock.css',
     './manifest.json',
     './service-worker.js',
     './image.png',
@@ -65,6 +66,9 @@ const APP_SHELL = [
     './js/abilities/abilities-export.js',
     './js/interactions.js',
     './js/app-init.js',
+    './js/campaign-clock.js',
+    './js/temporal-effects.js',
+    './js/campaign-daily-processing.js',
     './js/session-features.js',
     './js/care-services.js',
     './js/enhancements.js',

@@ -347,6 +347,7 @@ function addAutomationCondition(combatant, icon, parentEffect = null) {
             ? { linkedEffect: { id: parentEffect.id, type: parentEffect.type } }
             : undefined
     };
+    if (parentEffect?.temporal) condition.temporal = JSON.parse(JSON.stringify(parentEffect.temporal));
 
     combatant.effects = combatant.effects || [];
     combatant.effects.push(condition);
@@ -676,12 +677,12 @@ function getAutomationConfig(type, id, options = {}) {
             return { duration: 20, linkedCondition: '🌀', stabilizesCriticalWound: true };
 
         case 'item:elixirdepantagran':
-            return { duration: 120, linkedCondition: '🤪' };
+            return { timeDuration: { amount: 2, unit: 'hours' }, linkedCondition: '🤪' };
 
         case 'item:pocaodeperfume': {
             const pending = window.getPendingInventoryItemAutomationOptions?.(id) || {};
             return {
-                duration: Math.max(60, Number(pending.duration) || 60),
+                timeDuration: { amount: Math.max(1, Number(pending.hours) || Math.ceil((Number(pending.duration) || 60) / 60)), unit: 'hours' },
                 linkedConditions: ['🍷', '🐍'],
                 poisonNoSave: true,
                 note: pending.hours ? `${pending.hours} hora(s) · somente cura de veneno remove o efeito.` : ''
@@ -730,6 +731,8 @@ function applyAutomationMetadata(effect, metadata) {
     if (Number.isInteger(metadata.stacks)) {
         effect.stacks = metadata.stacks;
     }
+
+    window.attachTemporalEffect?.(effect, metadata.timeDuration || effect.timeDuration);
 }
 
 function getAutomationStaminaCost(metadata) {
@@ -1754,6 +1757,7 @@ function installRulesAutomation() {
 
     window.setTimeout(() => {
         repairAutomationEffectCollections();
+        window.migrateTemporalEffects?.(combatants);
         ensureAutomationMonsterCategories();
         savePlayersToStorage();
         renderList(false);

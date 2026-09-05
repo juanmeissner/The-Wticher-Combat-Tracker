@@ -237,6 +237,27 @@ assert.equal(context.calculateCriticalTreatmentTest({
     difficulty: 20
 }).critical, true);
 
+context.campaignClock = {
+    describeMinute: () => ({ epochMinute: 5000 }),
+    formatDuration: minutes => `${minutes} minutos`
+};
+const recoveringTarget = {
+    id: 'recovering', name: 'Paciente', type: 'player', stMax: 20, stCurrent: 20,
+    movement: 8, carryingCapacity: 10, criticalWounds: []
+};
+const recoveringWound = {
+    instanceId: 'recovery-1', woundId: 'simple-cracked-ribs', state: 'treated', treatment: {}
+};
+recoveringTarget.criticalWounds.push(recoveringWound);
+const scheduledRecovery = context.scheduleCriticalWoundRecovery(recoveringWound, 2, 'days');
+assert.equal(scheduledRecovery.startedAtMinute, 5000);
+assert.equal(scheduledRecovery.completesAtMinute, 7880);
+assert.equal(context.getCriticalWoundRecoveries([recoveringTarget], 7880, 5000).length, 1);
+const completedRecovery = context.completeCriticalWoundRecovery(recoveringTarget, recoveringWound, 7880);
+assert.equal(completedRecovery.woundName, 'Costelas Trincadas');
+assert.equal(recoveringWound.state, 'cured');
+assert.equal(recoveringWound.treatment.recovery.status, 'completed');
+
 const quickWounded = {
     creationMode: 'quick',
     stMax: 80,

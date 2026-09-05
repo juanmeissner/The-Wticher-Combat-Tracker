@@ -15,6 +15,7 @@ const APP_STORAGE_KEYS = new Set([
     'dnd_session_history',
     'dnd_saved_encounters',
     'dnd_last_combat_report',
+    'dnd_campaign_clock',
     'dnd_character_sheets',
     'dnd_character_sheets_backup_stage10_v11',
     'dnd_character_sheet_draft',

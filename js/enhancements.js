@@ -120,6 +120,14 @@ function persistCharacterSheets() {
     localStorage.setItem(CHARACTER_SHEETS_KEY, JSON.stringify(characterSheets));
 }
 
+function syncCharacterSheetBirthday(sheet) {
+    if (!sheet?.id || !window.campaignClock) return null;
+    if (sheet.creationMode !== 'full' || !sheet.identity?.birthDate) {
+        return window.campaignClock.removeCharacterBirthday?.(sheet.id) || null;
+    }
+    return window.campaignClock.syncCharacterBirthday?.(sheet) || null;
+}
+
 function sanitizeCharacterSheetTransferValue(value, depth = 0) {
     if (depth > 20) return null;
     if (value === null || typeof value === 'boolean') return value;
@@ -262,6 +270,7 @@ function importCharacterSheetPackage(payload) {
     const sheet = prepareImportedCharacterSheet(payload);
     characterSheets.unshift(sheet);
     persistCharacterSheets();
+    syncCharacterSheetBirthday(sheet);
     renderSessionToolsView('sheets');
     showToast(`⇧ ${sheet.name} importado para as fichas.`);
     return sheet;
@@ -289,6 +298,7 @@ async function importCharacterSheetFile(event) {
             onConfirm: () => {
                 characterSheets.unshift(sheet);
                 persistCharacterSheets();
+                syncCharacterSheetBirthday(sheet);
                 renderSessionToolsView('sheets');
                 showToast(`⇧ ${sheet.name} importado para as fichas.`);
             }
@@ -788,6 +798,7 @@ function saveCharacterSheet(id) {
     sheet.hpCurrent = getSheetResourceCurrent(sheet, 'hpCurrent', sheet.hpMax);
     sheet.stCurrent = getSheetResourceCurrent(sheet, 'stCurrent', sheet.stMax);
     sheet.updatedAt = new Date().toISOString();
+    syncCharacterSheetBirthday(sheet);
 
     combatants.filter(combatant => combatant.sheetId === id).forEach(combatant => {
         copyCharacterFoundation(combatant, sheet);
@@ -932,6 +943,7 @@ function createFullCharacterSheetFromDraft(draft, { addToCombat = false } = {}) 
     activeCharacterSheetId = sheet.id;
     localStorage.setItem(ACTIVE_SHEET_KEY, sheet.id);
     persistCharacterSheets();
+    syncCharacterSheetBirthday(sheet);
 
     if (addToCombat) {
         addCharacterSheetToCombat(sheet.id);
@@ -940,6 +952,315 @@ function createFullCharacterSheetFromDraft(draft, { addToCombat = false } = {}) 
         showToast(`${sheet.name} salvo nas fichas.`);
     }
 
+    return sheet;
+}
+
+function collectCharacterLevelUpChanges(beforeSheet, afterFoundation) {
+    const model = window.characterSheetModel;
+    const compareInvestments = (definitions, beforeCollection, afterCollection) => (
+        (definitions || []).map(definition => {
+            const before = Math.max(0, Number(beforeCollection?.[definition.id]?.invested) || 0);
+            const after = Math.max(0, Number(afterCollection?.[definition.id]?.invested) || 0);
+            return { id: definition.id, name: definition.name, before, after };
+        }).filter(change => change.before !== change.after)
+    );
+    const previousAbilityIds = new Set(beforeSheet.learnedAbilityIds || []);
+    const newAbilityIds = (afterFoundation.learnedAbilityIds || [])
+        .filter(id => !previousAbilityIds.has(id));
+    const abilityCatalog = new Map((window.predefinedAbilities || []).map(ability => [ability.id, ability]));
+
+    return {
+        attributes: compareInvestments(
+            model?.CHARACTER_ATTRIBUTES,
+            beforeSheet.attributes,
+            afterFoundation.attributes
+        ),
+        professionalSkills: compareInvestments(
+            model?.getCharacterProfessionalSkills(afterFoundation.identity?.specializationId),
+            beforeSheet.professionalSkills,
+            afterFoundation.professionalSkills
+        ),
+        skills: compareInvestments(
+            model?.CHARACTER_SKILLS,
+            beforeSheet.skills,
+            afterFoundation.skills
+        ),
+        abilities: newAbilityIds.map(id => ({
+            id,
+            name: abilityCatalog.get(id)?.name || id
+        }))
+    };
+}
+
+function validateCharacterLevelUpDraft(sheet, draft) {
+    const model = window.characterSheetModel;
+    if (!sheet || sheet.creationMode !== 'full' || !model) return 'Ficha completa inválida.';
+
+    const currentLevel = model.normalizeCharacterLevel(sheet.identity?.level);
+    const nextLevel = model.normalizeCharacterLevel(draft?.level);
+    if (nextLevel <= currentLevel) return 'O novo nível deve ser maior que o nível atual.';
+    if (Number(draft?.levelUpBase?.level) !== currentLevel) {
+        return 'A ficha mudou depois que a evolução começou. Reabra o assistente.';
+    }
+
+    const preservesInvestments = (beforeCollection, afterCollection) => (
+        Object.entries(beforeCollection || {}).every(([id, record]) => (
+            (Number(afterCollection?.[id]?.invested) || 0) >= (Number(record?.invested) || 0)
+        ))
+    );
+    if (!preservesInvestments(sheet.attributes, draft.attributes)) {
+        return 'A evolução não pode remover atributos já adquiridos.';
+    }
+    if (!preservesInvestments(sheet.skills, draft.skills)) {
+        return 'A evolução não pode remover perícias já adquiridas.';
+    }
+    if (!preservesInvestments(sheet.professionalSkills, draft.professionalSkills)) {
+        return 'A evolução não pode remover habilidades profissionais já adquiridas.';
+    }
+
+    const abilityContext = {
+        raceId: sheet.raceId,
+        professionId: sheet.identity?.professionId,
+        specializationId: sheet.identity?.specializationId
+    };
+    const preservedAbilityIds = model.normalizeCharacterLearnedAbilityIds(
+        sheet.learnedAbilityIds,
+        abilityContext,
+        window.predefinedAbilities || []
+    );
+    const nextAbilityIds = new Set(draft.learnedAbilityIds || []);
+    if (!preservedAbilityIds.every(id => nextAbilityIds.has(id))) {
+        return 'A evolução não pode remover magias já aprendidas.';
+    }
+
+    const allocation = model.getCharacterAllocationSummary(
+        nextLevel,
+        draft.attributes,
+        draft.skills,
+        {
+            professionalSkills: draft.professionalSkills,
+            specializationId: sheet.identity?.specializationId
+        }
+    );
+    if (allocation.attributePointsRemaining < 0) return 'Os atributos ultrapassam o orçamento da evolução.';
+    if (allocation.skillPointsRemaining < 0) return 'As perícias ultrapassam o orçamento da evolução.';
+
+    const training = model.getCharacterTrainingSummary(
+        nextLevel,
+        draft.learnedAbilityIds,
+        abilityContext,
+        window.predefinedAbilities || []
+    );
+    if (training.trainingPointsRemaining < 0) return 'As magias ultrapassam os pontos de treino da evolução.';
+    return '';
+}
+
+function buildCharacterLevelUpFingerprint(source) {
+    const investments = collection => Object.fromEntries(
+        Object.entries(collection || {})
+            .map(([id, record]) => [id, Math.max(0, Number(record?.invested) || 0)])
+            .sort(([left], [right]) => left.localeCompare(right))
+    );
+
+    return JSON.stringify({
+        level: Math.max(1, Number(source?.identity?.level ?? source?.level) || 1),
+        attributes: investments(source?.attributes),
+        skills: investments(source?.skills),
+        professionalSkills: investments(source?.professionalSkills),
+        learnedAbilityIds: [...(source?.learnedAbilityIds || [])].map(String).sort()
+    });
+}
+
+function buildCharacterLevelUpRestoreState(sheet) {
+    const progression = cloneEnhancementData(sheet.progression || {});
+    delete progression.levelHistory;
+    delete progression.lastLevelUpAt;
+    delete progression.lastLevelUpId;
+
+    return {
+        raceId: sheet.raceId,
+        identity: cloneEnhancementData(sheet.identity || {}),
+        attributes: cloneEnhancementData(sheet.attributes || {}),
+        skills: cloneEnhancementData(sheet.skills || {}),
+        professionalSkills: cloneEnhancementData(sheet.professionalSkills || {}),
+        learnedAbilityIds: cloneEnhancementData(sheet.learnedAbilityIds || []),
+        abilities: cloneEnhancementData(sheet.abilities || []),
+        progression,
+        traits: cloneEnhancementData(sheet.traits || []),
+        racialTraits: cloneEnhancementData(sheet.racialTraits || []),
+        raceEffects: cloneEnhancementData(sheet.raceEffects || []),
+        automationState: cloneEnhancementData(sheet.automationState || {})
+    };
+}
+
+function applyCharacterLevelUpFromDraft(id, draft) {
+    const sheet = characterSheets.find(entry => entry.id === id);
+    const model = window.characterSheetModel;
+    const validationError = validateCharacterLevelUpDraft(sheet, draft);
+    if (validationError) {
+        showToast(validationError);
+        return null;
+    }
+
+    const previousSheet = cloneEnhancementData(sheet);
+    const previousLevel = model.normalizeCharacterLevel(previousSheet.identity?.level);
+    const nextLevel = model.normalizeCharacterLevel(draft.level);
+    const foundation = model.createFullCharacterFoundation({
+        ...draft,
+        name: sheet.name,
+        level: nextLevel,
+        raceId: sheet.raceId,
+        professionId: sheet.identity?.professionId,
+        specializationId: sheet.identity?.specializationId,
+        progression: cloneEnhancementData(sheet.progression || {}),
+        abilities: cloneEnhancementData(sheet.abilities || []),
+        traits: cloneEnhancementData(sheet.traits || []),
+        automationState: cloneEnhancementData(sheet.automationState || {})
+    });
+    const changes = collectCharacterLevelUpChanges(previousSheet, foundation);
+    const evolvedAt = new Date().toISOString();
+    const levelUpId = `level-up-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+    const restoreState = buildCharacterLevelUpRestoreState(previousSheet);
+    const afterFingerprint = buildCharacterLevelUpFingerprint(foundation);
+
+    copyCharacterFoundation(sheet, foundation);
+    sheet.progression = {
+        ...(sheet.progression || {}),
+        lastLevelUpAt: evolvedAt,
+        lastLevelUpId: levelUpId,
+        levelHistory: [
+            ...((previousSheet.progression?.levelHistory || []).filter(entry => entry && typeof entry === 'object')),
+            {
+                id: levelUpId,
+                fromLevel: previousLevel,
+                toLevel: nextLevel,
+                createdAt: evolvedAt,
+                changes: cloneEnhancementData(changes),
+                beforeState: restoreState,
+                afterFingerprint
+            }
+        ].slice(-50)
+    };
+    sheet.updatedAt = evolvedAt;
+    refreshCharacterDerivedValues(sheet);
+
+    combatants.filter(combatant => combatant.sheetId === id).forEach(combatant => {
+        copyCharacterFoundation(combatant, sheet);
+        combatant.name = sheet.name;
+        combatant.monsterCategory = sheet.monsterCategory;
+        refreshCharacterDerivedValues(combatant);
+    });
+
+    persistCharacterSheets();
+    savePlayersToStorage();
+    if (activeCharacterSheetId === id) window.openCharacterSheetCollectionContext?.(id);
+
+    const investmentLabels = [
+        ...changes.attributes.map(change => `${change.name} ${change.before} → ${change.after}`),
+        ...changes.professionalSkills.map(change => `${change.name} ${change.before} → ${change.after}`),
+        ...changes.skills.map(change => `${change.name} ${change.before} → ${change.after}`)
+    ];
+    const abilityLabels = changes.abilities.map(ability => ability.name);
+    const derivedDetail = `HP máximo ${previousSheet.hpMax} → ${sheet.hpMax} · EST máximo ${previousSheet.stMax} → ${sheet.stMax} · Movimento ${previousSheet.movement} → ${sheet.movement} · Carga ${previousSheet.carryingCapacity} → ${sheet.carryingCapacity}.`;
+    const details = [
+        `Nível ${previousLevel} → ${nextLevel}.`,
+        investmentLabels.length ? `Investimentos: ${investmentLabels.join(', ')}.` : 'Nenhum ponto novo distribuído.',
+        abilityLabels.length ? `Novas magias: ${abilityLabels.join(', ')}.` : '',
+        derivedDetail,
+        `HP ${previousSheet.hpCurrent}/${previousSheet.hpMax} → ${sheet.hpCurrent}/${sheet.hpMax} e EST ${previousSheet.stCurrent}/${previousSheet.stMax} → ${sheet.stCurrent}/${sheet.stMax}; recursos atuais preservados.`
+    ].filter(Boolean).join('\n');
+
+    window.addCombatHistoryEntry?.(
+        `${sheet.name}: nível ${previousLevel} → ${nextLevel}`,
+        details,
+        {
+            type: 'participant-update',
+            action: 'level-up',
+            participantId: sheet.id,
+            participantName: sheet.name,
+            fromLevel: previousLevel,
+            toLevel: nextLevel,
+            changes: cloneEnhancementData(changes)
+        }
+    );
+
+    renderList(false);
+    renderSessionToolsView('sheets');
+    showToast(`${sheet.name} evoluiu para o nível ${nextLevel}.`);
+    return sheet;
+}
+
+function canUndoLastCharacterLevelUp(id) {
+    const sheet = characterSheets.find(entry => entry.id === id);
+    const history = sheet?.progression?.levelHistory;
+    const lastEntry = Array.isArray(history) ? history.at(-1) : null;
+    return Boolean(
+        sheet?.creationMode === 'full'
+        && lastEntry?.beforeState
+        && sheet.progression?.lastLevelUpId === lastEntry.id
+        && buildCharacterLevelUpFingerprint(sheet) === lastEntry.afterFingerprint
+    );
+}
+
+function undoLastCharacterLevelUp(id, confirmed = false) {
+    const sheet = characterSheets.find(entry => entry.id === id);
+    const history = Array.isArray(sheet?.progression?.levelHistory)
+        ? sheet.progression.levelHistory
+        : [];
+    const lastEntry = history.at(-1);
+
+    if (!canUndoLastCharacterLevelUp(id)) {
+        showToast('A última evolução não pode mais ser desfeita porque a progressão da ficha foi alterada.');
+        return null;
+    }
+    if (!confirmed) {
+        window.openSessionConfirm?.({
+            title: 'Desfazer última evolução?',
+            message: `${sheet.name} retornará do nível ${lastEntry.toLevel} para o nível ${lastEntry.fromLevel}. HP, EST e Fonte Rúnica atuais serão preservados dentro dos limites restaurados.`,
+            confirmLabel: 'Desfazer evolução',
+            danger: true,
+            onConfirm: () => undoLastCharacterLevelUp(id, true)
+        });
+        return null;
+    }
+
+    const beforeUndo = cloneEnhancementData(sheet);
+    const previousHistory = history.slice(0, -1);
+    const previousLevelUp = previousHistory.at(-1);
+    copyCharacterFoundation(sheet, lastEntry.beforeState);
+    sheet.progression = {
+        ...(sheet.progression || {}),
+        levelHistory: previousHistory,
+        lastLevelUpAt: previousLevelUp?.createdAt || null,
+        lastLevelUpId: previousLevelUp?.id || null
+    };
+    sheet.updatedAt = new Date().toISOString();
+    refreshCharacterDerivedValues(sheet);
+    syncCharacterSheetBirthday(sheet);
+
+    combatants.filter(combatant => combatant.sheetId === id).forEach(combatant => {
+        copyCharacterFoundation(combatant, sheet);
+        refreshCharacterDerivedValues(combatant);
+    });
+
+    persistCharacterSheets();
+    savePlayersToStorage();
+    window.characterSheetWizard?.clearCharacterWizardDraft?.();
+    window.addCombatHistoryEntry?.(
+        `${sheet.name}: evolução desfeita`,
+        `Nível ${beforeUndo.identity?.level || lastEntry.toLevel} → ${sheet.identity?.level || lastEntry.fromLevel}. Investimentos e magias da última evolução foram restaurados; recursos atuais permaneceram em ${sheet.hpCurrent}/${sheet.hpMax} HP e ${sheet.stCurrent}/${sheet.stMax} EST.`,
+        {
+            type: 'participant-update',
+            action: 'level-up-undo',
+            participantId: sheet.id,
+            participantName: sheet.name,
+            fromLevel: beforeUndo.identity?.level,
+            toLevel: sheet.identity?.level
+        }
+    );
+    renderList(false);
+    renderSessionToolsView('sheets');
+    showToast(`Evolução de ${sheet.name} desfeita.`);
     return sheet;
 }
 
@@ -963,6 +1284,7 @@ function updateFullCharacterSheetFromDraft(id, draft) {
         || sheet.monsterCategory;
     sheet.updatedAt = new Date().toISOString();
     refreshCharacterDerivedValues(sheet);
+    syncCharacterSheetBirthday(sheet);
 
     combatants.filter(combatant => combatant.sheetId === id).forEach(combatant => {
         copyCharacterFoundation(combatant, sheet);
@@ -1025,6 +1347,7 @@ function deleteCharacterSheet(id) {
         danger: true,
         onConfirm: () => {
             characterSheets = characterSheets.filter(entry => entry.id !== id);
+            window.campaignClock?.removeCharacterBirthday?.(id);
             if (activeCharacterSheetId === id) {
                 activeCharacterSheetId = null;
                 localStorage.removeItem(ACTIVE_SHEET_KEY);
@@ -1073,6 +1396,12 @@ function renderCharacterSheetsView(dialog) {
             const runeSource = Number(sheet.runeSourceMax) > 0
                 ? `<span><b>${sheet.runeSourceCurrent}/${sheet.runeSourceMax}</b><small>Fonte Rúnica</small></span>`
                 : '';
+            const characterAge = sheet.creationMode === 'full'
+                ? window.campaignClock?.getCharacterAge?.(sheet)
+                : null;
+            const birthLabel = sheet.creationMode === 'full'
+                ? window.campaignClock?.formatCharacterBirthDate?.(sheet.identity?.birthDate)
+                : '';
 
             return `
                 <li class="enhancement-card character-sheet-saved-card">
@@ -1086,6 +1415,7 @@ function renderCharacterSheetsView(dialog) {
                         ${sheet.creationMode === 'full'
                             ? `<small class="character-sheet-card-path">${escapeEnhancementHtml(pathLabel || 'Caminho em definição')} · Regras v${Number(sheet.rulesVersion) || model?.CHARACTER_RULES_VERSION || 11}</small>`
                             : ''}
+                        ${birthLabel ? `<small class="character-sheet-card-path">🎂 ${escapeEnhancementHtml(birthLabel)}${Number.isFinite(characterAge) ? ` · ${characterAge} anos` : ''}</small>` : ''}
                         <div class="character-sheet-card-resources">
                             <span><b>${sheet.hpCurrent}/${sheet.hpMax}</b><small>HP</small></span>
                             <span><b>${sheet.stCurrent}/${sheet.stMax}</b><small>ST</small></span>
@@ -1099,6 +1429,7 @@ function renderCharacterSheetsView(dialog) {
                     <div class="enhancement-card-actions">
                         <button type="button" class="session-small-button ${sheet.id === activeCharacterSheetId ? 'enhancement-active' : ''}" onclick="activateCharacterSheet('${sheet.id}')">Usar</button>
                         <button type="button" class="session-small-button" onclick="addCharacterSheetToCombat('${sheet.id}')">+ Combate</button>
+                        ${sheet.creationMode === 'full' ? `<button type="button" class="session-small-button character-sheet-level-up-button" onclick="startCharacterLevelUpWizard('${sheet.id}')">⬆ Evoluir</button>` : ''}
                         <button type="button" class="session-small-button" onclick="openCharacterSheetEditor('${sheet.id}')">Editar</button>
                         <button type="button" class="session-small-button character-sheet-export-button" onclick="exportCharacterSheet('${sheet.id}')" aria-label="Exportar ${escapeEnhancementHtml(sheet.name)}">⇩ Exportar</button>
                         <button type="button" class="session-small-button session-small-danger" onclick="deleteCharacterSheet('${sheet.id}')" aria-label="Excluir ${escapeEnhancementHtml(sheet.name)}">×</button>
@@ -1823,6 +2154,7 @@ function installEnhancements() {
     mergeCustomLibrary();
     migrateCharacterSheetSchema();
     migrateCharacterSheetResourceState();
+    characterSheets.forEach(syncCharacterSheetBirthday);
     applyPreferences();
     syncCombatantsToCharacterSheets();
     window.renderList?.(false);
@@ -1867,6 +2199,9 @@ window.createNewCharacterSheet = createNewCharacterSheet;
 window.createQuickCharacterSheet = createQuickCharacterSheet;
 window.createFullCharacterSheetFromDraft = createFullCharacterSheetFromDraft;
 window.updateFullCharacterSheetFromDraft = updateFullCharacterSheetFromDraft;
+window.applyCharacterLevelUpFromDraft = applyCharacterLevelUpFromDraft;
+window.canUndoLastCharacterLevelUp = canUndoLastCharacterLevelUp;
+window.undoLastCharacterLevelUp = undoLastCharacterLevelUp;
 window.addFullCharacterDraftToCombat = addFullCharacterDraftToCombat;
 window.getCharacterSheetForEditing = id => characterSheets.find(sheet => sheet.id === id) || null;
 window.openCharacterSheetEditor = openCharacterSheetEditor;

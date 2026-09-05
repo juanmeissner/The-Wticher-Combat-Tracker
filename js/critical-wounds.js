@@ -1675,6 +1675,66 @@ function getCriticalWoundStateDescription(instance, wound) {
     return wound.description;
 }
 
+function getCriticalRecoveryMinutes(recovery) {
+    const amount = Math.max(0, Number(recovery?.amount) || 0);
+    if (!amount) return 0;
+    if (recovery?.unit === 'hours') return Math.round(amount * 60);
+    if (recovery?.unit === 'days') return Math.round(amount * 1440);
+    return 0;
+}
+
+function scheduleCriticalWoundRecovery(instance, amount, unit) {
+    const normalizedAmount = Math.max(0, Number(amount) || 0);
+    if (!instance || !normalizedAmount) return null;
+    const startedAtMinute = Number(window.campaignClock?.describeMinute?.().epochMinute);
+    const recovery = {
+        amount: normalizedAmount,
+        unit,
+        setAt: new Date().toISOString(),
+        status: 'active'
+    };
+    const durationMinutes = getCriticalRecoveryMinutes(recovery);
+    if (durationMinutes && Number.isFinite(startedAtMinute)) {
+        recovery.startedAtMinute = startedAtMinute;
+        recovery.completesAtMinute = startedAtMinute + durationMinutes;
+    } else if (unit === 'rounds') {
+        recovery.remainingRounds = Math.max(1, Math.floor(normalizedAmount));
+    }
+    instance.treatment ||= { attempts: [], progress: {} };
+    instance.treatment.recovery = recovery;
+    return recovery;
+}
+
+function getCriticalWoundRecoveries(combatantsList, afterMinute, beforeMinute = null) {
+    const entries = [];
+    (Array.isArray(combatantsList) ? combatantsList : []).forEach(target => {
+        (target.criticalWounds || []).forEach(instance => {
+            const recovery = instance.treatment?.recovery;
+            const completesAtMinute = Number(recovery?.completesAtMinute);
+            if ((instance.state || 'normal') !== 'treated' || recovery?.status === 'completed') return;
+            if (!Number.isFinite(completesAtMinute) || completesAtMinute > Number(afterMinute)) return;
+            if (beforeMinute !== null && completesAtMinute <= Number(beforeMinute)) return;
+            const wound = getCriticalWound(instance.woundId);
+            if (wound) entries.push({ target, instance, wound, recovery, completesAtMinute });
+        });
+    });
+    return entries;
+}
+
+function completeCriticalWoundRecovery(target, instance, completedAtMinute) {
+    const wound = getCriticalWound(instance?.woundId);
+    if (!target || !instance || !wound || (instance.state || 'normal') !== 'treated') return null;
+    instance.state = 'cured';
+    instance.updatedAt = new Date().toISOString();
+    if (instance.treatment?.recovery) {
+        instance.treatment.recovery.status = 'completed';
+        instance.treatment.recovery.completedAtMinute = Number(completedAtMinute);
+    }
+    syncCriticalWoundResourceLimits(target);
+    window.enforceCriticalEquipmentRestrictions?.(target);
+    return { combatantId: target.id, combatantName: target.name, woundId: wound.id, woundName: wound.name };
+}
+
 function toggleCriticalWoundsPanel(combatantId) {
     const key = String(combatantId);
     if (expandedCriticalWoundPanels.has(key)) expandedCriticalWoundPanels.delete(key);
@@ -1983,7 +2043,9 @@ function executeCriticalWoundTreatment(random = Math.random) {
         instance.treatment.progress ||= {};
         instance.treatment.attempts.push(attempt);
         instance.treatment.progress[progressKey] = { successes, required };
-        if (recoveryAmount > 0) instance.treatment.recovery = { amount: recoveryAmount, unit: recoveryUnit, setAt: new Date().toISOString() };
+        if (completed && pending.nextState === 'treated' && recoveryAmount > 0) {
+            scheduleCriticalWoundRecovery(instance, recoveryAmount, recoveryUnit);
+        }
         if (criticalReward) window.characterSkillTests.applyCharacterSkillTestRewards(healer, {
             valid: true,
             luckDiceGained: 1,
@@ -2056,12 +2118,19 @@ function renderCombatantCriticalWoundsPanel(combatant) {
                         const region = CRITICAL_REGION_INFO[wound?.region];
                         const state = CRITICAL_STATE_INFO[instance.state] || CRITICAL_STATE_INFO.normal;
                         const nextState = state.next;
+                        const recovery = instance.treatment?.recovery;
+                        const timedRecoveryActive = nextState === 'cured'
+                            && recovery?.status !== 'completed'
+                            && Number.isFinite(Number(recovery?.completesAtMinute));
                         const actionDisabled =
                             (wound?.cannotStabilize && nextState === 'stabilized') ||
-                            (wound?.cannotTreat && (nextState === 'treated' || nextState === 'cured'));
+                            (wound?.cannotTreat && (nextState === 'treated' || nextState === 'cured')) ||
+                            timedRecoveryActive;
                         const progressKey = `${instance.state || 'normal'}:${nextState}`;
                         const treatmentProgress = instance.treatment?.progress?.[progressKey];
-                        const recovery = instance.treatment?.recovery;
+                        const recoveryRemaining = Number.isFinite(Number(recovery?.completesAtMinute))
+                            ? Math.max(0, Number(recovery.completesAtMinute) - Number(window.campaignClock?.describeMinute?.().epochMinute || 0))
+                            : null;
                         if (!wound || !severity || !region) return '';
 
                         return `
@@ -2078,10 +2147,14 @@ function renderCombatantCriticalWoundsPanel(combatant) {
                                     </ul>
                                 ` : ''}
                                 ${treatmentProgress?.successes ? `<p class="critical-wound-treatment-status">🩹 Tratamento: ${treatmentProgress.successes}/${treatmentProgress.required} sucessos</p>` : ''}
-                                ${recovery?.amount ? `<p class="critical-wound-treatment-status">⏳ Recuperação prevista: ${recovery.amount} ${recovery.unit === 'days' ? 'dias' : recovery.unit === 'hours' ? 'horas' : 'rodadas'}</p>` : ''}
+                                ${recovery?.amount ? `<p class="critical-wound-treatment-status">⏳ ${recovery.status === 'completed'
+                                    ? 'Recuperação concluída'
+                                    : `Recuperação: ${recoveryRemaining !== null && window.campaignClock?.formatDuration
+                                        ? window.campaignClock.formatDuration(recoveryRemaining)
+                                        : `${recovery.amount} ${recovery.unit === 'days' ? 'dias' : recovery.unit === 'hours' ? 'horas' : 'rodadas'}`}`}</p>` : ''}
                                  ${nextState ? `
                                     <button type="button" ${actionDisabled ? 'disabled' : ''} onclick="event.stopPropagation(); openCriticalWoundTreatment('${escapeCriticalHtml(combatant.id)}', '${escapeCriticalHtml(instance.instanceId)}', '${escapeCriticalHtml(nextState)}')">
-                                        ${actionDisabled ? 'Sem tratamento possível' : escapeCriticalHtml(state.action)}
+                                        ${timedRecoveryActive ? 'Recuperação em andamento' : actionDisabled ? 'Sem tratamento possível' : escapeCriticalHtml(state.action)}
                                     </button>
                                 ` : ''}
                             </article>
@@ -2238,6 +2311,10 @@ window.setCombatOutcomeChoice = setCombatOutcomeChoice;
 window.setCombatOutcomeTarget = setCombatOutcomeTarget;
 window.applyCombatRollOutcome = applyCombatRollOutcome;
 window.getCriticalWoundResourceModifiers = getCriticalWoundResourceModifiers;
+window.getCriticalRecoveryMinutes = getCriticalRecoveryMinutes;
+window.scheduleCriticalWoundRecovery = scheduleCriticalWoundRecovery;
+window.getCriticalWoundRecoveries = getCriticalWoundRecoveries;
+window.completeCriticalWoundRecovery = completeCriticalWoundRecovery;
 window.applyCriticalWoundDerivedModifiers = applyCriticalWoundDerivedModifiers;
 window.hasUnusableArmFromCriticalWound = hasUnusableArmFromCriticalWound;
 window.getCriticalWoundBlockedEquipmentSlots = getCriticalWoundBlockedEquipmentSlots;

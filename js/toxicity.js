@@ -357,7 +357,7 @@
 
         const consequence = Boolean(damageResult || tests.length || appliedConditions.length);
         const summary = `Toxicidade ${currentBefore}% → ${character.toxicityCurrent}%${damageResult ? ` · -${damageResult.damage} PV` : ''}`;
-        if (consequence) {
+        if (consequence && !options.silent) {
             global.showToast?.(`☣ ${character.name}: ${summary}`);
         }
         const history = consequence ? {

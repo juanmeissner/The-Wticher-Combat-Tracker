@@ -575,7 +575,8 @@ const fullSheet = model.normalizeCharacterSheet({
         name: 'Geralt',
         level: 3,
         professionId: 'Witcher',
-        specializationId: 'Escola do Lobo'
+        specializationId: 'Escola do Lobo',
+        birthDate: { day: 12, month: 4, year: 1235, era: 'DR' }
     },
     attributes: { strength: { invested: 2 } },
     progression: { attributePointsSpent: 2 }
@@ -586,6 +587,10 @@ assert.equal(fullSheet.identity.level, 3);
 assert.equal(fullSheet.identity.raceId, 'witcher');
 assert.equal(fullSheet.identity.professionId, 'witcher');
 assert.equal(fullSheet.identity.specializationId, 'wolf_school');
+assert.deepEqual(JSON.parse(JSON.stringify(fullSheet.identity.birthDate)), {
+    day: 12, month: 4, year: 1235, era: 'DR'
+});
+assert.equal(model.normalizeCharacterBirthDate({ day: 31, month: 2, year: 1276 }), null);
 assert.equal(fullSheet.monsterCategory, 'Humanoide');
 assert.equal(fullSheet.attributes.strength.invested, 2);
 assert.equal(fullSheet.skills.perception.raceBonus, 1);
@@ -682,6 +687,7 @@ vm.runInContext(`
 `, integrationContext);
 vm.runInContext(professionalSkillsSource, integrationContext, { filename: 'professional-skills-data.js' });
 vm.runInContext(source, integrationContext, { filename: 'character-sheet-model.js' });
+vm.runInContext(abilitiesSource, integrationContext, { filename: 'abilities-data.js' });
 vm.runInContext(
     fs.readFileSync(path.join(projectRoot, 'js', 'enhancements.js'), 'utf8'),
     integrationContext,
@@ -755,6 +761,7 @@ assert.match(renderedSheetList, /Regras v11/);
 assert.match(renderedSheetList, /Movimento/);
 assert.match(renderedSheetList, /Carga/);
 assert.match(renderedSheetList, /Exportar/);
+assert.match(renderedSheetList, /Evoluir/);
 
 vm.runInContext(`
     (() => {
@@ -820,6 +827,72 @@ assert.equal(
     sheetsBeforeImport + 1,
     'A ficha importada deve ser adicionada sem substituir as existentes.'
 );
+
+const mageAbilityId = vm.runInContext(
+    `predefinedAbilities.find(ability => ability.profession === 'Mago' && Number(ability.unlockCost) > 0).id`,
+    integrationContext
+);
+const evolvedSheet = JSON.parse(vm.runInContext(`
+    (() => {
+        const sheet = characterSheets.find(entry => entry.id === ${JSON.stringify(importedSheet.id)});
+        const attributes = JSON.parse(JSON.stringify(sheet.attributes));
+        attributes.intelligence.invested += 1;
+        return JSON.stringify(applyCharacterLevelUpFromDraft(sheet.id, {
+            level: 5,
+            levelUpBase: { level: 4 },
+            attributes,
+            skills: JSON.parse(JSON.stringify(sheet.skills)),
+            professionalSkills: JSON.parse(JSON.stringify(sheet.professionalSkills)),
+            learnedAbilityIds: [...sheet.learnedAbilityIds, ${JSON.stringify(mageAbilityId)}]
+        }));
+    })()
+`, integrationContext));
+assert.equal(evolvedSheet.identity.level, 5);
+assert.equal(evolvedSheet.attributes.intelligence.invested, 7);
+assert.ok(evolvedSheet.learnedAbilityIds.includes(mageAbilityId));
+assert.equal(evolvedSheet.hpCurrent, 5, 'A evolução não deve recuperar o HP atual.');
+assert.equal(evolvedSheet.stCurrent, 3, 'A evolução não deve recuperar o EST atual.');
+assert.equal(evolvedSheet.progression.levelHistory.length, 1);
+assert.equal(evolvedSheet.progression.levelHistory[0].fromLevel, 4);
+assert.equal(evolvedSheet.progression.levelHistory[0].toLevel, 5);
+assert.equal(evolvedSheet.progression.levelHistory[0].changes.attributes[0].id, 'intelligence');
+assert.ok(
+    evolvedSheet.progression.levelHistory[0].changes.abilities.some(ability => ability.id === mageAbilityId),
+    'A evolução deve registrar as novas magias aprendidas.'
+);
+assert.equal(
+    vm.runInContext(`canUndoLastCharacterLevelUp(${JSON.stringify(importedSheet.id)})`, integrationContext),
+    true,
+    'A última evolução intacta deve poder ser desfeita.'
+);
+
+const rejectedRegression = vm.runInContext(`
+    (() => {
+        const sheet = characterSheets.find(entry => entry.id === ${JSON.stringify(importedSheet.id)});
+        const attributes = JSON.parse(JSON.stringify(sheet.attributes));
+        attributes.intelligence.invested -= 1;
+        return applyCharacterLevelUpFromDraft(sheet.id, {
+            level: 6,
+            levelUpBase: { level: 5 },
+            attributes,
+            skills: JSON.parse(JSON.stringify(sheet.skills)),
+            professionalSkills: JSON.parse(JSON.stringify(sheet.professionalSkills)),
+            learnedAbilityIds: [...sheet.learnedAbilityIds]
+        });
+    })()
+`, integrationContext);
+assert.equal(rejectedRegression, null, 'A evolução deve impedir a remoção de atributos anteriores.');
+
+const revertedEvolution = JSON.parse(vm.runInContext(
+    `JSON.stringify(undoLastCharacterLevelUp(${JSON.stringify(importedSheet.id)}, true))`,
+    integrationContext
+));
+assert.equal(revertedEvolution.identity.level, 4);
+assert.equal(revertedEvolution.attributes.intelligence.invested, 6);
+assert.equal(revertedEvolution.learnedAbilityIds.includes(mageAbilityId), false);
+assert.equal(revertedEvolution.hpCurrent, 5);
+assert.equal(revertedEvolution.stCurrent, 3);
+assert.equal(revertedEvolution.progression.levelHistory.length, 0);
 assert.throws(
     () => vm.runInContext(`prepareImportedCharacterSheet({ format: 'outro-formato', version: 1, sheet: {} })`, integrationContext),
     /não é uma ficha exportada/

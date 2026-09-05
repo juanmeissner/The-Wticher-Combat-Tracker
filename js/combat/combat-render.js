@@ -627,15 +627,7 @@
                     
                         >
                     
-                            ${
-                    
-                                effect.remainingTurns===0
-                    
-                                ? "∞ Permanente"
-                    
-                                : effect.remainingTurns+" Rodadas"
-                    
-                            }
+                            ${window.formatEffectDurationLabel?.(effect) || (effect.remainingTurns===0 ? "∞ Permanente" : effect.remainingTurns+" Rodadas")}
                     
                         </div>
                     
@@ -753,15 +745,7 @@
                     
                             ⏳
                     
-                            ${
-                    
-                                effect.remainingTurns===0
-                    
-                                ? "∞ Permanente"
-                    
-                                : effect.remainingTurns+" Rodadas"
-                    
-                            }
+                            ${window.formatEffectDurationLabel?.(effect) || (effect.remainingTurns===0 ? "∞ Permanente" : effect.remainingTurns+" Rodadas")}
                     
                         </div>
                     
@@ -894,12 +878,10 @@
     
         if(!effect) return;
     
+        const temporal = Boolean(effect.temporal?.expiresAtMinute);
         const value = prompt(
-    
-            "Nova duração em rodadas (0 = Permanente)",
-    
-            effect.remainingTurns
-    
+            temporal ? "Nova duração restante em minutos" : "Nova duração em rodadas (0 = Permanente)",
+            temporal ? window.getTemporalEffectRemaining?.(effect) : effect.remainingTurns
         );
     
         if(value===null) return;
@@ -911,7 +893,12 @@
     
         turns = Math.max(0,turns);
     
-        effect.remainingTurns = turns;
+        if (temporal) {
+            const currentMinute = Number(window.campaignClock?.describeMinute?.().epochMinute) || 0;
+            effect.temporal.expiresAtMinute = currentMinute + turns;
+        } else {
+            effect.remainingTurns = turns;
+        }
     
         savePlayersToStorage();
     

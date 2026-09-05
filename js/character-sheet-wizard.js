@@ -2,7 +2,7 @@
     'use strict';
 
     const CHARACTER_SHEET_DRAFT_KEY = 'dnd_character_sheet_draft';
-    const CHARACTER_SHEET_DRAFT_VERSION = 4;
+    const CHARACTER_SHEET_DRAFT_VERSION = 6;
     const WIZARD_STEPS = Object.freeze([
         Object.freeze({ id: 'identity', label: 'Identidade' }),
         Object.freeze({ id: 'race', label: 'Raça' }),
@@ -14,6 +14,7 @@
         Object.freeze({ id: 'derived-values', label: 'Valores' }),
         Object.freeze({ id: 'review', label: 'Revisão' })
     ]);
+    const LEVEL_UP_STEP_INDEXES = Object.freeze([0, 3, 4, 5, 6, 7, 8]);
 
     let characterWizardDraft = null;
 
@@ -48,6 +49,39 @@
             .replaceAll("'", '&#039;');
     }
 
+    function isCharacterLevelUpDraft(draft = characterWizardDraft) {
+        return Boolean(
+            draft?.workflow === 'level-up'
+            && draft?.levelUpBase
+            && Number(draft.levelUpBase.level) >= 1
+        );
+    }
+
+    function getWizardStepIndexes(draft = characterWizardDraft) {
+        return isCharacterLevelUpDraft(draft)
+            ? LEVEL_UP_STEP_INDEXES
+            : WIZARD_STEPS.map((_, index) => index);
+    }
+
+    function getWizardStepKicker(stepIndex = characterWizardDraft?.step ?? 0) {
+        const indexes = getWizardStepIndexes();
+        const position = Math.max(0, indexes.indexOf(stepIndex));
+        return `PASSO ${position + 1} DE ${indexes.length}`;
+    }
+
+    function getLevelUpBaseInvestment(collectionName, id) {
+        if (!isCharacterLevelUpDraft()) return 0;
+        return Math.max(
+            0,
+            Number(characterWizardDraft.levelUpBase?.[collectionName]?.[id]?.invested) || 0
+        );
+    }
+
+    function isPreviouslyLearnedAbility(abilityId) {
+        return isCharacterLevelUpDraft()
+            && (characterWizardDraft.levelUpBase?.learnedAbilityIds || []).includes(abilityId);
+    }
+
     function cloneWizardValue(value, fallback) {
         if (value === undefined || value === null) return fallback;
         return JSON.parse(JSON.stringify(value));
@@ -56,6 +90,14 @@
     function formatWizardSignedNumber(value) {
         const numeric = Number(value) || 0;
         return numeric >= 0 ? `+${numeric}` : String(numeric);
+    }
+
+    function normalizeWizardBirthDate(value) {
+        const model = getCharacterModel();
+        if (typeof model?.normalizeCharacterBirthDate === 'function') {
+            return model.normalizeCharacterBirthDate(value);
+        }
+        return null;
     }
 
     function getWizardSkillBonusOrigins(breakdown) {
@@ -116,6 +158,16 @@
             abilityContext,
             getWizardAbilityCatalog()
         ) || [];
+        const birthSource = source.birthDate ?? source.identity?.birthDate;
+        const normalizedBirthDate = normalizeWizardBirthDate(birthSource);
+        const hasPartialBirthDate = birthSource && typeof birthSource === 'object'
+            && ['day', 'month', 'year'].some(field => Number(birthSource[field]) > 0);
+        const birthDate = normalizedBirthDate || (hasPartialBirthDate ? {
+            day: Math.max(0, Math.floor(Number(birthSource.day) || 0)) || null,
+            month: Math.max(0, Math.floor(Number(birthSource.month) || 0)) || null,
+            year: Math.max(0, Math.floor(Number(birthSource.year) || 0)) || null,
+            era: String(birthSource.era || 'DR').toUpperCase() === 'AR' ? 'AR' : 'DR'
+        } : null);
         const requestedStep = Math.max(0, Math.floor(Number(source.step) || 0));
         const sourceDraftVersion = Number(source.draftVersion) || CHARACTER_SHEET_DRAFT_VERSION;
         let migratedStep = requestedStep;
@@ -127,8 +179,11 @@
             draftVersion: CHARACTER_SHEET_DRAFT_VERSION,
             step: Math.min(WIZARD_STEPS.length - 1, migratedStep),
             editingSheetId: String(source.editingSheetId || ''),
+            workflow: source.workflow === 'level-up' ? 'level-up' : 'sheet',
+            levelUpBase: cloneWizardValue(source.levelUpBase, null),
             name: String(source.name || '').slice(0, 80),
             level: model?.normalizeCharacterLevel(source.level) || 1,
+            birthDate,
             raceId,
             professionId,
             specializationId: specialization?.id || '',
@@ -152,7 +207,7 @@
         return Boolean(
             draft
             && typeof draft === 'object'
-            && [1, 2, 3, CHARACTER_SHEET_DRAFT_VERSION].includes(Number(draft.draftVersion))
+            && [1, 2, 3, 4, 5, CHARACTER_SHEET_DRAFT_VERSION].includes(Number(draft.draftVersion))
         );
     }
 
@@ -197,6 +252,7 @@
                 || draft.raceId
                 || draft.professionId
                 || draft.specializationId
+                || draft.birthDate
                 || draft.step > 0
                 || hasAttributePoints
                 || hasSkillPoints
@@ -260,7 +316,17 @@
         let message = '';
 
         if (!draft) message = 'Inicie uma ficha completa.';
+        else if (
+            step === 0
+            && isCharacterLevelUpDraft(draft)
+            && draft.level <= Number(draft.levelUpBase.level)
+        ) message = 'O novo nível deve ser maior que o nível atual.';
         else if (step === 0 && !draft.name.trim()) message = 'Informe o nome do personagem.';
+        else if (
+            step === 0
+            && draft.birthDate
+            && !normalizeWizardBirthDate(draft.birthDate)
+        ) message = 'Informe uma data de nascimento válida ou deixe todos os campos vazios.';
         else if (step === 1 && !getWizardRace()) message = 'Escolha uma raça.';
         else if (
             step === 2
@@ -293,7 +359,7 @@
     }
 
     function validateCompleteCharacterWizard({ notify = false } = {}) {
-        for (let step = 0; step < WIZARD_STEPS.length - 1; step += 1) {
+        for (const step of getWizardStepIndexes().slice(0, -1)) {
             if (!validateCharacterWizardStep(step, { notify })) return false;
         }
 
@@ -301,12 +367,15 @@
     }
 
     function renderWizardProgress() {
+        const indexes = getWizardStepIndexes();
+        const currentPosition = indexes.indexOf(characterWizardDraft.step);
+
         return `
-            <ol class="character-wizard-progress" aria-label="Progresso da criação">
-                ${WIZARD_STEPS.map((step, index) => `
-                    <li class="${index === characterWizardDraft.step ? 'is-current' : ''} ${index < characterWizardDraft.step ? 'is-complete' : ''}">
-                        <span>${index + 1}</span>
-                        <small>${escapeWizardHtml(step.label)}</small>
+            <ol class="character-wizard-progress${isCharacterLevelUpDraft() ? ' is-level-up' : ''}" aria-label="Progresso ${isCharacterLevelUpDraft() ? 'da evolução' : 'da criação'}">
+                ${indexes.map((stepIndex, position) => `
+                    <li class="${position === currentPosition ? 'is-current' : ''} ${position < currentPosition ? 'is-complete' : ''}">
+                        <span>${position + 1}</span>
+                        <small>${escapeWizardHtml(WIZARD_STEPS[stepIndex].label)}</small>
                     </li>
                 `).join('')}
             </ol>
@@ -314,10 +383,19 @@
     }
 
     function renderIdentityStep() {
+        if (isCharacterLevelUpDraft()) return renderLevelUpIdentityStep();
+
+        const birthDate = characterWizardDraft.birthDate || {};
+        const age = global.campaignClock?.getCharacterAge?.(birthDate);
+        const monthOptions = [
+            'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+            'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+        ].map((month, index) => `<option value="${index + 1}" ${Number(birthDate.month) === index + 1 ? 'selected' : ''}>${month}</option>`).join('');
+
         return `
             <section class="character-wizard-step" aria-labelledby="characterWizardStepTitle">
                 <div class="character-wizard-step-copy">
-                    <span class="character-wizard-kicker">PASSO 1 DE 9</span>
+                    <span class="character-wizard-kicker">${getWizardStepKicker(0)}</span>
                     <h3 id="characterWizardStepTitle">Identidade</h3>
                     <p>Defina o nome e o nível inicial. Os pontos disponíveis acompanham o nível escolhido.</p>
                 </div>
@@ -329,7 +407,74 @@
                         <input id="characterWizardLevel" class="session-input" type="number" min="1" step="1" inputmode="numeric" value="${characterWizardDraft.level}" onchange="updateCharacterWizardField('level', this.value)">
                     </label>
                 </div>
+                <div class="character-birth-section">
+                    <div class="character-birth-heading">
+                        <div><strong>Data de nascimento</strong><small>O dia e o mês criam um aniversário anual no calendário da campanha.</small></div>
+                        ${Number.isFinite(age) ? `<span>${age} anos</span>` : ''}
+                    </div>
+                    <div class="character-birth-fields">
+                        <label>Dia<input class="session-input" type="number" min="1" max="31" inputmode="numeric" value="${birthDate.day || ''}" oninput="updateCharacterWizardBirthField('day', this.value)"></label>
+                        <label>Mês<select class="session-input" onchange="updateCharacterWizardBirthField('month', this.value)"><option value="">Selecione</option>${monthOptions}</select></label>
+                        <label>Ano <small>(opcional)</small><input class="session-input" type="number" min="1" inputmode="numeric" value="${birthDate.year || ''}" oninput="updateCharacterWizardBirthField('year', this.value)"></label>
+                        <label>Era<select class="session-input" onchange="updateCharacterWizardBirthField('era', this.value)"><option value="DR" ${birthDate.era !== 'AR' ? 'selected' : ''}>DR</option><option value="AR" ${birthDate.era === 'AR' ? 'selected' : ''}>AR</option></select></label>
+                    </div>
+                </div>
                 ${renderCharacterBudgetPreview()}
+            </section>
+        `;
+    }
+
+    function renderLevelUpIdentityStep() {
+        const model = getCharacterModel();
+        const baseLevel = Number(characterWizardDraft.levelUpBase.level) || 1;
+        const currentBudgets = model?.getCharacterBudgets(baseLevel);
+        const nextBudgets = model?.getCharacterBudgets(characterWizardDraft.level);
+        const baseAllocation = model?.getCharacterAllocationSummary(
+            baseLevel,
+            characterWizardDraft.levelUpBase.attributes,
+            characterWizardDraft.levelUpBase.skills,
+            {
+                professionalSkills: characterWizardDraft.levelUpBase.professionalSkills,
+                specializationId: characterWizardDraft.specializationId
+            }
+        );
+        const baseTraining = model?.getCharacterTrainingSummary(
+            baseLevel,
+            characterWizardDraft.levelUpBase.learnedAbilityIds,
+            getWizardAbilityContext(),
+            getWizardAbilityCatalog()
+        );
+        const gainedLevels = Math.max(0, characterWizardDraft.level - baseLevel);
+
+        return `
+            <section class="character-wizard-step character-level-up-step" aria-labelledby="characterWizardStepTitle">
+                <div class="character-wizard-step-copy">
+                    <span class="character-wizard-kicker">${getWizardStepKicker(0)}</span>
+                    <h3 id="characterWizardStepTitle">Escolha o novo nível</h3>
+                    <p>A raça, a profissão e as escolhas anteriores serão preservadas. Você poderá aplicar apenas os pontos liberados pela evolução.</p>
+                </div>
+                <div class="character-level-up-hero">
+                    <div>
+                        <span>PERSONAGEM</span>
+                        <strong>${escapeWizardHtml(characterWizardDraft.name)}</strong>
+                        <small>Nível atual ${baseLevel}</small>
+                    </div>
+                    <label>Novo nível
+                        <input id="characterWizardLevel" class="session-input" type="number" min="${baseLevel + 1}" step="1" inputmode="numeric" value="${characterWizardDraft.level}" onchange="updateCharacterWizardField('level', this.value)">
+                    </label>
+                </div>
+                <div class="character-level-up-gains" aria-label="Recursos liberados por ${gainedLevels} níveis">
+                    <article><span>Atributos ganhos</span><strong>+${Math.max(0, (nextBudgets?.attributePoints || 0) - (currentBudgets?.attributePoints || 0))}</strong><small>${Math.max(0, (nextBudgets?.attributePoints || 0) - (baseAllocation?.attributePointsSpent || 0))} disponíveis no total</small></article>
+                    <article><span>Perícias ganhas</span><strong>+${Math.max(0, (nextBudgets?.skillPoints || 0) - (currentBudgets?.skillPoints || 0))}</strong><small>${Math.max(0, (nextBudgets?.skillPoints || 0) - (baseAllocation?.skillPointsSpent || 0))} disponíveis no total</small></article>
+                    <article><span>Treino ganho</span><strong>+${Math.max(0, (nextBudgets?.trainingPoints || 0) - (currentBudgets?.trainingPoints || 0))}</strong><small>${Math.max(0, (nextBudgets?.trainingPoints || 0) - (baseTraining?.trainingPointsSpent || 0))} disponíveis no total</small></article>
+                </div>
+                <div class="character-wizard-stage-note">
+                    <strong>${gainedLevels} ${gainedLevels === 1 ? 'nível selecionado' : 'níveis selecionados'}</strong>
+                    <span>Pontos que ficaram sem uso em níveis anteriores também permanecem disponíveis.</span>
+                </div>
+                ${characterWizardDraft.levelUpBase.canUndoLastEvolution ? `
+                    <button type="button" class="character-level-up-undo" onclick="undoLastCharacterLevelUp('${escapeWizardHtml(characterWizardDraft.editingSheetId)}')">↶ Desfazer a última evolução confirmada</button>
+                ` : ''}
             </section>
         `;
     }
@@ -355,7 +500,7 @@
         return `
             <section class="character-wizard-step" aria-labelledby="characterWizardStepTitle">
                 <div class="character-wizard-step-copy">
-                    <span class="character-wizard-kicker">PASSO 2 DE 9</span>
+                    <span class="character-wizard-kicker">${getWizardStepKicker(1)}</span>
                     <h3 id="characterWizardStepTitle">Raça</h3>
                     <p>A raça aplicará bônus e características próprias nas próximas etapas.</p>
                 </div>
@@ -403,7 +548,7 @@
         return `
             <section class="character-wizard-step" aria-labelledby="characterWizardStepTitle">
                 <div class="character-wizard-step-copy">
-                    <span class="character-wizard-kicker">PASSO 3 DE 9</span>
+                    <span class="character-wizard-kicker">${getWizardStepKicker(2)}</span>
                     <h3 id="characterWizardStepTitle">${isWitcher ? 'Escola de bruxo' : 'Profissão e especialização'}</h3>
                     <p>${isWitcher
                         ? 'A escola substitui a profissão comum e define a árvore profissional do Witcher.'
@@ -455,7 +600,7 @@
         return `
             <section class="character-wizard-step" aria-labelledby="characterWizardStepTitle">
                 <div class="character-wizard-step-copy">
-                    <span class="character-wizard-kicker">PASSO 4 DE 9</span>
+                    <span class="character-wizard-kicker">${getWizardStepKicker(3)}</span>
                     <h3 id="characterWizardStepTitle">Distribua os atributos</h3>
                     <p>Todos começam em ${model?.CHARACTER_ATTRIBUTE_BASE_VALUE || 10}. Os pontos investidos são somados ao valor base e não possuem limite máximo.</p>
                 </div>
@@ -467,6 +612,7 @@
                 <div class="character-attribute-grid">
                     ${(model?.CHARACTER_ATTRIBUTES || []).map(attribute => {
                         const invested = Number(characterWizardDraft.attributes?.[attribute.id]?.invested) || 0;
+                        const baseInvested = getLevelUpBaseInvestment('attributes', attribute.id);
                         const raceBonus = Number(characterWizardDraft.attributes?.[attribute.id]?.raceBonus) || 0;
                         const total = model.getCharacterAttributeTotal(attribute.id, characterWizardDraft.attributes);
                         const modifier = model.getCharacterAttributeModifier(attribute.id, characterWizardDraft.attributes);
@@ -476,10 +622,10 @@
                                 <div>
                                     <span>${escapeWizardHtml(attribute.abbreviation)}</span>
                                     <strong>${escapeWizardHtml(attribute.name)}</strong>
-                                    <small>Base ${model.CHARACTER_ATTRIBUTE_BASE_VALUE} + ${invested}${raceBonus ? ` · racial ${raceBonus > 0 ? '+' : ''}${raceBonus}` : ''} · bônus +${modifier}</small>
+                                    <small>Base ${model.CHARACTER_ATTRIBUTE_BASE_VALUE} + ${invested}${raceBonus ? ` · racial ${raceBonus > 0 ? '+' : ''}${raceBonus}` : ''} · bônus +${modifier}${isCharacterLevelUpDraft() ? ` · mínimo preservado ${baseInvested}` : ''}</small>
                                 </div>
                                 <div class="character-allocation-control">
-                                    <button type="button" onclick="adjustCharacterWizardAttribute('${attribute.id}', -1)" ${invested <= 0 ? 'disabled' : ''} aria-label="Remover ponto de ${escapeWizardHtml(attribute.name)}">−</button>
+                                    <button type="button" onclick="adjustCharacterWizardAttribute('${attribute.id}', -1)" ${invested <= baseInvested ? 'disabled' : ''} aria-label="Remover ponto de ${escapeWizardHtml(attribute.name)}">−</button>
                                     <output aria-label="Valor total de ${escapeWizardHtml(attribute.name)}">${total}</output>
                                     <button type="button" onclick="adjustCharacterWizardAttribute('${attribute.id}', 1)" ${canIncrease ? '' : 'disabled'} aria-label="Adicionar ponto em ${escapeWizardHtml(attribute.name)}">+</button>
                                 </div>
@@ -501,7 +647,7 @@
         return `
             <section class="character-wizard-step" aria-labelledby="characterWizardStepTitle">
                 <div class="character-wizard-step-copy">
-                    <span class="character-wizard-kicker">PASSO 5 DE 9</span>
+                    <span class="character-wizard-kicker">${getWizardStepKicker(4)}</span>
                     <h3 id="characterWizardStepTitle">Habilidades profissionais</h3>
                     <p>Distribua primeiro os pontos da árvore ${escapeWizardHtml(specialization?.name || '')}. O saldo restante será usado nas perícias gerais.</p>
                 </div>
@@ -520,6 +666,7 @@
                 <div class="character-skill-list character-professional-skill-list">
                     ${skills.map(skill => {
                         const invested = Number(characterWizardDraft.professionalSkills?.[skill.id]?.invested) || 0;
+                        const baseInvested = getLevelUpBaseInvestment('professionalSkills', skill.id);
                         const canIncrease = invested < (skill.maxInvestment || 4)
                             && (summary?.skillPointsRemaining || 0) >= (skill.pointCost || 1);
 
@@ -532,10 +679,10 @@
                                             ? ' <span class="character-professional-automation-badge is-reference">REFERÊNCIA</span>'
                                             : '')}</strong>
                                     <p class="character-professional-description">${escapeWizardHtml(skill.description)}</p>
-                                    <small class="character-professional-level-note">Nível profissional · máximo ${skill.maxInvestment || 4}</small>
+                                    <small class="character-professional-level-note">Nível profissional · máximo ${skill.maxInvestment || 4}${isCharacterLevelUpDraft() ? ` · preservado ${baseInvested}` : ''}</small>
                                 </div>
                                 <div class="character-allocation-control character-skill-control">
-                                    <button type="button" onclick="adjustCharacterWizardProfessionalSkill('${skill.id}', -1)" ${invested <= 0 ? 'disabled' : ''} aria-label="Remover nível de ${escapeWizardHtml(skill.name)}">−</button>
+                                    <button type="button" onclick="adjustCharacterWizardProfessionalSkill('${skill.id}', -1)" ${invested <= baseInvested ? 'disabled' : ''} aria-label="Remover nível de ${escapeWizardHtml(skill.name)}">−</button>
                                     <output aria-label="Nível investido em ${escapeWizardHtml(skill.name)}">${invested}</output>
                                     <button type="button" onclick="adjustCharacterWizardProfessionalSkill('${skill.id}', 1)" ${canIncrease ? '' : 'disabled'} aria-label="Adicionar nível em ${escapeWizardHtml(skill.name)}">+</button>
                                 </div>
@@ -562,7 +709,7 @@
         return `
             <section class="character-wizard-step" aria-labelledby="characterWizardStepTitle">
                 <div class="character-wizard-step-copy">
-                    <span class="character-wizard-kicker">PASSO 6 DE 9</span>
+                    <span class="character-wizard-kicker">${getWizardStepKicker(5)}</span>
                     <h3 id="characterWizardStepTitle">Distribua as perícias</h3>
                     <p>Perícias comuns e profissionais compartilham o mesmo orçamento. Nesta etapa, cada perícia comum aceita até 4 níveis investidos.</p>
                 </div>
@@ -585,6 +732,7 @@
                 <div class="character-skill-list">
                     ${skills.map(skill => {
                         const invested = Number(characterWizardDraft.skills?.[skill.id]?.invested) || 0;
+                        const baseInvested = getLevelUpBaseInvestment('skills', skill.id);
                         const breakdown = model.getCharacterSkillBreakdown(
                             skill.id,
                             characterWizardDraft.skills,
@@ -598,7 +746,7 @@
                             <article class="character-skill-row">
                                 <div class="character-wizard-skill-copy">
                                     <strong>${escapeWizardHtml(skill.name)}</strong>
-                                    <small class="character-skill-cost">${escapeWizardHtml(activeAttribute?.abbreviation || '')}${skill.pointCost === 2 ? ' · custa 2 pontos por nível' : ' · custa 1 ponto por nível'}</small>
+                                    <small class="character-skill-cost">${escapeWizardHtml(activeAttribute?.abbreviation || '')}${skill.pointCost === 2 ? ' · custa 2 pontos por nível' : ' · custa 1 ponto por nível'}${isCharacterLevelUpDraft() ? ` · preservado ${baseInvested}` : ''}</small>
                                     <small class="character-skill-math">
                                         <span>${bonusOrigins.join(' · ')}</span>
                                         <b>Bônus ${formatWizardSignedNumber(breakdown?.bonusTotal)}</b>
@@ -606,7 +754,7 @@
                                     </small>
                                 </div>
                                 <div class="character-allocation-control character-skill-control">
-                                    <button type="button" onclick="adjustCharacterWizardSkill('${skill.id}', -1)" ${invested <= 0 ? 'disabled' : ''} aria-label="Remover nível de ${escapeWizardHtml(skill.name)}">−</button>
+                                    <button type="button" onclick="adjustCharacterWizardSkill('${skill.id}', -1)" ${invested <= baseInvested ? 'disabled' : ''} aria-label="Remover nível de ${escapeWizardHtml(skill.name)}">−</button>
                                     <output aria-label="Nível investido em ${escapeWizardHtml(skill.name)}">${invested}</output>
                                     <button type="button" onclick="adjustCharacterWizardSkill('${skill.id}', 1)" ${canIncrease ? '' : 'disabled'} aria-label="Adicionar nível em ${escapeWizardHtml(skill.name)}">+</button>
                                 </div>
@@ -665,7 +813,7 @@
         return `
             <section class="character-wizard-step" aria-labelledby="characterWizardStepTitle">
                 <div class="character-wizard-step-copy">
-                    <span class="character-wizard-kicker">PASSO 7 DE 9</span>
+                    <span class="character-wizard-kicker">${getWizardStepKicker(6)}</span>
                     <h3 id="characterWizardStepTitle">Aprendizado de magias</h3>
                     <p>${access?.isMagical
                         ? 'Use pontos de treino para aprender habilidades permitidas pela profissão. Rituais e hexes aparecem somente para caminhos mágicos.'
@@ -705,6 +853,7 @@
                         ${filteredOptions.map(ability => {
                             const isAutomatic = automaticIds.has(ability.id);
                             const isLearned = learnedIds.has(ability.id);
+                            const wasPreviouslyLearned = isPreviouslyLearnedAbility(ability.id);
                             const searchText = normalizeWizardSearch([
                                 ability.name,
                                 ability.profession,
@@ -734,8 +883,12 @@
                                             <p>${escapeWizardHtml(ability.description)}</p>
                                         </details>
                                     ` : ''}
-                                    <button type="button" class="character-ability-toggle ${isLearned ? 'is-remove' : ''}" onclick="toggleCharacterWizardAbility('${escapeWizardHtml(ability.id)}')" ${isAutomatic || !canLearn ? 'disabled' : ''}>
-                                        ${isAutomatic ? 'Concedida pela raça Witcher' : (isLearned ? 'Remover aprendizado' : `Aprender · ${ability.unlockCost} PT`)}
+                                    <button type="button" class="character-ability-toggle ${isLearned && !wasPreviouslyLearned ? 'is-remove' : ''}" onclick="toggleCharacterWizardAbility('${escapeWizardHtml(ability.id)}')" ${isAutomatic || wasPreviouslyLearned || !canLearn ? 'disabled' : ''}>
+                                        ${isAutomatic
+                                            ? 'Concedida pela raça Witcher'
+                                            : (wasPreviouslyLearned
+                                                ? 'Já conhecida · preservada'
+                                                : (isLearned ? 'Remover novo aprendizado' : `Aprender · ${ability.unlockCost} PT`))}
                                     </button>
                                 </article>
                             `;
@@ -755,7 +908,9 @@
     function renderDerivedValuesStep() {
         const model = getCharacterModel();
         const derived = model?.calculateCharacterDerivedValues(characterWizardDraft, {
-            equippedWeight: 0
+            equippedWeight: isCharacterLevelUpDraft()
+                ? Math.max(0, Number(characterWizardDraft.levelUpBase.equippedWeight) || 0)
+                : 0
         });
         const breakdown = derived?.breakdown || {};
         const stFormulaLabels = {
@@ -769,7 +924,7 @@
         return `
             <section class="character-wizard-step" aria-labelledby="characterWizardStepTitle">
                 <div class="character-wizard-step-copy">
-                    <span class="character-wizard-kicker">PASSO 8 DE 9</span>
+                    <span class="character-wizard-kicker">${getWizardStepKicker(7)}</span>
                     <h3 id="characterWizardStepTitle">Valores derivados</h3>
                     <p>HP, EST, carga e movimento foram calculados com os atributos, perícias, raça, profissão e nível escolhidos.</p>
                 </div>
@@ -811,14 +966,136 @@
                     </dl>
                 </div>
                 <div class="character-wizard-stage-note">
-                    <strong>Peso equipado começa em 0</strong>
-                    <span>Depois da criação, armaduras, escudo, arma ativa e as duas armas reservas reduzem o movimento automaticamente. Itens apenas guardados no inventário não contam.</span>
+                    <strong>${isCharacterLevelUpDraft() ? 'Equipamentos atuais considerados' : 'Peso equipado começa em 0'}</strong>
+                    <span>${isCharacterLevelUpDraft()
+                        ? `A prévia preserva os equipamentos da ficha e considera ${Math.max(0, Number(characterWizardDraft.levelUpBase.equippedWeight) || 0)} de peso no cálculo.`
+                        : 'Depois da criação, armaduras, escudo, arma ativa e as duas armas reservas reduzem o movimento automaticamente. Itens apenas guardados no inventário não contam.'}</span>
+                </div>
+            </section>
+        `;
+    }
+
+    function getCharacterLevelUpReviewData(draft = characterWizardDraft) {
+        const model = getCharacterModel();
+        if (!model || !isCharacterLevelUpDraft(draft)) return null;
+
+        const base = draft.levelUpBase;
+        const equippedWeight = Math.max(0, Number(base.equippedWeight) || 0);
+        const baseSource = {
+            ...draft,
+            level: base.level,
+            identity: { ...(draft.identity || {}), level: base.level },
+            attributes: base.attributes,
+            skills: base.skills,
+            professionalSkills: base.professionalSkills,
+            learnedAbilityIds: base.learnedAbilityIds
+        };
+        const beforeDerived = model.calculateCharacterDerivedValues(baseSource, { equippedWeight });
+        const afterDerived = model.calculateCharacterDerivedValues(draft, { equippedWeight });
+        const attributeChanges = (model.CHARACTER_ATTRIBUTES || []).map(attribute => {
+            const before = Math.max(0, Number(base.attributes?.[attribute.id]?.invested) || 0);
+            const after = Math.max(0, Number(draft.attributes?.[attribute.id]?.invested) || 0);
+            return { id: attribute.id, name: attribute.name, abbreviation: attribute.abbreviation, before, after };
+        }).filter(change => change.after !== change.before);
+        const professionalChanges = (model.getCharacterProfessionalSkills(draft.specializationId) || []).map(skill => {
+            const before = Math.max(0, Number(base.professionalSkills?.[skill.id]?.invested) || 0);
+            const after = Math.max(0, Number(draft.professionalSkills?.[skill.id]?.invested) || 0);
+            return { id: skill.id, name: skill.name, before, after };
+        }).filter(change => change.after !== change.before);
+        const skillChanges = (model.CHARACTER_SKILLS || []).map(skill => {
+            const before = Math.max(0, Number(base.skills?.[skill.id]?.invested) || 0);
+            const after = Math.max(0, Number(draft.skills?.[skill.id]?.invested) || 0);
+            return { id: skill.id, name: skill.name, before, after };
+        }).filter(change => change.after !== change.before);
+        const previousAbilityIds = new Set(base.learnedAbilityIds || []);
+        const options = model.getCharacterAbilityLearningOptions(
+            {
+                raceId: draft.raceId,
+                professionId: draft.professionId,
+                specializationId: draft.specializationId
+            },
+            getWizardAbilityCatalog()
+        );
+        const newAbilityIds = new Set((draft.learnedAbilityIds || []).filter(id => !previousAbilityIds.has(id)));
+        const newAbilities = options.filter(ability => newAbilityIds.has(ability.id));
+
+        return {
+            fromLevel: Number(base.level) || 1,
+            toLevel: Number(draft.level) || 1,
+            attributeChanges,
+            professionalChanges,
+            skillChanges,
+            newAbilities,
+            beforeDerived,
+            afterDerived
+        };
+    }
+
+    function renderCharacterLevelUpReviewStep() {
+        const review = getCharacterLevelUpReviewData();
+        const changes = [
+            ...review.attributeChanges.map(change => `${escapeWizardHtml(change.abbreviation)} ${change.before} → ${change.after}`),
+            ...review.professionalChanges.map(change => `${escapeWizardHtml(change.name)} ${change.before} → ${change.after}`),
+            ...review.skillChanges.map(change => `${escapeWizardHtml(change.name)} ${change.before} → ${change.after}`)
+        ];
+        const derivedRows = [
+            ['❤️ HP máximo', review.beforeDerived.hpMaximum, review.afterDerived.hpMaximum],
+            ['⚡ EST máximo', review.beforeDerived.stMaximum, review.afterDerived.stMaximum],
+            ['🎒 Carga', review.beforeDerived.carryingCapacity, review.afterDerived.carryingCapacity],
+            ['👣 Movimento', review.beforeDerived.movement, review.afterDerived.movement]
+        ];
+        if (review.beforeDerived.runeSourceMaximum || review.afterDerived.runeSourceMaximum) {
+            derivedRows.push(['🔷 Fonte Rúnica', review.beforeDerived.runeSourceMaximum, review.afterDerived.runeSourceMaximum]);
+        }
+
+        return `
+            <section class="character-wizard-step character-level-up-review" aria-labelledby="characterWizardStepTitle">
+                <div class="character-wizard-step-copy">
+                    <span class="character-wizard-kicker">${getWizardStepKicker(8)}</span>
+                    <h3 id="characterWizardStepTitle">Revisão da evolução</h3>
+                    <p>Confira todas as mudanças antes de atualizar a ficha. Nada será aplicado até a confirmação.</p>
+                </div>
+                <div class="character-level-up-summary">
+                    <span>EVOLUÇÃO</span>
+                    <strong>${escapeWizardHtml(characterWizardDraft.name)}</strong>
+                    <small>Nível ${review.fromLevel} → ${review.toLevel}</small>
+                </div>
+                <div class="character-level-up-derived-grid">
+                    ${derivedRows.map(([label, before, after]) => `
+                        <article class="${Number(after) !== Number(before) ? 'has-change' : ''}">
+                            <span>${label}</span>
+                            <strong>${before} → ${after}</strong>
+                        </article>
+                    `).join('')}
+                </div>
+                <div class="character-review-section">
+                    <strong>Investimentos realizados · ${changes.length}</strong>
+                    <div class="character-review-skill-list">
+                        ${changes.length ? changes.map(change => `<span>${change}</span>`).join('') : '<small>Nenhum ponto novo foi distribuído.</small>'}
+                    </div>
+                </div>
+                <div class="character-review-section">
+                    <strong>Novas magias · ${review.newAbilities.length}</strong>
+                    <div class="character-review-ability-list">
+                        ${review.newAbilities.length
+                            ? review.newAbilities.map(ability => `<span><b>${escapeWizardHtml(ability.icon || '✨')} ${escapeWizardHtml(ability.name)}</b><small>${ability.unlockCost} pontos de treino</small></span>`).join('')
+                            : '<small>Nenhuma magia nova foi aprendida.</small>'}
+                    </div>
+                </div>
+                <div class="character-wizard-stage-note">
+                    <strong>Recursos atuais serão preservados</strong>
+                    <span>O aplicativo atualizará os valores máximos sem recuperar automaticamente HP, EST ou Fonte Rúnica.</span>
+                </div>
+                <div class="character-wizard-finish-actions character-level-up-finish">
+                    <button type="button" class="session-primary" onclick="finishCharacterSheetWizard('level-up')">Confirmar evolução</button>
                 </div>
             </section>
         `;
     }
 
     function renderReviewStep() {
+        if (isCharacterLevelUpDraft()) return renderCharacterLevelUpReviewStep();
+
         const editing = Boolean(characterWizardDraft?.editingSheetId);
         const race = getWizardRace();
         const profession = characterWizardDraft.raceId === 'witcher'
@@ -869,7 +1146,7 @@
         return `
             <section class="character-wizard-step" aria-labelledby="characterWizardStepTitle">
                 <div class="character-wizard-step-copy">
-                    <span class="character-wizard-kicker">PASSO 9 DE 9</span>
+                    <span class="character-wizard-kicker">${getWizardStepKicker(8)}</span>
                     <h3 id="characterWizardStepTitle">Revisão</h3>
                     <p>Confira a identidade e os pontos distribuídos antes de salvar a ficha.</p>
                 </div>
@@ -883,6 +1160,8 @@
                         <div><dt>Raça</dt><dd>${escapeWizardHtml(race?.name || 'Não definida')}</dd></div>
                         <div><dt>Profissão</dt><dd>${escapeWizardHtml(profession?.name || 'Não definida')}</dd></div>
                         <div><dt>${characterWizardDraft.raceId === 'witcher' ? 'Escola' : 'Especialização'}</dt><dd>${escapeWizardHtml(specialization?.name || 'Não definida')}</dd></div>
+                        ${characterWizardDraft.birthDate ? `<div><dt>Nascimento</dt><dd>${escapeWizardHtml(global.campaignClock?.formatCharacterBirthDate?.(characterWizardDraft.birthDate) || 'Data informada')}</dd></div>` : ''}
+                        ${Number.isFinite(global.campaignClock?.getCharacterAge?.(characterWizardDraft.birthDate)) ? `<div><dt>Idade atual</dt><dd>${global.campaignClock.getCharacterAge(characterWizardDraft.birthDate)} anos</dd></div>` : ''}
                         <div><dt>Atributos</dt><dd>${summary?.attributePointsSpent || 0}/${budgets?.attributePoints || 0} pontos</dd></div>
                         <div><dt>Profissionais</dt><dd>${summary?.professionalSkillPointsSpent || 0} pontos</dd></div>
                         <div><dt>Perícias gerais</dt><dd>${summary?.commonSkillPointsSpent || 0} pontos</dd></div>
@@ -987,16 +1266,17 @@
         ][characterWizardDraft.step]();
         const isReview = characterWizardDraft.step === WIZARD_STEPS.length - 1;
         const editing = Boolean(characterWizardDraft.editingSheetId);
+        const levelUp = isCharacterLevelUpDraft();
 
         dialog.innerHTML = `
             <div class="session-dialog-header character-wizard-header">
                 <div>
-                    <span class="character-wizard-title-kicker">${editing ? 'EDITAR FICHA COMPLETA' : 'FICHA COMPLETA'}</span>
-                    <h2>${editing ? 'Edição completa de personagem' : 'Criação de personagem'}</h2>
+                    <span class="character-wizard-title-kicker">${levelUp ? 'EVOLUÇÃO DE PERSONAGEM' : (editing ? 'EDITAR FICHA COMPLETA' : 'FICHA COMPLETA')}</span>
+                    <h2>${levelUp ? 'Subir de nível' : (editing ? 'Edição completa de personagem' : 'Criação de personagem')}</h2>
                 </div>
                 <div class="character-wizard-header-actions">
-                    <button type="button" class="character-wizard-save-draft" onclick="saveCharacterWizardDraft()" title="Salvar rascunho">💾</button>
-                    <button type="button" class="character-wizard-discard-draft" onclick="discardCharacterWizardDraft()" title="Descartar rascunho" aria-label="Descartar rascunho">🗑️</button>
+                    <button type="button" class="character-wizard-save-draft" onclick="saveCharacterWizardDraft()" title="Salvar ${levelUp ? 'evolução' : 'rascunho'}">💾</button>
+                    <button type="button" class="character-wizard-discard-draft" onclick="discardCharacterWizardDraft()" title="${levelUp ? 'Cancelar evolução' : 'Descartar rascunho'}" aria-label="${levelUp ? 'Cancelar evolução' : 'Descartar rascunho'}">🗑️</button>
                     <button type="button" class="session-close" onclick="closeSessionTools()" aria-label="Fechar">×</button>
                 </div>
             </div>
@@ -1196,14 +1476,108 @@
         renderCharacterWizardStep();
     }
 
+    function startCharacterLevelUpWizard(sheetId, confirmedReset = false) {
+        const sheet = global.getCharacterSheetForEditing?.(String(sheetId || ''));
+        if (!sheet || sheet.creationMode !== 'full') {
+            global.showToast?.('Somente fichas completas podem usar o assistente de evolução.');
+            return;
+        }
+
+        const currentLevel = getCharacterModel()?.normalizeCharacterLevel(sheet.identity?.level) || 1;
+        const abilityContext = {
+            raceId: sheet.raceId || sheet.identity?.raceId,
+            professionId: sheet.identity?.professionId,
+            specializationId: sheet.identity?.specializationId
+        };
+        const normalizedLearnedAbilityIds = getCharacterModel()?.normalizeCharacterLearnedAbilityIds(
+            sheet.learnedAbilityIds,
+            abilityContext,
+            getWizardAbilityCatalog()
+        ) || [];
+        const savedDraft = readCharacterWizardDraft();
+        if (
+            isCharacterLevelUpDraft(savedDraft)
+            && savedDraft.editingSheetId === sheet.id
+            && Number(savedDraft.levelUpBase.level) === currentLevel
+        ) {
+            characterWizardDraft = savedDraft;
+            characterWizardDraft.levelUpBase.canUndoLastEvolution = Boolean(
+                global.canUndoLastCharacterLevelUp?.(sheet.id)
+            );
+            persistCharacterWizardDraft();
+            renderCharacterWizardStep();
+            global.showToast?.(`Evolução de ${sheet.name} retomada.`);
+            return;
+        }
+
+        if (!confirmedReset && hasCharacterWizardProgress(savedDraft)) {
+            global.openSessionConfirm?.({
+                title: 'Iniciar evolução?',
+                message: 'O rascunho atual será substituído pelo assistente de evolução deste personagem.',
+                confirmLabel: 'Iniciar evolução',
+                danger: true,
+                onConfirm: () => startCharacterLevelUpWizard(sheet.id, true)
+            });
+            return;
+        }
+
+        const base = {
+            level: currentLevel,
+            attributes: cloneWizardValue(sheet.attributes, {}),
+            skills: cloneWizardValue(sheet.skills, {}),
+            professionalSkills: cloneWizardValue(sheet.professionalSkills, {}),
+            learnedAbilityIds: cloneWizardValue(normalizedLearnedAbilityIds, []),
+            equippedWeight: Math.max(0, Number(sheet.equippedWeight) || 0),
+            hpMaximum: Math.max(0, Number(sheet.hpMax) || 0),
+            stMaximum: Math.max(0, Number(sheet.stMax) || 0),
+            runeSourceMaximum: Math.max(0, Number(sheet.runeSourceMax) || 0),
+            canUndoLastEvolution: Boolean(global.canUndoLastCharacterLevelUp?.(sheet.id))
+        };
+
+        characterWizardDraft = createCharacterWizardDraft({
+            ...sheet,
+            editingSheetId: sheet.id,
+            workflow: 'level-up',
+            levelUpBase: base,
+            step: 0,
+            name: sheet.identity?.name || sheet.name,
+            level: currentLevel + 1,
+            raceId: sheet.raceId || sheet.identity?.raceId,
+            professionId: sheet.identity?.professionId,
+            specializationId: sheet.identity?.specializationId
+        });
+        persistCharacterWizardDraft();
+        renderCharacterWizardStep();
+    }
+
     function updateCharacterWizardField(field, value) {
         if (!characterWizardDraft) return;
 
-        if (field === 'name') characterWizardDraft.name = String(value || '').slice(0, 80);
-        if (field === 'level') characterWizardDraft.level = getCharacterModel()?.normalizeCharacterLevel(value) || 1;
+        if (field === 'name' && !isCharacterLevelUpDraft()) {
+            characterWizardDraft.name = String(value || '').slice(0, 80);
+        }
+        if (field === 'level') {
+            const normalizedLevel = getCharacterModel()?.normalizeCharacterLevel(value) || 1;
+            characterWizardDraft.level = isCharacterLevelUpDraft()
+                ? Math.max(Number(characterWizardDraft.levelUpBase.level) + 1, normalizedLevel)
+                : normalizedLevel;
+        }
 
         persistCharacterWizardDraft();
         if (field === 'level') renderCharacterWizardStep();
+    }
+
+    function updateCharacterWizardBirthField(field, value) {
+        if (!characterWizardDraft || isCharacterLevelUpDraft()) return;
+        const current = characterWizardDraft.birthDate && typeof characterWizardDraft.birthDate === 'object'
+            ? { ...characterWizardDraft.birthDate }
+            : { day: null, month: null, year: null, era: 'DR' };
+        if (field === 'era') current.era = String(value).toUpperCase() === 'AR' ? 'AR' : 'DR';
+        else if (['day', 'month', 'year'].includes(field)) {
+            current[field] = String(value).trim() ? Math.max(0, Math.floor(Number(value) || 0)) || null : null;
+        }
+        characterWizardDraft.birthDate = current.day || current.month || current.year ? current : null;
+        persistCharacterWizardDraft();
     }
 
     function normalizeWizardLearnedAbilities() {
@@ -1315,12 +1689,14 @@
         const summary = getWizardAllocationSummary();
         const current = Number(characterWizardDraft.attributes?.[definition.id]?.invested) || 0;
         const direction = Math.sign(Number(delta) || 0);
+        const minimum = getLevelUpBaseInvestment('attributes', definition.id);
 
         if (direction > 0 && (summary?.attributePointsRemaining || 0) <= 0) return;
+        if (direction < 0 && current <= minimum) return;
 
         characterWizardDraft.attributes[definition.id] = {
             ...(characterWizardDraft.attributes[definition.id] || {}),
-            invested: Math.max(0, current + direction)
+            invested: Math.max(minimum, current + direction)
         };
         persistCharacterWizardDraft();
         renderCharacterWizardStep();
@@ -1344,13 +1720,15 @@
         const current = Number(characterWizardDraft.skills?.[definition.id]?.invested) || 0;
         const direction = Math.sign(Number(delta) || 0);
         const cap = model?.CHARACTER_SKILL_INVESTMENT_CAP || 4;
+        const minimum = getLevelUpBaseInvestment('skills', definition.id);
 
         if (direction > 0 && current >= cap) return;
         if (direction > 0 && (summary?.skillPointsRemaining || 0) < definition.pointCost) return;
+        if (direction < 0 && current <= minimum) return;
 
         characterWizardDraft.skills[definition.id] = {
             ...(characterWizardDraft.skills[definition.id] || {}),
-            invested: Math.min(cap, Math.max(0, current + direction))
+            invested: Math.min(cap, Math.max(minimum, current + direction))
         };
         persistCharacterWizardDraft();
         renderCharacterWizardStep({ preserveScroll: true });
@@ -1367,13 +1745,15 @@
         const direction = Math.sign(Number(delta) || 0);
         const cap = definition.maxInvestment || model?.CHARACTER_SKILL_INVESTMENT_CAP || 4;
         const pointCost = definition.pointCost || 1;
+        const minimum = getLevelUpBaseInvestment('professionalSkills', definition.id);
 
         if (direction > 0 && current >= cap) return;
         if (direction > 0 && (summary?.skillPointsRemaining || 0) < pointCost) return;
+        if (direction < 0 && current <= minimum) return;
 
         characterWizardDraft.professionalSkills[definition.id] = {
             ...(characterWizardDraft.professionalSkills[definition.id] || {}),
-            invested: Math.min(cap, Math.max(0, current + direction))
+            invested: Math.min(cap, Math.max(minimum, current + direction))
         };
         characterWizardDraft.skills = model.applyCharacterProfessionalSkillBonuses(
             characterWizardDraft.specializationId,
@@ -1439,6 +1819,10 @@
         );
         const ability = options.find(entry => entry.id === abilityId);
         if (!ability || ability.accessMode !== 'learnable') return;
+        if (isPreviouslyLearnedAbility(ability.id)) {
+            global.showToast?.(`${ability.name} já fazia parte da ficha e será preservada.`);
+            return;
+        }
 
         const learnedIds = new Set(characterWizardDraft.learnedAbilityIds || []);
         if (learnedIds.has(ability.id)) {
@@ -1478,27 +1862,32 @@
 
         if (direction > 0 && !validateCharacterWizardStep(characterWizardDraft.step, { notify: true })) return;
 
-        characterWizardDraft.step = Math.min(
-            WIZARD_STEPS.length - 1,
-            Math.max(0, characterWizardDraft.step + direction)
-        );
+        const indexes = getWizardStepIndexes();
+        const currentPosition = Math.max(0, indexes.indexOf(characterWizardDraft.step));
+        const nextPosition = Math.min(indexes.length - 1, Math.max(0, currentPosition + direction));
+        characterWizardDraft.step = indexes[nextPosition];
         persistCharacterWizardDraft();
         renderCharacterWizardStep();
     }
 
     function saveCharacterWizardDraft() {
         if (!persistCharacterWizardDraft()) return;
-        global.showToast?.('Rascunho da ficha salvo neste dispositivo.');
+        global.showToast?.(isCharacterLevelUpDraft()
+            ? 'Evolução salva para continuar depois.'
+            : 'Rascunho da ficha salvo neste dispositivo.');
     }
 
     function discardCharacterWizardDraft() {
         const editing = Boolean(characterWizardDraft?.editingSheetId);
+        const levelUp = isCharacterLevelUpDraft();
         global.openSessionConfirm?.({
-            title: editing ? 'Cancelar edição?' : 'Descartar rascunho?',
-            message: editing
+            title: levelUp ? 'Cancelar evolução?' : (editing ? 'Cancelar edição?' : 'Descartar rascunho?'),
+            message: levelUp
+                ? 'Os pontos distribuídos nesta evolução serão descartados. A ficha salva será mantida.'
+                : editing
                 ? 'As alterações feitas nesta edição serão descartadas. A ficha salva será mantida.'
                 : 'As escolhas desta ficha completa serão removidas.',
-            confirmLabel: editing ? 'Cancelar edição' : 'Descartar',
+            confirmLabel: levelUp ? 'Cancelar evolução' : (editing ? 'Cancelar edição' : 'Descartar'),
             danger: true,
             onConfirm: () => {
                 clearCharacterWizardDraft();
@@ -1522,6 +1911,8 @@
             result = global.addFullCharacterDraftToCombat?.(draft);
         } else if (action === 'update') {
             result = global.updateFullCharacterSheetFromDraft?.(draft.editingSheetId, draft);
+        } else if (action === 'level-up') {
+            result = global.applyCharacterLevelUpFromDraft?.(draft.editingSheetId, draft);
         }
 
         if (result) clearCharacterWizardDraft();
@@ -1531,8 +1922,10 @@
     global.openCharacterTemplateChooser = openCharacterTemplateChooser;
     global.startCharacterSheetTemplate = startCharacterSheetTemplate;
     global.startCharacterSheetWizard = startCharacterSheetWizard;
+    global.startCharacterLevelUpWizard = startCharacterLevelUpWizard;
     global.renderCharacterWizardStep = renderCharacterWizardStep;
     global.updateCharacterWizardField = updateCharacterWizardField;
+    global.updateCharacterWizardBirthField = updateCharacterWizardBirthField;
     global.selectCharacterWizardRace = selectCharacterWizardRace;
     global.selectCharacterWizardProfession = selectCharacterWizardProfession;
     global.selectCharacterWizardSpecialization = selectCharacterWizardSpecialization;
@@ -1558,6 +1951,9 @@
         clearCharacterWizardDraft,
         hasCharacterWizardProgress,
         getWizardAllocationSummary,
+        isCharacterLevelUpDraft,
+        getWizardStepIndexes,
+        getCharacterLevelUpReviewData,
         validateCharacterWizardStep,
         validateCompleteCharacterWizard
     });

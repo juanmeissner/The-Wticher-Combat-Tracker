@@ -95,7 +95,7 @@ const normalizedDraft = wizard.createCharacterWizardDraft({
     skills: { spellcasting: { invested: 2 }, perception: 9 }
 });
 
-assert.equal(normalizedDraft.draftVersion, 4);
+assert.equal(normalizedDraft.draftVersion, 6);
 assert.equal(normalizedDraft.step, 2);
 assert.equal(normalizedDraft.name, 'Geralt de Rívia');
 assert.equal(normalizedDraft.level, 3);
@@ -121,6 +121,32 @@ assert.equal(editingDraft.editingSheetId, 'sheet-geralt');
 assert.equal(editingDraft.progression.adrenaline, 2);
 assert.equal(editingDraft.abilities[0].active, true);
 
+const levelUpDraft = wizard.createCharacterWizardDraft({
+    editingSheetId: 'sheet-geralt',
+    workflow: 'level-up',
+    levelUpBase: {
+        level: 4,
+        attributes: { strength: { invested: 3 } },
+        skills: { physique: { invested: 2 } },
+        professionalSkills: {},
+        learnedAbilityIds: [],
+        equippedWeight: 2
+    },
+    name: 'Geralt',
+    level: 5,
+    raceId: 'witcher',
+    specializationId: 'wolf_school',
+    attributes: { strength: { invested: 4 } },
+    skills: { physique: { invested: 2 } }
+});
+assert.equal(levelUpDraft.workflow, 'level-up');
+assert.equal(levelUpDraft.levelUpBase.level, 4);
+assert.deepEqual(
+    Array.from(wizard.getWizardStepIndexes(levelUpDraft)),
+    [0, 3, 4, 5, 6, 7, 8],
+    'A evolução deve ignorar raça e caminho, que permanecem bloqueados.'
+);
+
 const migratedDraft = wizard.createCharacterWizardDraft({
     draftVersion: 1,
     step: 4,
@@ -130,7 +156,7 @@ const migratedDraft = wizard.createCharacterWizardDraft({
     specializationId: 'archer'
 });
 assert.equal(migratedDraft.step, 5, 'O rascunho anterior deve continuar na etapa de perícias gerais.');
-assert.equal(migratedDraft.draftVersion, 4);
+assert.equal(migratedDraft.draftVersion, 6);
 
 const migratedStageFiveDraft = wizard.createCharacterWizardDraft({
     draftVersion: 2,
@@ -180,6 +206,7 @@ const savedDraft = wizard.createCharacterWizardDraft({
     raceId: 'human',
     professionId: 'mage',
     specializationId: 'mage',
+    birthDate: { day: 8, month: 6, year: 1248, era: 'DR' },
     updatedAt: '2026-08-26T00:00:00.000Z'
 });
 localStorage.setItem(wizard.CHARACTER_SHEET_DRAFT_KEY, JSON.stringify(savedDraft));
@@ -187,6 +214,9 @@ localStorage.setItem(wizard.CHARACTER_SHEET_DRAFT_KEY, JSON.stringify(savedDraft
 assert.equal(wizard.hasCharacterWizardProgress(wizard.readCharacterWizardDraft()), true);
 assert.equal(wizard.readCharacterWizardDraft().name, 'Yennefer');
 assert.equal(wizard.readCharacterWizardDraft().level, 4);
+assert.deepEqual(JSON.parse(JSON.stringify(wizard.readCharacterWizardDraft().birthDate)), {
+    day: 8, month: 6, year: 1248, era: 'DR'
+});
 wizard.clearCharacterWizardDraft();
 assert.equal(wizard.readCharacterWizardDraft(), null);
 
@@ -220,7 +250,11 @@ assert.match(wizardCss, /@media \(max-width: 520px\)/);
 assert.match(wizardCss, /character-choice-grid/);
 assert.match(wizardCss, /character-template-grid/);
 assert.match(wizardCss, /character-mode-card-import/);
+assert.match(wizardCss, /character-sheet-level-up-button/);
+assert.match(wizardCss, /character-level-up-gains/);
+assert.match(wizardCss, /character-level-up-derived-grid/);
 assert.match(wizardCss, /character-attribute-grid/);
+assert.match(wizardCss, /character-birth-fields/);
 assert.match(wizardCss, /character-skill-list/);
 assert.match(wizardCss, /character-skill-group-bonus/);
 assert.match(wizardCss, /character-professional-heading/);
@@ -248,15 +282,78 @@ assert.match(wizardCss, /character-race-detail/);
 assert.match(wizardCss, /character-review-trait-list/);
 assert.match(wizardCss, /character-derived-grid/);
 assert.match(wizardSource, /calculateCharacterDerivedValues/);
-assert.match(wizardSource, /PASSO 8 DE 9/);
+assert.match(wizardSource, /EVOLUÇÃO DE PERSONAGEM/);
+assert.match(wizardSource, /Já conhecida · preservada/);
+assert.match(wizardSource, /Confirmar evolução/);
+assert.match(wizardSource, /getLevelUpBaseInvestment/);
+assert.match(wizardSource, /startCharacterLevelUpWizard/);
 assert.match(wizardSource, /Modelo pronto/);
 assert.match(wizardSource, /startCharacterSheetTemplate/);
 assert.match(wizardSource, /EDITAR FICHA COMPLETA/);
 assert.match(wizardSource, /editSheetId/);
 assert.match(wizardSource, /updateFullCharacterSheetFromDraft/);
+assert.match(wizardSource, /updateCharacterWizardBirthField/);
+assert.match(wizardSource, /Data de nascimento/);
 assert.match(wizardSource, /Salvar alterações/);
 assert.match(indexSource, /id="movementInp"/);
 assert.match(enhancementsSource, /id="sheetMovement"/);
+
+const levelUpDialog = {
+    classList: { add() {}, remove() {} },
+    innerHTML: '',
+    scrollTop: 0,
+    querySelector() { return null; }
+};
+const levelUpSheet = JSON.parse(JSON.stringify(context.characterSheetModel.createFullCharacterFoundation({
+    name: 'Yennefer',
+    level: 4,
+    raceId: 'human',
+    professionId: 'mage',
+    specializationId: 'mage',
+    attributes: { intelligence: { invested: 6 } },
+    skills: { spellcasting: { invested: 4 } }
+})));
+Object.assign(levelUpSheet, {
+    id: 'sheet-yennefer-level-up',
+    name: 'Yennefer',
+    hpMax: 50,
+    stMax: 40,
+    runeSourceMax: 0,
+    equippedWeight: 2
+});
+context.document = {
+    querySelector(selector) {
+        return selector === '#sessionToolsModal .session-tools' ? levelUpDialog : null;
+    },
+    getElementById() { return null; },
+    querySelectorAll() { return []; }
+};
+context.getCharacterSheetForEditing = id => id === levelUpSheet.id ? levelUpSheet : null;
+context.canUndoLastCharacterLevelUp = () => false;
+context.renderSessionToolsView = () => {};
+context.openSessionConfirm = () => {};
+context.showToast = () => {};
+context.startCharacterLevelUpWizard(levelUpSheet.id);
+assert.match(levelUpDialog.innerHTML, /EVOLUÇÃO DE PERSONAGEM/);
+assert.match(levelUpDialog.innerHTML, /Nível atual 4/);
+assert.match(levelUpDialog.innerHTML, /value="5"/);
+assert.equal((levelUpDialog.innerHTML.match(/<li class=/g) || []).length, 7);
+context.updateCharacterWizardField('level', 6);
+assert.match(levelUpDialog.innerHTML, /Atributos ganhos<\/span><strong>\+2/);
+assert.match(levelUpDialog.innerHTML, /Perícias ganhas<\/span><strong>\+8/);
+assert.match(levelUpDialog.innerHTML, /Treino ganho<\/span><strong>\+10/);
+context.moveCharacterWizard(1);
+assert.match(levelUpDialog.innerHTML, /Distribua os atributos/);
+assert.match(levelUpDialog.innerHTML, /mínimo preservado 6/);
+context.adjustCharacterWizardAttribute('intelligence', -1);
+assert.equal(
+    wizard.readCharacterWizardDraft().attributes.intelligence.invested,
+    6,
+    'A evolução não deve reduzir um atributo abaixo do investimento anterior.'
+);
+context.adjustCharacterWizardAttribute('intelligence', 1);
+assert.equal(wizard.readCharacterWizardDraft().attributes.intelligence.invested, 7);
+wizard.clearCharacterWizardDraft();
 
 const inventoryModalAdd = inventorySource.slice(
     inventorySource.indexOf('function addInventoryItemFromModal'),

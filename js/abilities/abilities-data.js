@@ -4100,6 +4100,7 @@
         type: 'Sagrado',
     
         duration: '1 dia',
+        timeDuration: { amount: 1, unit: 'days' },
     
         defense: 'Nenhuma',
     
@@ -4884,6 +4885,7 @@
         type: 'Ritual',
     
         duration: 'Única',
+        timeDuration: { amount: 5, unit: 'hours' },
     
         defense: 'Nenhuma',
     
@@ -5054,6 +5056,7 @@
         type: 'Ritual',
     
         duration: '1 hora',
+        timeDuration: { amount: 1, unit: 'hours' },
     
         defense: 'Nenhuma',
     
@@ -5213,6 +5216,7 @@
         `,
         shortDescription: 'Azar e sorte extremos',
         duration: '1 semana',
+        timeDuration: { amount: 1, unit: 'weeks' },
         defense: 'Resistir Coerção',
         damage: 'Nenhum',
         consumption: '8',
@@ -5395,6 +5399,7 @@
         Quando o primeiro corvo se alimentar da oferenda, o Hex desperta e passa a perseguir o alvo.
         `,
         duration: '2 semanas',
+        timeDuration: { amount: 2, unit: 'weeks' },
         defense: 'Nenhuma',
         damage: '',
         cost: '8',
@@ -5591,6 +5596,7 @@
             Antes do amanhecer, deve enterrar as cinzas da fogueira ao pé de uma árvore viva e deixar uma oferenda simples para os espíritos da mata, como pão, leite ou mel.
             `,
         duration: '1 semana',
+        timeDuration: { amount: 1, unit: 'weeks' },
         defense: 'Resistir Coerção',
         damage: '',
         cost: '8',
@@ -5661,6 +5667,7 @@
             Após cada vez, deve lavar o rosto e as mãos usando folhas frescas de hortelã ou ervas aromáticas. No último dia, as roupas usadas durante a maldição devem ser queimadas junto com um punhado de sal grosso.
             `,
         duration: '3 dias',
+        timeDuration: { amount: 3, unit: 'days' },
         defense: 'Tolerância',
         damage: '',
         cost: '8',
@@ -5698,6 +5705,7 @@
         profession: 'Hex',
         category: 'Hex',
         duration: '1 semana',
+        timeDuration: { amount: 1, unit: 'weeks' },
         defense: 'Consciência',
         damage: '',
         cost: '8',

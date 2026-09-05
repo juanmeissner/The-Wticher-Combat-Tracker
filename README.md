@@ -69,6 +69,7 @@ flowchart LR
 | 👹 Bestiário | Monstros predefinidos, busca, detalhes e painéis rápidos de ataques, habilidades e perícias |
 | 🎁 Saque | Recompensas contextuais, rolagem de quantidades, distribuição de itens e divisão de Coroas |
 | 🌀 Condições | Painel responsivo em grade, duração, stacks e dano recorrente automatizado |
+| 🕰️ Tempo da campanha | Calendário iniciado em 1276 DR, eras AR/DR, fases lunares, nomes medievais e avanços temporais auditáveis |
 | 🛏️ Cuidados | Alimentação, higiene, hospedagem, ciclos diários, recuperação e estados persistentes |
 | ☣️ Toxicidade | Poções com valores próprios, limiares cumulativos, Tolerância, overdose e Mel Branco |
 | ✨ Efeitos | Magias e itens ativos vinculados individualmente aos participantes |
@@ -196,7 +197,7 @@ O seletor de condições usa um painel central responsivo em grade no celular e 
 
 Cada condição ou efeito pode conter:
 
-- duração em rodadas ou permanência;
+- duração em rodadas, permanência ou prazo real da campanha em minutos, horas, dias e semanas;
 - stacks individuais;
 - descrição completa;
 - origem e alvo;
@@ -205,14 +206,52 @@ Cada condição ou efeito pode conter:
 
 **Sangramento**, **Em Chamas** e **Envenenado** causam 1d6 por stack no início do turno afetado. As três condições aceitam até 10 stacks, conforme suas regras cadastradas.
 
+O controle compacto `✨` do pad reúne a aplicação de **Magias**, **Itens** e **Status** em um único seletor contextual. O espaço liberado recebe o botão `🕰️`, mantendo a quantidade de controles e evitando poluir a interface.
+
+### 🕰️ Relógio da campanha
+
+O relógio possui um motor temporal persistente e independente do horário real do dispositivo. Campanhas novas começam em **1º de janeiro de 1276 DR, às 08:00**, mas o mestre pode redefinir o início. Datas e eventos aceitam as eras **AR** e **DR**, inclusive em uma Linha do Tempo própria para a cronologia histórica do Continente.
+
+- cada troca de participante avança exatamente **1 minuto**, inclusive em turnos de monstros e NPCs;
+- uma rodada equivale à quantidade de participantes vivos em minutos;
+- atalhos permitem avançar **1 rodada, 10 minutos, 1 hora, 8 horas, 1 dia** ou um período personalizado;
+- todo avanço manual apresenta a data anterior e a nova antes da confirmação;
+- o histórico cria uma ação agrupada, com período, horários e dia resultante;
+- o relógio faz parte do estado de Desfazer, dos backups completos e da restauração do aplicativo;
+- atravessar a meia-noite atualiza automaticamente o contador do dia da campanha;
+- a hora atual também recebe um nome medieval, como **Hora do Lobo**, **Hora do Tordo**, **Hora do Morcego** ou **Hora dos Fantasmas**.
+- cada data possui uma fase lunar calculada em um ciclo sinódico contínuo de aproximadamente 29,53 dias;
+- o cabeçalho mostra a Lua atual e cada dia do calendário exibe seu ícone lunar; as descrições são simplificadas para Lua Nova, Lua Crescente, Lua Cheia e Lua Minguante;
+- a visualização mensal começa pela segunda-feira, permite navegar entre meses e destaca o dia atual da campanha;
+- pontos coloridos identificam dias com notas, lembretes, missões, pagamentos, aniversários, datas comemorativas, prazos, marcos históricos ou eventos personalizados;
+- cada dia pode guardar descrição, contratante ou contato, recompensa em Coroas, horário, era AR/DR, recorrência anual e estado concluído;
+- concluir um evento com recompensa abre a distribuição de Coroas entre os jogadores do combate, sem selecionar ou creditar ninguém automaticamente;
+- recompensas divididas ficam registradas no evento e no histórico, não podem ser entregues duas vezes e continuam pendentes quando nenhum destinatário é escolhido;
+- a Agenda ordena compromissos pendentes, identifica atrasos e mantém os registros concluídos recolhidos;
+- eventos programados alcançados por turno ou salto aparecem na prévia, no aviso e nos detalhes agrupados do histórico;
+- cada ocorrência é identificada individualmente para não ser processada duas vezes, inclusive em eventos anuais.
+
+A aba **Linha do Tempo** mantém conhecimento histórico separado da agenda operacional. Marcos podem ser cadastrados em qualquer data AR ou DR, agrupados por ano, pesquisados por nome, descrição ou referência e filtrados por era. A ordem alterna entre antigos e recentes, cada registro indica sua posição em relação ao ano atual da campanha e um atalho abre diretamente o dia correspondente no calendário. Como são referências, marcos históricos nunca disparam alertas, recompensas ou efeitos ao avançar o relógio. Já **Datas comemorativas** são eventos anuais processáveis e estão prontas para receber a lista oficial do universo e da campanha sem alterar a estrutura do calendário.
+
+O motor oferece uma interface única para os processadores de efeitos temporais. Magias, itens e condições com duração narrativa recebem horário exato de início e expiração; seus cards mostram o tempo restante e a data final. Ao atingir o prazo, o efeito e suas condições vinculadas são encerrados juntos. Efeitos genuinamente táticos continuam em rodadas e não são convertidos silenciosamente. Fichas antigas com Elixir de Pantagran são migradas de `120 rodadas` para `2 horas`, e Poção de Perfume utiliza as horas efetivamente roladas.
+
+Antes de um salto capaz de processar Sangramento, Chamas ou Veneno, a prévia pergunta se o mestre deseja aplicar o dano recorrente. Se confirmado, os ciclos completos são calculados pela duração atual de uma rodada e o resultado fica agrupado na mesma ação temporal, evitando dezenas de registros soltos.
+
+Na virada da meia-noite, o motor encerra o dia anterior uma única vez e verifica alimentação, higiene e sono de cada personagem. Ausências acumulam **Faminto**, **Falta de Higiene** e **Privação de Sono**; cuidados registrados na data impedem a penalidade correspondente. Benefícios diários expiram pelo calendário, enquanto benefícios obtidos ao terminar uma noite de hospedagem permanecem válidos no novo dia.
+
+Saltos fora do combate também processam a passagem narrativa da toxicidade e o intervalo para **Abstinência de Fisstech**. A toxicidade reduz uma vez por dia conforme `Tolerância total + nível`; consequências e dano só são executados quando o mestre marca a confirmação apresentada na prévia. O Fisstech conserva a regra de dez turnos/minutos após o fim do efeito, sem contagem dupla nos turnos normais. Recuperações médicas informadas em horas ou dias recebem um prazo exato e mudam o ferimento de **Tratado** para **Curado** quando esse horário é alcançado.
+
 ### 🛏️ Cuidados, descanso e necessidades
 
 Com o pad zerado, o botão de Coração abre o fluxo contextual **Cuidados e descanso** sem adicionar controles permanentes à interface. O mestre escolhe os beneficiários, alimentação, banho, hospedagem, valores e pagadores; sem pagador selecionado, nenhuma Coroa é removida.
 
-- cada confirmação representa um novo ciclo diário da campanha;
+- alimentação, banho e sono são marcados no dia atual da campanha, sem criar ciclos duplicados ao usar mais de um serviço;
 - dias sem alimentação, banho ou sono permanecem salvos individualmente;
 - `Faminto`, `Falta de Higiene` e `Privação de Sono` acumulam pilhas e alteram testes de perícia;
 - refeições, banhos e hospedagens recuperam HP e EST conforme a qualidade;
+- registrar qualquer hospedagem com sono avança o relógio da campanha **uma única vez em 8 horas**, independentemente da quantidade de beneficiários;
+- dormir atravessando a meia-noite satisfaz a necessidade de sono do dia encerrado e mantém o benefício da hospedagem no novo dia;
+- alimentação e banho recebem o horário da campanha no registro, mas não avançam tempo arbitrariamente enquanto uma duração oficial não for definida;
 - `Bem Alimentado`, `Revigorado` e `Bem Descansado` concedem benefícios válidos por um ciclo;
 - PV e EST temporários de fontes diferentes coexistem, e o EST temporário é consumido antes do normal;
 - hospedagens simples usam testes assistidos de Físico e Intimidação, com Desconforto e risco de roubo;
@@ -439,6 +478,7 @@ Para usar, adicione um cavalo em **Itens → Etc. → Montarias**, selecione-o e
 Em **⋯ → Fichas → Nova ficha**, é possível escolher entre criação rápida, **criação completa em nove etapas** ou um **modelo pronto**. A ficha completa oferece:
 
 - raça, profissão, especialização ou escola de bruxo;
+- data de nascimento com ano opcional e era AR/DR, cálculo de idade conforme o relógio da campanha e aniversário anual sincronizado automaticamente;
 - nível configurável e orçamentos progressivos de atributo, perícia e treino;
 - seis atributos com valor base 10 e bônus derivado a cada dois pontos;
 - distribuição de atributos otimizada para celular, com nomes e cálculos completos, controles separados e adaptação automática para uma coluna em telas estreitas;
@@ -463,7 +503,11 @@ Cada ficha salva também pode ser transferida individualmente entre dispositivos
 3. no outro dispositivo, abra **⋯ → Fichas → Nova ficha → Importar ficha** e selecione o arquivo;
 4. revise o nome e o nível exibidos e confirme a importação.
 
-A transferência preserva a ficha completa, recursos atuais, progressão, magias, inventário, equipamentos, montarias e demais dados vinculados. O arquivo é validado e atualizado para as regras atuais durante a leitura. A ficha recebida ganha uma nova identificação e nunca sobrescreve uma ficha existente; nomes repetidos recebem automaticamente o sufixo **(Importada)**.
+A transferência preserva a ficha completa, nascimento, recursos atuais, progressão, magias, inventário, equipamentos, montarias e demais dados vinculados. O arquivo é validado e atualizado para as regras atuais durante a leitura. A ficha recebida ganha uma nova identificação e nunca sobrescreve uma ficha existente; nomes repetidos recebem automaticamente o sufixo **(Importada)**. Se houver nascimento, a importação também cria o aniversário anual usando a nova identificação.
+
+Fichas completas possuem ainda o botão **⬆ Evoluir**, que abre um assistente próprio para subir um ou vários níveis. Raça, profissão, escola ou especialização e investimentos anteriores permanecem bloqueados durante esse fluxo. A cada nível, o orçamento libera `+1` ponto de atributo, `+4` pontos de perícia e a progressão normal dos pontos de treino; saldos não utilizados anteriormente continuam disponíveis. O jogador distribui os novos pontos, aprende magias permitidas e revisa, antes de confirmar, todas as mudanças em atributos, perícias, HP, EST, Carga, Movimento e Fonte Rúnica.
+
+A evolução preserva HP, EST e Fonte Rúnica atuais, aumentando apenas os limites calculados. Cada confirmação gera um registro persistente dentro da ficha e uma entrada detalhada no histórico. Enquanto a progressão resultante não tiver sido alterada, reabrir **⬆ Evoluir** também oferece a opção de desfazer com segurança a última evolução.
 
 Os seis modelos prontos aceleram a preparação sem bloquear nenhuma escolha:
 
@@ -608,6 +652,7 @@ O menu **⋯** concentra as ferramentas administrativas:
 4. Escolha **⚡ Criação rápida**, **📜 Criação completa**, **🧭 Modelo pronto** ou **⇧ Importar ficha**.
 5. Nos modelos prontos, selecione a função desejada, revise a construção desde o primeiro passo e personalize o nome.
 6. Conclua com **Salvar ficha**, **Salvar e adicionar ao combate** ou **Somente combate**.
+7. Para avançar uma ficha completa, retorne a **⋯ → Fichas**, toque em **⬆ Evoluir**, escolha o novo nível e distribua somente os pontos liberados.
 
 ### 2. Entenda turno e alvo
 
@@ -789,6 +834,7 @@ O projeto não exige framework JavaScript, bundler ou etapa de compilação.
 ├── character-collections.css    # Seletor e contexto das coleções individuais
 ├── equipment.css                # Painéis, armas, armaduras e ações dos monstros
 ├── character-sheet-wizard.css   # Assistente responsivo da ficha completa
+├── campaign-clock.css           # Relógio, avanços temporais e seletor unificado de efeitos
 ├── character-spells.css         # Repertório e fluxo de conjuração no combate
 ├── critical-wounds.css          # Críticos, tratamentos, tabelas e consequências
 ├── toxicity.css                 # Indicador compacto e níveis visuais de toxicidade
@@ -809,6 +855,8 @@ O projeto não exige framework JavaScript, bundler ou etapa de compilação.
 │   ├── character-sheet-model.js # Regras, progressão e cálculos puros da ficha completa
 │   ├── character-sheet-templates.js # Modelos prontos e rascunhos independentes
 │   ├── character-sheet-wizard.js # Assistente responsivo de criação completa
+│   ├── campaign-clock.js         # Estado, conversões e transações do tempo da campanha
+│   ├── temporal-effects.js        # Prazos, migração e expiração de efeitos em horas e dias
 │   ├── character-skill-tests.js  # Painéis e testes de perícia durante o combate
 │   ├── character-spells.js       # Repertório, magia efetiva e conjuração das fichas completas
 │   ├── professional-skills-data.js # Classificação e automações das habilidades profissionais
@@ -850,6 +898,7 @@ node tests/character-sheet-templates.test.cjs
 node tests/character-sheet-wizard.test.cjs
 node tests/character-skill-tests.test.cjs
 node tests/character-spells.test.cjs
+node tests/campaign-clock.test.cjs
 node tests/care-services.test.cjs
 node tests/combat-effects-panel.test.cjs
 node tests/critical-wounds.test.cjs
@@ -865,7 +914,7 @@ node tests/item-use-automation.test.cjs
 node tests/spell-damage-automation.test.cjs
 ```
 
-Os testes verificam o isolamento entre personagens, a migração e o backup do armazenamento antigo, a criação completa, a exportação e importação individual sem sobrescrita, os seis modelos prontos, os orçamentos de progressão, o aprendizado de magias, os painéis de perícias e magias, os custos efetivos, Magia Expandida, Sobrecarga Arcana, Cura Mágica, dano mágico por alvo, fórmulas ofensivas, áreas, tipo Fogo, Bafo de Dragão, Inflamador, Fisstech e sua Abstinência atrasada. Também cobrem cuidados e descanso, ciclos diários, contadores de ausência, duração e restauração dos benefícios, recursos temporários, testes de hospedagem, redução profissional de custos, Cuidado Prolongado, Dormir Leve, Balada do Sobrevivente e os benefícios de Freya. A suíte valida ainda os itens instantâneos, seleção contextual de alvos, ablação em armadura e arma, preparação de dano por item, Veneno Negro, remoção de intoxicação, fórmula e recompensas dos testes, integração do `20 natural`, as quatro gravidades e os 24 ferimentos críticos, tratamento médico, vacilos, críticos defensivos, desarme, consequências avançadas, toxicidade, overdose e Mel Branco. Por fim, cobre a sincronização com fichas, a integridade do catálogo, equipamentos, munições, defesas, reparos, ataques de monstros, saque, Coroas, receitas, rendimentos, transferências entre armazenamentos, renderização de ícones na Central de Carga e o bloqueio global de zoom.
+Os testes verificam o isolamento entre personagens, a migração e o backup do armazenamento antigo, a criação completa, nascimento, idade, aniversários sincronizados, exportação e importação individual sem sobrescrita, a evolução de nível sem regressão de investimentos, a preservação de recursos, o histórico e o desfazer da última evolução, os seis modelos prontos, os orçamentos de progressão, o aprendizado de magias, os painéis de perícias e magias, os custos efetivos, Magia Expandida, Sobrecarga Arcana, Cura Mágica, dano mágico por alvo, fórmulas ofensivas, áreas, tipo Fogo, Bafo de Dragão, Inflamador, Fisstech e sua Abstinência atrasada. Também cobrem o relógio da campanha, início em 1276 DR, eras AR/DR, ciclos lunares, conversões de minutos, passagem entre dias, nomes medievais, persistência, backup, efeitos em horas e dias, expiração vinculada, recompensas de eventos sem duplicidade e integração com turnos e sono. Cuidados e descanso, ciclos diários, contadores de ausência, duração e restauração dos benefícios, recursos temporários, testes de hospedagem, redução profissional de custos, Cuidado Prolongado, Dormir Leve, Balada do Sobrevivente e os benefícios de Freya também são validados. A suíte cobre ainda os itens instantâneos, seleção contextual de alvos, ablação em armadura e arma, preparação de dano por item, Veneno Negro, remoção de intoxicação, fórmula e recompensas dos testes, integração do `20 natural`, as quatro gravidades e os 24 ferimentos críticos, tratamento médico, vacilos, críticos defensivos, desarme, consequências avançadas, toxicidade, overdose e Mel Branco. Por fim, cobre a sincronização com fichas, a integridade do catálogo, equipamentos, munições, defesas, reparos, ataques de monstros, saque, Coroas, receitas, rendimentos, transferências entre armazenamentos, renderização de ícones na Central de Carga e o bloqueio global de zoom.
 
 ## ✅ Estado atual
 
@@ -874,9 +923,21 @@ Os testes verificam o isolamento entre personagens, a migração e o backup do a
 - [x] Compatibilidade visual com safe areas do iOS
 - [x] Experiência standalone sem zoom acidental por gesto, duplo toque ou atalhos
 - [x] Combate, iniciativa, rodadas e dano localizado
+- [x] Motor temporal com data, horário, dia da campanha, avanço por turno, saltos manuais, histórico e desfazer
+- [x] Calendário mensal com notas, missões, lembretes, recompensas, aniversários, prazos e marcadores por dia
+- [x] Linha do Tempo histórica com eras AR/DR, busca, filtros, agrupamento anual e navegação para o calendário
+- [x] Datas comemorativas anuais separadas de marcos históricos informativos
+- [x] Conclusão de eventos com distribuição segura de Coroas, recompensa pendente e prevenção de crédito duplicado
+- [x] Eras AR/DR, calendário inicial em 1276 DR e ciclo lunar integrado
+- [x] Durações narrativas em minutos, horas, dias e semanas com expiração automática
+- [x] Fechamento diário com necessidades, toxicidade narrativa, Abstinência de Fisstech e recuperação médica
+- [x] Agenda ordenada com eventos pontuais ou anuais, conclusão e processamento sem duplicidade
+- [x] Seletor unificado de Magias, Itens e Status com botão dedicado ao relógio
 - [x] Fichas persistentes e encontros salvos
 - [x] Exportação e importação individual de fichas entre dispositivos
+- [x] Assistente de evolução com múltiplos níveis, pontos protegidos, novas magias, histórico e desfazer
 - [x] Criação completa com raças, profissões, atributos, perícias e aprendizado de magias
+- [x] Nascimento, idade dinâmica e aniversário anual sincronizado entre fichas e calendário
 - [x] Distribuição responsiva de atributos com controles legíveis e grade adaptável no mobile
 - [x] Seis modelos prontos, editáveis e validados pelos mesmos orçamentos da ficha completa
 - [x] Migração segura com cópia local única das fichas anteriores e resumo atualizado

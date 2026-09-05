@@ -1,7 +1,8 @@
 (function initializeCareServices(global) {
     'use strict';
 
-    const CARE_STATE_VERSION = 5;
+    const CARE_STATE_VERSION = 6;
+    const CARE_MINUTES_PER_DAY = 1440;
     const MAX_CARE_RECORDS = 30;
     const CARE_DAILY_BENEFIT_STATUS_IDS = Object.freeze([
         'well_fed', 'refreshed', 'well_rested',
@@ -358,6 +359,17 @@
             : 0;
     }
 
+    function getCareCampaignMinute(offsetMinutes = 0) {
+        const minute = Number(global.campaignClock?.describeMinute?.().epochMinute);
+        return Number.isFinite(minute) ? Math.floor(minute + Number(offsetMinutes || 0)) : null;
+    }
+
+    function getCareCampaignDayKey(minute = getCareCampaignMinute()) {
+        return minute !== null && minute !== undefined && Number.isFinite(Number(minute))
+            ? Math.floor(Number(minute) / CARE_MINUTES_PER_DAY)
+            : null;
+    }
+
     function renderCarePersistenceSummary(participants) {
         return participants.map(participant => {
             const cycle = Math.max(0, Number(participant?.careState?.cycle) || 0);
@@ -696,6 +708,12 @@
         }).filter(Boolean);
     }
 
+    function getCareTimeAdvanceMinutes(selections = []) {
+        return selections.some(selection => (
+            selection?.category?.id === 'lodging' && selection?.option?.id !== 'no_sleep'
+        )) ? 480 : 0;
+    }
+
     function refreshCareServicesModal() {
         if (!pendingCarePlan || !document.getElementById('careServicesModal')) return;
 
@@ -751,6 +769,13 @@
             );
         });
 
+        if (record.campaignTime?.minutes > 0) {
+            lines.push(
+                `Tempo da campanha: ${record.campaignTime.before} → ${record.campaignTime.after} ` +
+                `(+${record.campaignTime.minutes / 60} horas por sono/hospedagem)`
+            );
+        }
+
         if (record.payments.length) {
             lines.push(`Pagamento: ${record.payments.map(payment => `${payment.payerName} −${payment.amount}`).join(', ')}`);
         } else if (record.baseTotalCost > 0 && record.totalCost === 0) {
@@ -790,6 +815,16 @@
 
     function beginCareCycle(combatant, timestamp) {
         const state = ensureCareState(combatant);
+        const campaignDayKey = getCareCampaignDayKey();
+        if (campaignDayKey !== null) {
+            if (state.cycle <= 0) state.cycle = 1;
+            state.activeCampaignDay = campaignDayKey;
+            state.lastCareAt = timestamp;
+            return { state, cycle: state.cycle, expiredBenefits: [] };
+        }
+
+        // Compatibilidade com fichas e testes anteriores ao relógio da campanha:
+        // sem uma data de campanha disponível, cada confirmação ainda representa um ciclo.
         state.cycle += 1;
         state.lastCycleAt = timestamp;
         const expiredBenefits = [];
@@ -808,37 +843,54 @@
         const state = cycleContext.state;
         const need = state.needs[category.id];
         const details = [];
+        const campaignMinute = getCareCampaignMinute();
+        const campaignDayKey = getCareCampaignDayKey(campaignMinute);
 
         if (relationship && option.status?.id === relationship.negative) {
             const negativeEffect = getCareEffect(combatant, relationship.negative);
             need.daysWithout = Math.max(0, Number(negativeEffect?.stacks) || (need.daysWithout + 1));
+            if (campaignDayKey !== null) need.lastPenaltyCampaignDay = campaignDayKey;
             details.push(`${need.daysWithout} dia(s) sem ${category.id === 'food' ? 'alimentação' : category.id === 'hygiene' ? 'banho' : 'dormir'}`);
         } else {
             need.daysWithout = 0;
             need.lastFulfilledAt = timestamp;
             need.lastFulfilledCycle = cycleContext.cycle;
+            if (campaignDayKey !== null) need.lastFulfilledCampaignDay = campaignDayKey;
         }
 
         need.lastProcessedAt = timestamp;
         need.lastProcessedCycle = cycleContext.cycle;
+        if (campaignDayKey !== null) need.lastProcessedCampaignDay = campaignDayKey;
         need.lastOption = { id: option.id, name: option.name };
 
         if (option.status?.id && CARE_DAILY_BENEFIT_STATUS_IDS.includes(option.status.id)) {
             const effect = getCareEffect(combatant, option.status.id);
             if (effect) {
+                const benefitMinute = category.id === 'lodging' && option.id !== 'no_sleep'
+                    ? getCareCampaignMinute(480)
+                    : campaignMinute;
+                const benefitCampaignDay = getCareCampaignDayKey(benefitMinute);
                 effect.automation = {
                     ...(effect.automation || {}),
                     careCycleApplied: cycleContext.cycle,
                     careDurationCycles: 1,
                     expiresAtCareCycle: cycleContext.cycle + 1,
-                    note: `Benefício diário · válido durante o ciclo ${cycleContext.cycle}`
+                    note: `Benefício diário · válido durante o ciclo ${cycleContext.cycle}`,
+                    ...(benefitCampaignDay !== null ? {
+                        careAppliedCampaignDay: benefitCampaignDay,
+                        expiresAtCampaignDay: benefitCampaignDay + 1
+                    } : {})
                 };
                 state.benefits[option.status.id] = {
                     name: effect.name,
                     stacks: Math.max(1, Number(effect.stacks) || 1),
                     appliedCycle: cycleContext.cycle,
                     expiresAtCycle: cycleContext.cycle + 1,
-                    effect: cloneCareValue(effect, {})
+                    effect: cloneCareValue(effect, {}),
+                    ...(benefitCampaignDay !== null ? {
+                        appliedCampaignDay: benefitCampaignDay,
+                        expiresAtCampaignDay: benefitCampaignDay + 1
+                    } : {})
                 };
                 details.push(`${effect.name} válido durante o ciclo ${cycleContext.cycle}`);
             }
@@ -849,6 +901,88 @@
         else delete state.conditions.uncomfortable;
 
         return details;
+    }
+
+    function previewCareDayBoundary(combatant, boundaryMinute) {
+        if (!combatant || combatant.type !== 'player') return null;
+        const closedDay = getCareCampaignDayKey(Number(boundaryMinute) - 1);
+        if (closedDay === null) return null;
+        const state = combatant.careState || {};
+        if (Number(state.lastClosedCampaignDay) >= closedDay) return null;
+
+        const missing = Object.entries(CARE_CATEGORY_RELATIONSHIPS)
+            .filter(([categoryId]) => Number(state.needs?.[categoryId]?.lastFulfilledCampaignDay) !== closedDay)
+            .map(([categoryId]) => getCareCategory(categoryId)?.name || categoryId);
+        const expiring = CARE_DAILY_BENEFIT_STATUS_IDS.filter(statusId => {
+            const effect = getCareEffect(combatant, statusId);
+            if (!effect) return false;
+            const expiresAt = Number(
+                state.benefits?.[statusId]?.expiresAtCampaignDay
+                ?? effect.automation?.expiresAtCampaignDay
+            );
+            return !Number.isFinite(expiresAt) || expiresAt <= closedDay + 1;
+        });
+
+        return { combatantId: combatant.id, combatantName: combatant.name, closedDay, missing, expiring };
+    }
+
+    function processCareDayBoundary(combatant, boundaryMinute) {
+        const preview = previewCareDayBoundary(combatant, boundaryMinute);
+        if (!preview) return null;
+
+        const state = ensureCareState(combatant);
+        const nextDay = preview.closedDay + 1;
+        const details = [];
+        state.cycle += 1;
+        state.lastCycleAt = Number(boundaryMinute);
+        state.lastClosedCampaignDay = preview.closedDay;
+        state.lastDailyBoundaryMinute = Number(boundaryMinute);
+
+        CARE_DAILY_BENEFIT_STATUS_IDS.forEach(statusId => {
+            const effect = getCareEffect(combatant, statusId);
+            if (!effect) return;
+            const expiresAt = Number(
+                state.benefits?.[statusId]?.expiresAtCampaignDay
+                ?? effect.automation?.expiresAtCampaignDay
+            );
+            if (Number.isFinite(expiresAt) && expiresAt > nextDay) return;
+            const removed = removeCareStatus(combatant, statusId);
+            if (removed) details.push(`${removed.name} expirou`);
+            delete state.benefits[statusId];
+        });
+
+        Object.entries(CARE_CATEGORY_RELATIONSHIPS).forEach(([categoryId, relationship]) => {
+            const need = state.needs[categoryId];
+            const categoryName = getCareCategory(categoryId)?.name || categoryId;
+            const fulfilled = Number(need.lastFulfilledCampaignDay) === preview.closedDay;
+            const penaltyAlreadyApplied = Number(need.lastPenaltyCampaignDay) === preview.closedDay;
+
+            if (fulfilled) {
+                need.daysWithout = 0;
+                details.push(`${categoryName}: atendida`);
+            } else if (!penaltyAlreadyApplied) {
+                const changed = setCareStatus(combatant, relationship.negative, 1, {}, true);
+                removeCareStatus(combatant, relationship.positive);
+                need.daysWithout = Math.max(1, Number(changed?.nextStacks) || (Number(need.daysWithout) || 0) + 1);
+                need.lastPenaltyCampaignDay = preview.closedDay;
+                details.push(`${changed?.effect?.name || categoryName}: +1 pilha (×${need.daysWithout})`);
+            } else {
+                need.daysWithout = getCareNeedDays(combatant, categoryId);
+                details.push(`${categoryName}: penalidade do dia já registrada`);
+            }
+
+            need.lastProcessedCampaignDay = preview.closedDay;
+            need.lastProcessedAt = Number(boundaryMinute);
+        });
+
+        return {
+            combatantId: combatant.id,
+            combatantName: combatant.name,
+            closedDay: preview.closedDay,
+            missing: preview.missing,
+            expiredBenefits: preview.expiring,
+            details
+        };
     }
 
     function persistCareProfessionalBenefit(combatant, statusId, level, provider, cycleContext, note) {
@@ -1405,6 +1539,9 @@
         };
         record.outcomes = [];
         record.cycles = [];
+        record.campaignMinute = Number(global.campaignClock?.describeMinute?.().epochMinute) || null;
+        const careTimeAdvance = getCareTimeAdvanceMinutes(selections);
+        record.campaignTime = careTimeAdvance ? { minutes: careTimeAdvance } : null;
 
         const mutate = () => {
             payments.forEach(payment => {
@@ -1463,6 +1600,16 @@
                     });
                 }
             });
+            if (record.campaignTime?.minutes && global.campaignClock?.advanceByMinutes) {
+                const timeResult = global.campaignClock.advanceByMinutes(record.campaignTime.minutes, {
+                    source: 'care-sleep'
+                });
+                if (timeResult?.changed) {
+                    record.campaignTime.before = timeResult.before.short;
+                    record.campaignTime.after = timeResult.after.short;
+                    record.campaignTime.results = cloneCareValue(timeResult.results, []);
+                }
+            }
             beneficiaries.forEach(beneficiary => {
                 const state = ensureCareState(beneficiary);
                 state.lastRecord = cloneCareValue(record, {});
@@ -1586,6 +1733,7 @@
         normalizeCareAmount,
         getCareOption,
         divideCareCost,
+        getCareTimeAdvanceMinutes,
         buildCareHistoryDetail,
         getCareStatusIdFromEffect,
         getCareEffect,
@@ -1604,6 +1752,8 @@
         ensureCareState,
         beginCareCycle,
         updateCarePersistence,
+        previewCareDayBoundary,
+        processCareDayBoundary,
         restoreCareStateEffects,
         serializeCareState,
         getCareConsumableDefinition,

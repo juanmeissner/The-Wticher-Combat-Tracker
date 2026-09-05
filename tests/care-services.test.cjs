@@ -57,6 +57,49 @@ assert.deepEqual(JSON.parse(JSON.stringify(care.divideCareCost(20, []))), []);
 assert.equal(care.normalizeCareAmount(-5), 0);
 assert.equal(care.normalizeCareAmount('15'), 15);
 
+let campaignMinute = 100 * 1440 + 600;
+const dailyContext = createContext({
+    campaignClock: { describeMinute: () => ({ epochMinute: campaignMinute }) }
+});
+const dailyCare = dailyContext.careServices;
+const dailyPlayer = {
+    id: 'daily-player', name: 'Triss', type: 'player', hpCurrent: 30, hpMax: 40,
+    stCurrent: 20, stMax: 30, effects: [], progression: {}
+};
+const dailySelection = {
+    category: dailyCare.CARE_CATALOG.food,
+    option: dailyCare.CARE_CATALOG.food.options.find(option => option.id === 'good_meal'),
+    totalCost: 0
+};
+const dailyCycle = dailyCare.beginCareCycle(dailyPlayer, 'campaign-day-100');
+dailyCare.applyCareSelectionToCombatant(dailyPlayer, dailySelection);
+dailyCare.updateCarePersistence(dailyPlayer, dailySelection, dailyCycle, 'campaign-day-100');
+const dailyPreview = dailyCare.previewCareDayBoundary(dailyPlayer, 101 * 1440);
+assert.deepEqual(JSON.parse(JSON.stringify(dailyPreview.missing)), ['Higiene', 'Sono e hospedagem']);
+dailyCare.processCareDayBoundary(dailyPlayer, 101 * 1440);
+assert.equal(dailyCare.getCareEffect(dailyPlayer, 'hungry'), null, 'Alimentação registrada não deve gerar Faminto.');
+assert.equal(dailyCare.getCareEffect(dailyPlayer, 'poor_hygiene').stacks, 1);
+assert.equal(dailyCare.getCareEffect(dailyPlayer, 'sleep_deprivation').stacks, 1);
+assert.equal(dailyCare.getCareEffect(dailyPlayer, 'well_fed'), null, 'Benefício diário deve expirar na virada seguinte.');
+assert.equal(dailyCare.processCareDayBoundary(dailyPlayer, 101 * 1440), null, 'A mesma meia-noite não pode ser processada duas vezes.');
+
+campaignMinute = 200 * 1440 + 1200;
+const sleeper = {
+    id: 'sleeper', name: 'Geralt', type: 'player', hpCurrent: 30, hpMax: 50,
+    stCurrent: 20, stMax: 40, effects: [], progression: {}
+};
+const lodgingSelection = {
+    category: dailyCare.CARE_CATALOG.lodging,
+    option: dailyCare.CARE_CATALOG.lodging.options.find(option => option.id === 'quality_inn'),
+    totalCost: 0
+};
+const lodgingCycle = dailyCare.beginCareCycle(sleeper, 'campaign-day-200');
+dailyCare.applyCareSelectionToCombatant(sleeper, lodgingSelection);
+dailyCare.updateCarePersistence(sleeper, lodgingSelection, lodgingCycle, 'campaign-day-200');
+dailyCare.processCareDayBoundary(sleeper, 201 * 1440);
+assert.equal(dailyCare.getCareEffect(sleeper, 'sleep_deprivation'), null);
+assert.ok(dailyCare.getCareEffect(sleeper, 'well_rested'), 'O benefício obtido ao acordar deve permanecer no novo dia.');
+
 const automated = {
     id: 10,
     name: 'Geralt',
@@ -72,6 +115,9 @@ const selection = (categoryId, optionId) => ({
     option: care.CARE_CATALOG[categoryId].options.find(option => option.id === optionId),
     totalCost: 0
 });
+assert.equal(care.getCareTimeAdvanceMinutes([selection('lodging', 'quality_inn')]), 480);
+assert.equal(care.getCareTimeAdvanceMinutes([selection('lodging', 'no_sleep')]), 0);
+assert.equal(care.getCareTimeAdvanceMinutes([selection('food', 'good_meal')]), 0);
 
 care.applyCareSelectionToCombatant(automated, selection('food', 'no_food'));
 care.applyCareSelectionToCombatant(automated, selection('food', 'no_food'));

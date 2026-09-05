@@ -15,6 +15,19 @@ function decreaseEffectTurn(combatantId,type,id){
 
     if(!effect) return;
 
+    if (effect.temporal?.expiresAtMinute) {
+        effect.temporal.expiresAtMinute = Math.max(
+            Number(window.campaignClock?.describeMinute?.().epochMinute) || 0,
+            Number(effect.temporal.expiresAtMinute) - 60
+        );
+        if (window.getTemporalEffectRemaining?.(effect) <= 0) {
+            combatant.effects = combatant.effects.filter(current => current !== effect);
+        }
+        savePlayersToStorage();
+        renderList(false);
+        return;
+    }
+
     if(effect.remainingTurns>0){
 
         effect.remainingTurns--;
@@ -43,6 +56,13 @@ function increaseEffectTurn(combatantId,type,id){
         );
 
     if(!effect) return;
+
+    if (effect.temporal?.expiresAtMinute) {
+        effect.temporal.expiresAtMinute = Number(effect.temporal.expiresAtMinute) + 60;
+        savePlayersToStorage();
+        renderList(false);
+        return;
+    }
 
     effect.remainingTurns++;
 

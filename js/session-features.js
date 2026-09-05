@@ -15,6 +15,7 @@ const HISTORY_TYPE_INFO = Object.freeze({
     loot: { icon: '🎁', label: 'Saque' },
     'skill-test': { icon: '🎲', label: 'Teste' },
     turn: { icon: '⏱️', label: 'Turno' },
+    time: { icon: '🕰️', label: 'Tempo' },
     participant: { icon: '🧙', label: 'Participante' },
     undo: { icon: '↶', label: 'Desfeito' },
     system: { icon: '📜', label: 'Sessão' }
@@ -59,6 +60,7 @@ function captureSessionState() {
         inventory: cloneSessionData(inventory),
         abilitiesInventory: cloneSessionData(abilitiesInventory),
         expandedMagic,
+        campaignClock: window.campaignClock?.getSnapshot?.() || null,
         characterCollectionContextKey: window.getCharacterCollectionContextKey?.() || 'legacy'
     };
 }
@@ -72,6 +74,7 @@ function getStateFingerprint(state) {
         inventory: state.inventory,
         abilitiesInventory: state.abilitiesInventory,
         expandedMagic: state.expandedMagic,
+        campaignClock: state.campaignClock,
         characterCollectionContextKey: state.characterCollectionContextKey
     });
 }
@@ -87,6 +90,7 @@ function inferHistoryType(label) {
     if (normalized.includes('cura em ')) return 'healing';
     if (normalized.includes('falha de morte')) return 'death-save';
     if (normalized.startsWith('turno:')) return 'turn';
+    if (normalized.startsWith('tempo avançado') || normalized.includes('relógio da campanha') || normalized.includes('início da campanha')) return 'time';
     if (normalized.startsWith('condição')) return 'condition';
     if (normalized.includes('equipad') || normalized.includes('arma ativa') || normalized.includes('danificado')) return 'equipment';
     if (normalized.startsWith('efeito') || normalized.startsWith('item usado')) return 'effect';
@@ -443,6 +447,7 @@ function restoreSessionState(state) {
         abilitiesInventory = cloneSessionData(state.abilitiesInventory);
         expandedMagic = state.expandedMagic;
     }
+    if (state.campaignClock) window.campaignClock?.restoreSnapshot?.(state.campaignClock);
 
     savePlayersToStorage();
     saveInventory();
@@ -1277,7 +1282,7 @@ function deleteSavedEncounter(id) {
 
 function exportSessionBackup() {
     const backup = {
-        version: 3,
+        version: 4,
         exportedAt: new Date().toISOString(),
         session: captureSessionState(),
         history: sessionHistory,
@@ -1853,7 +1858,12 @@ function installActionGuards() {
 
     window.nextTurn = () => {
         const before = captureSessionState();
+        const hadCombatants = combatants.length > 0;
         originalNextTurn();
+
+        const campaignTime = hadCombatants
+            ? window.campaignClock?.advanceByMinutes?.(1, { source: 'combat-turn' })
+            : null;
 
         const activeCombatant = getActiveCombatant();
         const recurringEffects = applyRecurringEffects(activeCombatant);
@@ -1867,6 +1877,11 @@ function installActionGuards() {
         const automationChanges = window.processAutomatedTurnEffects?.(activeCombatant) || [];
         const expiredEffects = getExpiredEffects(before);
         const detail = [
+            ...(campaignTime?.changed ? [
+                `Tempo: ${campaignTime.before.short} → ${campaignTime.after.short}`,
+                campaignTime.after.medievalHour,
+                ...campaignTime.results.map(result => result.summary || result.detail).filter(Boolean)
+            ] : []),
             ...recurringChanges,
             ...automationChanges,
             ...expiredEffects.map(effect => effect.summary)
@@ -2114,6 +2129,7 @@ window.setHistoryParticipantFilter = setHistoryParticipantFilter;
 window.toggleHistoryDetails = toggleHistoryDetails;
 window.clearSessionHistory = clearSessionHistory;
 window.addCombatHistoryEntry = addHistoryEntry;
+window.applyRecurringCombatEffects = applyRecurringEffects;
 window.trackCombatAction = (label, callback, detail = '', metadata = {}) =>
     trackAction(label, callback, detail, metadata);
 window.trackEquipmentAction = (label, callback, detail = '', metadata = {}) =>

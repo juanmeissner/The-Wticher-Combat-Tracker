@@ -240,6 +240,11 @@ function toggleEffect(type,id){
             }
         }
 
+        window.attachTemporalEffect?.(
+            appliedEffect,
+            automationMetadata?.timeDuration || source.timeDuration
+        );
+
         combatant.effects.push(appliedEffect);
 
         showToast("✨ Efeito aplicado");

@@ -1131,11 +1131,28 @@
             : CHARACTER_CREATION_MODES.QUICK;
     }
 
+    function normalizeCharacterBirthDate(value) {
+        const source = isPlainObject(value) ? value : {};
+        const day = Math.floor(Number(source.day) || 0);
+        const month = Math.floor(Number(source.month) || 0);
+        const rawYear = Math.floor(Number(source.year) || 0);
+        const year = rawYear > 0 ? rawYear : null;
+        const era = String(source.era || 'DR').toUpperCase() === 'AR' ? 'AR' : 'DR';
+        if (day < 1 || month < 1 || month > 12) return null;
+        const calendarYear = year ? (era === 'AR' ? 1 - year : year) : 2000;
+        const isLeapYear = calendarYear % 4 === 0
+            && (calendarYear % 100 !== 0 || calendarYear % 400 === 0);
+        const daysInMonth = [31, isLeapYear ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][month - 1];
+        if (day > daysInMonth) return null;
+        return { day, month, year, era };
+    }
+
     function createFullCharacterFoundation(options = {}) {
         const source = isPlainObject(options) ? options : {};
         const level = normalizeCharacterLevel(source.level ?? source.identity?.level);
         const raceId = normalizeCharacterRaceId(source.raceId ?? source.identity?.raceId);
         const identity = isPlainObject(source.identity) ? cloneCharacterValue(source.identity, {}) : {};
+        const birthDate = normalizeCharacterBirthDate(source.birthDate ?? identity.birthDate);
         const progression = isPlainObject(source.progression)
             ? cloneCharacterValue(source.progression, {})
             : {};
@@ -1230,7 +1247,8 @@
                 level,
                 raceId,
                 professionId,
-                specializationId: specialization?.id || ''
+                specializationId: specialization?.id || '',
+                birthDate
             },
             attributes,
             skills,
@@ -1315,6 +1333,7 @@
         CHARACTER_PROFESSIONAL_SKILL_DEFINITIONS,
         normalizeCharacterIdentifier,
         normalizeCharacterLevel,
+        normalizeCharacterBirthDate,
         getCharacterAttributePointBudget,
         getCharacterSkillPointBudget,
         getCharacterTrainingPointBudget,

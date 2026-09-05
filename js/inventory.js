@@ -1035,9 +1035,14 @@ function useItem(itemId) {
             window.appendToxicityItemUseDetail?.(effectResult.summary);
         } else {
             const duration = Number(effectResult.effect?.remainingTurns) || 0;
-            const durationDetail = duration > 0
-                ? ` por ${duration} rodada${duration === 1 ? '' : 's'}`
+            const temporalDuration = effectResult.effect?.temporal
+                ? window.formatEffectDurationLabel?.(effectResult.effect)
                 : '';
+            const durationDetail = temporalDuration
+                ? ` por ${temporalDuration}`
+                : duration > 0
+                    ? ` por ${duration} rodada${duration === 1 ? '' : 's'}`
+                    : '';
             const action = effectResult.refreshed ? 'renovado' : 'aplicado';
             const automationNote = String(effectResult.effect?.automation?.note || '').trim();
             window.appendToxicityItemUseDetail?.(

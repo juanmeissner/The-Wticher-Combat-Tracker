@@ -784,6 +784,46 @@
         syncWithdrawalExhaustion(target);
     }
 
+    function advanceFissstechWithdrawal(target, elapsedTurns = 1) {
+        const changes = [];
+        if (!target?.automation?.fissstechWithdrawalPending) return changes;
+
+        const fissstechActive = (target.effects || []).some(effect => (
+            effect.type === 'item' && effect.id === 'fissstech'
+        ));
+        if (fissstechActive) {
+            target.automation.fissstechWithdrawalDelay = null;
+            return changes;
+        }
+
+        const elapsed = Math.max(0, Math.floor(Number(elapsedTurns) || 0));
+        if (!elapsed) return changes;
+        const rawDelay = target.automation.fissstechWithdrawalDelay;
+        const configured = Number(rawDelay);
+        const initial = rawDelay !== null && rawDelay !== undefined
+            && Number.isInteger(configured) && configured >= 0 ? configured : 10;
+        const remaining = Math.max(0, initial - elapsed);
+
+        if (remaining > 0) {
+            target.automation.fissstechWithdrawalDelay = remaining;
+            changes.push(`Abstinência de Fisstech: começa em ${remaining} turno${remaining === 1 ? '' : 's'}`);
+        } else {
+            const addictionStacks = Number(getCondition(target, '💉')?.stacks) || 0;
+            const withdrawalStacks = Number(getCondition(target, '🥶')?.stacks) || 0;
+            if (addictionStacks > withdrawalStacks) {
+                const withdrawal = ensureStackCondition(target, '🥶', 1);
+                changes.push(`Abstinência de Fisstech: +1 pilha (×${Number(withdrawal?.stacks) || withdrawalStacks + 1})`);
+            } else {
+                changes.push('Abstinência de Fisstech: nenhuma nova pilha necessária');
+            }
+            target.automation.fissstechWithdrawalPending = false;
+            target.automation.fissstechWithdrawalDelay = null;
+        }
+
+        syncWithdrawalExhaustion(target);
+        return changes;
+    }
+
     function stabilizeSelectedWound(target, instanceId) {
         if (!instanceId) return '';
         const instance = (target.criticalWounds || []).find(wound => wound.instanceId === instanceId);
@@ -1069,7 +1109,10 @@
                         : `${target.name}: Alucinado por 20 rodadas; nenhum ferimento estabilizado`);
                 } else {
                     const duration = Math.max(0, Number(result.effect?.remainingTurns) || 0);
-                    detailLines.push(`${target.name}: ${result.refreshed ? 'efeito renovado' : 'efeito aplicado'}${duration ? ` por ${duration} rodadas` : ''}`);
+                    const temporalDuration = result.effect?.temporal
+                        ? global.formatEffectDurationLabel?.(result.effect)
+                        : '';
+                    detailLines.push(`${target.name}: ${result.refreshed ? 'efeito renovado' : 'efeito aplicado'}${temporalDuration ? ` por ${temporalDuration}` : duration ? ` por ${duration} rodadas` : ''}`);
                 }
 
                 results.push({ ...result, target });
@@ -1116,33 +1159,7 @@
                 }
             }
 
-            const fissstechActive = (combatant.effects || []).some(effect => (
-                effect.type === 'item' && effect.id === 'fissstech'
-            ));
-            if (combatant.automation?.fissstechWithdrawalPending && !fissstechActive) {
-                const rawDelay = combatant.automation.fissstechWithdrawalDelay;
-                const configuredDelay = Number(rawDelay);
-                if (rawDelay === null || rawDelay === undefined || !Number.isInteger(configuredDelay) || configuredDelay < 0) {
-                    combatant.automation.fissstechWithdrawalDelay = 10;
-                    changes.push('Abstinência de Fisstech: começa em 10 turnos');
-                } else if (configuredDelay > 1) {
-                    combatant.automation.fissstechWithdrawalDelay = configuredDelay - 1;
-                    changes.push(`Abstinência de Fisstech: começa em ${configuredDelay - 1} turnos`);
-                } else {
-                    const addictionStacks = Number(getCondition(combatant, '💉')?.stacks) || 0;
-                    const withdrawalStacks = Number(getCondition(combatant, '🥶')?.stacks) || 0;
-                    if (addictionStacks > withdrawalStacks) {
-                        ensureStackCondition(combatant, '🥶', 1);
-                        changes.push('Abstinência de Fisstech: +1 pilha');
-                    }
-                    combatant.automation.fissstechWithdrawalPending = false;
-                    combatant.automation.fissstechWithdrawalDelay = null;
-                }
-            } else if (fissstechActive && combatant.automation?.fissstechWithdrawalPending) {
-                combatant.automation.fissstechWithdrawalDelay = null;
-            }
-
-            syncWithdrawalExhaustion(combatant);
+            changes.push(...advanceFissstechWithdrawal(combatant, 1));
             global.savePlayersToStorage?.();
             return changes;
         };
@@ -1331,6 +1348,7 @@
     global.getItemConditionTestOptions = getItemConditionTestOptions;
     global.getItemConditionHealingMultiplier = getItemConditionHealingMultiplier;
     global.getItemConditionStaminaRecoveryMultiplier = getItemConditionStaminaRecoveryMultiplier;
+    global.advanceFissstechWithdrawal = advanceFissstechWithdrawal;
     global.itemUseAutomation = Object.freeze({
         targetedItemIds: Object.freeze([...TARGETED_ITEMS]),
         multiTargetItemIds: Object.freeze([...MULTI_TARGET_ITEMS]),
@@ -1340,7 +1358,8 @@
         getItemConditionSkillModifier,
         getItemConditionTestOptions,
         getItemConditionHealingMultiplier,
-        getItemConditionStaminaRecoveryMultiplier
+        getItemConditionStaminaRecoveryMultiplier,
+        advanceFissstechWithdrawal
     });
 
     installInventoryApplicationWrapper();
