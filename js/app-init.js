@@ -28,6 +28,9 @@ const APP_STORAGE_KEYS = new Set([
     'dnd_collaboration_session_v1',
     'dnd_collaboration_endpoint_v1'
 ]);
+const APP_SENSITIVE_STORAGE_KEYS = new Set([
+    'dnd_cloud_account_session_v1'
+]);
 
 let applicationRegistrationPromise = null;
 let reloadingForServiceWorker = false;
@@ -54,6 +57,7 @@ function getApplicationStorageSnapshot() {
 
 function clearApplicationStorage() {
     Object.keys(getApplicationStorageSnapshot()).forEach(key => localStorage.removeItem(key));
+    APP_SENSITIVE_STORAGE_KEYS.forEach(key => localStorage.removeItem(key));
 }
 
 function restoreApplicationStorageSnapshot(snapshot) {

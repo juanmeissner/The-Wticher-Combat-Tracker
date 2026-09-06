@@ -1,3 +1,5 @@
+import { handleAccountRequest, isAccountRequest } from './account-service.mjs';
+
 const ROOM_KEY = 'room';
 const ROOM_DIRECTORY_KEY = 'rooms';
 const MAX_BODY_BYTES = 3 * 1024 * 1024;
@@ -1426,7 +1428,7 @@ function getAllowedOrigin(request, env) {
 function corsHeaders(origin) {
     return {
         'access-control-allow-origin': origin,
-        'access-control-allow-methods': 'GET,POST,OPTIONS',
+        'access-control-allow-methods': 'GET,POST,PUT,OPTIONS',
         'access-control-allow-headers': 'content-type,authorization',
         'access-control-max-age': '86400',
         'vary': 'Origin'
@@ -1458,39 +1460,48 @@ export default {
         const headers = corsHeaders(allowedOrigin);
         if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers });
         if (request.method === 'GET' && url.pathname === '/health') {
-            return jsonResponse({ ok: true, service: 'witcher-combat-collaboration', version: 1 }, 200, headers);
+            return jsonResponse({
+                ok: true,
+                service: 'witcher-combat-collaboration',
+                version: 2,
+                accounts: Boolean(env.ACCOUNT_DB)
+            }, 200, headers);
         }
 
         let response;
         try {
-            const listMatch = request.method === 'GET' && url.pathname === '/api/rooms';
-            const createMatch = request.method === 'POST' && url.pathname === '/api/rooms';
-            const roomMatch = url.pathname.match(/^\/api\/rooms\/([A-Z0-9]{6,12})\/(join|ticket|socket|status)$/i);
-            if (listMatch) {
-                response = await routeToDirectory(env, request, '/internal/list');
-            } else if (createMatch) {
-                const body = await readJson(request).catch(() => null);
-                if (!body) return errorResponse('invalid_json', 'Os dados enviados são inválidos.', 400, {}, headers);
-                let lastResponse = null;
-                for (let attempt = 0; attempt < 5; attempt++) {
-                    const code = createRoomCode();
-                    const forwarded = new Request(`${url.origin}/internal/create`, {
-                        method: 'POST', headers: { 'content-type': 'application/json' },
-                        body: JSON.stringify({ ...body, roomCode: code })
-                    });
-                    lastResponse = await routeToRoom(env, code, forwarded, '/internal/create');
-                    if (lastResponse.status !== 409) break;
-                }
-                response = lastResponse || errorResponse('room_code_failed', 'Não foi possível gerar o código da sala.', 503);
-            } else if (roomMatch) {
-                const code = normalizeRoomCode(roomMatch[1]);
-                const action = roomMatch[2].toLowerCase();
-                response = await routeToRoom(env, code, request, `/internal/${action}`);
+            if (isAccountRequest(url)) {
+                response = await handleAccountRequest(request, env.ACCOUNT_DB, url);
             } else {
-                response = errorResponse('not_found', 'Rota não encontrada.', 404);
+                const listMatch = request.method === 'GET' && url.pathname === '/api/rooms';
+                const createMatch = request.method === 'POST' && url.pathname === '/api/rooms';
+                const roomMatch = url.pathname.match(/^\/api\/rooms\/([A-Z0-9]{6,12})\/(join|ticket|socket|status)$/i);
+                if (listMatch) {
+                    response = await routeToDirectory(env, request, '/internal/list');
+                } else if (createMatch) {
+                    const body = await readJson(request).catch(() => null);
+                    if (!body) return errorResponse('invalid_json', 'Os dados enviados são inválidos.', 400, {}, headers);
+                    let lastResponse = null;
+                    for (let attempt = 0; attempt < 5; attempt++) {
+                        const code = createRoomCode();
+                        const forwarded = new Request(`${url.origin}/internal/create`, {
+                            method: 'POST', headers: { 'content-type': 'application/json' },
+                            body: JSON.stringify({ ...body, roomCode: code })
+                        });
+                        lastResponse = await routeToRoom(env, code, forwarded, '/internal/create');
+                        if (lastResponse.status !== 409) break;
+                    }
+                    response = lastResponse || errorResponse('room_code_failed', 'Não foi possível gerar o código da sala.', 503);
+                } else if (roomMatch) {
+                    const code = normalizeRoomCode(roomMatch[1]);
+                    const action = roomMatch[2].toLowerCase();
+                    response = await routeToRoom(env, code, request, `/internal/${action}`);
+                } else {
+                    response = errorResponse('not_found', 'Rota não encontrada.', 404);
+                }
             }
         } catch (error) {
-            console.error('Falha de comunicação com a sala persistente.', error);
+            console.error('Falha no serviço de colaboração.', error);
             response = errorResponse(
                 'room_unavailable',
                 'A sala está temporariamente indisponível. Tente novamente em instantes.',

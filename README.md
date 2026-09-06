@@ -860,6 +860,21 @@ servidor com PBKDF2 e nunca é salva em texto aberto; o dispositivo recebe um
 token próprio e abre o WebSocket com um ticket curto de uso único. A projeção do
 Jogador remove preferências, anotações privadas e fichas alheias antes do envio.
 
+### ☁️ Conta e campanhas permanentes
+
+Fora de uma sala, o painel **Conta e campanhas permanentes** permite criar uma
+conta opcional, salvar a campanha ativa e abri-la em outro dispositivo. As
+campanhas ficam privadas por proprietário no **Cloudflare D1**, possuem revisão
+independente e recusam uma gravação desatualizada em vez de substituir uma versão
+mais recente silenciosamente.
+
+- a senha nunca é armazenada no dispositivo nem no banco em texto aberto;
+- a sessão da conta é revogável, expira e não é incluída no backup JSON;
+- cada conta enxerga somente as próprias campanhas;
+- carregar uma campanha da nuvem mantém a campanha local anterior disponível;
+- o modo offline permanece completo e não exige cadastro;
+- somente o Mestre pode publicar a campanha ativa na conta durante a colaboração.
+
 > [!NOTE]
 > O endereço do serviço oficial já vem configurado no aplicativo. Mestre e
 > jogadores de salas públicas informam somente nome e senha; o código continua
@@ -869,10 +884,13 @@ Jogador remove preferências, anotações privadas e fichas alheias antes do env
 
 ## 💾 Dados, privacidade e backup
 
-Sem entrar em uma sala, todos os dados continuam exclusivamente no dispositivo.
-Ao utilizar a colaboração opcional, um snapshot projetado da campanha é mantido
-no Durable Object da sala; o backup local continua disponível. O `localStorage`
-preserva:
+Sem entrar em uma sala ou optar por uma conta, todos os dados continuam
+exclusivamente no dispositivo. Ao utilizar a colaboração, um snapshot projetado
+da campanha é mantido temporariamente no Durable Object da sala. No dispositivo
+do Jogador, esse snapshot remoto fica isolado da campanha local e é descartado ao
+sair, ser removido ou quando a sala termina; em seguida, a campanha offline é
+restaurada automaticamente. Ao escolher **Salvar campanha atual** em uma conta,
+uma cópia permanente e privada é enviada ao D1. O `localStorage` preserva:
 
 - combate atual;
 - fichas e recursos atuais;
@@ -1036,6 +1054,10 @@ Os testes verificam o isolamento entre personagens, a migração e o backup do a
 - [x] Pad recolhível, rolagens próprias e calendário somente leitura no modo Jogador
 - [x] Revogação remota de dispositivos, encerramento administrativo e registro de acessos
 - [x] Bloqueio integral da campanha no dispositivo após saída, revogação ou encerramento da sala
+- [x] Restauração automática da campanha offline após saída, expulsão ou encerramento da sala
+- [x] Contas opcionais com autenticação privada e sessões revogáveis
+- [x] Campanhas permanentes por proprietário no Cloudflare D1 com controle de revisão
+- [x] Validação automatizada de saída voluntária, expulsão, encerramento e reconexão
 - [x] Assistente de evolução com múltiplos níveis, pontos protegidos, novas magias, histórico e desfazer
 - [x] Criação completa com raças, profissões, atributos, perícias e aprendizado de magias
 - [x] Nascimento, idade dinâmica e aniversário anual sincronizado entre fichas e calendário

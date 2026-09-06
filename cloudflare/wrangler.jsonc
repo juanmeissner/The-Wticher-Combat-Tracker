@@ -1,38 +1,52 @@
 {
-  "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "witcher-combat-collaboration",
-  "main": "src/worker.mjs",
-  "compatibility_date": "2026-09-05",
-  "compatibility_flags": ["nodejs_compat"],
-  "durable_objects": {
-    "bindings": [
-      {
-        "name": "CAMPAIGN_ROOMS",
-        "class_name": "CampaignRoom"
-      },
-      {
-        "name": "ROOM_DIRECTORY",
-        "class_name": "RoomDirectory"
-      }
-    ]
-  },
-  "migrations": [
-    {
-      "tag": "v1",
-      "new_sqlite_classes": ["CampaignRoom"]
-    },
-    {
-      "tag": "v2",
-      "new_sqlite_classes": ["RoomDirectory"]
-    }
-  ],
-  "vars": {
-    "ALLOWED_ORIGINS": "http://localhost:4173,http://127.0.0.1:4173,https://juanmeissner.github.io",
-    "MASTER_RECONNECT_GRACE_MS": "300000",
-    "DIRECTORY_HEARTBEAT_MS": "120000",
-    "DIRECTORY_STALE_MS": "600000"
-  },
-  "observability": {
-    "enabled": true
-  }
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"name": "witcher-combat-collaboration",
+	"main": "src/worker.mjs",
+	"compatibility_date": "2026-09-05",
+	"compatibility_flags": [
+		"nodejs_compat"
+	],
+	"durable_objects": {
+		"bindings": [
+			{
+				"name": "CAMPAIGN_ROOMS",
+				"class_name": "CampaignRoom"
+			},
+			{
+				"name": "ROOM_DIRECTORY",
+				"class_name": "RoomDirectory"
+			}
+		]
+	},
+	"migrations": [
+		{
+			"tag": "v1",
+			"new_sqlite_classes": [
+				"CampaignRoom"
+			]
+		},
+		{
+			"tag": "v2",
+			"new_sqlite_classes": [
+				"RoomDirectory"
+			]
+		}
+	],
+	"vars": {
+		"ALLOWED_ORIGINS": "http://localhost:4173,http://127.0.0.1:4173,https://juanmeissner.github.io",
+		"MASTER_RECONNECT_GRACE_MS": "300000",
+		"DIRECTORY_HEARTBEAT_MS": "120000",
+		"DIRECTORY_STALE_MS": "600000"
+	},
+	"observability": {
+		"enabled": true
+	},
+	"d1_databases": [
+		{
+			"binding": "ACCOUNT_DB",
+			"database_name": "witcher-combat-accounts",
+			"database_id": "6afa80a5-a6a3-4604-9b2a-381b6d06d407",
+			"migrations_dir": "migrations"
+		}
+	]
 }

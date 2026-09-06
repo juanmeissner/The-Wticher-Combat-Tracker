@@ -658,6 +658,7 @@
                 </section>
             </div>
             ${joinPanel}
+            ${root?.cloudAccount?.getPanelMarkup?.() || ''}
             <details class="collaboration-local-preview">
                 <summary>Prévia local de permissões</summary>
             <div class="collaboration-role-grid">
@@ -674,6 +675,7 @@
             <button type="button" class="session-secondary session-full" onclick="renderSessionToolsView('menu')">Voltar</button>
         `;
         if (!roomDirectoryLoaded && !roomDirectoryLoading) root?.setTimeout?.(() => refreshCollaborationRooms(), 0);
+        root?.setTimeout?.(() => root?.cloudAccount?.mountPanel?.(), 0);
     }
 
     function renderProposalCard(proposal) {

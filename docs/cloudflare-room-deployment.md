@@ -1,8 +1,9 @@
 # Publicação da sala experimental na Cloudflare
 
 A interface do Combat Tracker continua hospedada como PWA estática. O diretório
-`cloudflare/` contém somente o serviço de colaboração: API, autenticação da sala,
-Durable Objects, diretório público e WebSockets.
+`cloudflare/` contém o serviço de colaboração: API, autenticação da sala,
+Durable Objects, diretório público, WebSockets e o banco D1 opcional para contas
+e campanhas permanentes.
 
 ## 1. Autorizar o Wrangler
 
@@ -35,7 +36,27 @@ para o Worker de desenvolvimento, execute no console do navegador e recarregue:
 localStorage.setItem('dnd_collaboration_endpoint_v1', 'http://localhost:8787')
 ```
 
-## 4. Publicar
+## 4. Preparar o banco de contas
+
+O `wrangler.jsonc` liga `ACCOUNT_DB` ao banco `witcher-combat-accounts`. Em uma
+conta Cloudflare nova, crie o banco e copie o `database_id` retornado para a
+configuração:
+
+```powershell
+npx wrangler@latest d1 create witcher-combat-accounts
+```
+
+Depois aplique as migrações no banco remoto:
+
+```powershell
+npx wrangler@latest d1 migrations apply witcher-combat-accounts --remote
+```
+
+A migração cria usuários, sessões revogáveis e campanhas privadas versionadas.
+Ela pode ser executada novamente com segurança: o Wrangler aplica somente as
+migrações ainda pendentes.
+
+## 5. Publicar
 
 ```powershell
 npx wrangler@latest deploy
@@ -54,6 +75,17 @@ O cliente oficial já utiliza automaticamente
 instalação própria, substitua `DEFAULT_ENDPOINT` em
 `js/collaboration/realtime-client.js`. O app guarda somente o endereço e o token
 revogável do dispositivo; a senha da sala não é persistida.
+
+## Fluxo de teste das campanhas permanentes
+
+1. Fora de uma sala, abra **⋯ → Sala → Conta e campanhas permanentes**.
+2. Crie uma conta com nome exibido, usuário e senha de pelo menos oito caracteres.
+3. Toque em **Salvar campanha atual** e confira a versão criada na lista.
+4. Em outro dispositivo, entre com a mesma conta e toque em **Carregar**.
+5. Confirme que outra conta não consegue listar nem abrir essa campanha.
+6. Altere a campanha nos dois dispositivos e confirme que uma versão antiga gera
+   conflito, sem sobrescrever silenciosamente a versão mais recente.
+7. Saia da conta e confirme que a sessão desaparece, mas a campanha local continua disponível.
 
 ## Fluxo de teste entre dois dispositivos
 
@@ -83,4 +115,9 @@ revogável do dispositivo; a senha da sala não é persistida.
 - divergências de versão abrem uma decisão explícita para o Mestre;
 - salas públicas expõem somente nome, código e contadores; fichas e credenciais
   permanecem dentro do Durable Object privado da sala;
+- jogadores recebem a campanha da sala em armazenamento temporário; ao sair,
+  serem removidos ou a sala terminar, a campanha offline anterior é restaurada;
+- contas são opcionais; a senha é validada por derivação PBKDF2, o token salvo no
+  dispositivo não participa dos backups e campanhas permanentes ficam isoladas
+  por proprietário no D1;
 - restauração navegável de snapshots históricos continuará em uma etapa futura.

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'witcher-combat-tracker-v114';
+const CACHE_NAME = 'witcher-combat-tracker-v115';
 
 const APP_SHELL = [
     './',
@@ -31,6 +31,7 @@ const APP_SHELL = [
     './js/collaboration/protocol.js',
     './js/collaboration/permissions.js',
     './js/collaboration/offline-queue.js',
+    './js/collaboration/cloud-account.js',
     './js/collaboration/collaboration-session.js',
     './js/collaboration/realtime-client.js',
     './js/campaign/campaign-migrations.js',

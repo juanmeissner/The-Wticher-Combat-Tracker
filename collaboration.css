@@ -62,6 +62,113 @@
     margin: 0;
 }
 
+.cloud-account-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin: 14px 0;
+    padding: 14px;
+    border: 1px solid #31516d;
+    border-radius: 16px;
+    background: linear-gradient(145deg, rgba(8, 47, 73, .72), rgba(23, 32, 51, .96));
+}
+
+.cloud-account-heading,
+.cloud-account-heading > div,
+.cloud-account-actions,
+.cloud-campaign-card {
+    display: flex;
+    align-items: center;
+}
+
+.cloud-account-heading {
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.cloud-account-heading > div {
+    min-width: 0;
+    flex-wrap: wrap;
+    gap: 4px 8px;
+}
+
+.cloud-account-heading strong {
+    color: #f8fafc;
+}
+
+.cloud-account-heading small {
+    width: 100%;
+    padding-left: 30px;
+    color: #7dd3fc;
+}
+
+.cloud-account-copy,
+.cloud-account-empty {
+    margin: 0;
+    color: #b6c6da;
+    font-size: .78rem;
+    line-height: 1.5;
+}
+
+.cloud-account-form,
+.cloud-campaign-list {
+    display: grid;
+    gap: 8px;
+}
+
+.cloud-account-actions {
+    gap: 8px;
+}
+
+.cloud-account-actions > button {
+    min-width: 0;
+    flex: 1;
+    margin: 0;
+}
+
+.cloud-account-error {
+    margin: 0;
+    padding: 9px 10px;
+    border: 1px solid rgba(248, 113, 113, .45);
+    border-radius: 10px;
+    background: rgba(127, 29, 29, .3);
+    color: #fecaca;
+    font-size: .76rem;
+}
+
+.cloud-campaign-card {
+    justify-content: space-between;
+    gap: 10px;
+    padding: 10px;
+    border: 1px solid #334155;
+    border-radius: 12px;
+    background: rgba(15, 23, 42, .72);
+}
+
+.cloud-campaign-card > div {
+    display: grid;
+    min-width: 0;
+    gap: 3px;
+}
+
+.cloud-campaign-card strong,
+.cloud-campaign-card small {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.cloud-campaign-card small {
+    color: #94a3b8;
+    font-size: .68rem;
+}
+
+.cloud-campaign-card button {
+    width: auto;
+    flex: 0 0 auto;
+    margin: 0;
+}
+
 .collaboration-room-list-heading,
 .collaboration-selected-room,
 .collaboration-character-actions {
@@ -607,6 +714,11 @@ html[data-collaboration-role="player"] button[onclick="openExpandedMagicModal()"
 
     .collaboration-online-card > small {
         min-height: 0;
+    }
+
+    .cloud-account-actions {
+        align-items: stretch;
+        flex-direction: column;
     }
 }
 
