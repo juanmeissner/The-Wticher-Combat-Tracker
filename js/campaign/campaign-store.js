@@ -20,8 +20,12 @@
     let checkpointScheduled = false;
     let storageBridgeInstalled = false;
     let bridgeSuspended = 0;
+    let rawGetItem = null;
     let rawSetItem = null;
     let rawRemoveItem = null;
+    let transientRemoteActive = false;
+    let persistentCampaignBeforeTransient = null;
+    let transientStorageValues = new Map();
 
     function campaignStorageKey(id) {
         return `${CAMPAIGN_KEY_PREFIX}${id}`;
@@ -89,8 +93,24 @@
     }
 
     function persistCampaign(campaign) {
+        if (transientRemoteActive && campaign?.id === activeCampaign?.id) return;
         writeDirect(campaignStorageKey(campaign.id), JSON.stringify(campaign));
         updateRegistryEntry(campaign);
+    }
+
+    function snapshotRuntimeStorage() {
+        if (!transientRemoteActive) return migrations.snapshotLegacyStorage(storage);
+        return Object.fromEntries(transientStorageValues.entries());
+    }
+
+    function seedTransientStorage(campaign) {
+        transientStorageValues = new Map();
+        const snapshot = campaign?.state?.compatibility || {};
+        migrations.LEGACY_CAMPAIGN_STORAGE_KEYS.forEach(key => {
+            if (Object.prototype.hasOwnProperty.call(snapshot, key)) {
+                transientStorageValues.set(key, String(snapshot[key]));
+            }
+        });
     }
 
     function emit(reason, detail = {}) {
@@ -145,7 +165,7 @@
         if (!initialized) initialize({ installBridge: false });
         if (!activeCampaign || !storage) return null;
 
-        const snapshot = migrations.snapshotLegacyStorage(storage);
+        const snapshot = snapshotRuntimeStorage();
         const previous = JSON.stringify(activeCampaign.state?.compatibility || {});
         const next = JSON.stringify(snapshot);
         if (previous === next && options.force !== true) return getActiveCampaign();
@@ -184,16 +204,39 @@
     function installLegacyStorageBridge() {
         if (storageBridgeInstalled || !root?.Storage || storage !== root.localStorage) return false;
         const prototype = root.Storage.prototype;
+        rawGetItem = prototype.getItem;
         rawSetItem = prototype.setItem;
         rawRemoveItem = prototype.removeItem;
 
+        prototype.getItem = function (key) {
+            const normalizedKey = String(key || '');
+            if (this === storage && transientRemoteActive && migrations.isCampaignStorageKey(normalizedKey)) {
+                return transientStorageValues.has(normalizedKey)
+                    ? transientStorageValues.get(normalizedKey)
+                    : null;
+            }
+            return rawGetItem.call(this, key);
+        };
+
         prototype.setItem = function (key, value) {
+            const normalizedKey = String(key || '');
+            if (this === storage && transientRemoteActive && migrations.isCampaignStorageKey(normalizedKey)) {
+                transientStorageValues.set(normalizedKey, String(value));
+                if (!bridgeSuspended) scheduleCheckpoint(`transient:set:${normalizedKey}`);
+                return;
+            }
             rawSetItem.call(this, key, value);
             if (this === storage && migrations.isCampaignStorageKey(key) && !bridgeSuspended) {
                 scheduleCheckpoint(`storage:set:${key}`);
             }
         };
         prototype.removeItem = function (key) {
+            const normalizedKey = String(key || '');
+            if (this === storage && transientRemoteActive && migrations.isCampaignStorageKey(normalizedKey)) {
+                transientStorageValues.delete(normalizedKey);
+                if (!bridgeSuspended) scheduleCheckpoint(`transient:remove:${normalizedKey}`);
+                return;
+            }
             rawRemoveItem.call(this, key);
             if (this === storage && migrations.isCampaignStorageKey(key) && !bridgeSuspended) {
                 scheduleCheckpoint(`storage:remove:${key}`);
@@ -277,6 +320,26 @@
             ),
             lastSyncedAt: new Date().toISOString()
         };
+
+        if (options.transient === true) {
+            if (!transientRemoteActive) {
+                persistentCampaignBeforeTransient = activeCampaign
+                    ? migrations.clone(activeCampaign)
+                    : null;
+            }
+            transientRemoteActive = true;
+            seedTransientStorage(incoming);
+            activeCampaign = incoming;
+            emit('remote-applied', {
+                sequence: incoming.sync.lastServerSequence,
+                transient: true
+            });
+            return getActiveCampaign();
+        }
+
+        transientRemoteActive = false;
+        persistentCampaignBeforeTransient = null;
+        transientStorageValues.clear();
         activeCampaign = incoming;
         persistCampaign(activeCampaign);
 
@@ -290,6 +353,33 @@
         return getActiveCampaign();
     }
 
+    function isTransientRemoteCampaign() {
+        return transientRemoteActive;
+    }
+
+    function endTransientRemoteCampaign() {
+        if (!transientRemoteActive) return getActiveCampaign();
+
+        const registry = getRegistry();
+        const persistentId = persistentCampaignBeforeTransient?.id
+            || storage?.getItem?.(ACTIVE_CAMPAIGN_KEY)
+            || registry.activeCampaignId;
+        const stored = persistentId
+            ? parse(storage?.getItem?.(campaignStorageKey(persistentId)), null)
+            : null;
+
+        transientRemoteActive = false;
+        transientStorageValues.clear();
+        activeCampaign = stored
+            ? migrations.normalizeCampaign(stored)
+            : (persistentCampaignBeforeTransient
+                ? migrations.normalizeCampaign(persistentCampaignBeforeTransient)
+                : null);
+        persistentCampaignBeforeTransient = null;
+        emit('transient-remote-ended');
+        return getActiveCampaign();
+    }
+
     function subscribe(listener) {
         if (typeof listener !== 'function') return () => {};
         listeners.add(listener);
@@ -297,13 +387,22 @@
     }
 
     function resetForTests() {
+        if (storageBridgeInstalled && root?.Storage?.prototype) {
+            if (rawGetItem) root.Storage.prototype.getItem = rawGetItem;
+            if (rawSetItem) root.Storage.prototype.setItem = rawSetItem;
+            if (rawRemoveItem) root.Storage.prototype.removeItem = rawRemoveItem;
+        }
         activeCampaign = null;
         initialized = false;
         checkpointScheduled = false;
         storageBridgeInstalled = false;
         bridgeSuspended = 0;
+        rawGetItem = null;
         rawSetItem = null;
         rawRemoveItem = null;
+        transientRemoteActive = false;
+        persistentCampaignBeforeTransient = null;
+        transientStorageValues.clear();
         storage = null;
         listeners.clear();
     }
@@ -323,6 +422,8 @@
         activateCampaign,
         updateMetadata,
         applyRemoteCampaign,
+        isTransientRemoteCampaign,
+        endTransientRemoteCampaign,
         subscribe,
         resetForTests
     });

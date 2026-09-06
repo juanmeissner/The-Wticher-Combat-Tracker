@@ -214,10 +214,18 @@
         return updateSession({ pendingCount: Math.max(0, Number(pendingCount) || 0) });
     }
 
+    function restorePersistentCampaignView() {
+        if (!root?.campaignStore?.isTransientRemoteCampaign?.()) return null;
+        const restoredCampaign = root.campaignStore.endTransientRemoteCampaign?.();
+        if (restoredCampaign) root?.applyRemoteCampaignView?.(restoredCampaign);
+        return restoredCampaign || null;
+    }
+
     function leaveOnlineSession() {
         const deviceId = session?.deviceId || createDeviceId();
         session = normalizeSession({ role: protocol.ROLES.MASTER, deviceId });
         persist();
+        restorePersistentCampaignView();
         applyRoleToDocument();
         root?.renderCharacterCollectionSelectors?.();
         root?.renderList?.(false);
@@ -239,6 +247,7 @@
             accessEndedAt: new Date().toISOString()
         });
         persist();
+        restorePersistentCampaignView();
         applyRoleToDocument();
         root?.renderCharacterCollectionSelectors?.();
         root?.renderList?.(false);
@@ -635,11 +644,11 @@
                     <span class="collaboration-card-icon">👑</span>
                     <strong>Criar sala</strong>
                     <small>Publica uma cópia segura da campanha ativa.</small>
-                    <input id="collaborationCreateName" class="session-input" type="text" maxlength="80" placeholder="Nome do Mestre" value="Mestre">
-                    <input id="collaborationRoomName" class="session-input" type="text" maxlength="100" placeholder="Nome da sala" value="${escapeHtml(campaign?.metadata?.name || 'Campanha principal')}">
-                    <input id="collaborationCreatePassword" class="session-input" type="password" minlength="6" maxlength="128" autocomplete="new-password" placeholder="Senha da sala">
+                    <input id="collaborationCreateName" class="session-input" type="text" maxlength="80" placeholder="Nome do Mestre" autocomplete="off" required oninput="updateCollaborationCreateButtonState()">
+                    <input id="collaborationRoomName" class="session-input" type="text" maxlength="100" placeholder="Nome da sala" autocomplete="off" required oninput="updateCollaborationCreateButtonState()">
+                    <input id="collaborationCreatePassword" class="session-input" type="password" minlength="6" maxlength="128" autocomplete="new-password" placeholder="Senha da sala" required oninput="updateCollaborationCreateButtonState()">
                     <label class="collaboration-discoverable"><input id="collaborationDiscoverable" type="checkbox" checked><span>Mostrar esta sala na lista pública</span></label>
-                    <button id="collaborationCreateButton" type="button" class="session-primary" onclick="createCollaborationRoomFromView()">Criar sala</button>
+                    <button id="collaborationCreateButton" type="button" class="session-primary" onclick="createCollaborationRoomFromView()" disabled>Criar sala</button>
                 </section>
                 <section class="collaboration-online-card">
                     <div class="collaboration-room-list-heading"><div><span class="collaboration-card-icon">👤</span><strong>Salas abertas</strong></div><button type="button" onclick="refreshCollaborationRooms()" aria-label="Atualizar salas">↻</button></div>
@@ -813,21 +822,62 @@
         button.textContent = busy ? label : button.dataset.idleLabel;
     }
 
+    function getCollaborationCreateFields() {
+        return {
+            masterName: root?.document?.getElementById('collaborationCreateName'),
+            roomName: root?.document?.getElementById('collaborationRoomName'),
+            password: root?.document?.getElementById('collaborationCreatePassword'),
+            button: root?.document?.getElementById('collaborationCreateButton')
+        };
+    }
+
+    function updateCollaborationCreateButtonState() {
+        const fields = getCollaborationCreateFields();
+        const masterName = String(fields.masterName?.value || '').trim();
+        const roomName = String(fields.roomName?.value || '').trim();
+        const password = String(fields.password?.value || '');
+        const ready = Boolean(masterName && roomName && password.length >= 6);
+        if (fields.button && fields.button.dataset.busy !== 'true') fields.button.disabled = !ready;
+        return ready;
+    }
+
     async function createCollaborationRoomFromView() {
-        const button = root?.document?.getElementById('collaborationCreateButton');
+        const fields = getCollaborationCreateFields();
+        const button = fields.button;
+        const actorName = String(fields.masterName?.value || '').trim();
+        const roomName = String(fields.roomName?.value || '').trim();
+        const password = String(fields.password?.value || '');
+        if (!actorName) {
+            fields.masterName?.focus?.();
+            root?.showToast?.('⚠️ Informe o nome do Mestre.');
+            return;
+        }
+        if (!roomName) {
+            fields.roomName?.focus?.();
+            root?.showToast?.('⚠️ Informe o nome da sala.');
+            return;
+        }
+        if (password.length < 6) {
+            fields.password?.focus?.();
+            root?.showToast?.('⚠️ Use uma senha com pelo menos 6 caracteres.');
+            return;
+        }
+        if (button) button.dataset.busy = 'true';
         setBusy(button, true, 'Criando...');
         try {
             const result = await root.collaborationRealtime.createRoom({
-                actorName: root.document.getElementById('collaborationCreateName')?.value,
-                roomName: root.document.getElementById('collaborationRoomName')?.value,
-                password: root.document.getElementById('collaborationCreatePassword')?.value,
+                actorName,
+                roomName,
+                password,
                 discoverable: root.document.getElementById('collaborationDiscoverable')?.checked !== false
             });
             root?.showToast?.(`🌐 Sala ${result.room.code} criada.`);
             renderCollaborationView(root.document.querySelector('#sessionToolsModal .session-tools'));
         } catch (error) {
             root?.showToast?.(`⚠️ ${error?.message || 'Não foi possível criar a sala.'}`);
+            if (button) button.dataset.busy = 'false';
             setBusy(button, false);
+            updateCollaborationCreateButtonState();
         }
     }
 
@@ -994,6 +1044,7 @@
         setConnectionState,
         setLastServerSequence,
         setPendingCount,
+        restorePersistentCampaignView,
         leaveOnlineSession,
         endPlayerRoomAccess,
         returnToOfflineModeAfterAccessEnded,
@@ -1002,6 +1053,7 @@
         updateConnectionIndicator,
         applyRoleToDocument,
         renderCollaborationView,
+        updateCollaborationCreateButtonState,
         setLocalRole,
         setLocalPlayerFromView,
         setLocalMasterFromView,
@@ -1021,6 +1073,7 @@
     root.setLocalPlayerFromView = setLocalPlayerFromView;
     root.setLocalMasterFromView = setLocalMasterFromView;
     root.createCollaborationRoomFromView = createCollaborationRoomFromView;
+    root.updateCollaborationCreateButtonState = updateCollaborationCreateButtonState;
     root.joinCollaborationRoomFromView = joinCollaborationRoomFromView;
     root.refreshCollaborationRooms = refreshCollaborationRooms;
     root.selectCollaborationRoom = selectCollaborationRoom;

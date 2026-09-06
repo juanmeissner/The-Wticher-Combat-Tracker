@@ -96,15 +96,19 @@
 
     async function createRoom(options = {}) {
         const endpoint = saveEndpoint(getServiceEndpoint(options.endpoint));
+        const actorName = String(options.actorName || '').trim();
+        const roomName = String(options.roomName || '').trim();
+        if (!actorName) throw new Error('Informe o nome do Mestre.');
+        if (!roomName) throw new Error('Informe o nome da sala.');
         const campaign = root?.campaignStore?.checkpoint?.({ reason: 'collaboration-room-create' })
             || root?.campaignStore?.getActiveCampaign?.();
         if (!campaign) throw new Error('Nenhuma campanha ativa foi encontrada.');
         const current = root?.collaborationSession?.getSession?.() || {};
         const result = await request(endpoint, '/api/rooms', {
             body: {
-                roomName: options.roomName || campaign.metadata?.name,
+                roomName,
                 password: options.password,
-                actorName: options.actorName || 'Mestre',
+                actorName,
                 deviceId: current.deviceId,
                 discoverable: options.discoverable !== false,
                 campaign
@@ -120,6 +124,9 @@
         const endpoint = saveEndpoint(getServiceEndpoint(options.endpoint));
         const roomCode = String(options.roomCode || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
         if (!roomCode) throw new Error('Informe o código da sala.');
+        if (!root?.campaignStore?.isTransientRemoteCampaign?.()) {
+            root?.campaignStore?.checkpoint?.({ reason: 'collaboration-player-before-join' });
+        }
         const current = root?.collaborationSession?.getSession?.() || {};
         const result = await request(endpoint, `/api/rooms/${encodeURIComponent(roomCode)}/join`, {
             body: {
@@ -311,7 +318,12 @@
             root?.collaborationSession?.setLastServerSequence?.(numericSequence);
             return;
         }
-        const applied = root?.campaignStore?.applyRemoteCampaign?.(campaign, { sequence });
+        const transient = member?.role === protocol.ROLES.PLAYER
+            || root?.collaborationSession?.isPlayer?.();
+        const applied = root?.campaignStore?.applyRemoteCampaign?.(campaign, {
+            sequence,
+            transient
+        });
         if (applied) {
             lastAppliedSequence = Math.max(lastAppliedSequence, numericSequence);
             lastCampaignFingerprint = fingerprint;

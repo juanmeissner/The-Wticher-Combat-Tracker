@@ -49,6 +49,19 @@ assert.equal(online.connectionState, 'synced');
 
 session.resetForTests();
 session.initialize({ storage: memoryStorage(), session: online });
+let transientRemoteActive = true;
+let restoredCampaignView = null;
+global.campaignStore = {
+    isTransientRemoteCampaign() { return transientRemoteActive; },
+    endTransientRemoteCampaign() {
+        transientRemoteActive = false;
+        return { id: 'local-campaign', state: { combat: { combatants: [] } } };
+    }
+};
+global.applyRemoteCampaignView = campaign => {
+    restoredCampaignView = campaign;
+    return true;
+};
 const accessEnded = session.endPlayerRoomAccess('revoked');
 assert.equal(accessEnded.role, 'player');
 assert.equal(accessEnded.mode, 'access-ended');
@@ -58,12 +71,16 @@ assert.equal(accessEnded.memberToken, null);
 assert.equal(accessEnded.linkedParticipantId, null);
 assert.equal(session.isPlayerAccessEnded(), true);
 assert.match(session.getStatusPresentation().label, /Sem acesso/);
+assert.equal(transientRemoteActive, false);
+assert.equal(restoredCampaignView.id, 'local-campaign');
 const restoredOffline = session.returnToOfflineModeAfterAccessEnded();
 assert.equal(restoredOffline.mode, 'solo');
 assert.equal(restoredOffline.role, 'master');
 assert.equal(restoredOffline.connectionState, 'offline');
 assert.equal(restoredOffline.accessEndReason, null);
 assert.equal(session.isPlayerAccessEnded(), false);
+delete global.campaignStore;
+delete global.applyRemoteCampaignView;
 
 const projectRoot = path.resolve(__dirname, '..');
 const indexSource = fs.readFileSync(path.join(projectRoot, 'index.html'), 'utf8');
@@ -79,7 +96,7 @@ assert.match(sessionSource, /renderSessionToolsView\('collaboration'\)/);
 assert.match(sessionSource, /masterOnlyViews/);
 assert.match(sessionSource, /session-role-chip/);
 assert.match(styles, /data-collaboration-role="player"/);
-assert.match(workerSource, /witcher-combat-tracker-v112/);
+assert.match(workerSource, /witcher-combat-tracker-v114/);
 assert.match(indexSource, /playerPadCollapsedBar/);
 assert.match(sessionSource, /Calendário/);
 assert.match(styles, /player-pad-collapsed/);
@@ -87,6 +104,7 @@ assert.match(styles, /data-collaboration-access="blocked"/);
 assert.match(styles, /collaboration-access-ended/);
 assert.match(collaborationSource, /endPlayerRoomAccess/);
 assert.match(collaborationSource, /returnToOfflineModeAfterAccessEnded/);
+assert.match(collaborationSource, /restorePersistentCampaignView/);
 assert.match(collaborationSource, /Voltar ao modo offline/);
 assert.match(styles, /collaboration-access-ended-actions/);
 assert.match(workerSource, /js\/collaboration\/collaboration-session\.js/);

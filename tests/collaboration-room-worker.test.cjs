@@ -113,6 +113,33 @@ test('sala experimental cria mestre, exige senha e vincula jogador', async () =>
     assert.ok((await ticketResponse.json()).socketTicket.length > 20);
 });
 
+test('criação da sala exige nomes explícitos para sala e Mestre', async () => {
+    const moduleUrl = pathToFileURL(path.resolve(__dirname, '..', 'cloudflare', 'src', 'worker.mjs')).href;
+    const worker = await import(moduleUrl);
+
+    const missingMasterRoom = new worker.CampaignRoom(new FakeContext(), { PBKDF2_ITERATIONS: '1000' });
+    const missingMaster = await missingMasterRoom.fetch(new Request('https://room.test/internal/create', {
+        method: 'POST',
+        body: JSON.stringify({
+            roomCode: 'NONAME23', roomName: 'Sala válida', actorName: '   ',
+            password: 'segredo-forte', deviceId: 'master-device', campaign: campaignFixture()
+        })
+    }));
+    assert.equal(missingMaster.status, 400);
+    assert.equal((await missingMaster.json()).error, 'invalid_master_name');
+
+    const missingRoomName = new worker.CampaignRoom(new FakeContext(), { PBKDF2_ITERATIONS: '1000' });
+    const missingRoom = await missingRoomName.fetch(new Request('https://room.test/internal/create', {
+        method: 'POST',
+        body: JSON.stringify({
+            roomCode: 'NONAME24', roomName: '', actorName: 'Mestre válido',
+            password: 'segredo-forte', deviceId: 'master-device', campaign: campaignFixture()
+        })
+    }));
+    assert.equal(missingRoom.status, 400);
+    assert.equal((await missingRoom.json()).error, 'invalid_room_name');
+});
+
 test('iterações PBKDF2 respeitam o limite aceito pelo Cloudflare Workers', async () => {
     const moduleUrl = pathToFileURL(path.resolve(__dirname, '..', 'cloudflare', 'src', 'worker.mjs')).href;
     const worker = await import(moduleUrl);

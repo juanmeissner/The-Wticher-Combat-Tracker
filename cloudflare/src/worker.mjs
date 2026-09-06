@@ -83,6 +83,13 @@ export function validatePassword(value) {
     return '';
 }
 
+export function validateRequiredName(value, label, maximum) {
+    const name = String(value || '').trim();
+    if (!name) return `Informe ${label}.`;
+    if (name.length > maximum) return `${label} pode ter no máximo ${maximum} caracteres.`;
+    return '';
+}
+
 export function normalizePbkdf2Iterations(value) {
     const configured = Number(value);
     const iterations = Number.isFinite(configured) && configured > 0
@@ -655,7 +662,11 @@ export class CampaignRoom {
         if (this.room && !this.room.closedAt) return errorResponse('room_exists', 'Este código de sala já está em uso.', 409);
         const body = await readJson(request);
         const passwordError = validatePassword(body.password);
+        const masterNameError = validateRequiredName(body.actorName, 'o nome do Mestre', 80);
+        const roomNameError = validateRequiredName(body.roomName, 'o nome da sala', 100);
         const campaign = sanitizeCampaign(body.campaign);
+        if (masterNameError) return errorResponse('invalid_master_name', masterNameError);
+        if (roomNameError) return errorResponse('invalid_room_name', roomNameError);
         if (passwordError) return errorResponse('invalid_password', passwordError);
         if (!campaign) return errorResponse('invalid_campaign', 'A campanha enviada é inválida.');
 
@@ -663,7 +674,7 @@ export class CampaignRoom {
         const iterations = normalizePbkdf2Iterations(this.env?.PBKDF2_ITERATIONS);
         const token = randomSecret();
         const master = normalizeMember({
-            name: body.actorName || 'Mestre',
+            name: String(body.actorName).trim(),
             role: 'master',
             deviceId: body.deviceId,
             tokenHash: await sha256(token)
@@ -671,7 +682,7 @@ export class CampaignRoom {
         this.room = {
             version: 1,
             code: normalizeRoomCode(body.roomCode),
-            name: String(body.roomName || campaign.metadata?.name || 'Campanha').slice(0, 100),
+            name: String(body.roomName).trim(),
             passwordSalt: salt,
             passwordVerifier: await derivePassword(String(body.password), salt, iterations),
             passwordIterations: iterations,

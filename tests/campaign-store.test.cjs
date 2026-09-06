@@ -64,6 +64,29 @@ const remoteSession = {
     activeTurnId: 'ciri',
     round: 8
 };
+
+const persistentBeforeTransient = storage.dump();
+const transient = store.applyRemoteCampaign({
+    ...restored,
+    id: 'campaign-player-room',
+    revision: 11,
+    state: {
+        ...restored.state,
+        combat: remoteSession,
+        compatibility: { dnd_combat_session: JSON.stringify(remoteSession) }
+    }
+}, { sequence: 19, transient: true });
+assert.equal(transient.id, 'campaign-player-room');
+assert.equal(transient.state.combat.round, 8);
+assert.equal(store.isTransientRemoteCampaign(), true);
+assert.deepEqual(storage.dump(), persistentBeforeTransient, 'Sala do jogador não deve alterar o armazenamento persistente.');
+assert.equal(storage.getItem(store.campaignStorageKey('campaign-player-room')), null);
+
+const localAfterTransient = store.endTransientRemoteCampaign();
+assert.equal(localAfterTransient.id, restored.id);
+assert.equal(store.isTransientRemoteCampaign(), false);
+assert.deepEqual(storage.dump(), persistentBeforeTransient);
+
 const remote = store.applyRemoteCampaign({
     ...restored,
     revision: 12,
@@ -77,5 +100,46 @@ assert.equal(remote.revision, 12);
 assert.equal(remote.sync.lastServerSequence, 20);
 assert.equal(JSON.parse(storage.getItem('dnd_combat_session')).round, 8);
 
+class BrowserMemoryStorage {
+    constructor(initial = {}) {
+        this.values = new Map(Object.entries(initial).map(([key, value]) => [key, String(value)]));
+    }
+    getItem(key) { return this.values.has(key) ? this.values.get(key) : null; }
+    setItem(key, value) { this.values.set(key, String(value)); }
+    removeItem(key) { this.values.delete(key); }
+    raw(key) { return this.values.has(key) ? this.values.get(key) : null; }
+}
+
+const previousStorageConstructor = global.Storage;
+const previousLocalStorage = global.localStorage;
+const localRuntimeSession = { version: 3, combatants: [{ id: 'local' }], round: 2 };
+const remoteRuntimeSession = { version: 3, combatants: [{ id: 'remote' }], round: 9 };
+const browserStorage = new BrowserMemoryStorage({
+    dnd_combat_session: JSON.stringify(localRuntimeSession)
+});
+global.Storage = BrowserMemoryStorage;
+global.localStorage = browserStorage;
+
 store.resetForTests();
+const browserLocalCampaign = store.initialize({ storage: browserStorage, now: '2026-09-05T11:00:00.000Z' });
+store.applyRemoteCampaign({
+    ...browserLocalCampaign,
+    id: 'campaign-browser-room',
+    state: {
+        ...browserLocalCampaign.state,
+        combat: remoteRuntimeSession,
+        compatibility: { dnd_combat_session: JSON.stringify(remoteRuntimeSession) }
+    }
+}, { sequence: 3, transient: true });
+assert.equal(JSON.parse(browserStorage.getItem('dnd_combat_session')).round, 9);
+assert.equal(JSON.parse(browserStorage.raw('dnd_combat_session')).round, 2, 'Snapshot remoto deve existir somente na sobreposição em memória.');
+browserStorage.setItem('dnd_combat_session', JSON.stringify({ ...remoteRuntimeSession, round: 10 }));
+assert.equal(JSON.parse(browserStorage.getItem('dnd_combat_session')).round, 10);
+assert.equal(JSON.parse(browserStorage.raw('dnd_combat_session')).round, 2);
+store.endTransientRemoteCampaign();
+assert.equal(JSON.parse(browserStorage.getItem('dnd_combat_session')).round, 2);
+
+store.resetForTests();
+global.Storage = previousStorageConstructor;
+global.localStorage = previousLocalStorage;
 console.log('✓ Migração, campanhas versionadas, checkpoints e compatibilidade local validados.');
