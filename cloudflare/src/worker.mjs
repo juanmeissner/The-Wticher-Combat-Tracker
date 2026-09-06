@@ -7,6 +7,9 @@ const ROOM_CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 const DEFAULT_PBKDF2_ITERATIONS = 100_000;
 const MIN_PBKDF2_ITERATIONS = 1_000;
 const MAX_PBKDF2_ITERATIONS = 100_000;
+const DEFAULT_MASTER_RECONNECT_GRACE_MS = 5 * 60_000;
+const DEFAULT_DIRECTORY_HEARTBEAT_MS = 2 * 60_000;
+const DEFAULT_DIRECTORY_STALE_MS = 10 * 60_000;
 
 const COMMANDS = Object.freeze({
     'combat.turn.advance': { player: 'deny', conflict: 'exclusive', scope: 'campaign' },
@@ -86,6 +89,14 @@ export function normalizePbkdf2Iterations(value) {
         ? Math.trunc(configured)
         : DEFAULT_PBKDF2_ITERATIONS;
     return Math.min(MAX_PBKDF2_ITERATIONS, Math.max(MIN_PBKDF2_ITERATIONS, iterations));
+}
+
+function normalizeDuration(value, fallback, minimum = 30_000, maximum = 24 * 60 * 60_000) {
+    const configured = Number(value);
+    const duration = Number.isFinite(configured) && configured > 0
+        ? Math.trunc(configured)
+        : fallback;
+    return Math.min(maximum, Math.max(minimum, duration));
 }
 
 async function sha256(value) {
@@ -436,18 +447,39 @@ export function applyResourceCommand(campaign, command, member) {
 }
 
 export class RoomDirectory {
-    constructor(ctx) {
+    constructor(ctx, env = {}) {
         this.ctx = ctx;
+        this.env = env;
     }
 
     async fetch(request) {
         const url = new URL(request.url);
         const rooms = await this.ctx.storage.get(ROOM_DIRECTORY_KEY) || {};
         if (request.method === 'GET' && url.pathname.endsWith('/internal/list')) {
-            const cutoff = Date.now() - (30 * 24 * 60 * 60_000);
+            const staleAfter = normalizeDuration(
+                this.env?.DIRECTORY_STALE_MS,
+                DEFAULT_DIRECTORY_STALE_MS,
+                60_000,
+                60 * 60_000
+            );
+            const cutoff = Date.now() - staleAfter;
+            let changed = false;
+            Object.entries(rooms).forEach(([code, room]) => {
+                const lastHeartbeat = Date.parse(room?.directoryHeartbeatAt || room?.updatedAt || room?.createdAt || 0);
+                if (
+                    room?.discoverable === false
+                    || room?.closedAt
+                    || room?.masterOnline !== true
+                    || !Number.isFinite(lastHeartbeat)
+                    || lastHeartbeat < cutoff
+                ) {
+                    delete rooms[code];
+                    changed = true;
+                }
+            });
+            if (changed) await this.ctx.storage.put(ROOM_DIRECTORY_KEY, rooms);
             const visible = Object.values(rooms)
-                .filter(room => room?.discoverable !== false && !room?.closedAt)
-                .filter(room => Date.parse(room.updatedAt || room.createdAt || 0) >= cutoff)
+                .filter(room => room?.discoverable !== false && !room?.closedAt && room?.masterOnline === true)
                 .sort((left, right) => String(right.updatedAt || '').localeCompare(String(left.updatedAt || '')))
                 .slice(0, 100)
                 .map(room => ({
@@ -464,15 +496,17 @@ export class RoomDirectory {
             const body = await readJson(request);
             const code = normalizeRoomCode(body.code);
             if (!code || !String(body.name || '').trim()) return errorResponse('invalid_room', 'Sala inválida.');
-            if (body.closedAt || body.discoverable === false) delete rooms[code];
+            if (body.closedAt || body.discoverable === false || body.masterOnline !== true) delete rooms[code];
             else rooms[code] = {
                 code,
                 name: String(body.name).slice(0, 100),
                 connected: Math.max(0, Number(body.connected) || 0),
                 availableCharacters: Math.max(0, Number(body.availableCharacters) || 0),
                 discoverable: true,
+                masterOnline: true,
                 createdAt: body.createdAt || new Date().toISOString(),
                 updatedAt: body.updatedAt || new Date().toISOString(),
+                directoryHeartbeatAt: body.directoryHeartbeatAt || new Date().toISOString(),
                 closedAt: null
             };
             await this.ctx.storage.put(ROOM_DIRECTORY_KEY, rooms);
@@ -485,7 +519,7 @@ export class RoomDirectory {
 export class CampaignRoom {
     constructor(ctx, env) {
         this.ctx = ctx;
-        this.env = env;
+        this.env = env || {};
         this.room = null;
         this.ready = this.ctx.storage.get(ROOM_KEY).then(stored => { this.room = stored || null; });
     }
@@ -509,9 +543,14 @@ export class CampaignRoom {
         this.room.accessLog = this.room.accessLog.slice(-200);
     }
 
-    async syncDirectory() {
+    async syncDirectory(options = {}) {
         if (!this.room || !this.env?.ROOM_DIRECTORY) return;
         try {
+            const presence = Array.isArray(options.presence)
+                ? options.presence
+                : this.getPresence(options.excludeSocket || null);
+            const masterOnline = presence.some(member => member?.role === 'master');
+            const directoryHeartbeatAt = new Date().toISOString();
             const id = this.env.ROOM_DIRECTORY.idFromName('public-room-directory-v1');
             const stub = this.env.ROOM_DIRECTORY.get(id);
             await stub.fetch('https://directory.internal/internal/upsert', {
@@ -520,11 +559,13 @@ export class CampaignRoom {
                 body: JSON.stringify({
                     code: this.room.code,
                     name: this.room.name,
-                    connected: this.getPresence().length,
+                    connected: presence.length,
                     availableCharacters: this.getAvailableParticipants().length,
                     discoverable: this.room.discoverable !== false,
+                    masterOnline,
                     createdAt: this.room.createdAt,
-                    updatedAt: this.room.updatedAt,
+                    updatedAt: directoryHeartbeatAt,
+                    directoryHeartbeatAt,
                     closedAt: this.room.closedAt
                 })
             });
@@ -543,6 +584,52 @@ export class CampaignRoom {
         this.room.activity ||= [];
         this.room.accessLog ||= [];
         if (this.room.discoverable === undefined) this.room.discoverable = true;
+    }
+
+    getMasterReconnectGraceMs() {
+        return normalizeDuration(
+            this.env?.MASTER_RECONNECT_GRACE_MS,
+            DEFAULT_MASTER_RECONNECT_GRACE_MS,
+            30_000,
+            60 * 60_000
+        );
+    }
+
+    getDirectoryHeartbeatMs() {
+        return normalizeDuration(
+            this.env?.DIRECTORY_HEARTBEAT_MS,
+            DEFAULT_DIRECTORY_HEARTBEAT_MS,
+            30_000,
+            10 * 60_000
+        );
+    }
+
+    async setRoomAlarm(timestamp) {
+        if (typeof this.ctx.storage.setAlarm !== 'function') return;
+        await this.ctx.storage.setAlarm(timestamp);
+    }
+
+    async clearRoomAlarm() {
+        if (typeof this.ctx.storage.deleteAlarm !== 'function') return;
+        await this.ctx.storage.deleteAlarm();
+    }
+
+    async markMasterOnline() {
+        if (!this.room || this.room.closedAt) return;
+        const now = new Date().toISOString();
+        this.room.lastMasterSeenAt = now;
+        this.room.masterDisconnectedAt = null;
+        this.room.autoCloseAt = null;
+        await this.setRoomAlarm(Date.now() + this.getDirectoryHeartbeatMs());
+    }
+
+    async markMasterOffline(excludeSocket = null) {
+        if (!this.room || this.room.closedAt || this.hasConnectedMaster(excludeSocket)) return false;
+        const now = Date.now();
+        this.room.masterDisconnectedAt ||= new Date(now).toISOString();
+        this.room.autoCloseAt ||= new Date(now + this.getMasterReconnectGraceMs()).toISOString();
+        await this.setRoomAlarm(Date.parse(this.room.autoCloseAt));
+        return true;
     }
 
     async fetch(request) {
@@ -604,12 +691,16 @@ export class CampaignRoom {
             discoverable: body.discoverable !== false,
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
+            lastMasterSeenAt: null,
+            masterDisconnectedAt: new Date().toISOString(),
+            autoCloseAt: new Date(Date.now() + this.getMasterReconnectGraceMs()).toISOString(),
             closedAt: null
         };
         const ticket = await this.createTicket(master.id);
         this.appendAccessLog('room.created', master);
         await this.persist();
         await this.syncDirectory();
+        await this.setRoomAlarm(Date.parse(this.room.autoCloseAt));
         return jsonResponse({
             ok: true,
             room: { code: this.room.code, name: this.room.name, sequence: this.room.sequence },
@@ -759,6 +850,7 @@ export class CampaignRoom {
         server.serializeAttachment(attachment);
         this.ctx.acceptWebSocket(server);
         member.lastSeenAt = new Date().toISOString();
+        if (member.role === 'master') await this.markMasterOnline();
         this.appendAccessLog('member.connected', member);
         server.send(JSON.stringify(this.snapshotEvent(member)));
         await this.persist();
@@ -811,9 +903,14 @@ export class CampaignRoom {
         };
     }
 
-    getPresence() {
-        return this.ctx.getWebSockets().map(socket => socket.deserializeAttachment?.())
+    getPresence(excludeSocket = null) {
+        return this.ctx.getWebSockets().filter(socket => socket !== excludeSocket)
+            .map(socket => socket.deserializeAttachment?.())
             .filter(Boolean).map(publicMember);
+    }
+
+    hasConnectedMaster(excludeSocket = null) {
+        return this.getPresence(excludeSocket).some(member => member?.role === 'master');
     }
 
     send(socket, payload) {
@@ -830,9 +927,13 @@ export class CampaignRoom {
         });
     }
 
-    broadcastPresence() {
-        const payload = { type: 'room.presence', sequence: this.room.sequence, members: this.getPresence() };
-        this.broadcast(payload);
+    broadcastPresence(excludeSocket = null) {
+        const payload = {
+            type: 'room.presence',
+            sequence: this.room.sequence,
+            members: this.getPresence(excludeSocket)
+        };
+        this.broadcast(payload, excludeSocket);
     }
 
     async webSocketMessage(socket, rawMessage) {
@@ -1033,6 +1134,7 @@ export class CampaignRoom {
         this.appendAccessLog('room.closed', member);
         await this.persist();
         await this.syncDirectory();
+        await this.clearRoomAlarm();
         this.send(socket, { type: 'command.accepted', commandId: command.id, sequence: this.room.sequence });
         this.broadcast({ type: 'room.closed', sequence: this.room.sequence });
         this.ctx.getWebSockets().forEach(targetSocket => {
@@ -1225,15 +1327,71 @@ export class CampaignRoom {
     }
 
     async webSocketClose(socket, code, reason) {
+        const member = socket.deserializeAttachment?.();
         try { socket.close(code, reason); } catch { /* fechamento já concluído */ }
-        this.broadcastPresence();
-        await this.syncDirectory();
+        const presence = this.getPresence(socket);
+        if (member?.role === 'master' && await this.markMasterOffline(socket)) {
+            this.appendAccessLog('master.disconnected', member, { reconnectUntil: this.room.autoCloseAt });
+            await this.persist();
+            this.broadcast({
+                type: 'room.master-offline',
+                reconnectUntil: this.room.autoCloseAt
+            }, socket);
+        }
+        this.broadcastPresence(socket);
+        await this.syncDirectory({ presence });
     }
 
     async webSocketError(socket) {
-        try { socket.close(1011, 'Erro na conexão'); } catch { /* conexão já encerrada */ }
-        this.broadcastPresence();
+        await this.webSocketClose(socket, 1011, 'Erro na conexão');
+    }
+
+    async alarm() {
+        await this.ready;
+        this.ensureWorkflowState();
+        if (!this.room) return;
+        if (this.room.closedAt) {
+            await this.syncDirectory();
+            await this.clearRoomAlarm();
+            return;
+        }
+
+        if (this.hasConnectedMaster()) {
+            await this.markMasterOnline();
+            await this.persist();
+            await this.syncDirectory();
+            return;
+        }
+
+        await this.markMasterOffline();
+        const deadline = Date.parse(this.room.autoCloseAt || 0);
+        if (Number.isFinite(deadline) && deadline > Date.now()) {
+            await this.persist();
+            await this.syncDirectory();
+            await this.setRoomAlarm(deadline);
+            return;
+        }
+
+        const closedAt = new Date().toISOString();
+        this.room.closedAt = closedAt;
+        this.room.updatedAt = closedAt;
+        this.room.closeReason = 'master_timeout';
+        this.room.sequence += 1;
+        this.appendAccessLog('room.auto-closed', null, {
+            reason: 'master_timeout',
+            masterDisconnectedAt: this.room.masterDisconnectedAt
+        });
+        await this.persist();
         await this.syncDirectory();
+        this.broadcast({
+            type: 'room.closed',
+            sequence: this.room.sequence,
+            reason: 'master_timeout'
+        });
+        this.ctx.getWebSockets().forEach(targetSocket => {
+            try { targetSocket.close(4004, 'Sala encerrada por inatividade do Mestre'); } catch { /* conexão já fechada */ }
+        });
+        await this.clearRoomAlarm();
     }
 
     status() {

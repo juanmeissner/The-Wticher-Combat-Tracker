@@ -407,13 +407,27 @@
                 <small>SESSÃO PROTEGIDA</small>
                 <h1>${escapeHtml(copy.title)}</h1>
                 <p>${escapeHtml(copy.message)}</p>
-                <button type="button" onclick="openCollaborationLobbyAfterAccessEnded()">Procurar outra sala</button>
+                <div class="collaboration-access-ended-actions">
+                    <button type="button" class="is-secondary" onclick="returnToOfflineModeAfterAccessEnded()">Voltar ao modo offline</button>
+                    <button type="button" onclick="openCollaborationLobbyAfterAccessEnded()">Procurar outra sala</button>
+                </div>
             </div>
         `;
     }
 
     function openCollaborationLobbyAfterAccessEnded() {
         root?.openSessionTools?.('collaboration');
+    }
+
+    function returnToOfflineModeAfterAccessEnded() {
+        if (!isPlayerAccessEnded()) return getSession();
+        root?.collaborationRealtime?.disconnect?.({ clearSession: false });
+        selectedRoom = null;
+        pendingJoin = null;
+        const offlineSession = leaveOnlineSession();
+        root?.closeSessionTools?.();
+        root?.showToast?.('Modo offline restaurado. Seus dados locais continuam disponíveis.');
+        return offlineSession;
     }
 
     function applyPlayerPadState() {
@@ -591,6 +605,9 @@
                     <div><strong>${escapeHtml(copy.title)}</strong><small>Nenhuma informação da campanha anterior está acessível.</small></div>
                 </section>
                 <p>Escolha uma nova sala e autentique este dispositivo para voltar ao modo Jogador.</p>
+                <div class="session-dialog-actions collaboration-access-ended-dialog-actions">
+                    <button type="button" class="session-secondary" onclick="returnToOfflineModeAfterAccessEnded()">Voltar ao modo offline</button>
+                </div>
                 <section class="collaboration-online-card collaboration-access-room-browser">
                     <div class="collaboration-room-list-heading"><div><span class="collaboration-card-icon">👤</span><strong>Salas abertas</strong></div><button type="button" onclick="refreshCollaborationRooms()" aria-label="Atualizar salas">↻</button></div>
                     <small>Toque em uma sala para conectar.</small>
@@ -979,6 +996,7 @@
         setPendingCount,
         leaveOnlineSession,
         endPlayerRoomAccess,
+        returnToOfflineModeAfterAccessEnded,
         isPlayerAccessEnded,
         getStatusPresentation,
         updateConnectionIndicator,
@@ -1016,6 +1034,7 @@
     root.copyCollaborationRoomCode = copyCollaborationRoomCode;
     root.leaveCollaborationRoom = leaveCollaborationRoom;
     root.openCollaborationLobbyAfterAccessEnded = openCollaborationLobbyAfterAccessEnded;
+    root.returnToOfflineModeAfterAccessEnded = returnToOfflineModeAfterAccessEnded;
     root.publishCollaborationCampaignNow = publishCollaborationCampaignNow;
     root.approveCollaborationProposal = approveCollaborationProposal;
     root.adjustCollaborationProposal = adjustCollaborationProposal;

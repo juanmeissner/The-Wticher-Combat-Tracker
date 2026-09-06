@@ -839,9 +839,12 @@ dispositivo ou um JSON exportado pelo aplicativo.
 - o pad do Jogador pode ser recolhido até a borda inferior e restaurado com um toque;
 - calendário, agenda e linha do tempo ficam disponíveis ao Jogador em modo somente leitura;
 - a presença mostra quem está conectado à sala;
+- salas públicas aparecem no diretório somente enquanto o Mestre está conectado;
+- se o Mestre cair, a sala some imediatamente da lista e aguarda até **5 minutos** para reconexão antes de ser encerrada automaticamente;
+- o diretório recebe confirmações periódicas de atividade e elimina registros abandonados, evitando o acúmulo de salas antigas;
 - o Mestre pode revogar dispositivos, consultar acessos e encerrar a sala;
 - ao sair, ser removido ou quando a sala é encerrada, o dispositivo do Jogador entra imediatamente em uma tela protegida sem acesso ao combate ou aos dados da campanha anterior;
-- a tela protegida permite somente procurar e autenticar a entrada em outra sala;
+- a tela protegida permite procurar outra sala ou voltar ao modo offline padrão, preservando os dados locais do dispositivo;
 - quedas de rede iniciam reconexão automática com um novo ticket temporário;
 - alterações permanentes do jogador entram em uma fila para o Mestre aprovar,
   ajustar ou rejeitar, com registro da decisão;

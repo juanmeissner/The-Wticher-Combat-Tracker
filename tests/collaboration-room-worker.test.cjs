@@ -4,9 +4,12 @@ const path = require('node:path');
 const { pathToFileURL } = require('node:url');
 
 class MemoryStorage {
-    constructor() { this.values = new Map(); }
+    constructor() { this.values = new Map(); this.alarm = null; }
     async get(key) { return this.values.get(key); }
     async put(key, value) { this.values.set(key, structuredClone(value)); }
+    async setAlarm(value) { this.alarm = Number(value); }
+    async getAlarm() { return this.alarm; }
+    async deleteAlarm() { this.alarm = null; }
 }
 
 class FakeContext {
@@ -268,7 +271,8 @@ test('diretório lista somente metadados de salas públicas abertas', async () =
         method: 'POST',
         body: JSON.stringify({
             code: 'PUBLIC23', name: 'Caçada pública', connected: 2,
-            availableCharacters: 1, discoverable: true, updatedAt: new Date().toISOString()
+            availableCharacters: 1, discoverable: true, masterOnline: true,
+            updatedAt: new Date().toISOString()
         })
     }));
     await directory.fetch(new Request('https://directory.test/internal/upsert', {
@@ -276,6 +280,22 @@ test('diretório lista somente metadados de salas públicas abertas', async () =
         body: JSON.stringify({
             code: 'PRIVATE2', name: 'Sala privada', discoverable: false,
             updatedAt: new Date().toISOString()
+        })
+    }));
+    await directory.fetch(new Request('https://directory.test/internal/upsert', {
+        method: 'POST',
+        body: JSON.stringify({
+            code: 'OFFLINE2', name: 'Mestre desconectado', discoverable: true,
+            masterOnline: false, updatedAt: new Date().toISOString()
+        })
+    }));
+    await directory.fetch(new Request('https://directory.test/internal/upsert', {
+        method: 'POST',
+        body: JSON.stringify({
+            code: 'STALE234', name: 'Sala abandonada', discoverable: true,
+            masterOnline: true,
+            updatedAt: new Date(Date.now() - 20 * 60_000).toISOString(),
+            directoryHeartbeatAt: new Date(Date.now() - 20 * 60_000).toISOString()
         })
     }));
     const response = await directory.fetch(new Request('https://directory.test/internal/list'));
@@ -287,6 +307,70 @@ test('diretório lista somente metadados de salas públicas abertas', async () =
     }]);
     assert.equal('password' in result.rooms[0], false);
     assert.equal('campaign' in result.rooms[0], false);
+    const storedRooms = await ctx.storage.get('rooms');
+    assert.equal('OFFLINE2' in storedRooms, false);
+    assert.equal('STALE234' in storedRooms, false);
+});
+
+test('sala some do diretório sem Mestre e encerra após a janela de reconexão', async () => {
+    const moduleUrl = pathToFileURL(path.resolve(__dirname, '..', 'cloudflare', 'src', 'worker.mjs')).href;
+    const worker = await import(moduleUrl);
+    const ctx = new FakeContext();
+    const directoryCtx = new FakeContext();
+    const directory = new worker.RoomDirectory(directoryCtx);
+    const room = new worker.CampaignRoom(ctx, {
+        PBKDF2_ITERATIONS: '1000',
+        MASTER_RECONNECT_GRACE_MS: '30000',
+        ROOM_DIRECTORY: {
+            idFromName() { return 'directory'; },
+            get() {
+                return {
+                    fetch(input, init) { return directory.fetch(new Request(input, init)); }
+                };
+            }
+        }
+    });
+    const created = await (await room.fetch(new Request('https://room.test/internal/create', {
+        method: 'POST',
+        body: JSON.stringify({
+            roomCode: 'TIMEOUT2', roomName: 'Sala temporária', password: 'segredo-forte',
+            actorName: 'Mestre', deviceId: 'master-device', campaign: campaignFixture()
+        })
+    }))).json();
+    const masterMember = room.room.members[created.member.id];
+    const masterSocket = {
+        deserializeAttachment() { return masterMember; },
+        send() {},
+        close() { this.closed = true; }
+    };
+    const playerMessages = [];
+    const playerSocket = {
+        deserializeAttachment() { return { id: 'player', role: 'player', name: 'Jogador' }; },
+        send(value) { playerMessages.push(JSON.parse(value)); },
+        close() { this.closed = true; }
+    };
+    ctx.sockets = [masterSocket, playerSocket];
+    await room.markMasterOnline();
+    await room.persist();
+    await room.syncDirectory();
+
+    let directoryResult = await (await directory.fetch(new Request('https://directory.test/internal/list'))).json();
+    assert.deepEqual(directoryResult.rooms.map(entry => entry.code), ['TIMEOUT2']);
+
+    await room.webSocketClose(masterSocket, 1000, 'Mestre saiu');
+    assert.ok(room.room.autoCloseAt);
+    assert.ok(Number.isFinite(await ctx.storage.getAlarm()));
+    directoryResult = await (await directory.fetch(new Request('https://directory.test/internal/list'))).json();
+    assert.deepEqual(directoryResult.rooms, []);
+
+    ctx.sockets = [playerSocket];
+    room.room.autoCloseAt = new Date(Date.now() - 1).toISOString();
+    await room.alarm();
+    assert.ok(room.room.closedAt);
+    assert.equal(room.room.closeReason, 'master_timeout');
+    assert.equal(playerSocket.closed, true);
+    assert.ok(playerMessages.some(message => message.type === 'room.closed' && message.reason === 'master_timeout'));
+    assert.equal(await ctx.storage.getAlarm(), null);
 });
 
 test('jogador pode entrar com ficha própria e o mestre pode revogar o dispositivo e encerrar a sala', async () => {

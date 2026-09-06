@@ -199,6 +199,9 @@ utiliza um Durable Object SQLite por código de sala. O cliente fica em
 - diretório público mantido por um Durable Object separado da campanha;
 - listagem limitada a código, nome e contadores operacionais da sala;
 - opção de sala privada acessível somente por código;
+- presença obrigatória do Mestre para uma sala permanecer no diretório público;
+- heartbeat periódico do Durable Object e limpeza automática de registros sem atividade;
+- janela padrão de cinco minutos para o Mestre se reconectar antes do encerramento automático;
 - revogação imediata de dispositivos pelo Mestre;
 - encerramento da sala com desconexão de todos os participantes;
 - registro privado de criação, entrada, conexão, revogação e encerramento;

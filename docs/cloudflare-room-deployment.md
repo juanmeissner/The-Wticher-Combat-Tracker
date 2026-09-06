@@ -41,6 +41,14 @@ localStorage.setItem('dnd_collaboration_endpoint_v1', 'http://localhost:8787')
 npx wrangler@latest deploy
 ```
 
+Os tempos de vida das salas ficam centralizados em `wrangler.jsonc`:
+
+- `MASTER_RECONNECT_GRACE_MS`: tempo concedido ao Mestre para se reconectar, com padrão de 5 minutos;
+- `DIRECTORY_HEARTBEAT_MS`: frequência de atualização da presença no diretório, com padrão de 2 minutos;
+- `DIRECTORY_STALE_MS`: limite para eliminar uma entrada sem heartbeat, com padrão de 10 minutos.
+
+Uma sala deixa de aparecer no diretório assim que o Mestre desconecta. Durante a janela de reconexão, os dados continuam preservados no Durable Object; passado o limite, a sala é encerrada, os jogadores são desconectados e o registro público é removido.
+
 O cliente oficial já utiliza automaticamente
 `https://witcher-combat-collaboration.juanmeissnerf.workers.dev`. Em uma
 instalação própria, substitua `DEFAULT_ENDPOINT` em

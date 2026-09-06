@@ -27,7 +27,10 @@
     }
   ],
   "vars": {
-    "ALLOWED_ORIGINS": "http://localhost:4173,http://127.0.0.1:4173,https://juanmeissner.github.io"
+    "ALLOWED_ORIGINS": "http://localhost:4173,http://127.0.0.1:4173,https://juanmeissner.github.io",
+    "MASTER_RECONNECT_GRACE_MS": "300000",
+    "DIRECTORY_HEARTBEAT_MS": "120000",
+    "DIRECTORY_STALE_MS": "600000"
   },
   "observability": {
     "enabled": true

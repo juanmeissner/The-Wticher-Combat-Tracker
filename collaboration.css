@@ -564,6 +564,21 @@ html[data-collaboration-access="blocked"] .mobile-navigation {
     font-weight: 850;
 }
 
+.collaboration-access-ended-actions {
+    display: grid;
+    gap: 10px;
+}
+
+.collaboration-access-ended-card button.is-secondary {
+    border-color: #475569;
+    background: #1e293b;
+    color: #e2e8f0;
+}
+
+.collaboration-access-ended-dialog-actions {
+    margin-bottom: 14px;
+}
+
 .collaboration-status-card.is-access-ended {
     border-color: rgba(239, 68, 68, .38);
     background: rgba(127, 29, 29, .18);
