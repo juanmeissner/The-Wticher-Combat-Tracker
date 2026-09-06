@@ -1,11 +1,13 @@
 # Contrato de colaboração e sincronização
 
-Status: Etapa 0 concluída — contrato local, independente do provedor de rede.
+Status: Etapas 0 a 8 concluídas — contrato, sala, combate em tempo real,
+aprovações, fila offline, resolução de conflitos e experiência do Jogador.
 
-Este documento define a fronteira entre o aplicativo offline e a futura sala em
-tempo real. A interface nunca envia uma campanha inteira para substituir outra.
-Ela envia **comandos pequenos, identificáveis e idempotentes**; o servidor da
-sala valida, ordena, persiste e devolve eventos autorizados.
+Este documento define a fronteira entre o aplicativo offline e a sala em tempo
+real. Alterações de jogadores utilizam **comandos pequenos, identificáveis e
+idempotentes**; o servidor valida, ordena, persiste e devolve eventos
+autorizados. Durante a transição dos módulos legados, o Mestre também publica
+snapshots versionados e projetados conforme o papel de cada destinatário.
 
 ## Princípios obrigatórios
 
@@ -137,6 +139,11 @@ Cada evento aceito recebe uma sequência crescente da sala. Na reconexão, o
 cliente informa a última sequência confirmada e recebe os eventos ausentes ou
 um snapshot novo quando o intervalo não estiver mais disponível.
 
+O cliente ignora sequências antigas, elimina snapshots repetidos e agrupa
+atualizações recebidas no mesmo quadro de renderização. O Worker confirma a
+publicação ao Mestre sem devolver a ele o próprio snapshot; somente os outros
+dispositivos recebem essa atualização.
+
 ## Segurança da sala experimental
 
 - HTTPS/WSS obrigatório;
@@ -163,6 +170,54 @@ utiliza um Durable Object SQLite por código de sala. O cliente fica em
 - presença, sequência crescente e reconexão automática;
 - publicação automática da campanha pelo Mestre;
 - ajuste remoto de Adrenalina e Dado da Sorte pelo próprio Jogador.
+
+## Implementação das Etapas 4 e 5
+
+- sincronização de turno, alvo, HP, EST, condições, recursos e histórico pelo
+  estado versionado da campanha;
+- rolagens e mensagens como atividades acrescentadas à sala;
+- propostas permanentes de ficha, evolução, inventário, equipamentos, magias e
+  transferências;
+- fila do Mestre com ações de aprovar, ajustar ou rejeitar;
+- decisão persistida e visível aos participantes autorizados;
+- atualização agrupada e deduplicada para evitar reconstruções repetidas da
+  interface.
+
+## Implementação da Etapa 6
+
+- fila persistente `pending-commands` em IndexedDB, com fallback local;
+- reconexão automática e solicitação de snapshot atual;
+- reenvio idempotente pela mesma identificação de comando;
+- remoção da fila somente após confirmação ou rejeição definitiva do servidor;
+- controle de versão por `entityKey`;
+- preservação da versão atual e da recebida quando existir divergência;
+- painel de resolução de conflitos exclusivo do Mestre;
+- restauração do estado autorizado antes de reenviar alterações pendentes.
+
+## Implementação da Etapa 7
+
+- diretório público mantido por um Durable Object separado da campanha;
+- listagem limitada a código, nome e contadores operacionais da sala;
+- opção de sala privada acessível somente por código;
+- revogação imediata de dispositivos pelo Mestre;
+- encerramento da sala com desconexão de todos os participantes;
+- registro privado de criação, entrada, conexão, revogação e encerramento;
+- senhas, tokens, nomes de personagens e conteúdo das fichas nunca entram no
+  diretório público.
+
+## Implementação da Etapa 8
+
+- entrada em uma sala pública com seleção visual e senha, sem digitar o código;
+- vínculo com personagem livre já existente na sala;
+- criação local ou importação de JSON antes da entrada;
+- cópia segura da ficha enviada com novos IDs de ficha e participante;
+- publicação de testes do personagem controlado e bloqueio de rolagens alheias;
+- pad numérico recolhível com preferência preservada no dispositivo;
+- calendário, agenda e linha do tempo disponíveis ao Jogador somente para leitura;
+- ações administrativas e alterações de calendário validadas além da ocultação visual;
+- estado persistente de acesso encerrado após saída voluntária, revogação ou fechamento;
+- navegação, conteúdo e controles da campanha tornam-se inertes e invisíveis nesse estado;
+- somente o navegador de salas pode ser aberto até uma nova autenticação válida.
 
 ## Critérios da Etapa 0
 

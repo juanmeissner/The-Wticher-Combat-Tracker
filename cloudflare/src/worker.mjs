@@ -1,4 +1,5 @@
 const ROOM_KEY = 'room';
+const ROOM_DIRECTORY_KEY = 'rooms';
 const MAX_BODY_BYTES = 3 * 1024 * 1024;
 const MAX_SEEN_COMMANDS = 500;
 const TICKET_LIFETIME_MS = 45_000;
@@ -8,9 +9,38 @@ const MIN_PBKDF2_ITERATIONS = 1_000;
 const MAX_PBKDF2_ITERATIONS = 100_000;
 
 const COMMANDS = Object.freeze({
-    'participant.resource.adjust': { player: 'allow', conflict: 'delta' },
-    'roll.publish': { player: 'allow', conflict: 'append' },
-    'combat.message.publish': { player: 'allow', conflict: 'append' }
+    'combat.turn.advance': { player: 'deny', conflict: 'exclusive', scope: 'campaign' },
+    'combat.target.set': { player: 'deny', conflict: 'exclusive', scope: 'campaign' },
+    'combat.damage.apply': { player: 'deny', conflict: 'exclusive', scope: 'campaign' },
+    'combat.healing.apply': { player: 'deny', conflict: 'exclusive', scope: 'campaign' },
+    'combat.condition.change': { player: 'deny', conflict: 'exclusive', scope: 'campaign' },
+    'participant.resource.adjust': { player: 'allow', conflict: 'delta', scope: 'owned-participant' },
+    'roll.publish': { player: 'allow', conflict: 'append', scope: 'owned-participant' },
+    'combat.message.publish': { player: 'allow', conflict: 'append', scope: 'room-member' },
+    'campaign.clock.advance': { player: 'deny', conflict: 'exclusive', scope: 'campaign' },
+    'campaign.event.change': { player: 'deny', conflict: 'exclusive', scope: 'campaign' },
+    'campaign.preferences.change': { player: 'deny', conflict: 'exclusive', scope: 'campaign' },
+    'sheet.update': { player: 'propose', conflict: 'exclusive', scope: 'owned-sheet' },
+    'sheet.level-up': { player: 'propose', conflict: 'exclusive', scope: 'owned-sheet' },
+    'inventory.change': { player: 'propose', conflict: 'exclusive', scope: 'owned-participant' },
+    'equipment.change': { player: 'propose', conflict: 'exclusive', scope: 'owned-participant' },
+    'spell.learn': { player: 'propose', conflict: 'exclusive', scope: 'owned-sheet' },
+    'transfer.item': { player: 'propose', conflict: 'exclusive', scope: 'owned-participant' },
+    'transfer.crowns': { player: 'propose', conflict: 'exclusive', scope: 'owned-participant' },
+    'proposal.resolve': { player: 'deny', conflict: 'exclusive', scope: 'campaign' },
+    'conflict.resolve': { player: 'deny', conflict: 'exclusive', scope: 'campaign' },
+    'room.member.revoke': { player: 'deny', conflict: 'exclusive', scope: 'campaign' },
+    'room.close': { player: 'deny', conflict: 'exclusive', scope: 'campaign' }
+});
+
+const PROPOSAL_LABELS = Object.freeze({
+    'sheet.update': 'Atualização da ficha',
+    'sheet.level-up': 'Evolução de nível',
+    'inventory.change': 'Alteração de inventário',
+    'equipment.change': 'Alteração de equipamento',
+    'spell.learn': 'Aprendizado de magia',
+    'transfer.item': 'Transferência de item',
+    'transfer.crowns': 'Transferência de Coroas'
 });
 
 function jsonResponse(value, status = 200, headers = {}) {
@@ -63,7 +93,7 @@ async function sha256(value) {
     return base64Url(new Uint8Array(await crypto.subtle.digest('SHA-256', bytes)));
 }
 
-async function derivePassword(password, salt, iterations = 120_000) {
+async function derivePassword(password, salt, iterations = DEFAULT_PBKDF2_ITERATIONS) {
     const key = await crypto.subtle.importKey(
         'raw',
         new TextEncoder().encode(password),
@@ -221,6 +251,151 @@ function publicMember(member) {
     };
 }
 
+function clone(value) {
+    return value === undefined ? undefined : JSON.parse(JSON.stringify(value));
+}
+
+function normalizeImportedCharacterSheet(value) {
+    if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+    const sheet = clone(value);
+    const name = String(sheet.name || sheet.identity?.name || '').trim().slice(0, 100);
+    if (!name) return null;
+    const sheetId = `sheet-${crypto.randomUUID()}`;
+    sheet.id = sheetId;
+    sheet.name = name;
+    if (sheet.identity && typeof sheet.identity === 'object') sheet.identity.name = name;
+    sheet.hpMax = Math.max(1, Number(sheet.hpMax) || 1);
+    sheet.stMax = Math.max(0, Number(sheet.stMax) || 0);
+    sheet.hpCurrent = Math.min(sheet.hpMax, Math.max(0, Number(sheet.hpCurrent ?? sheet.hpMax) || 0));
+    sheet.stCurrent = Math.min(sheet.stMax, Math.max(0, Number(sheet.stCurrent ?? sheet.stMax) || 0));
+    sheet.updatedAt = new Date().toISOString();
+    return sheet;
+}
+
+function createCombatantFromImportedSheet(sheet) {
+    const participantId = `participant-${crypto.randomUUID()}`;
+    return {
+        ...clone(sheet),
+        id: participantId,
+        sheetId: sheet.id,
+        name: sheet.name,
+        initiative: 0,
+        hpMax: sheet.hpMax,
+        hpCurrent: sheet.hpCurrent,
+        stMax: sheet.stMax,
+        stCurrent: sheet.stCurrent,
+        toxicityCurrent: Math.max(0, Number(sheet.toxicityCurrent) || 0),
+        ca: Math.max(0, Number(sheet.ca) || 0),
+        movement: Math.max(0, Number(sheet.movement) || 5),
+        atkInfo: String(sheet.atkInfo || '-'),
+        armor: clone(sheet.armor || { head: 0, torso: 0, arm: 0, leg: 0 }),
+        inventory: clone(sheet.inventory || []),
+        abilities: clone(sheet.abilities || []),
+        equipment: clone(sheet.equipment || {}),
+        type: 'player',
+        conditions: [],
+        effects: [],
+        deathSaves: { success: 0, failures: 0 },
+        stabilized: false
+    };
+}
+
+function appendImportedCharacter(campaign, sheet) {
+    const state = campaign.state ||= {};
+    const combat = state.combat ||= {};
+    const combatants = Array.isArray(combat.combatants) ? combat.combatants : (combat.combatants = []);
+    const sheets = Array.isArray(state.characterSheets) ? state.characterSheets : (state.characterSheets = []);
+    const combatant = createCombatantFromImportedSheet(sheet);
+    sheets.push(clone(sheet));
+    combatants.push(combatant);
+    if (!combat.activeTurnId) combat.activeTurnId = combatant.id;
+
+    const compatibility = state.compatibility ||= {};
+    for (const key of ['dnd_combat_session', 'dnd_players']) {
+        try {
+            const parsed = typeof compatibility[key] === 'string' ? JSON.parse(compatibility[key]) : [];
+            const list = Array.isArray(parsed) ? parsed : (Array.isArray(parsed?.combatants) ? parsed.combatants : []);
+            list.push(clone(combatant));
+            compatibility[key] = JSON.stringify(Array.isArray(parsed) ? list : { ...parsed, combatants: list });
+        } catch {
+            compatibility[key] = JSON.stringify([clone(combatant)]);
+        }
+    }
+    try {
+        const parsedSheets = typeof compatibility.dnd_character_sheets === 'string'
+            ? JSON.parse(compatibility.dnd_character_sheets)
+            : [];
+        const list = Array.isArray(parsedSheets) ? parsedSheets : [];
+        list.push(clone(sheet));
+        compatibility.dnd_character_sheets = JSON.stringify(list);
+    } catch {
+        compatibility.dnd_character_sheets = JSON.stringify([clone(sheet)]);
+    }
+    return combatant;
+}
+
+function commandOwnedByMember(command, member, definition) {
+    if (member?.role === 'master' || definition?.scope === 'room-member') return true;
+    if (definition?.scope === 'owned-participant') {
+        return String(command?.targetId || '') === String(member?.participantId || '');
+    }
+    if (definition?.scope === 'owned-sheet') {
+        return String(command?.targetId || '') === String(member?.sheetId || '');
+    }
+    return false;
+}
+
+function replaceById(list, id, nextValue) {
+    if (!Array.isArray(list) || !nextValue || String(nextValue.id || '') !== String(id || '')) return false;
+    const index = list.findIndex(entry => String(entry?.id || '') === String(id || ''));
+    if (index < 0) return false;
+    list[index] = clone(nextValue);
+    return true;
+}
+
+function replaceCompatibilityEntity(campaign, keys, id, nextValue) {
+    const compatibility = campaign?.state?.compatibility;
+    if (!compatibility || typeof compatibility !== 'object') return;
+    keys.forEach(key => {
+        if (typeof compatibility[key] !== 'string') return;
+        try {
+            const parsed = JSON.parse(compatibility[key]);
+            const list = Array.isArray(parsed) ? parsed : parsed?.combatants;
+            if (!replaceById(list, id, nextValue)) return;
+            compatibility[key] = JSON.stringify(parsed);
+        } catch { /* compatibilidade inválida não impede a atualização principal */ }
+    });
+}
+
+export function applyPermanentCommand(campaign, command) {
+    const replacementCampaign = sanitizeCampaign(command?.payload?.campaign);
+    if (replacementCampaign && String(replacementCampaign.id) === String(campaign?.id)) {
+        Object.keys(campaign).forEach(key => delete campaign[key]);
+        Object.assign(campaign, replacementCampaign);
+        return { applied: true, mode: 'campaign' };
+    }
+
+    if (['sheet.update', 'sheet.level-up', 'spell.learn'].includes(command?.type)) {
+        const sheet = command?.payload?.sheet;
+        if (!replaceById(campaign?.state?.characterSheets, command.targetId, sheet)) {
+            return { applied: false, reason: 'sheet-not-found' };
+        }
+        replaceCompatibilityEntity(campaign, ['dnd_character_sheets'], command.targetId, sheet);
+        return { applied: true, mode: 'sheet' };
+    }
+
+    if (['inventory.change', 'equipment.change'].includes(command?.type)) {
+        const combatant = command?.payload?.combatant;
+        if (!replaceById(campaign?.state?.combat?.combatants, command.targetId, combatant)) {
+            return { applied: false, reason: 'participant-not-found' };
+        }
+        replaceCompatibilityEntity(campaign, ['dnd_combat_session', 'dnd_players'], command.targetId, combatant);
+        return { applied: true, mode: 'participant' };
+    }
+
+    return { applied: false, reason: 'unsupported-payload' };
+}
+
 export function applyResourceCommand(campaign, command, member) {
     if (command?.type !== 'participant.resource.adjust') return { applied: false, reason: 'unsupported' };
     if (member.role !== 'master' && String(command.targetId) !== String(member.participantId)) {
@@ -260,6 +435,53 @@ export function applyResourceCommand(campaign, command, member) {
     return { applied: true, before, after };
 }
 
+export class RoomDirectory {
+    constructor(ctx) {
+        this.ctx = ctx;
+    }
+
+    async fetch(request) {
+        const url = new URL(request.url);
+        const rooms = await this.ctx.storage.get(ROOM_DIRECTORY_KEY) || {};
+        if (request.method === 'GET' && url.pathname.endsWith('/internal/list')) {
+            const cutoff = Date.now() - (30 * 24 * 60 * 60_000);
+            const visible = Object.values(rooms)
+                .filter(room => room?.discoverable !== false && !room?.closedAt)
+                .filter(room => Date.parse(room.updatedAt || room.createdAt || 0) >= cutoff)
+                .sort((left, right) => String(right.updatedAt || '').localeCompare(String(left.updatedAt || '')))
+                .slice(0, 100)
+                .map(room => ({
+                    code: room.code,
+                    name: room.name,
+                    connected: Math.max(0, Number(room.connected) || 0),
+                    availableCharacters: Math.max(0, Number(room.availableCharacters) || 0),
+                    createdAt: room.createdAt,
+                    updatedAt: room.updatedAt
+                }));
+            return jsonResponse({ ok: true, rooms: visible });
+        }
+        if (request.method === 'POST' && url.pathname.endsWith('/internal/upsert')) {
+            const body = await readJson(request);
+            const code = normalizeRoomCode(body.code);
+            if (!code || !String(body.name || '').trim()) return errorResponse('invalid_room', 'Sala inválida.');
+            if (body.closedAt || body.discoverable === false) delete rooms[code];
+            else rooms[code] = {
+                code,
+                name: String(body.name).slice(0, 100),
+                connected: Math.max(0, Number(body.connected) || 0),
+                availableCharacters: Math.max(0, Number(body.availableCharacters) || 0),
+                discoverable: true,
+                createdAt: body.createdAt || new Date().toISOString(),
+                updatedAt: body.updatedAt || new Date().toISOString(),
+                closedAt: null
+            };
+            await this.ctx.storage.put(ROOM_DIRECTORY_KEY, rooms);
+            return jsonResponse({ ok: true });
+        }
+        return errorResponse('not_found', 'Rota do diretório não encontrada.', 404);
+    }
+}
+
 export class CampaignRoom {
     constructor(ctx, env) {
         this.ctx = ctx;
@@ -272,8 +494,60 @@ export class CampaignRoom {
         await this.ctx.storage.put(ROOM_KEY, this.room);
     }
 
+    appendAccessLog(action, member = null, detail = {}) {
+        if (!this.room) return;
+        this.room.accessLog ||= [];
+        this.room.accessLog.push({
+            id: `access-${crypto.randomUUID()}`,
+            action: String(action || 'room.activity'),
+            memberId: member?.id || null,
+            memberName: member?.name || null,
+            role: member?.role || null,
+            detail: clone(detail),
+            createdAt: new Date().toISOString()
+        });
+        this.room.accessLog = this.room.accessLog.slice(-200);
+    }
+
+    async syncDirectory() {
+        if (!this.room || !this.env?.ROOM_DIRECTORY) return;
+        try {
+            const id = this.env.ROOM_DIRECTORY.idFromName('public-room-directory-v1');
+            const stub = this.env.ROOM_DIRECTORY.get(id);
+            await stub.fetch('https://directory.internal/internal/upsert', {
+                method: 'POST',
+                headers: { 'content-type': 'application/json' },
+                body: JSON.stringify({
+                    code: this.room.code,
+                    name: this.room.name,
+                    connected: this.getPresence().length,
+                    availableCharacters: this.getAvailableParticipants().length,
+                    discoverable: this.room.discoverable !== false,
+                    createdAt: this.room.createdAt,
+                    updatedAt: this.room.updatedAt,
+                    closedAt: this.room.closedAt
+                })
+            });
+        } catch (error) {
+            console.warn('Não foi possível atualizar o diretório público de salas.', error?.message || error);
+        }
+    }
+
+    ensureWorkflowState() {
+        if (!this.room) return;
+        this.room.proposals ||= {};
+        this.room.proposalOrder ||= [];
+        this.room.decisions ||= [];
+        this.room.conflicts ||= {};
+        this.room.conflictOrder ||= [];
+        this.room.activity ||= [];
+        this.room.accessLog ||= [];
+        if (this.room.discoverable === undefined) this.room.discoverable = true;
+    }
+
     async fetch(request) {
         await this.ready;
+        this.ensureWorkflowState();
         const url = new URL(request.url);
         try {
             if (request.method === 'POST' && url.pathname.endsWith('/internal/create')) return await this.create(request);
@@ -320,12 +594,22 @@ export class CampaignRoom {
             tickets: {},
             joinAttempts: {},
             seenCommandIds: [],
+            proposals: {},
+            proposalOrder: [],
+            decisions: [],
+            conflicts: {},
+            conflictOrder: [],
+            activity: [],
+            accessLog: [],
+            discoverable: body.discoverable !== false,
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
             closedAt: null
         };
         const ticket = await this.createTicket(master.id);
+        this.appendAccessLog('room.created', master);
         await this.persist();
+        await this.syncDirectory();
         return jsonResponse({
             ok: true,
             room: { code: this.room.code, name: this.room.name, sequence: this.room.sequence },
@@ -371,7 +655,19 @@ export class CampaignRoom {
         }
         if (this.room.joinAttempts?.[attemptKey]) delete this.room.joinAttempts[attemptKey];
         const candidates = this.getAvailableParticipants();
-        const selected = candidates.find(entry => String(entry.participantId) === String(body.participantId || ''));
+        let selected = candidates.find(entry => String(entry.participantId) === String(body.participantId || ''));
+        let imported = null;
+        if (!selected && body.characterSheet) {
+            const totalPlayers = getCampaignParticipants(this.room.campaign).length;
+            if (totalPlayers >= 30) return errorResponse('room_full', 'A sala atingiu o limite de 30 personagens.', 409);
+            const sheet = normalizeImportedCharacterSheet(body.characterSheet);
+            if (!sheet) return errorResponse('invalid_character_sheet', 'A ficha enviada é inválida.', 400);
+            imported = appendImportedCharacter(this.room.campaign, sheet);
+            selected = { participantId: imported.id, sheetId: sheet.id, name: sheet.name };
+            this.room.sequence += 1;
+            this.room.campaign.revision = Math.max(0, Number(this.room.campaign.revision) || 0) + 1;
+            this.room.campaign.updatedAt = new Date().toISOString();
+        }
         if (!selected) {
             return errorResponse('participant_required', candidates.length
                 ? 'Escolha qual personagem será controlado neste dispositivo.'
@@ -388,8 +684,13 @@ export class CampaignRoom {
         });
         this.room.members[member.id] = member;
         this.room.updatedAt = new Date().toISOString();
+        this.appendAccessLog(imported ? 'member.joined-with-character' : 'member.joined', member, {
+            participantId: selected.participantId
+        });
         const ticket = await this.createTicket(member.id);
         await this.persist();
+        await this.syncDirectory();
+        if (imported) this.broadcast(target => this.snapshotEvent(target));
         return jsonResponse({
             ok: true,
             room: { code: this.room.code, name: this.room.name, sequence: this.room.sequence },
@@ -457,9 +758,12 @@ export class CampaignRoom {
         const attachment = publicMember(member);
         server.serializeAttachment(attachment);
         this.ctx.acceptWebSocket(server);
+        member.lastSeenAt = new Date().toISOString();
+        this.appendAccessLog('member.connected', member);
         server.send(JSON.stringify(this.snapshotEvent(member)));
         await this.persist();
         this.broadcastPresence();
+        await this.syncDirectory();
         return new Response(null, { status: 101, webSocket: client });
     }
 
@@ -470,7 +774,40 @@ export class CampaignRoom {
             room: { code: this.room.code, name: this.room.name },
             member: publicMember(member),
             campaign: projectCampaignForMember(this.room.campaign, member),
-            presence: this.getPresence()
+            presence: this.getPresence(),
+            workflow: this.getWorkflowForMember(member)
+        };
+    }
+
+    getWorkflowForMember(member) {
+        this.ensureWorkflowState();
+        const canSee = entry => member?.role === 'master'
+            || String(entry?.memberId || '') === String(member?.id || '');
+        const proposals = this.room.proposalOrder
+            .map(id => this.room.proposals[id])
+            .filter(entry => entry && canSee(entry))
+            .slice(-100)
+            .map(clone);
+        const conflicts = this.room.conflictOrder
+            .map(id => this.room.conflicts[id])
+            .filter(entry => entry && canSee(entry))
+            .slice(-100)
+            .map(clone);
+        const decisions = this.room.decisions.filter(canSee).slice(-100).map(clone);
+        return {
+            proposals,
+            conflicts,
+            decisions,
+            activity: this.room.activity.slice(-80).map(clone),
+            accessLog: member?.role === 'master' ? this.room.accessLog.slice(-80).map(clone) : [],
+            members: member?.role === 'master'
+                ? Object.values(this.room.members || {}).map(entry => ({
+                    ...publicMember(entry),
+                    revoked: entry.revoked === true,
+                    createdAt: entry.createdAt,
+                    lastSeenAt: entry.lastSeenAt
+                }))
+                : []
         };
     }
 
@@ -488,7 +825,8 @@ export class CampaignRoom {
             if (socket === except) return;
             const member = socket.deserializeAttachment?.();
             if (!member) return;
-            this.send(socket, typeof factory === 'function' ? factory(member) : factory);
+            const payload = typeof factory === 'function' ? factory(member) : factory;
+            if (payload !== null && payload !== undefined) this.send(socket, payload);
         });
     }
 
@@ -499,6 +837,7 @@ export class CampaignRoom {
 
     async webSocketMessage(socket, rawMessage) {
         await this.ready;
+        this.ensureWorkflowState();
         const member = socket.deserializeAttachment?.();
         if (!member || this.room?.members?.[member.id]?.revoked) {
             this.send(socket, { type: 'room.revoked' });
@@ -522,7 +861,9 @@ export class CampaignRoom {
             this.room.sequence += 1;
             this.room.updatedAt = new Date().toISOString();
             await this.persist();
-            this.broadcast(target => this.snapshotEvent(target));
+            await this.syncDirectory();
+            this.send(socket, { type: 'snapshot.accepted', sequence: this.room.sequence });
+            this.broadcast(target => this.snapshotEvent(target), socket);
             return;
         }
         if (message.type === 'command.submit') {
@@ -542,13 +883,84 @@ export class CampaignRoom {
             this.send(socket, { type: 'command.accepted', commandId: command.id, duplicate: true, sequence: this.room.sequence });
             return;
         }
+        if (String(command.campaignId || '') !== String(this.room.campaign.id)) {
+            this.send(socket, { type: 'command.rejected', commandId: command.id, reason: 'Campanha incompatível.' });
+            return;
+        }
+        if (!commandOwnedByMember(command, member, definition)) {
+            this.send(socket, { type: 'command.rejected', commandId: command.id, reason: 'O participante não controla este alvo.' });
+            return;
+        }
+        if (member.role !== 'master' && definition.player === 'propose') {
+            await this.createProposal(socket, member, command);
+            return;
+        }
         if (member.role !== 'master' && definition.player !== 'allow') {
             this.send(socket, { type: 'command.rejected', commandId: command.id, reason: 'Ação não permitida.' });
+            return;
+        }
+        if (command.type === 'proposal.resolve') {
+            await this.resolveProposal(socket, member, command);
+            return;
+        }
+        if (command.type === 'conflict.resolve') {
+            await this.resolveConflict(socket, member, command);
+            return;
+        }
+        if (command.type === 'room.member.revoke') {
+            await this.revokeMember(socket, member, command);
+            return;
+        }
+        if (command.type === 'room.close') {
+            await this.closeRoom(socket, member, command);
+            return;
+        }
+        const entityKey = String(command.entityKey || `${command.type}:${command.targetId || 'campaign'}`);
+        const currentEntityVersion = Math.max(0, Number(this.room.campaign.entityVersions?.[entityKey]) || 0);
+        if (definition.conflict === 'exclusive' && Number(command.baseVersion || 0) !== currentEntityVersion) {
+            await this.createConflict(socket, member, command, { currentEntityVersion });
             return;
         }
         let result = { applied: true };
         if (command.type === 'participant.resource.adjust') {
             result = applyResourceCommand(this.room.campaign, command, member);
+            if (!result.applied) {
+                this.send(socket, { type: 'command.rejected', commandId: command.id, reason: result.reason });
+                return;
+            }
+        } else if (['roll.publish', 'combat.message.publish'].includes(command.type)) {
+            let resourceChanged = false;
+            if (command.type === 'roll.publish' && member.participantId) {
+                const target = this.room.campaign?.state?.combat?.combatants?.find(entry =>
+                    String(entry?.id || '') === String(member.participantId));
+                if (target) {
+                    const luckDelta = Math.min(1, Math.max(0, Math.trunc(Number(command.payload?.luckDiceGained) || 0)));
+                    const adrenalineDelta = Math.min(3, Math.max(0, Math.trunc(Number(command.payload?.adrenalineGained) || 0)));
+                    if (luckDelta || adrenalineDelta) {
+                        target.progression = {
+                            ...(target.progression || {}),
+                            luckDice: Math.max(0, Number(target.progression?.luckDice) || 0) + luckDelta,
+                            adrenaline: Math.max(0, Number(target.progression?.adrenaline) || 0) + adrenalineDelta
+                        };
+                        replaceCompatibilityEntity(this.room.campaign, ['dnd_combat_session', 'dnd_players'], target.id, target);
+                        resourceChanged = true;
+                    }
+                }
+            }
+            const activity = {
+                id: command.id,
+                type: command.type,
+                memberId: member.id,
+                memberName: member.name,
+                participantId: member.participantId,
+                payload: clone(command.payload),
+                createdAt: new Date().toISOString()
+            };
+            this.room.activity.push(activity);
+            this.room.activity = this.room.activity.slice(-200);
+            result = { applied: true, activity, resourceChanged };
+        } else if (PROPOSAL_LABELS[command.type]) {
+            result = applyPermanentCommand(this.room.campaign, command);
             if (!result.applied) {
                 this.send(socket, { type: 'command.rejected', commandId: command.id, reason: result.reason });
                 return;
@@ -565,21 +977,263 @@ export class CampaignRoom {
         };
         this.room.updatedAt = new Date().toISOString();
         await this.persist();
+        await this.syncDirectory();
         const accepted = { type: 'command.accepted', commandId: command.id, sequence: this.room.sequence, result };
         this.broadcast(accepted);
-        if (command.type === 'participant.resource.adjust') {
+        if (command.type === 'participant.resource.adjust' || PROPOSAL_LABELS[command.type]) {
             this.broadcast(target => this.snapshotEvent(target));
+        } else if (result.activity) {
+            this.broadcast({ type: 'activity.created', sequence: this.room.sequence, activity: result.activity });
+            if (result.resourceChanged) this.broadcast(target => this.snapshotEvent(target));
         }
+    }
+
+    async revokeMember(socket, member, command) {
+        if (member.role !== 'master') {
+            this.send(socket, { type: 'command.rejected', commandId: command.id, reason: 'Somente o mestre remove participantes.' });
+            return;
+        }
+        const targetId = String(command.payload?.memberId || command.targetId || '');
+        const target = this.room.members?.[targetId];
+        if (!target || target.role === 'master') {
+            this.send(socket, { type: 'command.rejected', commandId: command.id, reason: 'Participante inválido.' });
+            return;
+        }
+        target.revoked = true;
+        target.revokedAt = new Date().toISOString();
+        target.revokedBy = member.id;
+        this.room.seenCommandIds.push(command.id);
+        this.room.seenCommandIds = this.room.seenCommandIds.slice(-MAX_SEEN_COMMANDS);
+        this.room.sequence += 1;
+        this.room.updatedAt = new Date().toISOString();
+        this.appendAccessLog('member.revoked', target, { revokedBy: member.name });
+        await this.persist();
+        this.send(socket, { type: 'command.accepted', commandId: command.id, sequence: this.room.sequence });
+        this.ctx.getWebSockets().forEach(targetSocket => {
+            const attached = targetSocket.deserializeAttachment?.();
+            if (String(attached?.id || '') !== targetId) return;
+            this.send(targetSocket, { type: 'room.revoked', sequence: this.room.sequence });
+            try { targetSocket.close(4003, 'Acesso revogado'); } catch { /* conexão já fechada */ }
+        });
+        this.broadcastPresence();
+        this.broadcast(targetMember => this.snapshotEvent(targetMember));
+        await this.syncDirectory();
+    }
+
+    async closeRoom(socket, member, command) {
+        if (member.role !== 'master') {
+            this.send(socket, { type: 'command.rejected', commandId: command.id, reason: 'Somente o mestre encerra a sala.' });
+            return;
+        }
+        this.room.closedAt = new Date().toISOString();
+        this.room.updatedAt = this.room.closedAt;
+        this.room.sequence += 1;
+        this.room.seenCommandIds.push(command.id);
+        this.room.seenCommandIds = this.room.seenCommandIds.slice(-MAX_SEEN_COMMANDS);
+        this.appendAccessLog('room.closed', member);
+        await this.persist();
+        await this.syncDirectory();
+        this.send(socket, { type: 'command.accepted', commandId: command.id, sequence: this.room.sequence });
+        this.broadcast({ type: 'room.closed', sequence: this.room.sequence });
+        this.ctx.getWebSockets().forEach(targetSocket => {
+            try { targetSocket.close(4004, 'Sala encerrada'); } catch { /* conexão já fechada */ }
+        });
+    }
+
+    async createProposal(socket, member, command) {
+        const proposal = {
+            id: `proposal-${crypto.randomUUID()}`,
+            label: PROPOSAL_LABELS[command.type] || command.type,
+            status: 'pending',
+            memberId: member.id,
+            memberName: member.name,
+            participantId: member.participantId,
+            sheetId: member.sheetId,
+            command: clone({ ...command, actorId: member.actorId, role: member.role }),
+            createdAt: new Date().toISOString(),
+            resolvedAt: null
+        };
+        this.room.proposals[proposal.id] = proposal;
+        this.room.proposalOrder.push(proposal.id);
+        this.room.seenCommandIds.push(command.id);
+        this.room.seenCommandIds = this.room.seenCommandIds.slice(-MAX_SEEN_COMMANDS);
+        this.room.sequence += 1;
+        this.room.updatedAt = new Date().toISOString();
+        await this.persist();
+        this.broadcast(target => target.role === 'master' || target.id === member.id
+            ? { type: 'proposal.created', sequence: this.room.sequence, proposal: clone(proposal) }
+            : null);
+        this.send(socket, { type: 'command.accepted', commandId: command.id, proposed: true, proposalId: proposal.id, sequence: this.room.sequence });
+    }
+
+    async resolveProposal(socket, member, command) {
+        if (member.role !== 'master') {
+            this.send(socket, { type: 'command.rejected', commandId: command.id, reason: 'Somente o mestre resolve propostas.' });
+            return;
+        }
+        const proposal = this.room.proposals[String(command.payload?.proposalId || '')];
+        if (!proposal || proposal.status !== 'pending') {
+            this.send(socket, { type: 'command.rejected', commandId: command.id, reason: 'Proposta inexistente ou já resolvida.' });
+            return;
+        }
+        const decision = command.payload?.decision === 'approved' ? 'approved' : 'rejected';
+        let result = { applied: false, reason: 'rejected' };
+        if (decision === 'approved') {
+            const approvedCommand = clone(proposal.command);
+            if (command.payload?.adjustedPayload && typeof command.payload.adjustedPayload === 'object') {
+                approvedCommand.payload = clone(command.payload.adjustedPayload);
+            }
+            const entityKey = String(approvedCommand.entityKey || `${approvedCommand.type}:${approvedCommand.targetId || 'campaign'}`);
+            const currentEntityVersion = Math.max(0, Number(this.room.campaign.entityVersions?.[entityKey]) || 0);
+            if (Number(approvedCommand.baseVersion || 0) !== currentEntityVersion) {
+                proposal.status = 'conflict';
+                proposal.resolvedAt = new Date().toISOString();
+                await this.createConflict(socket, proposal, approvedCommand, {
+                    currentEntityVersion,
+                    proposalId: proposal.id,
+                    memberId: proposal.memberId,
+                    memberName: proposal.memberName,
+                    ackCommandId: command.id
+                });
+                return;
+            }
+            result = applyPermanentCommand(this.room.campaign, approvedCommand);
+            if (!result.applied) {
+                this.send(socket, { type: 'command.rejected', commandId: command.id, reason: result.reason });
+                return;
+            }
+            this.room.campaign.revision = Math.max(0, Number(this.room.campaign.revision) || 0) + 1;
+            this.room.campaign.updatedAt = new Date().toISOString();
+            this.room.campaign.entityVersions = {
+                ...(this.room.campaign.entityVersions || {}),
+                [String(approvedCommand.entityKey || `${approvedCommand.type}:${approvedCommand.targetId || 'campaign'}`)]: this.room.campaign.revision
+            };
+        }
+        proposal.status = decision;
+        proposal.resolvedAt = new Date().toISOString();
+        proposal.resolvedBy = member.id;
+        proposal.note = String(command.payload?.note || '').slice(0, 500);
+        const record = {
+            id: `decision-${crypto.randomUUID()}`,
+            proposalId: proposal.id,
+            memberId: proposal.memberId,
+            memberName: proposal.memberName,
+            decision,
+            label: proposal.label,
+            note: proposal.note,
+            decidedBy: member.name,
+            createdAt: proposal.resolvedAt
+        };
+        this.room.decisions.push(record);
+        this.room.decisions = this.room.decisions.slice(-200);
+        this.room.seenCommandIds.push(command.id);
+        this.room.seenCommandIds = this.room.seenCommandIds.slice(-MAX_SEEN_COMMANDS);
+        this.room.sequence += 1;
+        this.room.updatedAt = new Date().toISOString();
+        await this.persist();
+        this.broadcast({ type: 'proposal.resolved', sequence: this.room.sequence, proposal: clone(proposal), decision: record });
+        this.broadcast(target => this.snapshotEvent(target));
+        this.send(socket, { type: 'command.accepted', commandId: command.id, sequence: this.room.sequence, result });
+    }
+
+    async createConflict(socket, member, command, options = {}) {
+        const acknowledgedCommandId = String(options.ackCommandId || command.id);
+        const conflict = {
+            id: `conflict-${crypto.randomUUID()}`,
+            label: PROPOSAL_LABELS[command.type] || command.type || 'Alteração simultânea',
+            status: 'pending',
+            memberId: options.memberId || member.id,
+            memberName: options.memberName || member.name,
+            proposalId: options.proposalId || null,
+            entityKey: String(command.entityKey || `${command.type}:${command.targetId || 'campaign'}`),
+            expectedVersion: Math.max(0, Number(command.baseVersion) || 0),
+            currentVersion: Math.max(0, Number(options.currentEntityVersion) || 0),
+            incomingCommand: clone(command),
+            createdAt: new Date().toISOString(),
+            resolvedAt: null
+        };
+        this.room.conflicts[conflict.id] = conflict;
+        this.room.conflictOrder.push(conflict.id);
+        this.room.seenCommandIds.push(acknowledgedCommandId);
+        this.room.seenCommandIds = this.room.seenCommandIds.slice(-MAX_SEEN_COMMANDS);
+        this.room.sequence += 1;
+        this.room.updatedAt = new Date().toISOString();
+        await this.persist();
+        this.broadcast(target => target.role === 'master' || target.id === conflict.memberId
+            ? { type: 'conflict.created', sequence: this.room.sequence, conflict: clone(conflict) }
+            : null);
+        this.send(socket, { type: 'command.accepted', commandId: acknowledgedCommandId, conflict: true, conflictId: conflict.id, sequence: this.room.sequence });
+    }
+
+    async resolveConflict(socket, member, command) {
+        if (member.role !== 'master') {
+            this.send(socket, { type: 'command.rejected', commandId: command.id, reason: 'Somente o mestre resolve conflitos.' });
+            return;
+        }
+        const conflict = this.room.conflicts[String(command.payload?.conflictId || '')];
+        if (!conflict || conflict.status !== 'pending') {
+            this.send(socket, { type: 'command.rejected', commandId: command.id, reason: 'Conflito inexistente ou já resolvido.' });
+            return;
+        }
+        const resolution = command.payload?.resolution === 'incoming' ? 'incoming' : 'current';
+        let result = { applied: false, mode: 'current-preserved' };
+        if (resolution === 'incoming') {
+            result = applyPermanentCommand(this.room.campaign, conflict.incomingCommand);
+            if (!result.applied) {
+                this.send(socket, { type: 'command.rejected', commandId: command.id, reason: result.reason });
+                return;
+            }
+            this.room.campaign.revision = Math.max(0, Number(this.room.campaign.revision) || 0) + 1;
+            this.room.campaign.updatedAt = new Date().toISOString();
+            this.room.campaign.entityVersions = {
+                ...(this.room.campaign.entityVersions || {}),
+                [conflict.entityKey]: this.room.campaign.revision
+            };
+        }
+        conflict.status = 'resolved';
+        conflict.resolution = resolution;
+        conflict.resolvedAt = new Date().toISOString();
+        conflict.resolvedBy = member.id;
+        const proposal = conflict.proposalId ? this.room.proposals[conflict.proposalId] : null;
+        if (proposal) {
+            proposal.status = resolution === 'incoming' ? 'approved' : 'rejected';
+            proposal.resolvedAt = conflict.resolvedAt;
+            proposal.resolvedBy = member.id;
+        }
+        const record = {
+            id: `decision-${crypto.randomUUID()}`,
+            proposalId: conflict.proposalId,
+            conflictId: conflict.id,
+            memberId: conflict.memberId,
+            memberName: conflict.memberName,
+            decision: resolution === 'incoming' ? 'approved' : 'rejected',
+            label: conflict.label,
+            note: resolution === 'incoming' ? 'Versão recebida preservada.' : 'Versão atual preservada.',
+            decidedBy: member.name,
+            createdAt: conflict.resolvedAt
+        };
+        this.room.decisions.push(record);
+        this.room.decisions = this.room.decisions.slice(-200);
+        this.room.seenCommandIds.push(command.id);
+        this.room.seenCommandIds = this.room.seenCommandIds.slice(-MAX_SEEN_COMMANDS);
+        this.room.sequence += 1;
+        this.room.updatedAt = new Date().toISOString();
+        await this.persist();
+        this.broadcast({ type: 'conflict.resolved', sequence: this.room.sequence, conflict: clone(conflict), proposal: clone(proposal), decision: record });
+        this.broadcast(target => this.snapshotEvent(target));
+        this.send(socket, { type: 'command.accepted', commandId: command.id, sequence: this.room.sequence, result });
     }
 
     async webSocketClose(socket, code, reason) {
         try { socket.close(code, reason); } catch { /* fechamento já concluído */ }
         this.broadcastPresence();
+        await this.syncDirectory();
     }
 
     async webSocketError(socket) {
         try { socket.close(1011, 'Erro na conexão'); } catch { /* conexão já encerrada */ }
         this.broadcastPresence();
+        await this.syncDirectory();
     }
 
     status() {
@@ -618,6 +1272,15 @@ async function routeToRoom(env, code, request, internalPath) {
     return stub.fetch(new Request(target, request));
 }
 
+async function routeToDirectory(env, request, internalPath) {
+    if (!env.ROOM_DIRECTORY) return jsonResponse({ ok: true, rooms: [] });
+    const id = env.ROOM_DIRECTORY.idFromName('public-room-directory-v1');
+    const stub = env.ROOM_DIRECTORY.get(id);
+    const target = new URL(request.url);
+    target.pathname = internalPath;
+    return stub.fetch(new Request(target, request));
+}
+
 export default {
     async fetch(request, env) {
         const url = new URL(request.url);
@@ -631,9 +1294,12 @@ export default {
 
         let response;
         try {
+            const listMatch = request.method === 'GET' && url.pathname === '/api/rooms';
             const createMatch = request.method === 'POST' && url.pathname === '/api/rooms';
             const roomMatch = url.pathname.match(/^\/api\/rooms\/([A-Z0-9]{6,12})\/(join|ticket|socket|status)$/i);
-            if (createMatch) {
+            if (listMatch) {
+                response = await routeToDirectory(env, request, '/internal/list');
+            } else if (createMatch) {
                 const body = await readJson(request).catch(() => null);
                 if (!body) return errorResponse('invalid_json', 'Os dados enviados são inválidos.', 400, {}, headers);
                 let lastResponse = null;

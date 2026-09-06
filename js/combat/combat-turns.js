@@ -176,6 +176,11 @@ function updateRoundEffects() {
 
 function nextTurn() {
     if (combatants.length === 0) return;
+
+    const outgoingCombatant = combatants.find(c => c.id === activeTurnId);
+    if (outgoingCombatant?.preparedCriticalAttack) {
+        delete outgoingCombatant.preparedCriticalAttack;
+    }
     
     let currentIndex = combatants.findIndex(c => c.id === activeTurnId);
 

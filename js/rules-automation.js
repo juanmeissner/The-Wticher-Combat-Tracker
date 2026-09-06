@@ -852,8 +852,27 @@ function prepareCharacterSpellEffect(target, caster, id, cast = {}) {
         return { managed: false };
     }
 
-    const metadata = getAutomationConfig('ability', id, { spent: cast.baseCost });
-    if (metadata === null) return null;
+    const baseMetadata = getAutomationConfig('ability', id, { spent: cast.baseCost });
+    if (baseMetadata === null) return null;
+    const effectMultiplier = Math.max(1, Math.floor(Number(cast.effectMultiplier) || 1));
+    const metadata = {
+        ...baseMetadata,
+        ...(Number.isInteger(baseMetadata.duration) && baseMetadata.duration > 0
+            ? { duration: baseMetadata.duration * effectMultiplier }
+            : {}),
+        ...(Number.isInteger(baseMetadata.stacks) && baseMetadata.stacks > 0
+            ? { stacks: baseMetadata.stacks * effectMultiplier }
+            : {}),
+        ...(baseMetadata.timeDuration && Number(baseMetadata.timeDuration.amount) > 0
+            ? {
+                timeDuration: {
+                    ...baseMetadata.timeDuration,
+                    amount: Number(baseMetadata.timeDuration.amount) * effectMultiplier
+                }
+            }
+            : {}),
+        effectMultiplier
+    };
 
     pendingCharacterSpellEffect = {
         targetId: String(target.id),

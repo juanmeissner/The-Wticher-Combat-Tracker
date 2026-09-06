@@ -64,6 +64,16 @@
         custom: Object.freeze({ icon: '📌', name: 'Evento', scheduled: true })
     });
 
+    function isCampaignClockReadOnly() {
+        return global.collaborationSession?.isPlayer?.() === true;
+    }
+
+    function denyCampaignClockEdit() {
+        if (!isCampaignClockReadOnly()) return false;
+        global.showToast?.('🔒 O calendário está disponível somente para consulta no modo Jogador.');
+        return true;
+    }
+
     function clone(value) {
         return JSON.parse(JSON.stringify(value));
     }
@@ -1000,7 +1010,7 @@
                     <small>${escapeHtml(isOfficialAnnual ? 'Celebração do Continente' : info.name)} · ${escapeHtml(details.join(' · '))}</small>
                     ${description}
                 </div>
-                ${isOfficialAnnual ? '' : `<div class="campaign-event-actions">
+                ${isOfficialAnnual || isCampaignClockReadOnly() ? '' : `<div class="campaign-event-actions">
                     ${event.completed && pendingReward > 0 ? `<button type="button" class="reward" onclick="openCampaignEventReward('${event.id}')" title="Distribuir ${pendingReward} Coroas">💰</button>` : ''}
                     ${canComplete ? `<button type="button" onclick="toggleCampaignEventCompleted('${event.id}')" title="${event.completed ? 'Reabrir' : 'Concluir'}">${event.completed ? '↶' : '✓'}</button>` : ''}
                     <button type="button" onclick="openCampaignEventEditor('${event.id}')" title="Editar">✎</button>
@@ -1075,6 +1085,7 @@
     }
 
     function openCampaignEventReward(id) {
+        if (denyCampaignClockEdit()) return;
         const event = clockState.events.find(entry => entry.id === String(id));
         const pendingReward = getEventRewardPending(event);
         if (!event || !event.completed || pendingReward <= 0) return;
@@ -1115,6 +1126,7 @@
     }
 
     function confirmCampaignEventReward() {
+        if (denyCampaignClockEdit()) return;
         const overlay = document.getElementById('campaignRewardModal');
         const event = clockState.events.find(entry => entry.id === overlay?.dataset.eventId);
         const pendingReward = getEventRewardPending(event);
@@ -1182,6 +1194,15 @@
     function renderNowView(current, start, roundMinutes) {
         const upcoming = getAgendaEvents().slice(0, 3);
         const moon = getMoonPhase(current.epochMinute);
+        if (isCampaignClockReadOnly()) return `
+            <section class="campaign-clock-section campaign-clock-readonly-summary">
+                <div class="campaign-clock-section-title"><small>CONSULTA DO JOGADOR</small><span>O tempo é controlado pelo Mestre</span></div>
+                <p>Você pode acompanhar data, horário, lua, agenda e linha do tempo sem alterar a campanha.</p>
+            </section>
+            <section class="campaign-clock-upcoming">
+                <div class="campaign-clock-section-title"><small>PRÓXIMOS EVENTOS</small><button type="button" onclick="setCampaignClockView('agenda')">Ver agenda</button></div>
+                ${upcoming.length ? upcoming.map(event => renderEventCard(event, { occurrenceMinute: event.occurrenceMinute })).join('') : '<p class="campaign-clock-empty">Nenhum evento futuro programado.</p>'}
+            </section>`;
         return `
             <section class="campaign-clock-section">
                 <div class="campaign-clock-section-title"><small>AVANÇO RÁPIDO</small><span>O histórico será agrupado</span></div>
@@ -1300,7 +1321,7 @@
                 <div class="campaign-calendar-day-panel">
                     <div class="campaign-clock-section-title">
                         <div><small>DIA SELECIONADO</small><h3>${selectedMinute === null ? '' : escapeHtml(formatDateLong(selectedMinute))}</h3>${selectedMoon ? `<p class="campaign-selected-moon">${selectedMoon.icon} ${escapeHtml(selectedMoon.name)}</p>` : ''}</div>
-                        <button type="button" class="campaign-event-add" onclick="openCampaignEventEditor()">+ Adicionar</button>
+                        ${isCampaignClockReadOnly() ? '' : '<button type="button" class="campaign-event-add" onclick="openCampaignEventEditor()">+ Adicionar</button>'}
                     </div>
                     <div class="campaign-day-events">
                         ${selectedEvents.length
@@ -1327,7 +1348,7 @@
             <section class="campaign-agenda-panel">
                 <div class="campaign-clock-section-title">
                     <div><small>AGENDA DA CAMPANHA</small><h3>${pending.length} pendente${pending.length === 1 ? '' : 's'}</h3></div>
-                    <button type="button" class="campaign-event-add" onclick="openCampaignEventEditor()">+ Evento</button>
+                    ${isCampaignClockReadOnly() ? '' : '<button type="button" class="campaign-event-add" onclick="openCampaignEventEditor()">+ Evento</button>'}
                 </div>
                 <div class="campaign-agenda-list">
                     ${pending.length ? pending.map(event => `
@@ -1426,7 +1447,7 @@
             <section class="campaign-timeline-panel">
                 <div class="campaign-clock-section-title campaign-timeline-title">
                     <div><small>LINHA DO TEMPO DA CAMPANHA</small><h3><span id="campaignTimelineVisibleCount">${visibleCount}</span> acontecimento${visibleCount === 1 ? '' : 's'}</h3></div>
-                    <button type="button" class="campaign-event-add" onclick="openCampaignEventEditor('', 'history')">+ Anotação</button>
+                    ${isCampaignClockReadOnly() ? '' : '<button type="button" class="campaign-event-add" onclick="openCampaignEventEditor(\'\', \'history\')">+ Anotação</button>'}
                 </div>
                 <p class="campaign-timeline-intro">A cronologia oficial é somente leitura. Anotações históricas da campanha são editáveis; aniversários e datas anuais continuam no Calendário e na Agenda.</p>
                 <div class="campaign-timeline-legend" aria-label="Tipos de registro">
@@ -1522,7 +1543,7 @@
 
         dialog.innerHTML = `
             <div class="session-dialog-header campaign-clock-header">
-                <div><small>RELÓGIO DA CAMPANHA</small><h2 id="campaignClockTitle">Tempo e calendário</h2></div>
+                <div><small>RELÓGIO DA CAMPANHA</small><h2 id="campaignClockTitle">Tempo e calendário</h2>${isCampaignClockReadOnly() ? '<span class="campaign-clock-readonly-badge">Somente leitura</span>' : ''}</div>
                 <button type="button" class="session-close" onclick="closeCampaignClock()" aria-label="Fechar">×</button>
             </div>
             <section class="campaign-clock-now" aria-live="polite">
@@ -1564,9 +1585,10 @@
         `;
     }
 
-    function openCampaignClock() {
+    function openCampaignClock(options = {}) {
         pendingAdvance = null;
         editingEventId = null;
+        if (isCampaignClockReadOnly() || options.readOnly) activeClockView = options.view || 'calendar';
         ensureCalendarSelection();
         const overlay = ensureClockModal();
         if (!overlay) return;
@@ -1714,6 +1736,7 @@
     }
 
     function openCampaignEventEditor(id = '', preferredType = '') {
+        if (denyCampaignClockEdit()) return;
         ensureCalendarSelection();
         eventEditorReturnView = activeClockView;
         editingEventId = String(id || '');
@@ -1750,6 +1773,7 @@
     }
 
     function saveCampaignEventFromForm() {
+        if (denyCampaignClockEdit()) return;
         const type = document.getElementById('campaignEventType')?.value || 'note';
         const title = document.getElementById('campaignEventTitle')?.value.trim() || '';
         const date = document.getElementById('campaignEventDate')?.value || '';
@@ -1812,6 +1836,7 @@
     }
 
     function toggleCampaignEventCompleted(id) {
+        if (denyCampaignClockEdit()) return;
         const event = clockState.events.find(entry => entry.id === String(id));
         if (!event) return;
         let changed;
@@ -1831,6 +1856,7 @@
     }
 
     function requestDeleteCampaignEvent(id) {
+        if (denyCampaignClockEdit()) return;
         const event = clockState.events.find(entry => entry.id === String(id));
         if (!event) return;
         const execute = () => {
@@ -1856,6 +1882,7 @@
     }
 
     function requestCampaignAdvance(minutes, preferredUnit = '') {
+        if (denyCampaignClockEdit()) return;
         const preview = previewAdvance(minutes, { source: preferredUnit === 'round' ? 'round-jump' : 'manual-jump' });
         if (preview.minutes <= 0) {
             global.showToast?.('Informe um período válido.');
@@ -1893,6 +1920,7 @@
     }
 
     function confirmCampaignAdvance() {
+        if (denyCampaignClockEdit()) return;
         if (!pendingAdvance) return;
         const request = pendingAdvance;
         const processRecurringDamage = Boolean(document.getElementById('campaignClockRecurringDamage')?.checked);
@@ -1933,6 +1961,7 @@
     }
 
     function setCampaignClockDateTime(resetStart) {
+        if (denyCampaignClockEdit()) return;
         const target = minuteFromInputs(
             document.getElementById('campaignClockDateInput')?.value,
             document.getElementById('campaignClockTimeInput')?.value,

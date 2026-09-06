@@ -8,6 +8,7 @@
     'use strict';
 
     const ENDPOINT_KEY = 'dnd_collaboration_endpoint_v1';
+    const DEFAULT_ENDPOINT = 'https://witcher-combat-collaboration.juanmeissnerf.workers.dev';
     const RECONNECT_DELAYS = [1000, 2000, 4000, 8000, 15000, 20000];
     let socket = null;
     let reconnectTimer = null;
@@ -16,6 +17,13 @@
     let campaignUnsubscribe = null;
     let publishTimer = null;
     let presence = [];
+    let pendingSnapshot = null;
+    let snapshotFrame = null;
+    let lastAppliedSequence = 0;
+    let lastCampaignFingerprint = '';
+    let workflow = { proposals: [], conflicts: [], decisions: [], activity: [], accessLog: [], members: [] };
+    let queueFlushPromise = null;
+    const sentCommandIds = new Set();
 
     function normalizeEndpoint(value) {
         const text = String(value || '').trim().replace(/\/+$/, '');
@@ -29,14 +37,29 @@
         }
     }
 
+    function isLocalDevelopmentEndpoint(value) {
+        try {
+            const hostname = new URL(value).hostname.toLowerCase();
+            return hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1';
+        } catch {
+            return false;
+        }
+    }
+
     function getSavedEndpoint() {
-        return normalizeEndpoint(root?.localStorage?.getItem?.(ENDPOINT_KEY) || '');
+        const saved = normalizeEndpoint(root?.localStorage?.getItem?.(ENDPOINT_KEY) || '');
+        return isLocalDevelopmentEndpoint(saved) ? saved : DEFAULT_ENDPOINT;
     }
 
     function saveEndpoint(value) {
-        const endpoint = normalizeEndpoint(value);
+        const requested = normalizeEndpoint(value);
+        const endpoint = isLocalDevelopmentEndpoint(requested) ? requested : DEFAULT_ENDPOINT;
         if (endpoint) root?.localStorage?.setItem?.(ENDPOINT_KEY, endpoint);
         return endpoint;
+    }
+
+    function getServiceEndpoint(value) {
+        return normalizeEndpoint(value) || getSavedEndpoint() || DEFAULT_ENDPOINT;
     }
 
     async function request(endpoint, path, options = {}) {
@@ -61,14 +84,18 @@
     }
 
     async function checkHealth(endpointValue) {
-        const endpoint = normalizeEndpoint(endpointValue);
-        if (!endpoint) throw new Error('Informe o endereço do serviço Cloudflare.');
+        const endpoint = getServiceEndpoint(endpointValue);
         return request(endpoint, '/health', { method: 'GET' });
     }
 
+    async function listRooms(endpointValue) {
+        const endpoint = getServiceEndpoint(endpointValue);
+        const result = await request(endpoint, '/api/rooms', { method: 'GET' });
+        return Array.isArray(result.rooms) ? result.rooms : [];
+    }
+
     async function createRoom(options = {}) {
-        const endpoint = saveEndpoint(options.endpoint);
-        if (!endpoint) throw new Error('Informe um endereço HTTPS válido para o serviço Cloudflare.');
+        const endpoint = saveEndpoint(getServiceEndpoint(options.endpoint));
         const campaign = root?.campaignStore?.checkpoint?.({ reason: 'collaboration-room-create' })
             || root?.campaignStore?.getActiveCampaign?.();
         if (!campaign) throw new Error('Nenhuma campanha ativa foi encontrada.');
@@ -79,18 +106,18 @@
                 password: options.password,
                 actorName: options.actorName || 'Mestre',
                 deviceId: current.deviceId,
+                discoverable: options.discoverable !== false,
                 campaign
             }
         });
         root?.collaborationSession?.startOnlineSession?.({ endpoint, ...result });
-        applySnapshot(result.campaign, result.room?.sequence, result.member);
+        applySnapshot(result.campaign, result.room?.sequence, result.member, { force: true });
         await connect({ socketTicket: result.socketTicket });
         return result;
     }
 
     async function joinRoom(options = {}) {
-        const endpoint = saveEndpoint(options.endpoint);
-        if (!endpoint) throw new Error('Informe um endereço HTTPS válido para o serviço Cloudflare.');
+        const endpoint = saveEndpoint(getServiceEndpoint(options.endpoint));
         const roomCode = String(options.roomCode || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
         if (!roomCode) throw new Error('Informe o código da sala.');
         const current = root?.collaborationSession?.getSession?.() || {};
@@ -99,11 +126,12 @@
                 password: options.password,
                 actorName: options.actorName,
                 participantId: options.participantId || null,
+                characterSheet: options.characterSheet || null,
                 deviceId: current.deviceId
             }
         });
         root?.collaborationSession?.startOnlineSession?.({ endpoint, ...result });
-        applySnapshot(result.campaign, result.room?.sequence, result.member);
+        applySnapshot(result.campaign, result.room?.sequence, result.member, { force: true });
         await connect({ socketTicket: result.socketTicket });
         return result;
     }
@@ -142,6 +170,8 @@
         reconnectAttempt = 0;
         root?.collaborationSession?.setConnectionState?.('synced');
         installCampaignPublisher();
+        const current = root?.collaborationSession?.getSession?.() || {};
+        socket?.send?.(JSON.stringify({ type: 'resync.request', since: current.lastServerSequence || 0 }));
     }
 
     function handleMessage(event) {
@@ -149,9 +179,15 @@
         try { message = JSON.parse(event.data); } catch { return; }
         if (message.type === 'room.snapshot') {
             presence = Array.isArray(message.presence) ? message.presence : presence;
+            mergeWorkflow(message.workflow, { replace: true });
             root?.collaborationSession?.updateOnlineIdentity?.(message);
-            applySnapshot(message.campaign, message.sequence, message.member);
+            if (!queueSnapshot(message)) void flushOfflineQueue();
             refreshRoomView();
+            return;
+        }
+        if (message.type === 'snapshot.accepted') {
+            root?.collaborationSession?.setLastServerSequence?.(message.sequence);
+            root?.collaborationSession?.setConnectionState?.('synced');
             return;
         }
         if (message.type === 'room.presence') {
@@ -160,32 +196,158 @@
             return;
         }
         if (message.type === 'command.accepted') {
+            void acknowledgeQueuedCommand(message.commandId);
+            root?.collaborationSession?.setLastServerSequence?.(message.sequence);
+            return;
+        }
+        if (message.type === 'proposal.created') {
+            mergeWorkflow({ proposals: [message.proposal] });
+            root?.collaborationSession?.setLastServerSequence?.(message.sequence);
+            root?.showToast?.(root?.collaborationSession?.isMaster?.()
+                ? `📨 Nova solicitação: ${message.proposal?.label || 'alteração de jogador'}.`
+                : '📨 Alteração enviada para aprovação do mestre.');
+            refreshRoomView();
+            return;
+        }
+        if (message.type === 'proposal.resolved') {
+            workflow.proposals = workflow.proposals.map(entry =>
+                entry.id === message.proposal?.id ? message.proposal : entry);
+            mergeWorkflow({ decisions: [message.decision] });
+            root?.collaborationSession?.setLastServerSequence?.(message.sequence);
+            root?.showToast?.(message.proposal?.status === 'approved'
+                ? '✅ Alteração aprovada pelo mestre.'
+                : '❌ Alteração rejeitada pelo mestre.');
+            refreshRoomView();
+            return;
+        }
+        if (message.type === 'conflict.created') {
+            mergeWorkflow({ conflicts: [message.conflict] });
+            root?.collaborationSession?.setConnectionState?.('conflict');
+            refreshRoomView();
+            return;
+        }
+        if (message.type === 'conflict.resolved') {
+            workflow.conflicts = workflow.conflicts.map(entry =>
+                entry.id === message.conflict?.id ? message.conflict : entry);
+            if (message.proposal) {
+                workflow.proposals = workflow.proposals.map(entry =>
+                    entry.id === message.proposal.id ? message.proposal : entry);
+            }
+            mergeWorkflow({ decisions: [message.decision] });
             root?.collaborationSession?.setLastServerSequence?.(message.sequence);
             root?.collaborationSession?.setConnectionState?.('synced');
+            refreshRoomView();
+            return;
+        }
+        if (message.type === 'activity.created') {
+            mergeWorkflow({ activity: [message.activity] });
+            root?.collaborationSession?.setLastServerSequence?.(message.sequence);
+            if (message.activity?.type === 'roll.publish') {
+                const result = message.activity.payload?.finalResult;
+                root?.showToast?.(`🎲 ${message.activity.memberName || 'Jogador'} rolou ${result ?? 'um teste'}.`);
+            }
+            refreshRoomView();
             return;
         }
         if (message.type === 'command.rejected') {
+            void acknowledgeQueuedCommand(message.commandId);
             root?.collaborationSession?.setConnectionState?.('conflict');
             root?.showToast?.(`⚠️ ${message.reason || 'A alteração foi recusada pela sala.'}`);
             return;
         }
         if (message.type === 'room.revoked' || message.type === 'room.closed') {
             manualDisconnect = true;
-            root?.collaborationSession?.setConnectionState?.('revoked');
+            const reason = message.type === 'room.closed' ? 'closed' : 'revoked';
+            disconnect({ clearSession: false });
+            root?.collaborationSession?.endPlayerRoomAccess?.(reason);
             root?.showToast?.(message.type === 'room.closed' ? 'A sala foi encerrada.' : 'O acesso deste dispositivo foi revogado.');
         }
     }
 
-    function applySnapshot(campaign, sequence, member) {
+    function campaignFingerprint(campaign) {
+        if (!campaign) return '';
+        try { return JSON.stringify(campaign); } catch { return String(campaign?.revision || ''); }
+    }
+
+    function mergeUnique(current, incoming, limit = 100) {
+        const values = new Map((current || []).map(entry => [String(entry?.id || ''), entry]));
+        (incoming || []).forEach(entry => {
+            if (entry?.id) values.set(String(entry.id), entry);
+        });
+        return [...values.values()].slice(-limit);
+    }
+
+    function mergeWorkflow(incoming = {}, options = {}) {
+        if (options.replace) {
+            workflow = {
+                proposals: Array.isArray(incoming.proposals) ? incoming.proposals : [],
+                conflicts: Array.isArray(incoming.conflicts) ? incoming.conflicts : [],
+                decisions: Array.isArray(incoming.decisions) ? incoming.decisions : [],
+                activity: Array.isArray(incoming.activity) ? incoming.activity : [],
+                accessLog: Array.isArray(incoming.accessLog) ? incoming.accessLog : [],
+                members: Array.isArray(incoming.members) ? incoming.members : []
+            };
+            return getWorkflow();
+        }
+        workflow = {
+            proposals: mergeUnique(workflow.proposals, incoming.proposals),
+            conflicts: mergeUnique(workflow.conflicts, incoming.conflicts),
+            decisions: mergeUnique(workflow.decisions, incoming.decisions),
+            activity: mergeUnique(workflow.activity, incoming.activity, 80),
+            accessLog: mergeUnique(workflow.accessLog, incoming.accessLog, 80),
+            members: mergeUnique(workflow.members, incoming.members, 100)
+        };
+        return getWorkflow();
+    }
+
+    function applySnapshot(campaign, sequence, member, options = {}) {
         if (!campaign) return;
+        const numericSequence = Math.max(0, Number(sequence) || 0);
+        const fingerprint = campaignFingerprint(campaign);
+        if (!options.force && (
+            (numericSequence && numericSequence <= lastAppliedSequence)
+            || (fingerprint && fingerprint === lastCampaignFingerprint)
+        )) {
+            root?.collaborationSession?.setLastServerSequence?.(numericSequence);
+            return;
+        }
         const applied = root?.campaignStore?.applyRemoteCampaign?.(campaign, { sequence });
-        if (applied) root?.applyRemoteCampaignView?.(applied);
-        root?.collaborationSession?.setLastServerSequence?.(sequence);
+        if (applied) {
+            lastAppliedSequence = Math.max(lastAppliedSequence, numericSequence);
+            lastCampaignFingerprint = fingerprint;
+            root?.applyRemoteCampaignView?.(applied);
+        }
+        root?.collaborationSession?.setLastServerSequence?.(numericSequence);
+    }
+
+    function queueSnapshot(message) {
+        const sequence = Math.max(0, Number(message?.sequence) || 0);
+        if (sequence && sequence <= lastAppliedSequence) return false;
+        if (!pendingSnapshot || sequence >= Number(pendingSnapshot.sequence || 0)) pendingSnapshot = message;
+        if (snapshotFrame !== null) return true;
+        const schedule = root?.requestAnimationFrame || (callback => root?.setTimeout?.(callback, 16));
+        snapshotFrame = schedule(() => {
+            const latest = pendingSnapshot;
+            pendingSnapshot = null;
+            snapshotFrame = null;
+            if (latest) {
+                applySnapshot(latest.campaign, latest.sequence, latest.member);
+                void flushOfflineQueue();
+            }
+        });
+        return true;
     }
 
     function handleClose(event) {
         socket = null;
-        if (manualDisconnect || event.code === 4003) return;
+        sentCommandIds.clear();
+        if (event.code === 4003 || event.code === 4004) {
+            manualDisconnect = true;
+            disconnect({ clearSession: false });
+            root?.collaborationSession?.endPlayerRoomAccess?.(event.code === 4004 ? 'closed' : 'revoked');
+            return;
+        }
+        if (manualDisconnect) return;
         root?.collaborationSession?.setConnectionState?.('connecting');
         scheduleReconnect();
     }
@@ -195,12 +357,24 @@
         root?.collaborationSession?.setConnectionState?.('connecting');
     }
 
+    function handleTerminalAccessError(error) {
+        if (!root?.collaborationSession?.isPlayer?.()) return false;
+        if (![403, 404].includes(Number(error?.status)) && !['revoked', 'room_not_found'].includes(error?.code)) return false;
+        const closed = Number(error?.status) === 404 || error?.code === 'room_not_found';
+        disconnect({ clearSession: false });
+        root?.collaborationSession?.endPlayerRoomAccess?.(closed ? 'closed' : 'revoked');
+        root?.showToast?.(closed ? 'A sala foi encerrada.' : 'O acesso deste dispositivo foi revogado.');
+        return true;
+    }
+
     function scheduleReconnect() {
         clearTimeout(reconnectTimer);
         const delay = RECONNECT_DELAYS[Math.min(reconnectAttempt, RECONNECT_DELAYS.length - 1)];
         reconnectAttempt += 1;
         reconnectTimer = setTimeout(() => {
-            connect().catch(() => scheduleReconnect());
+            connect().catch(error => {
+                if (!handleTerminalAccessError(error)) scheduleReconnect();
+            });
         }, delay);
     }
 
@@ -228,13 +402,61 @@
     }
 
     function submitCommand(command) {
-        if (!socket || socket.readyState !== root.WebSocket.OPEN) {
-            root?.showToast?.('A sala está reconectando. Tente novamente em instantes.');
-            return false;
-        }
-        socket.send(JSON.stringify({ type: 'command.submit', command }));
+        const current = root?.collaborationSession?.getSession?.() || {};
+        if (!current.roomCode || !command?.id) return false;
         root?.collaborationSession?.setConnectionState?.('pending');
+        const queue = root?.collaborationOfflineQueue;
+        if (!queue?.enqueue) {
+            if (!socket || socket.readyState !== root.WebSocket.OPEN) return false;
+            socket.send(JSON.stringify({ type: 'command.submit', command }));
+            return true;
+        }
+        queue.enqueue(current.roomCode, command).then(async () => {
+            await updatePendingCount();
+            if (socket?.readyState === root.WebSocket.OPEN) await flushOfflineQueue();
+            else root?.showToast?.('📥 Alteração guardada. Ela será enviada quando a conexão voltar.');
+        });
         return true;
+    }
+
+    async function updatePendingCount() {
+        const current = root?.collaborationSession?.getSession?.() || {};
+        const entries = await root?.collaborationOfflineQueue?.list?.(current.roomCode || '') || [];
+        root?.collaborationSession?.setPendingCount?.(entries.length);
+        return entries.length;
+    }
+
+    async function acknowledgeQueuedCommand(commandId) {
+        if (commandId) sentCommandIds.delete(String(commandId));
+        if (commandId) await root?.collaborationOfflineQueue?.remove?.(commandId);
+        const pending = await updatePendingCount();
+        if (!pending && root?.collaborationSession?.getSession?.().connectionState !== 'conflict') {
+            root?.collaborationSession?.setConnectionState?.('synced');
+        }
+    }
+
+    async function flushOfflineQueue() {
+        if (queueFlushPromise) return queueFlushPromise;
+        queueFlushPromise = (async () => {
+            const current = root?.collaborationSession?.getSession?.() || {};
+            if (!current.roomCode || !socket || socket.readyState !== root.WebSocket.OPEN) return false;
+            const entries = await root?.collaborationOfflineQueue?.list?.(current.roomCode) || [];
+            if (!entries.length) {
+                root?.collaborationSession?.setPendingCount?.(0);
+                return true;
+            }
+            root?.collaborationSession?.setPendingCount?.(entries.length);
+            root?.collaborationSession?.setConnectionState?.('pending');
+            for (const entry of entries) {
+                if (!socket || socket.readyState !== root.WebSocket.OPEN) break;
+                if (sentCommandIds.has(String(entry.id))) continue;
+                await root?.collaborationOfflineQueue?.markAttempt?.(entry.id);
+                socket.send(JSON.stringify({ type: 'command.submit', command: entry.command }));
+                sentCommandIds.add(String(entry.id));
+            }
+            return true;
+        })().finally(() => { queueFlushPromise = null; });
+        return queueFlushPromise;
     }
 
     function disconnect(options = {}) {
@@ -243,16 +465,31 @@
         clearTimeout(publishTimer);
         if (socket && socket.readyState < 2) socket.close(1000, 'Sala desconectada');
         socket = null;
+        sentCommandIds.clear();
         presence = [];
+        workflow = { proposals: [], conflicts: [], decisions: [], activity: [], accessLog: [], members: [] };
+        pendingSnapshot = null;
+        lastAppliedSequence = 0;
+        lastCampaignFingerprint = '';
+        if (snapshotFrame !== null) {
+            const cancel = root?.cancelAnimationFrame || root?.clearTimeout;
+            cancel?.(snapshotFrame);
+            snapshotFrame = null;
+        }
         if (campaignUnsubscribe) campaignUnsubscribe();
         campaignUnsubscribe = null;
-        if (options.clearSession !== false) root?.collaborationSession?.leaveOnlineSession?.();
+        if (options.endPlayerAccess) {
+            root?.collaborationSession?.endPlayerRoomAccess?.(options.reason || 'left');
+        } else if (options.clearSession !== false) {
+            root?.collaborationSession?.leaveOnlineSession?.();
+        }
     }
 
     function reconnectIfNeeded() {
         const current = root?.collaborationSession?.getSession?.() || {};
         if (current.mode !== 'room' || !current.memberToken || socket) return false;
         connect().catch(error => {
+            if (handleTerminalAccessError(error)) return;
             root?.collaborationSession?.setConnectionState?.('connecting');
             scheduleReconnect();
             console.warn('A sala será reconectada automaticamente.', error?.message || error);
@@ -262,6 +499,52 @@
 
     function getPresence() {
         return presence.map(member => ({ ...member }));
+    }
+
+    function getWorkflow() {
+        return JSON.parse(JSON.stringify(workflow));
+    }
+
+    function resolveProposal(proposalId, decision, options = {}) {
+        const permission = root?.collaborationSession?.authorize?.('proposal.resolve', null, {
+            proposalId,
+            decision: decision === 'approved' ? 'approved' : 'rejected',
+            note: options.note || '',
+            adjustedPayload: options.adjustedPayload
+        }, { entityKey: `proposal:${proposalId}` });
+        if (!permission || permission.decision !== protocol.DECISIONS.ALLOW) return false;
+        return submitCommand(permission.command);
+    }
+
+    function resolveConflict(conflictId, resolution) {
+        const permission = root?.collaborationSession?.authorize?.('conflict.resolve', null, {
+            conflictId,
+            resolution: resolution === 'incoming' ? 'incoming' : 'current'
+        }, { entityKey: `conflict:${conflictId}` });
+        if (!permission || permission.decision !== protocol.DECISIONS.ALLOW) return false;
+        return submitCommand(permission.command);
+    }
+
+    function revokeMember(memberId) {
+        const permission = root?.collaborationSession?.authorize?.('room.member.revoke', memberId, { memberId }, {
+            entityKey: `room-member:${memberId}`
+        });
+        if (!permission || permission.decision !== protocol.DECISIONS.ALLOW) return false;
+        return submitCommand(permission.command);
+    }
+
+    function closeRoom() {
+        const permission = root?.collaborationSession?.authorize?.('room.close', null, {}, { entityKey: 'room:status' });
+        if (!permission || permission.decision !== protocol.DECISIONS.ALLOW) return false;
+        return submitCommand(permission.command);
+    }
+
+    function publishRoll(targetId, payload = {}) {
+        const permission = root?.collaborationSession?.authorize?.('roll.publish', targetId, payload, {
+            entityKey: `roll:${targetId}`
+        });
+        if (!permission || permission.decision !== protocol.DECISIONS.ALLOW) return false;
+        return submitCommand(permission.command);
     }
 
     function refreshRoomView() {
@@ -281,10 +564,14 @@
 
     return Object.freeze({
         ENDPOINT_KEY,
+        DEFAULT_ENDPOINT,
         normalizeEndpoint,
+        isLocalDevelopmentEndpoint,
         getSavedEndpoint,
         saveEndpoint,
+        getServiceEndpoint,
         checkHealth,
+        listRooms,
         createRoom,
         joinRoom,
         connect,
@@ -292,7 +579,15 @@
         reconnectIfNeeded,
         publishActiveCampaign,
         submitCommand,
+        flushOfflineQueue,
+        updatePendingCount,
         getPresence,
+        getWorkflow,
+        resolveProposal,
+        resolveConflict,
+        revokeMember,
+        closeRoom,
+        publishRoll,
         isConnected
     });
 });

@@ -2,7 +2,7 @@
 
 A interface do Combat Tracker continua hospedada como PWA estática. O diretório
 `cloudflare/` contém somente o serviço de colaboração: API, autenticação da sala,
-Durable Object e WebSockets.
+Durable Objects, diretório público e WebSockets.
 
 ## 1. Autorizar o Wrangler
 
@@ -28,7 +28,12 @@ npx wrangler@latest dev
 ```
 
 O serviço normalmente ficará disponível em `http://localhost:8787`. No app,
-abra **⋯ → Sala** e informe esse endereço no campo Cloudflare.
+o endereço de produção fica oculto. Para apontar temporariamente a cópia local
+para o Worker de desenvolvimento, execute no console do navegador e recarregue:
+
+```javascript
+localStorage.setItem('dnd_collaboration_endpoint_v1', 'http://localhost:8787')
+```
 
 ## 4. Publicar
 
@@ -36,23 +41,27 @@ abra **⋯ → Sala** e informe esse endereço no campo Cloudflare.
 npx wrangler@latest deploy
 ```
 
-Ao final, copie o endereço HTTPS exibido, semelhante a
-`https://witcher-combat-collaboration.<subdominio>.workers.dev`, e cole-o em
-**⋯ → Sala**. O app guarda somente o endereço e o token revogável do dispositivo;
-a senha da sala não é persistida.
+O cliente oficial já utiliza automaticamente
+`https://witcher-combat-collaboration.juanmeissnerf.workers.dev`. Em uma
+instalação própria, substitua `DEFAULT_ENDPOINT` em
+`js/collaboration/realtime-client.js`. O app guarda somente o endereço e o token
+revogável do dispositivo; a senha da sala não é persistida.
 
 ## Fluxo de teste entre dois dispositivos
 
-1. No dispositivo do Mestre, abra **⋯ → Sala**, informe o endereço do Worker,
-   nome, sala e uma senha com pelo menos seis caracteres.
-2. Toque em **Criar sala** e copie o código gerado.
-3. No segundo dispositivo, informe o mesmo endereço, código e senha.
-4. Escolha um dos personagens ainda disponíveis e toque em **Entrar agora**.
+1. No dispositivo do Mestre, abra **⋯ → Sala**, informe o nome e uma senha com
+   pelo menos seis caracteres.
+2. Marque se a sala deve aparecer publicamente e toque em **Criar sala**.
+3. No segundo dispositivo, abra **⋯ → Sala**, toque na sala da lista e informe a senha.
+4. Escolha um personagem livre, uma ficha deste dispositivo ou importe um JSON.
 5. Avance um turno no dispositivo do Mestre e confirme a atualização automática
    no dispositivo do Jogador.
 6. No Jogador, ajuste Adrenalina ou Dado da Sorte do personagem vinculado e
    confirme a atualização nos dois dispositivos.
 7. Desative e reative a rede do Jogador para validar a reconexão automática.
+8. No Jogador, abra o calendário e confirme que navegação e consulta funcionam,
+   mas não existem controles para avançar o tempo ou editar eventos.
+9. No Mestre, revogue o dispositivo de teste e confirme a desconexão imediata.
 
 ## Limites desta etapa
 
@@ -60,8 +69,10 @@ a senha da sala não é persistida.
 - a visão do Mestre é sincronizada automaticamente por snapshots versionados;
 - o Jogador pode alterar imediatamente apenas os recursos próprios já ligados
   ao contrato de comandos;
-- inventário, equipamentos, evolução e outras alterações permanentes entrarão
-  como propostas para aprovação nas próximas etapas;
-- encerramento remoto, expulsão de dispositivos e histórico de versões serão
-  ampliados nas etapas de colaboração seguintes.
-
+- inventário, equipamentos, evolução e outras alterações permanentes do Jogador
+  entram como propostas para aprovação do Mestre;
+- comandos feitos offline são reenviados ao reconectar sem duplicar efeitos;
+- divergências de versão abrem uma decisão explícita para o Mestre;
+- salas públicas expõem somente nome, código e contadores; fichas e credenciais
+  permanecem dentro do Durable Object privado da sala;
+- restauração navegável de snapshots históricos continuará em uma etapa futura.

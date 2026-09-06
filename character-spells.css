@@ -46,6 +46,13 @@
     color: #f8fafc;
     font: inherit;
     font-size: max(16px, .78rem);
+    color-scheme: dark;
+}
+
+.character-spell-field select option,
+.character-spell-hit-fields select option {
+    background: #172033;
+    color: #f8fafc;
 }
 
 .character-spell-search input:focus,
@@ -235,6 +242,7 @@
 }
 
 .character-spell-cast-dialog {
+    box-sizing: border-box;
     width: min(100%, 520px);
 }
 
@@ -268,6 +276,7 @@
 
 .character-spell-cost-summary,
 .character-spell-overload,
+.character-spell-adrenaline,
 .character-spell-healing,
 .character-spell-damage,
 .character-spell-target-field {
@@ -278,6 +287,68 @@
     border: 1px solid #334155;
     border-radius: 12px;
     background: rgba(30, 41, 59, .58);
+}
+
+.character-spell-adrenaline {
+    border-color: rgba(250, 204, 21, .42);
+    background: linear-gradient(135deg, rgba(113, 63, 18, .3), rgba(30, 41, 59, .62));
+}
+
+.character-spell-adrenaline-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.character-spell-adrenaline-heading > div,
+.character-spell-adrenaline-option span {
+    display: grid;
+    min-width: 0;
+    gap: 2px;
+}
+
+.character-spell-adrenaline-heading strong,
+.character-spell-adrenaline-heading b {
+    color: #fde68a;
+    font-size: .7rem;
+}
+
+.character-spell-adrenaline-heading small,
+.character-spell-adrenaline-option small {
+    color: #cbd5e1;
+    font-size: .56rem;
+    line-height: 1.38;
+}
+
+.character-spell-adrenaline-option {
+    display: flex;
+    align-items: flex-start;
+    gap: 9px;
+    min-width: 0;
+    padding: 9px;
+    border: 1px solid #475569;
+    border-radius: 10px;
+    background: rgba(15, 23, 42, .72);
+}
+
+.character-spell-adrenaline-option.is-active {
+    border-color: #facc15;
+    background: rgba(133, 77, 14, .38);
+    box-shadow: inset 3px 0 0 #facc15;
+}
+
+.character-spell-adrenaline-option input {
+    width: 20px;
+    height: 20px;
+    flex: 0 0 auto;
+    margin: 1px 0 0;
+    accent-color: #eab308;
+}
+
+.character-spell-adrenaline-option strong {
+    color: #fef3c7;
+    font-size: .64rem;
 }
 
 .character-spell-target-field {
@@ -364,6 +435,89 @@
 .character-spell-damage-note {
     margin: 0 !important;
     color: #fca5a5 !important;
+}
+
+.character-spell-hit-count {
+    margin-top: 0;
+}
+
+.character-spell-hit-list {
+    display: grid;
+    gap: 8px;
+}
+
+.character-spell-hit-card {
+    display: grid;
+    min-width: 0;
+    gap: 8px;
+    padding: 9px;
+    border: 1px solid #475569;
+    border-radius: 10px;
+    background: rgba(15, 23, 42, .76);
+}
+
+.character-spell-hit-card.is-critical {
+    border-color: #fb7185;
+    background: rgba(127, 29, 29, .28);
+    box-shadow: inset 3px 0 0 #f43f5e;
+}
+
+.character-spell-hit-card header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.character-spell-hit-card header strong {
+    color: #f8fafc;
+    font-size: .68rem;
+}
+
+.character-spell-hit-card header span {
+    color: #a5f3fc;
+    font-size: .56rem;
+    font-weight: 900;
+}
+
+.character-spell-hit-card.is-critical header span {
+    color: #fda4af;
+}
+
+.character-spell-hit-fields {
+    display: grid;
+    grid-template-columns: minmax(0, .75fr) minmax(0, .9fr) minmax(0, 1.25fr);
+    gap: 7px;
+}
+
+.character-spell-hit-fields label {
+    display: grid;
+    min-width: 0;
+    gap: 4px;
+}
+
+.character-spell-hit-fields span {
+    overflow: hidden;
+    color: #cbd5e1;
+    font-size: .52rem;
+    font-weight: 800;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.character-spell-hit-fields input,
+.character-spell-hit-fields select {
+    width: 100%;
+    min-width: 0;
+    background: #172033;
+    color: #f8fafc;
+    color-scheme: dark;
+}
+
+.character-spell-hit-critical-note {
+    color: #fecdd3;
+    font-size: .56rem;
+    line-height: 1.4;
 }
 
 .character-spell-cost-summary > span,
@@ -504,6 +658,14 @@
 
     .character-spell-target-list {
         grid-template-columns: minmax(0, 1fr);
+    }
+
+    .character-spell-hit-fields {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .character-spell-hit-fields label:last-child {
+        grid-column: 1 / -1;
     }
 }
 

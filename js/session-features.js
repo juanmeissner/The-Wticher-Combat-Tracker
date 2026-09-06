@@ -758,12 +758,22 @@ function buildResourceHistoryDetail(metadata) {
 
     if (combat.critical) {
         const critical = combat.critical;
+        const spellRoll = combat.spellDamage?.roll;
         detail.push(critical.severityName
             ? `Crítico ${critical.severityName} · margem ${critical.margin || 0}`
             : `Crítico por 20 natural · margem ${critical.margin || 0} · sem ferimento adicional`);
         detail.push(
             `Cálculo: ${combat.localizedBaseDamage ?? combat.baseDamage} ×2 ×${combat.bodyMultiplier || 1} + ${critical.woundBonus || 0} = ${combat.finalValue}`
         );
+        if (spellRoll?.adrenalineMultiplier > 1) {
+            detail.push(`Golpe Forte: dano base ×${spellRoll.adrenalineMultiplier}`);
+        }
+        if (spellRoll?.overloadMultiplier > 1) {
+            detail.push(`Sobrecarga Arcana: dano base ×${spellRoll.overloadMultiplier}`);
+        }
+        if (spellRoll?.totalMultiplier > 1) {
+            detail.push(`Multiplicador mágico antes do crítico: ×${spellRoll.totalMultiplier}`);
+        }
         if (critical.preparedFromNatural20) {
             detail.push(`Preparado por: 20 natural em ${critical.preparedSkillName || 'ataque'}`);
         }
@@ -1098,6 +1108,11 @@ function renderSessionToolsView(view) {
 
     if (!dialog) return;
 
+    if (window.collaborationSession?.isPlayerAccessEnded?.() && view !== 'collaboration') {
+        window.renderCollaborationView?.(dialog);
+        return;
+    }
+
     const masterOnlyViews = new Set([
         'sheets', 'library', 'preferences', 'save-encounter', 'load-encounter',
         'app-maintenance'
@@ -1239,6 +1254,7 @@ function renderSessionToolsView(view) {
         <div class="session-tool-grid">
             <button type="button" onclick="renderSessionToolsView('collaboration')">🌐 Sala</button>
             <button type="button" onclick="renderSessionToolsView('history')">📜 Histórico</button>
+            ${playerMode ? '<button type="button" onclick="closeSessionTools(); openCampaignClock({ readOnly: true, view: \'calendar\' })">🗓️ Calendário</button>' : ''}
             ${masterTools}
             <button type="button" onclick="renderSessionToolsView('report')">▤ Relatório</button>
             <button type="button" onclick="renderSessionToolsView('install')">⌄ Aplicativo</button>
@@ -1831,6 +1847,17 @@ function installActionGuards() {
         }
 
         if (!target) return applyOriginalHP();
+
+        if (historyContext?.skipConfirmation) {
+            const applied = trackAction(
+                historyLabel,
+                applyOriginalHP,
+                () => buildResourceHistoryDetail(historyMetadata),
+                () => historyMetadata
+            );
+            if (historyContext?.damageSource) window.completeSpellDamageStep?.();
+            return applied;
+        }
 
         openSessionConfirm({
             title: historyMetadata?.combat?.critical ? 'Aplicar dano crítico?' : 'Aplicar dano?',

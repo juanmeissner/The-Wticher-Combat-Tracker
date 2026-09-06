@@ -6,6 +6,11 @@ const realtime = require('../js/collaboration/realtime-client.js');
 assert.equal(realtime.normalizeEndpoint(' https://sala.example.workers.dev/ '), 'https://sala.example.workers.dev');
 assert.equal(realtime.normalizeEndpoint('javascript:alert(1)'), '');
 assert.equal(realtime.normalizeEndpoint('not-a-url'), '');
+assert.equal(realtime.DEFAULT_ENDPOINT, 'https://witcher-combat-collaboration.juanmeissnerf.workers.dev');
+assert.equal(realtime.isLocalDevelopmentEndpoint('http://127.0.0.1:8787'), true);
+assert.equal(realtime.isLocalDevelopmentEndpoint('https://outro-worker.example.com'), false);
+assert.equal(realtime.saveEndpoint('https://outro-worker.example.com'), realtime.DEFAULT_ENDPOINT);
+assert.equal(realtime.getServiceEndpoint(), realtime.DEFAULT_ENDPOINT);
 
 const projectRoot = path.resolve(__dirname, '..');
 const indexSource = fs.readFileSync(path.join(projectRoot, 'index.html'), 'utf8');
@@ -15,13 +20,27 @@ const appInit = fs.readFileSync(path.join(projectRoot, 'js', 'app-init.js'), 'ut
 const wrangler = fs.readFileSync(path.join(projectRoot, 'cloudflare', 'wrangler.jsonc'), 'utf8');
 
 assert.match(indexSource, /collaboration\/realtime-client\.js/);
-assert.match(serviceWorker, /witcher-combat-tracker-v105/);
+assert.match(indexSource, /collaboration\/offline-queue\.js/);
+assert.match(serviceWorker, /witcher-combat-tracker-v111/);
 assert.match(serviceWorker, /collaboration\/realtime-client\.js/);
+assert.match(serviceWorker, /collaboration\/offline-queue\.js/);
 assert.match(sessionSource, /createCollaborationRoomFromView/);
 assert.match(sessionSource, /joinCollaborationRoomFromView/);
 assert.match(sessionSource, /participant_required/);
+assert.match(sessionSource, /Salas abertas/);
+assert.match(sessionSource, /Importar JSON/);
+assert.match(sessionSource, /requestRevokeCollaborationMember/);
+assert.match(sessionSource, /requestCloseCollaborationRoom/);
+assert.match(sessionSource, /Acesso removido pelo Mestre/);
+assert.match(sessionSource, /Entrar em outra sala/);
+assert.match(fs.readFileSync(path.join(projectRoot, 'js', 'collaboration', 'realtime-client.js'), 'utf8'), /handleTerminalAccessError/);
+assert.doesNotMatch(sessionSource, /id="collaborationEndpoint"/);
+assert.match(sessionSource, /conexão segura já está configurada/i);
+assert.match(sessionSource, /Aprovar/);
+assert.match(sessionSource, /resolveCollaborationConflict/);
 assert.match(appInit, /dnd_collaboration_endpoint_v1/);
 assert.match(wrangler, /new_sqlite_classes/);
 assert.match(wrangler, /CampaignRoom/);
+assert.match(wrangler, /RoomDirectory/);
 
 console.log('✓ Cliente em tempo real, painel da sala e configuração Cloudflare validados.');

@@ -6,6 +6,8 @@ const vm = require('node:vm');
 const projectRoot = path.resolve(__dirname, '..');
 const source = fs.readFileSync(path.join(projectRoot, 'js', 'spell-damage-automation.js'), 'utf8');
 const openedTargets = [];
+const preparedHits = [];
+const criticalHits = [];
 const context = vm.createContext({
     console,
     combatants: [
@@ -17,6 +19,16 @@ const context = vm.createContext({
     currentInput: '',
     setTimeout(callback) { callback(); },
     openDamageBodyModal() { openedTargets.push(this.selectedId); },
+    applyPreparedLocalizedDamage(options) {
+        preparedHits.push({ ...options, context: this.getPendingSpellDamageContext() });
+        this.completeSpellDamageStep();
+        return true;
+    },
+    openContextualCriticalDamageFlow(options) {
+        criticalHits.push({ ...options, context: this.getPendingSpellDamageContext() });
+        this.completeSpellDamageStep();
+        return true;
+    },
     updateNumpad() {},
     setPendingAutomationDamageContext() {},
     showToast() {},
@@ -45,7 +57,48 @@ assert.equal(context.getPendingSpellDamageContext().spellDamage.targetId, 'two')
 
 context.completeSpellDamageStep();
 assert.equal(context.spellDamageAutomation.getActiveSequence(), null);
+
+assert.equal(context.startPreparedSpellDamageSequence({
+    casterId: 'caster',
+    casterName: 'Yennefer',
+    abilityId: 'igni',
+    abilityName: 'Igni',
+    damageType: 'fire',
+    entries: [
+        { targetId: 'one', naturalRoll: 12, damage: 9, bodyPart: 'torso' },
+        { targetId: 'two', naturalRoll: 20, damage: 16, bodyPart: 'head' }
+    ],
+    roll: { prepared: true, totalMultiplier: 2, adrenalineMultiplier: 2 }
+}), true);
+assert.equal(preparedHits.at(-1).targetId, 'one');
+assert.equal(preparedHits.at(-1).historyContext.skipConfirmation, true);
+assert.equal(criticalHits.at(-1).targetId, 'two');
+assert.equal(criticalHits.at(-1).damageContext.spellDamage.prepared, true);
+assert.equal(criticalHits.at(-1).damageContext.spellDamage.naturalRoll, 20);
+assert.equal(context.spellDamageAutomation.getActiveSequence(), null);
 assert.equal(context.selectedId, 'caster');
+
+assert.equal(context.startSpellMultiHitSequence({
+    casterId: 'caster',
+    casterName: 'Yennefer',
+    abilityId: 'cenlly_graig',
+    abilityName: 'Cenlly Graig',
+    targetId: 'one',
+    damageType: 'terra',
+    hits: [
+        { naturalRoll: 15, damage: 8, bodyPart: 'arm' },
+        { naturalRoll: 20, damage: 11, bodyPart: 'head' }
+    ],
+    roll: { multiHit: true }
+}), true);
+assert.equal(preparedHits.length, 2);
+assert.equal(preparedHits.at(-1).bodyPart, 'arm');
+assert.equal(preparedHits.at(-1).historyContext.skipConfirmation, true);
+assert.equal(preparedHits.at(-1).context.spellDamage.hitIndex, 0);
+assert.equal(criticalHits.length, 2);
+assert.equal(criticalHits.at(-1).bodyPart, 'head');
+assert.equal(criticalHits.at(-1).context.spellDamage.naturalRoll, 20);
+assert.equal(context.spellDamageAutomation.getActiveSequence(), null);
 
 assert.equal(context.startItemDamageSequence({
     sourceId: 'caster',

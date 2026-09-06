@@ -1286,3 +1286,22 @@
         width: fit-content;
     }
 }
+.campaign-clock-readonly-badge {
+    display: inline-flex;
+    margin-top: 5px;
+    padding: 3px 7px;
+    border: 1px solid rgba(56, 189, 248, .45);
+    border-radius: 999px;
+    color: #7dd3fc;
+    font-size: .58rem;
+    font-weight: 900;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+}
+
+.campaign-clock-readonly-summary p {
+    margin: 10px 0 0;
+    color: #cbd5e1;
+    font-size: .78rem;
+    line-height: 1.5;
+}

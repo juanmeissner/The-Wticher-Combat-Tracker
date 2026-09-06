@@ -24,6 +24,10 @@ const damageModalSource = fs.readFileSync(
     path.join(projectRoot, 'js', 'combat', 'damage-modal.js'),
     'utf8'
 );
+const combatTurnsSource = fs.readFileSync(
+    path.join(projectRoot, 'js', 'combat', 'combat-turns.js'),
+    'utf8'
+);
 
 const context = vm.createContext({
     console,
@@ -108,6 +112,11 @@ assert.deepEqual(
     }
 );
 assert.equal(context.calculateCriticalDamage(15, 'arm', 7).finalDamage, 18);
+assert.equal(
+    context.calculateCriticalDamage(48, 'head', null).finalDamage,
+    288,
+    'Dano já ampliado por Golpe Forte e Sobrecarga deve ser dobrado pelo crítico antes da cabeça ×3.'
+);
 
 const woundedHead = {
     criticalWounds: [{ woundId: 'difficult-skull-fracture', state: 'treated' }]
@@ -441,7 +450,13 @@ assert.match(skillTestsSource, /getCriticalWoundSkillModifier/);
 assert.match(skillTestsSource, /openCombatRollOutcomeFlow/);
 assert.match(skillTestsSource, /syncPreparedAttackCriticalFromSkillTest/);
 assert.match(sessionFeaturesSource, /session-critical-ready/);
-assert.match(damageModalSource, /openPreparedCriticalDamageFlow/);
+assert.doesNotMatch(
+    damageModalSource,
+    /selectBodyPart[\s\S]{0,300}openPreparedCriticalDamageFlow/,
+    'Selecionar o local não deve abrir um crítico preparado automaticamente.'
+);
+assert.match(damageModalSource, /damageTypeModal'\)\.style\.display = 'flex'/);
+assert.match(combatTurnsSource, /delete outgoingCombatant\.preparedCriticalAttack/);
 assert.match(enhancementsSource, /criticalWounds/);
 assert.match(combatSource, /restoreCriticalWoundConditions/);
 

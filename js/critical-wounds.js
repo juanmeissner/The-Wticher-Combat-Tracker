@@ -1127,13 +1127,17 @@ function applyCombatRollOutcome() {
     showToast(`${flow.icon} ${outcome.title} aplicado a ${target.name}.`);
 }
 
-function closeCriticalDamageModal() {
+function closeCriticalDamageModal(preserveDamageSequence = false) {
+    const shouldCancelSequence = !preserveDamageSequence && Boolean(
+        pendingCriticalDamage?.spellDamage?.multiHit || pendingCriticalDamage?.spellDamage?.prepared
+    );
     const modal = getCriticalModal();
     if (modal) modal.style.display = 'none';
     pendingCriticalDamage = null;
     pendingCombatRollOutcome = null;
     const title = typeof document !== 'undefined' ? document.getElementById('criticalDamageTitle') : null;
     if (title) title.textContent = 'Crítico e ferimento';
+    if (shouldCancelSequence) window.cancelSpellDamageSequence?.('Sequência de impactos cancelada.');
 }
 
 function renderCriticalMarginStep() {
@@ -1146,6 +1150,7 @@ function renderCriticalMarginStep() {
     const bodyMultiplier = getCriticalBodyMultiplier(target, pendingCriticalDamage.bodyPart);
     const initialMargin = Math.max(0, Number(pendingCriticalDamage.margin) || 0);
     const prepared = pendingCriticalDamage.preparedCritical;
+    const naturalCritical = pendingCriticalDamage.naturalCritical;
 
     content.innerHTML = `
         <div class="critical-context">
@@ -1157,6 +1162,7 @@ function renderCriticalMarginStep() {
             <strong>${regionInfo.icon} ${escapeCriticalHtml(regionInfo.name)} ×${bodyMultiplier}</strong>
             <span>${pendingCriticalDamage.baseDamage} de dano base será dobrado e ignorará a armadura.</span>
             ${prepared ? `<span>💥 Preparado por 20 natural em ${escapeCriticalHtml(prepared.skillName)} · margem ${initialMargin} transportada.</span>` : ''}
+            ${naturalCritical ? `<span>💥 20 natural registrado em ${escapeCriticalHtml(pendingCriticalDamage.spellDamage?.abilityName || 'magia')}.</span>` : ''}
         </div>
         <label class="critical-field">
             <span>Por quanto o ataque venceu a defesa?</span>
@@ -1242,6 +1248,57 @@ function openCriticalDamageFlow(options = {}) {
     return true;
 }
 
+function openContextualCriticalDamageFlow(options = {}) {
+    const target = combatants.find(combatant => String(combatant.id) === String(options.targetId));
+    const source = combatants.find(combatant => String(combatant.id) === String(options.sourceId));
+    const originalBaseDamage = Math.max(0, Math.floor(Number(options.baseDamage) || 0));
+    const bodyPart = String(options.bodyPart || '');
+    const spellDamageContext = options.damageContext || {};
+    const localizedAutomation = window.prepareAutomatedLocalizedDamage?.(
+        target,
+        originalBaseDamage,
+        spellDamageContext
+    ) || {
+        requestedDamage: originalBaseDamage,
+        adjustedDamage: originalBaseDamage,
+        damageType: spellDamageContext.damageType || '',
+        fireBonus: 0,
+        fireMultiplier: 1,
+        message: ''
+    };
+
+    if (!target || !source || !localizedAutomation.adjustedDamage || !CRITICAL_REGION_INFO[bodyPart]) {
+        showToast('Não foi possível preparar o impacto crítico da magia.');
+        return false;
+    }
+
+    pendingCriticalDamage = {
+        targetId: String(target.id),
+        sourceId: String(source.id),
+        baseDamage: localizedAutomation.adjustedDamage,
+        originalBaseDamage,
+        localizedAutomation,
+        damageSource: spellDamageContext.damageSource || null,
+        spellDamage: spellDamageContext.spellDamage || null,
+        itemDamage: spellDamageContext.itemDamage || null,
+        bodyPart,
+        margin: Math.max(0, Math.floor(Number(options.margin) || 7)),
+        severityId: '',
+        woundId: '',
+        selectionMode: 'manual',
+        roll: '',
+        preparedCritical: null,
+        naturalCritical: Number(spellDamageContext.spellDamage?.naturalRoll) === 20
+    };
+
+    const damageTypeModal = document.getElementById('damageTypeModal');
+    if (damageTypeModal) damageTypeModal.style.display = 'none';
+    const modal = getCriticalModal();
+    if (modal) modal.style.display = 'flex';
+    renderCriticalMarginStep();
+    return true;
+}
+
 function openPreparedCriticalDamageFlow() {
     const source = combatants.find(combatant => String(combatant.id) === String(activeTurnId));
     if (!getPreparedAttackCritical(source)) return false;
@@ -1254,7 +1311,7 @@ function continueCriticalMargin() {
     const margin = Math.max(0, Math.floor(Number(document.getElementById('criticalMarginInput')?.value) || 0));
     const severity = getCriticalSeverity(margin);
     if (!severity) {
-        if (pendingCriticalDamage.preparedCritical) {
+        if (pendingCriticalDamage.preparedCritical || pendingCriticalDamage.naturalCritical) {
             pendingCriticalDamage.margin = margin;
             pendingCriticalDamage.severityId = '';
             pendingCriticalDamage.woundId = '';
@@ -1410,7 +1467,7 @@ function confirmCriticalDamage() {
     const flow = pendingCriticalDamage;
     const wound = getCriticalWound(flow?.woundId);
     const severity = CRITICAL_SEVERITIES.find(item => item.id === flow?.severityId);
-    const withoutWound = Boolean(flow?.preparedCritical && !severity && !wound && Number(flow.margin) < 7);
+    const withoutWound = Boolean((flow?.preparedCritical || flow?.naturalCritical) && !severity && !wound && Number(flow.margin) < 7);
     if (!flow || (!withoutWound && (!wound || !severity))) return;
 
     const target = combatants.find(combatant => String(combatant.id) === flow.targetId);
@@ -1437,15 +1494,15 @@ function confirmCriticalDamage() {
         conditions: [...(wound?.conditions || [])],
         immediateDeath: Boolean(wound?.immediateDeath),
         preparedCriticalId: flow.preparedCritical?.id || '',
-        preparedFromNatural20: Boolean(flow.preparedCritical),
+        preparedFromNatural20: Boolean(flow.preparedCritical || flow.naturalCritical),
         preparedSkillId: flow.preparedCritical?.skillId || '',
-        preparedSkillName: flow.preparedCritical?.skillName || '',
+        preparedSkillName: flow.preparedCritical?.skillName || (flow.naturalCritical ? flow.spellDamage?.abilityName || 'magia' : ''),
         adrenalineAlreadyGranted: Boolean(flow.preparedCritical?.adrenalineAlreadyGranted),
         adrenalineBefore: flow.preparedCritical?.adrenalineBefore,
         adrenalineAfter: flow.preparedCritical?.adrenalineAfter
     };
 
-    closeCriticalDamageModal();
+    closeCriticalDamageModal(true);
     window.applyDirectDamage?.(calculation.finalDamage, {
         baseDamage: flow.originalBaseDamage ?? calculation.baseDamage,
         localizedBaseDamage: calculation.baseDamage,
@@ -1459,7 +1516,8 @@ function confirmCriticalDamage() {
         prelocalizedAutomation: flow.localizedAutomation || null,
         damageSource: flow.damageSource || null,
         spellDamage: flow.spellDamage || null,
-        itemDamage: flow.itemDamage || null
+        itemDamage: flow.itemDamage || null,
+        skipConfirmation: Boolean(flow.spellDamage?.multiHit || flow.spellDamage?.prepared)
     });
 }
 
@@ -2322,6 +2380,7 @@ window.getCriticalEquipmentSlotRestriction = getCriticalEquipmentSlotRestriction
 window.syncCriticalWoundResourceLimits = syncCriticalWoundResourceLimits;
 window.processCriticalWoundTurnChecks = processCriticalWoundTurnChecks;
 window.openCriticalDamageFlow = openCriticalDamageFlow;
+window.openContextualCriticalDamageFlow = openContextualCriticalDamageFlow;
 window.openPreparedCriticalDamageFlow = openPreparedCriticalDamageFlow;
 window.closeCriticalDamageModal = closeCriticalDamageModal;
 window.updateCriticalMarginPreview = updateCriticalMarginPreview;

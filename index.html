@@ -64,6 +64,10 @@
     <main id="combatList" class="combat-list p-4 space-y-3"></main>
 
     <footer id="combatControls" class="bg-slate-900 border-t border-slate-800 py-4 px-0 shrink-0 z-30">
+        <button id="playerPadCollapseButton" data-player-only type="button" onclick="toggleCollaborationPlayerPad(true)" aria-label="Minimizar teclado" title="Minimizar teclado">⌄</button>
+        <button id="playerPadCollapsedBar" data-player-only type="button" onclick="toggleCollaborationPlayerPad(false)" aria-label="Expandir teclado">
+            <span>🎲 <strong id="playerPadCollapsedName">Meu personagem</strong></span><b>⌃ Abrir pad</b>
+        </button>
         <div class="max-w-xl mx-auto flex gap-4">
             
             <div class="flex flex-col gap-2 w-24 shrink-0 justify-between py-1">
@@ -72,6 +76,7 @@
                     <p id="roundCounter" class="text-xl font-bold text-slate-200">1</p>
                 </div>
                 <div class="grid grid-cols-2 gap-2">
+                    <button data-player-only onclick="openCollaborationPlayerRolls()" class="btn-control player-roll-shortcut" title="Abrir minhas perícias">🎲</button>
                     <button data-master-only onclick="createNewCharacterSheet()" class="btn-control hover:bg-blue-900/40 border-blue-900/50" title="Criar personagem">🧙‍♂️</button>
                     <button data-master-only onclick="openMonsterChoiceModal()" class="btn-control hover:bg-slate-700" title="Add Monstro">👹</button>
                     <button data-master-only onclick="endCombat()" onmousedown="startEndCombatPress(event)" onmouseup="cancelEndCombatPress(event)" onmouseleave="cancelEndCombatPress(event)" ontouchstart="startEndCombatPress(event)" ontouchend="cancelEndCombatPress(event)" class="btn-control hover:bg-red-600/50 border-red-900/50" title="Terminar Combate (Segure 3s para apagar tudo)">❌</button>
@@ -430,6 +435,7 @@
     <script src="js/state.js"></script>
     <script src="js/collaboration/protocol.js"></script>
     <script src="js/collaboration/permissions.js"></script>
+    <script src="js/collaboration/offline-queue.js"></script>
     <script src="js/campaign/campaign-migrations.js"></script>
     <script src="js/campaign/campaign-store.js"></script>
     <script src="js/collaboration/collaboration-session.js"></script>

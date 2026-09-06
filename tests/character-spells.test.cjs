@@ -108,11 +108,12 @@ assert.equal(casting.renderCharacterSpellsPanel({ ...mage, creationMode: 'quick'
 assert.equal(casting.renderCharacterSpellsPanel({ ...mage, type: 'monster' }), '');
 
 let currentModal = null;
+let overloadRollValue = '20';
 const castHistory = [];
 context.document = {
     getElementById(id) {
         if (id === 'characterSpellCastModal') return currentModal;
-        if (id === 'characterSpellOverloadRoll') return { value: '20', focus() {} };
+        if (id === 'characterSpellOverloadRoll') return { value: overloadRollValue, focus() {} };
         if (id === 'characterSpellHealingRoll') return { value: '4', focus() {} };
         if (id === 'characterSpellDamageRoll') return { value: '6', focus() {} };
         return null;
@@ -153,9 +154,14 @@ context.closeCharacterSpellCast();
 vm.runInContext("selectedId = 'target-1'", context);
 context.openCharacterSpellCast(encodeURIComponent(mage.id), encodeURIComponent('igni'));
 context.setCharacterSpellOverload('damage');
+context.updateCharacterSpellDamageField(encodeURIComponent(target.id), 'naturalRoll', '19');
+context.updateCharacterSpellDamageField(encodeURIComponent(target.id), 'damage', '6');
+context.updateCharacterSpellDamageField(encodeURIComponent(target.id), 'bodyPart', 'torso');
 const castResult = context.confirmCharacterSpellCast();
 assert.equal(castResult.effective.finalCost, 2);
 assert.equal(castResult.damage.total, 12, 'Sobrecarga deve dobrar o dano informado de Igni.');
+assert.equal(castResult.damage.entries[0].naturalRoll, 19);
+assert.equal(castResult.damage.entries[0].bodyPart, 'torso');
 assert.equal(mage.stCurrent, 28);
 assert.equal(mage.progression.luckDice, 1, 'Crítico na Sobrecarga deve conceder Dado da Sorte.');
 assert.equal(mage.progression.adrenaline, 1, 'Crítico na Sobrecarga em combate deve conceder Adrenalina.');
@@ -171,6 +177,84 @@ const igniDamageRule = casting.getSpellDamageRule(
 assert.equal(igniDamageRule.notation, '3d6');
 assert.equal(igniDamageRule.multiple, true, 'Cone deve permitir múltiplos alvos.');
 assert.equal(igniDamageRule.damageType, 'fire');
+
+const cenllyRule = casting.getSpellDamageRule(
+    context.predefinedAbilities.find(ability => ability.id === 'cenlly_graig'),
+    6
+);
+assert.equal(cenllyRule.mode, 'multi-hit');
+assert.equal(cenllyRule.multiple, false, 'As rajadas devem compartilhar um único alvo.');
+assert.equal(cenllyRule.multiHit.maxHits, 5);
+assert.equal(cenllyRule.multiHit.extraCostPerHit, 1);
+const multiHitDamage = casting.calculateMultiHitSpellDamage(cenllyRule, [
+    { naturalRoll: '14', damage: '7', bodyPart: 'torso' },
+    { naturalRoll: '20', damage: '9', bodyPart: 'head' }
+], { success: true, effect: 'damage' });
+assert.equal(multiHitDamage.valid, true);
+assert.equal(multiHitDamage.hits[0].damage, 14, 'Sobrecarga deve modificar cada impacto individualmente.');
+assert.equal(multiHitDamage.hits[1].critical, true, 'O 20 natural deve marcar somente seu próprio impacto como crítico.');
+assert.equal(multiHitDamage.hits[1].bodyPart, 'head');
+assert.equal(multiHitDamage.total, 32);
+
+const combinedMultiHitDamage = casting.calculateMultiHitSpellDamage(cenllyRule, [
+    { naturalRoll: '20', damage: '12', bodyPart: 'head' }
+], { success: true, effect: 'damage' }, { strongStrike: true, doubledEffect: true });
+assert.equal(combinedMultiHitDamage.hits[0].damage, 48, 'Golpe Forte e Sobrecarga devem resultar em dano ×4 antes do crítico e da região.');
+assert.equal(combinedMultiHitDamage.totalMultiplier, 4);
+assert.equal(combinedMultiHitDamage.doubledEffect, true);
+assert.equal(casting.calculateMultiHitSpellDamage(
+    cenllyRule,
+    Array.from({ length: 6 }, () => ({ naturalRoll: '10', damage: '5', bodyPart: 'torso' })),
+    null,
+    { doubledEffect: false }
+).valid, false, 'Sem Efeito Dobrado o limite deve permanecer em cinco impactos.');
+assert.equal(casting.calculateMultiHitSpellDamage(
+    cenllyRule,
+    Array.from({ length: 10 }, () => ({ naturalRoll: '10', damage: '5', bodyPart: 'torso' })),
+    null,
+    { doubledEffect: true }
+).valid, true, 'Efeito Dobrado deve permitir até dez impactos.');
+
+const preparedMultiHitSequences = [];
+context.startSpellMultiHitSequence = options => {
+    preparedMultiHitSequences.push(options);
+    return true;
+};
+mage.learnedAbilityIds.push('cenlly_graig');
+vm.runInContext("activeTurnId = 'mage-1'; selectedId = 'target-1';", context);
+context.openCharacterSpellCast(encodeURIComponent(mage.id), encodeURIComponent('cenlly_graig'));
+assert.match(currentModal.markup, /Quantidade de impactos/);
+assert.match(currentModal.markup, /D20 natural/);
+assert.match(currentModal.markup, /Local do acerto/);
+context.updateCharacterSpellHitCount(2);
+context.updateCharacterSpellHitField(0, 'naturalRoll', '14');
+context.updateCharacterSpellHitField(0, 'damage', '7');
+context.updateCharacterSpellHitField(0, 'bodyPart', 'torso');
+context.updateCharacterSpellHitField(1, 'naturalRoll', '20');
+context.updateCharacterSpellHitField(1, 'damage', '8');
+context.updateCharacterSpellHitField(1, 'bodyPart', 'head');
+const multiHitCast = context.confirmCharacterSpellCast(() => 0.5);
+assert.equal(multiHitCast.effective.finalCost, 4, 'O custo efetivo deve incluir +1 EST para cada uma das duas rajadas.');
+assert.equal(mage.stCurrent, 24);
+assert.equal(preparedMultiHitSequences.length, 1);
+assert.equal(preparedMultiHitSequences[0].hits.length, 2);
+assert.equal(preparedMultiHitSequences[0].hits[1].critical, true);
+assert.equal(preparedMultiHitSequences[0].hits[1].bodyPart, 'head');
+
+mage.progression.adrenaline = 2;
+overloadRollValue = '19';
+vm.runInContext("activeTurnId = 'mage-1'; selectedId = 'target-1';", context);
+context.openCharacterSpellCast(encodeURIComponent(mage.id), encodeURIComponent('cenlly_graig'));
+context.toggleCharacterSpellAdrenaline('strongStrike', true);
+context.toggleCharacterSpellAdrenaline('doubledEffect', true);
+assert.match(currentModal.markup, /option value="10"/);
+context.updateCharacterSpellHitField(0, 'naturalRoll', '12');
+context.updateCharacterSpellHitField(0, 'damage', '6');
+context.updateCharacterSpellHitField(0, 'bodyPart', 'torso');
+const adrenalineCast = context.confirmCharacterSpellCast(() => 0.5);
+assert.equal(adrenalineCast.damage.hits[0].damage, 12, 'Golpe Forte deve dobrar o dano informado.');
+assert.equal(adrenalineCast.adrenaline.spent, 2);
+assert.equal(mage.progression.adrenaline, 0);
 
 const healer = {
     id: 'healer-1',
@@ -230,15 +314,16 @@ assert.equal(woundedTarget.hpCurrent, 20);
 assert.deepEqual(JSON.parse(JSON.stringify(woundedTarget.deathSaves)), { success: 0, failures: 0 });
 assert.equal(woundedTarget.stabilized, false);
 assert.equal(healer.stCurrent, 15);
-assert.match(castHistory[1].detail, /Fórmula de cura: 3 \+ Bônus de Inteligência 3 \+ 1d6 4 = 10/);
-assert.equal(castHistory[1].metadata.type, 'healing');
-assert.equal(castHistory[1].metadata.combat.finalValue, 10);
+assert.match(castHistory.at(-1).detail, /Fórmula de cura: 3 \+ Bônus de Inteligência 3 \+ 1d6 4 = 10/);
+assert.equal(castHistory.at(-1).metadata.type, 'healing');
+assert.equal(castHistory.at(-1).metadata.combat.finalValue, 10);
 
 const indexSource = fs.readFileSync(path.join(projectRoot, 'index.html'), 'utf8');
 const serviceWorkerSource = fs.readFileSync(path.join(projectRoot, 'js', 'service-worker.js'), 'utf8');
 const combatRenderSource = fs.readFileSync(path.join(projectRoot, 'js', 'combat', 'combat-render.js'), 'utf8');
 const automationSource = fs.readFileSync(path.join(projectRoot, 'js', 'rules-automation.js'), 'utf8');
 const criticalSource = fs.readFileSync(path.join(projectRoot, 'js', 'critical-wounds.js'), 'utf8');
+const spellStyles = fs.readFileSync(path.join(projectRoot, 'character-spells.css'), 'utf8');
 
 assert.match(indexSource, /character-spells\.css/);
 assert.match(indexSource, /js\/character-spells\.js/);
@@ -249,8 +334,11 @@ assert.match(serviceWorkerSource, /js\/spell-damage-automation\.js/);
 assert.match(combatRenderSource, /renderCharacterSpellsPanel/);
 assert.match(automationSource, /prepareCharacterSpellEffect/);
 assert.match(automationSource, /prepaidSpellCast/);
+assert.match(automationSource, /effectMultiplier/);
 assert.match(automationSource, /ability:ritual_de_vida/);
 assert.match(automationSource, /turnHealing: 3, perTurnSt: 3/);
 assert.match(criticalSource, /window\.addCombatConsequence = addCombatConsequence/);
+assert.match(spellStyles, /character-spell-hit-fields select option/);
+assert.match(spellStyles, /color-scheme:\s*dark/);
 
 console.log('✓ Cards, custos efetivos e integração de conjuração das magias validados.');

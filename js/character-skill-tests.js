@@ -152,20 +152,22 @@
         const luckDice = Math.max(0, Number(combatant.progression?.luckDice) || 0);
         const adrenaline = Math.max(0, Number(combatant.progression?.adrenaline) || 0);
 
-        const renderResource = ({ key: resourceKey, icon, label, value, hint }) => `
+        const renderResource = ({ key: resourceKey, icon, label, value, descriptions }) => `
             <article class="character-resource-card">
-                <div class="character-resource-copy">
-                    <span class="character-resource-icon" aria-hidden="true">${icon}</span>
-                    <span>
+                <div class="character-resource-row">
+                    <div class="character-resource-copy">
+                        <span class="character-resource-icon" aria-hidden="true">${icon}</span>
                         <strong>${label}</strong>
-                        <small>${hint}</small>
-                    </span>
+                    </div>
+                    <div class="character-resource-controls" aria-label="Ajustar ${label}">
+                        <button type="button" onclick="event.stopPropagation(); adjustCharacterCombatResource('${encodedId}', '${resourceKey}', -1)" aria-label="Remover 1 de ${label}" ${value <= 0 ? 'disabled' : ''}>−</button>
+                        <output aria-label="${label} atual">${value}</output>
+                        <button type="button" onclick="event.stopPropagation(); adjustCharacterCombatResource('${encodedId}', '${resourceKey}', 1)" aria-label="Adicionar 1 de ${label}">+</button>
+                    </div>
                 </div>
-                <div class="character-resource-controls" aria-label="Ajustar ${label}">
-                    <button type="button" onclick="event.stopPropagation(); adjustCharacterCombatResource('${encodedId}', '${resourceKey}', -1)" aria-label="Remover 1 de ${label}" ${value <= 0 ? 'disabled' : ''}>−</button>
-                    <output aria-label="${label} atual">${value}</output>
-                    <button type="button" onclick="event.stopPropagation(); adjustCharacterCombatResource('${encodedId}', '${resourceKey}', 1)" aria-label="Adicionar 1 de ${label}">+</button>
-                </div>
+                <ul class="character-resource-description">
+                    ${descriptions.map(description => `<li><strong>${escapeSkillHtml(description.name)}:</strong> ${escapeSkillHtml(description.text)}</li>`).join('')}
+                </ul>
             </article>
         `;
 
@@ -177,8 +179,27 @@
                 </button>
                 ${expanded ? `
                     <div class="character-resources-grid">
-                        ${renderResource({ key: 'luckDice', icon: '🎲', label: 'Dado da Sorte', value: luckDice, hint: 'Recurso de críticos e habilidades' })}
-                        ${renderResource({ key: 'adrenaline', icon: '⚡', label: 'Adrenalina', value: adrenaline, hint: 'Recurso acumulado em combate' })}
+                        ${renderResource({
+                            key: 'luckDice',
+                            icon: '🎲',
+                            label: 'Dado da Sorte',
+                            value: luckDice,
+                            descriptions: [
+                                { name: 'Rolagem Certeira', text: 'Repete a rolagem de um D20.' },
+                                { name: 'Golpe Perfeito', text: 'Permite rolar local de acerto com vantagem.' }
+                            ]
+                        })}
+                        ${renderResource({
+                            key: 'adrenaline',
+                            icon: '⚡',
+                            label: 'Adrenalina',
+                            value: adrenaline,
+                            descriptions: [
+                                { name: 'Golpe Forte', text: 'Permite dobrar o dano de um ataque.' },
+                                { name: 'Efeito Dobrado', text: 'Permite dobrar o efeito de uma ação.' },
+                                { name: 'Adrenalina de Combate', text: 'Permite realizar um surto de ação e realizar mais um ataque.' }
+                            ]
+                        })}
                     </div>
                 ` : ''}
             </section>
@@ -439,6 +460,14 @@
         const combatant = typeof combatants !== 'undefined'
             ? combatants.find(entry => String(entry.id) === combatantId)
             : null;
+        const playerSession = global.collaborationSession?.getSession?.();
+        if (
+            global.collaborationSession?.isPlayer?.()
+            && String(playerSession?.linkedParticipantId || '') !== combatantId
+        ) {
+            global.showToast?.('🔒 Você pode realizar testes somente com o seu personagem.');
+            return;
+        }
         const { skill, breakdown, professional } = getCharacterTestContext(
             combatant,
             skillId,
@@ -579,6 +608,14 @@
         const modifierInput = document.getElementById('characterSkillModifier');
 
         if (!combatant || !skill || !breakdown) return null;
+        const playerSession = global.collaborationSession?.getSession?.();
+        if (
+            global.collaborationSession?.isPlayer?.()
+            && String(playerSession?.linkedParticipantId || '') !== combatantId
+        ) {
+            global.showToast?.('🔒 Você pode realizar testes somente com o seu personagem.');
+            return null;
+        }
         if (professional && skill.automation?.mode !== 'assisted') return null;
 
         const target = Number(targetInput?.value);
@@ -723,6 +760,23 @@
                 }
             }
         );
+
+        if (global.collaborationSession?.isOnlineRoom?.()) {
+            global.collaborationRealtime?.publishRoll?.(String(combatant.id), {
+                skillId: skill.id,
+                skillName: skill.name,
+                testKind: professional ? 'professional' : 'general',
+                naturalRoll: result.naturalRoll,
+                skillTotal: result.skillTotal,
+                modifier: result.modifier,
+                target: result.target,
+                finalResult: result.finalResult,
+                success: result.success,
+                critical,
+                luckDiceGained: Math.max(0, Number(result.luckDiceGained) || 0),
+                adrenalineGained: Math.max(0, Number(result.appliedAdrenalineGained ?? result.adrenalineGained) || 0)
+            });
+        }
 
         closeCharacterSkillTest();
         global.renderList?.(false);

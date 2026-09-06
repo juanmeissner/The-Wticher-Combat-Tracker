@@ -26,6 +26,26 @@
             attributeLabel: 'Bônus de Inteligência'
         })
     });
+    const MULTI_HIT_SPELL_RULES = Object.freeze({
+        cenlly_graig: Object.freeze({
+            minHits: 1,
+            maxHits: 5,
+            dice: '2d6',
+            extraCostPerHit: 1,
+            conditionIcon: '🩸',
+            conditionName: 'Sangrando',
+            conditionChance: 10
+        }),
+        granizo_de_carys: Object.freeze({
+            minHits: 1,
+            maxHits: 5,
+            dice: '2d6',
+            extraCostPerHit: 1,
+            conditionIcon: '🧊',
+            conditionName: 'Congelado',
+            conditionChance: 10
+        })
+    });
     const NON_DAMAGE_LABELS = /^(?:-|nenhum|indefinido|efeito vari[aá]vel conforme feiti[cç]o)$/i;
     const expandedPanels = new Set();
     const expandedSpellCards = new Set();
@@ -124,16 +144,19 @@
             ? count * Math.max(1, Number(baseCost) || 1)
             : count;
 
+        const multiHit = MULTI_HIT_SPELL_RULES[String(ability?.id || '')] || null;
+
         return {
             raw,
-            mode: isSimple ? 'dice' : 'manual-total',
+            mode: multiHit ? 'multi-hit' : isSimple ? 'dice' : 'manual-total',
             count: effectiveCount,
             sides,
             notation: isSimple ? `${effectiveCount}d${sides}` : raw,
-            multiple,
+            multiple: multiHit ? false : multiple,
             damageType: normalizeSpellSearch(ability?.type) === 'fogo' ? 'fire' : normalizeSpellSearch(ability?.type),
             attributeId: intelligenceBonus ? 'intelligence' : '',
-            attributeLabel: intelligenceBonus ? 'Bônus de Inteligência' : ''
+            attributeLabel: intelligenceBonus ? 'Bônus de Inteligência' : '',
+            multiHit
         };
     }
 
@@ -150,6 +173,45 @@
             (entry.type !== 'monster' || entry.hpCurrent === undefined || Number(entry.hpCurrent) > 0) &&
             (entry.type !== 'player' || Math.max(0, Number(entry.deathSaves?.failures) || 0) < 3)
         ));
+    }
+
+    function getCharacterAdrenaline(combatant) {
+        return Math.max(0, Math.floor(Number(combatant?.progression?.adrenaline) || 0));
+    }
+
+    function getPendingAdrenalineUses() {
+        return {
+            strongStrike: Boolean(pendingCast?.adrenalineUses?.strongStrike),
+            doubledEffect: Boolean(pendingCast?.adrenalineUses?.doubledEffect)
+        };
+    }
+
+    function getPendingAdrenalineCost() {
+        const uses = getPendingAdrenalineUses();
+        return Number(uses.strongStrike) + Number(uses.doubledEffect);
+    }
+
+    function canDoubleSpellEffect(ability, damageRule) {
+        if (damageRule?.multiHit || damageRule?.multiple) return true;
+        if (Object.prototype.hasOwnProperty.call(ability || {}, 'active')) return true;
+        if (global.isAutomationManagedEffect?.('ability', ability?.id)) return true;
+        const duration = normalizeSpellSearch(ability?.duration);
+        return Boolean(duration && !/imediat|instant/.test(duration));
+    }
+
+    function getEffectiveMultiHitMax(rule) {
+        if (!rule?.multiHit) return 0;
+        return rule.multiHit.maxHits * (getPendingAdrenalineUses().doubledEffect ? 2 : 1);
+    }
+
+    function getSpellDamageMultiplier(overloadResult, adrenalineUses = {}) {
+        const overloadMultiplier = overloadResult?.success !== false && overloadResult?.effect === 'damage' ? 2 : 1;
+        const adrenalineMultiplier = adrenalineUses.strongStrike ? 2 : 1;
+        return {
+            overloadMultiplier,
+            adrenalineMultiplier,
+            total: overloadMultiplier * adrenalineMultiplier
+        };
     }
 
     function renderSpellTargetField(targets, damageRule) {
@@ -183,9 +245,105 @@
         `;
     }
 
+    function getPendingMultiHitCount(rule) {
+        if (!rule?.multiHit) return 0;
+        return Math.min(
+            getEffectiveMultiHitMax(rule),
+            Math.max(rule.multiHit.minHits, Math.floor(Number(pendingCast?.hitCount) || rule.multiHit.minHits))
+        );
+    }
+
+    function ensurePendingMultiHitEntries(rule) {
+        if (!pendingCast || !rule?.multiHit) return [];
+        const count = getPendingMultiHitCount(rule);
+        if (!Array.isArray(pendingCast.hits)) pendingCast.hits = [];
+        while (pendingCast.hits.length < count) {
+            pendingCast.hits.push({ naturalRoll: '', damage: '', bodyPart: 'torso' });
+        }
+        pendingCast.hits = pendingCast.hits.slice(0, count);
+        return pendingCast.hits;
+    }
+
+    function ensurePendingSpellDamageEntries(rule) {
+        if (!pendingCast || !rule || rule.multiHit) return [];
+        const selectedIds = [...(pendingCast.targetIds || [])].map(String);
+        const previous = new Map(
+            (Array.isArray(pendingCast.damageEntries) ? pendingCast.damageEntries : [])
+                .map(entry => [String(entry.targetId), entry])
+        );
+        pendingCast.damageEntries = selectedIds.map(targetId => previous.get(targetId) || {
+            targetId,
+            naturalRoll: '',
+            damage: '',
+            bodyPart: 'torso'
+        });
+        return pendingCast.damageEntries;
+    }
+
+    function renderMultiHitSpellFields(rule) {
+        const entries = ensurePendingMultiHitEntries(rule);
+        const count = getPendingMultiHitCount(rule);
+        const maximumHits = getEffectiveMultiHitMax(rule);
+        const strongStrike = getPendingAdrenalineUses().strongStrike;
+        const options = Array.from(
+            { length: maximumHits - rule.multiHit.minHits + 1 },
+            (_, index) => index + rule.multiHit.minHits
+        );
+        return `
+            <section class="character-spell-damage character-spell-multi-hit">
+                <div>
+                    <strong>⚔️ Rajadas individuais</strong>
+                    <small>Cada impacto usa ${escapeSpellHtml(rule.multiHit.dice)}${strongStrike ? ' ×2 com Golpe Forte' : ''}, região, armadura e crítico próprios.</small>
+                </div>
+                <label class="character-spell-field character-spell-hit-count">
+                    <span>Quantidade de impactos</span>
+                    <select onchange="updateCharacterSpellHitCount(this.value)">
+                        ${options.map(value => `<option value="${value}"${value === count ? ' selected' : ''}>${value} ${value === 1 ? 'impacto' : 'impactos'}</option>`).join('')}
+                    </select>
+                    <small>O custo adicional é de ${rule.multiHit.extraCostPerHit} EST por impacto.</small>
+                </label>
+                <div class="character-spell-hit-list">
+                    ${entries.map((entry, index) => `
+                        <article class="character-spell-hit-card ${Number(entry.naturalRoll) === 20 ? 'is-critical' : ''}">
+                            <header>
+                                <strong>Impacto ${index + 1}</strong>
+                                <span>${Number(entry.naturalRoll) === 20 ? '💥 CRÍTICO' : `${escapeSpellHtml(rule.multiHit.dice)}${strongStrike ? ' ×2' : ''}`}</span>
+                            </header>
+                            <div class="character-spell-hit-fields">
+                                <label>
+                                    <span>D20 natural</span>
+                                    <input type="number" min="1" max="20" inputmode="numeric" value="${escapeSpellHtml(entry.naturalRoll)}" placeholder="1–20" oninput="updateCharacterSpellHitField(${index}, 'naturalRoll', this.value)">
+                                </label>
+                                <label>
+                                    <span>Dano base (${escapeSpellHtml(rule.multiHit.dice)})</span>
+                                    <input type="number" min="0" inputmode="numeric" value="${escapeSpellHtml(entry.damage)}" placeholder="Total" oninput="updateCharacterSpellHitField(${index}, 'damage', this.value)">
+                                </label>
+                                <label>
+                                    <span>Local do acerto</span>
+                                    <select onchange="updateCharacterSpellHitField(${index}, 'bodyPart', this.value)">
+                                        <option value="head"${entry.bodyPart === 'head' ? ' selected' : ''}>Cabeça ×3</option>
+                                        <option value="torso"${entry.bodyPart === 'torso' ? ' selected' : ''}>Tronco ×1</option>
+                                        <option value="arm"${entry.bodyPart === 'arm' ? ' selected' : ''}>Braço ×0,5</option>
+                                        <option value="leg"${entry.bodyPart === 'leg' ? ' selected' : ''}>Perna ×0,5</option>
+                                    </select>
+                                </label>
+                            </div>
+                            ${Number(entry.naturalRoll) === 20 ? '<small class="character-spell-hit-critical-note">Ignora armadura, dobra o dano antes da região e abrirá o ferimento crítico.</small>' : ''}
+                        </article>
+                    `).join('')}
+                </div>
+                <p class="character-spell-damage-note">Informe o resultado original de ${escapeSpellHtml(rule.multiHit.dice)}. Crítico, Adrenalina, Sobrecarga e região serão calculados pelo app.</p>
+            </section>
+        `;
+    }
+
     function renderSpellDamageField(combatant, rule) {
         if (!rule) return '';
+        if (rule.multiHit) return renderMultiHitSpellFields(rule);
         const attributeBonus = getSpellDamageAttributeBonus(combatant, rule);
+        const entries = ensurePendingSpellDamageEntries(rule);
+        const targetsById = new Map(getAvailableSpellTargets().map(target => [String(target.id), target]));
+        const uses = getPendingAdrenalineUses();
         return `
             <section class="character-spell-damage">
                 <div>
@@ -193,16 +351,66 @@
                     <small>${escapeSpellHtml(rule.raw)}${rule.mode === 'dice' ? ` · rolagem efetiva ${escapeSpellHtml(rule.notation)}` : ' · fórmula contextual'}</small>
                 </div>
                 ${rule.attributeId ? `<p>${escapeSpellHtml(rule.attributeLabel)} será somado automaticamente: ${attributeBonus >= 0 ? '+' : ''}${attributeBonus}.</p>` : ''}
-                ${getAbilityRollMode() === 'auto' && rule.mode === 'dice' ? `
-                    <p class="character-spell-auto-roll">🎲 ${escapeSpellHtml(rule.notation)} será rolado automaticamente.</p>
-                ` : `
-                    <label class="character-spell-field">
-                        <span>${rule.mode === 'dice' ? `Resultado total de ${escapeSpellHtml(rule.notation)}` : 'Dano total definido pela mesa'}</span>
-                        <input id="characterSpellDamageRoll" type="number" min="0" inputmode="numeric" placeholder="Informe o dano" value="${escapeSpellHtml(pendingCast.damageInput || '')}" oninput="updateCharacterSpellDamageRoll(this.value)">
-                        <small>Informe o resultado antes de Sobrecarga, Bafo de Dragão, Inflamador e local de acerto.</small>
+                ${entries.length ? `<div class="character-spell-hit-list">
+                    ${entries.map((entry, index) => {
+                        const target = targetsById.get(String(entry.targetId));
+                        return `
+                            <article class="character-spell-hit-card ${Number(entry.naturalRoll) === 20 ? 'is-critical' : ''}">
+                                <header>
+                                    <strong>${escapeSpellHtml(target?.name || `Alvo ${index + 1}`)}</strong>
+                                    <span>${Number(entry.naturalRoll) === 20 ? '💥 CRÍTICO' : `${escapeSpellHtml(rule.notation)}${uses.strongStrike ? ' ×2' : ''}`}</span>
+                                </header>
+                                <div class="character-spell-hit-fields">
+                                    <label>
+                                        <span>D20 natural</span>
+                                        <input type="number" min="1" max="20" inputmode="numeric" value="${escapeSpellHtml(entry.naturalRoll)}" placeholder="1–20" oninput="updateCharacterSpellDamageField('${encodeURIComponent(String(entry.targetId))}', 'naturalRoll', this.value)">
+                                    </label>
+                                    <label>
+                                        <span>${rule.mode === 'dice' ? `Dano base (${escapeSpellHtml(rule.notation)})` : 'Dano base'}</span>
+                                        <input type="number" min="0" inputmode="numeric" value="${escapeSpellHtml(entry.damage)}" placeholder="Total" oninput="updateCharacterSpellDamageField('${encodeURIComponent(String(entry.targetId))}', 'damage', this.value)">
+                                    </label>
+                                    <label>
+                                        <span>Local do acerto</span>
+                                        <select onchange="updateCharacterSpellDamageField('${encodeURIComponent(String(entry.targetId))}', 'bodyPart', this.value)">
+                                            <option value="head"${entry.bodyPart === 'head' ? ' selected' : ''}>Cabeça ×3</option>
+                                            <option value="torso"${entry.bodyPart === 'torso' ? ' selected' : ''}>Tronco ×1</option>
+                                            <option value="arm"${entry.bodyPart === 'arm' ? ' selected' : ''}>Braço ×0,5</option>
+                                            <option value="leg"${entry.bodyPart === 'leg' ? ' selected' : ''}>Perna ×0,5</option>
+                                        </select>
+                                    </label>
+                                </div>
+                                ${Number(entry.naturalRoll) === 20 ? '<small class="character-spell-hit-critical-note">O dano será crítico, ignorará a armadura e seguirá para o ferimento da região.</small>' : ''}
+                            </article>
+                        `;
+                    }).join('')}
+                </div>` : '<p class="character-spell-damage-note">Selecione ao menos um alvo para preencher o dano.</p>'}
+                <p class="character-spell-damage-note">Informe o dano original. Crítico, Adrenalina, Sobrecarga, armadura e região serão calculados automaticamente.</p>
+            </section>
+        `;
+    }
+
+    function renderSpellAdrenalineOptions(combatant, ability, damageRule) {
+        if (!damageRule) return '';
+        const available = getCharacterAdrenaline(combatant);
+        const uses = getPendingAdrenalineUses();
+        const cost = getPendingAdrenalineCost();
+        const canDoubleEffect = canDoubleSpellEffect(ability, damageRule);
+        return `
+            <section class="character-spell-adrenaline">
+                <div class="character-spell-adrenaline-heading">
+                    <div><strong>⚡ Adrenalina</strong><small>${available} ${available === 1 ? 'disponível' : 'disponíveis'} · ${cost} selecionada${cost === 1 ? '' : 's'}</small></div>
+                    <b>${Math.max(0, available - cost)} restante${available - cost === 1 ? '' : 's'}</b>
+                </div>
+                <label class="character-spell-adrenaline-option ${uses.strongStrike ? 'is-active' : ''}">
+                    <input type="checkbox" ${uses.strongStrike ? 'checked' : ''} onchange="toggleCharacterSpellAdrenaline('strongStrike', this.checked)">
+                    <span><strong>Golpe Forte · 1 Adrenalina</strong><small>Dobra o dano base. Pode acumular com crítico e Sobrecarga de dano.</small></span>
+                </label>
+                ${canDoubleEffect ? `
+                    <label class="character-spell-adrenaline-option ${uses.doubledEffect ? 'is-active' : ''}">
+                        <input type="checkbox" ${uses.doubledEffect ? 'checked' : ''} onchange="toggleCharacterSpellAdrenaline('doubledEffect', this.checked)">
+                        <span><strong>Efeito Dobrado · 1 Adrenalina</strong><small>${damageRule.multiHit ? 'Eleva o limite desta magia de 5 para 10 impactos.' : 'Dobra duração, pilhas ou limite de alvos quando a regra da magia permitir.'}</small></span>
                     </label>
-                `}
-                <p class="character-spell-damage-note">Após conjurar, o app abrirá o fluxo normal de local e tipo de dano para cada alvo.</p>
+                ` : ''}
             </section>
         `;
     }
@@ -605,7 +813,7 @@
         };
     }
 
-    function calculateSpellDamage(combatant, rule, enteredValue, overloadResult, random = Math.random) {
+    function calculateSpellDamage(combatant, rule, enteredValue, overloadResult, random = Math.random, adrenalineUses = {}) {
         if (!rule) return null;
         const automaticDice = getAbilityRollMode() === 'auto' && rule.mode === 'dice';
         const rolled = automaticDice
@@ -615,7 +823,7 @@
 
         const attributeBonus = getSpellDamageAttributeBonus(combatant, rule);
         const subtotal = Math.max(0, Math.floor(rolled.total) + attributeBonus);
-        const overloadMultiplier = overloadResult?.success !== false && overloadResult?.effect === 'damage' ? 2 : 1;
+        const multipliers = getSpellDamageMultiplier(overloadResult, adrenalineUses);
         return {
             valid: true,
             raw: rule.raw,
@@ -625,10 +833,101 @@
             rolledTotal: Math.floor(rolled.total),
             attributeBonus,
             subtotal,
-            overloadMultiplier,
-            total: subtotal * overloadMultiplier,
+            overloadMultiplier: multipliers.overloadMultiplier,
+            adrenalineMultiplier: multipliers.adrenalineMultiplier,
+            totalMultiplier: multipliers.total,
+            total: subtotal * multipliers.total,
             damageType: rule.damageType,
             multiple: rule.multiple
+        };
+    }
+
+    function calculateMultiHitSpellDamage(rule, entries, overloadResult, adrenalineUses = {}) {
+        if (!rule?.multiHit || !Array.isArray(entries)) return null;
+        const maximumHits = rule.multiHit.maxHits * (adrenalineUses.doubledEffect ? 2 : 1);
+        const count = Math.min(maximumHits, Math.max(rule.multiHit.minHits, entries.length));
+        if (entries.length !== count) return { valid: false, invalidIndex: 0 };
+        const multipliers = getSpellDamageMultiplier(overloadResult, adrenalineUses);
+        const hits = entries.map((entry, index) => {
+            const naturalRoll = Number(entry?.naturalRoll);
+            const enteredDamage = Number(entry?.damage);
+            const bodyPart = String(entry?.bodyPart || '');
+            const valid = Number.isInteger(naturalRoll)
+                && naturalRoll >= 1
+                && naturalRoll <= 20
+                && Number.isFinite(enteredDamage)
+                && enteredDamage > 0
+                && ['head', 'torso', 'arm', 'leg'].includes(bodyPart);
+            return {
+                index,
+                valid,
+                naturalRoll,
+                enteredDamage: valid ? Math.floor(enteredDamage) : 0,
+                damage: valid ? Math.floor(enteredDamage) * multipliers.total : 0,
+                bodyPart,
+                critical: naturalRoll === 20
+            };
+        });
+        const invalid = hits.find(hit => !hit.valid);
+        return {
+            valid: !invalid,
+            invalidIndex: invalid?.index ?? -1,
+            multiHit: true,
+            notation: rule.multiHit.dice,
+            overloadMultiplier: multipliers.overloadMultiplier,
+            adrenalineMultiplier: multipliers.adrenalineMultiplier,
+            totalMultiplier: multipliers.total,
+            doubledEffect: Boolean(adrenalineUses.doubledEffect),
+            damageType: rule.damageType,
+            hits,
+            total: hits.reduce((sum, hit) => sum + hit.damage, 0)
+        };
+    }
+
+    function calculatePreparedSpellDamage(combatant, rule, entries, overloadResult, adrenalineUses = {}, random = Math.random) {
+        if (!rule || rule.multiHit || !Array.isArray(entries)) return null;
+        const results = entries.map((entry, index) => {
+            const naturalRoll = Number(entry?.naturalRoll);
+            const bodyPart = String(entry?.bodyPart || '');
+            const calculation = calculateSpellDamage(
+                combatant,
+                rule,
+                entry?.damage,
+                overloadResult,
+                random,
+                adrenalineUses
+            );
+            const valid = Number.isInteger(naturalRoll)
+                && naturalRoll >= 1
+                && naturalRoll <= 20
+                && ['head', 'torso', 'arm', 'leg'].includes(bodyPart)
+                && calculation?.valid
+                && calculation.total > 0;
+            return {
+                index,
+                targetId: String(entry?.targetId || ''),
+                naturalRoll,
+                bodyPart,
+                critical: naturalRoll === 20,
+                valid,
+                enteredDamage: calculation?.rolledTotal || 0,
+                damage: calculation?.total || 0,
+                calculation
+            };
+        });
+        const invalid = results.find(entry => !entry.valid);
+        const multipliers = getSpellDamageMultiplier(overloadResult, adrenalineUses);
+        return {
+            valid: !invalid && results.length > 0,
+            invalidIndex: invalid?.index ?? (results.length ? -1 : 0),
+            prepared: true,
+            notation: rule.notation,
+            damageType: rule.damageType,
+            overloadMultiplier: multipliers.overloadMultiplier,
+            adrenalineMultiplier: multipliers.adrenalineMultiplier,
+            totalMultiplier: multipliers.total,
+            entries: results,
+            total: results.reduce((sum, entry) => sum + entry.damage, 0)
         };
     }
 
@@ -661,18 +960,25 @@
 
     function renderCharacterSpellCastModal() {
         if (!pendingCast) return;
+        const previousScroll = document.querySelector?.('.character-spell-cast-dialog')?.scrollTop || 0;
         document.getElementById('characterSpellCastModal')?.remove();
 
         const { combatant, ability, parsedCost, overloadEffect } = pendingCast;
         const effective = getPendingEffectiveSpell();
         const overload = getArcaneOverloadOptions(combatant, ability);
         const availability = getSpellEnergyAvailability(combatant, ability);
-        const enoughEnergy = effective.finalCost <= availability.total;
         const rollMode = getSkillRollMode();
         const healingRule = getSpellHealingRule(ability);
         const healingRollMode = getAbilityRollMode();
         const healingAttributeBonus = getSpellHealingAttributeBonus(combatant, healingRule);
         const damageRule = getSpellDamageRule(ability, effective.baseCost);
+        const hitCount = getPendingMultiHitCount(damageRule);
+        const multiHitCost = damageRule?.multiHit ? hitCount * damageRule.multiHit.extraCostPerHit : 0;
+        const finalCastCost = effective.finalCost + multiHitCost;
+        const enoughEnergy = finalCastCost <= availability.total;
+        const adrenalineAvailable = getCharacterAdrenaline(combatant);
+        const adrenalineCost = getPendingAdrenalineCost();
+        const enoughAdrenaline = adrenalineCost <= adrenalineAvailable;
         const targets = getAvailableSpellTargets();
         const modal = document.createElement('div');
         modal.id = 'characterSpellCastModal';
@@ -698,10 +1004,12 @@
                     </label>
                 ` : ''}
                 ${renderSpellTargetField(targets, damageRule)}
+                ${renderSpellAdrenalineOptions(combatant, ability, damageRule)}
                 <section class="character-spell-cost-summary">
                     <strong>Custo calculado</strong>
                     ${effective.costSteps.map(step => `<span><b>${escapeSpellHtml(step.label)}</b><em>${step.value === null ? 'aplicado' : `${step.label === 'Custo base' || step.value < 0 ? '' : '+'}${step.value} EST`}</em></span>`).join('')}
-                    <div><span>Custo final</span><strong>${effective.finalCost} EST</strong></div>
+                    ${multiHitCost ? `<span><b>${hitCount} ${hitCount === 1 ? 'impacto' : 'impactos'}</b><em>+${multiHitCost} EST</em></span>` : ''}
+                    <div><span>Custo final</span><strong>${finalCastCost} EST</strong></div>
                 </section>
                 ${healingRule ? `
                     <section class="character-spell-healing">
@@ -748,14 +1056,17 @@
                         ` : ''}
                     </section>
                 ` : ''}
-                ${!enoughEnergy ? `<p class="character-spell-warning">EST insuficiente: faltam ${effective.finalCost - availability.total} pontos.</p>` : ''}
+                ${!enoughEnergy ? `<p class="character-spell-warning">EST insuficiente: faltam ${finalCastCost - availability.total} pontos.</p>` : ''}
+                ${!enoughAdrenaline ? `<p class="character-spell-warning">Adrenalina insuficiente: faltam ${adrenalineCost - adrenalineAvailable} pontos.</p>` : ''}
                 <div class="session-dialog-actions">
                     <button type="button" class="session-secondary" onclick="closeCharacterSpellCast()">Cancelar</button>
-                    <button type="button" class="session-primary" onclick="confirmCharacterSpellCast()" ${enoughEnergy ? '' : 'disabled'}>Confirmar conjuração · ${effective.finalCost} EST</button>
+                    <button type="button" class="session-primary" onclick="confirmCharacterSpellCast()" ${(enoughEnergy && enoughAdrenaline) ? '' : 'disabled'}>Confirmar conjuração · ${finalCastCost} EST${adrenalineCost ? ` · ${adrenalineCost} Adrenalina` : ''}</button>
                 </div>
             </section>
         `;
         document.body.appendChild(modal);
+        const dialog = modal.querySelector?.('.character-spell-cast-dialog');
+        if (dialog) dialog.scrollTop = previousScroll;
     }
 
     function openCharacterSpellCast(encodedCombatantId, encodedAbilityId) {
@@ -791,6 +1102,15 @@
             targetId: selectedTarget?.id ?? combatant.id,
             targetIds: new Set(initialTargetIds),
             damageInput: '',
+            hitCount: damageRule?.multiHit?.minHits || 0,
+            hits: damageRule?.multiHit
+                ? [{ naturalRoll: '', damage: '', bodyPart: 'torso' }]
+                : [],
+            damageEntries: [],
+            adrenalineUses: {
+                strongStrike: false,
+                doubledEffect: false
+            },
             overloadEffect: ''
         };
         renderCharacterSpellCastModal();
@@ -815,18 +1135,96 @@
         if (!rule?.multiple) {
             pendingCast.targetIds = new Set([String(target.id)]);
             pendingCast.targetId = target.id;
-            document.querySelectorAll?.('input[name="characterSpellDamageTarget"]')
-                .forEach(input => { input.checked = String(input.value) === String(target.id); });
+            ensurePendingSpellDamageEntries(rule);
+            renderCharacterSpellCastModal();
             return;
         }
 
         if (checked) pendingCast.targetIds.add(String(target.id));
         else pendingCast.targetIds.delete(String(target.id));
         pendingCast.targetId = [...pendingCast.targetIds][0] ?? pendingCast.combatant.id;
+        ensurePendingSpellDamageEntries(rule);
+        renderCharacterSpellCastModal();
     }
 
     function updateCharacterSpellDamageRoll(value) {
         if (pendingCast) pendingCast.damageInput = String(value ?? '');
+    }
+
+    function updateCharacterSpellDamageField(encodedTargetId, field, value) {
+        if (!pendingCast || !['naturalRoll', 'damage', 'bodyPart'].includes(field)) return;
+        const targetId = decodeURIComponent(String(encodedTargetId));
+        const rule = getSpellDamageRule(pendingCast.ability, pendingCast.baseCost);
+        const entry = ensurePendingSpellDamageEntries(rule)
+            .find(current => String(current.targetId) === targetId);
+        if (!entry) return;
+        if (field === 'bodyPart') {
+            entry.bodyPart = ['head', 'torso', 'arm', 'leg'].includes(value) ? value : 'torso';
+            return;
+        }
+        entry[field] = String(value ?? '');
+        if (field === 'naturalRoll') {
+            const input = document.querySelector?.(`input[oninput*="${encodeURIComponent(targetId)}"][oninput*="naturalRoll"]`);
+            const card = input?.closest?.('.character-spell-hit-card');
+            card?.classList.toggle('is-critical', Number(value) === 20);
+            const badge = card?.querySelector?.('header span');
+            if (badge) badge.textContent = Number(value) === 20
+                ? '💥 CRÍTICO'
+                : `${rule.notation}${getPendingAdrenalineUses().strongStrike ? ' ×2' : ''}`;
+            const previousNote = card?.querySelector?.('.character-spell-hit-critical-note');
+            if (Number(value) === 20 && !previousNote) {
+                const note = document.createElement?.('small');
+                if (note) {
+                    note.className = 'character-spell-hit-critical-note';
+                    note.textContent = 'O dano será crítico, ignorará a armadura e seguirá para o ferimento da região.';
+                    card?.appendChild?.(note);
+                }
+            } else if (Number(value) !== 20) {
+                previousNote?.remove();
+            }
+        }
+    }
+
+    function updateCharacterSpellHitCount(value) {
+        if (!pendingCast) return;
+        const rule = getSpellDamageRule(pendingCast.ability, pendingCast.baseCost);
+        if (!rule?.multiHit) return;
+        pendingCast.hitCount = Math.min(
+            getEffectiveMultiHitMax(rule),
+            Math.max(rule.multiHit.minHits, Math.floor(Number(value) || rule.multiHit.minHits))
+        );
+        ensurePendingMultiHitEntries(rule);
+        renderCharacterSpellCastModal();
+    }
+
+    function updateCharacterSpellHitField(index, field, value) {
+        if (!pendingCast) return;
+        const rule = getSpellDamageRule(pendingCast.ability, pendingCast.baseCost);
+        const hits = ensurePendingMultiHitEntries(rule);
+        const hit = hits[Math.max(0, Math.floor(Number(index) || 0))];
+        if (!hit || !['naturalRoll', 'damage', 'bodyPart'].includes(field)) return;
+        if (field === 'bodyPart') {
+            hit.bodyPart = ['head', 'torso', 'arm', 'leg'].includes(value) ? value : 'torso';
+            return;
+        }
+        hit[field] = String(value ?? '');
+        if (field === 'naturalRoll') {
+            const card = document.querySelectorAll?.('.character-spell-hit-card')?.[index];
+            card?.classList.toggle('is-critical', Number(value) === 20);
+            const badge = card?.querySelector('header span');
+            if (badge) badge.textContent = Number(value) === 20
+                ? '💥 CRÍTICO'
+                : `${rule.multiHit.dice}${getPendingAdrenalineUses().strongStrike ? ' ×2' : ''}`;
+            const previousNote = card?.querySelector('.character-spell-hit-critical-note');
+            if (Number(value) === 20 && !previousNote) {
+                const note = document.createElement('small');
+                note.className = 'character-spell-hit-critical-note';
+                note.textContent = 'Ignora armadura, dobra o dano antes da região e abrirá o ferimento crítico.';
+                card?.appendChild(note);
+            } else if (Number(value) !== 20) {
+                previousNote?.remove();
+            }
+        }
     }
 
     function setCharacterSpellOverload(effectId) {
@@ -837,7 +1235,27 @@
         renderCharacterSpellCastModal();
     }
 
-    function buildSpellCastHistoryMetadata(caster, target, ability, effective, energy, overloadResult, healingResult, damageResult) {
+    function toggleCharacterSpellAdrenaline(kind, enabled) {
+        if (!pendingCast || !['strongStrike', 'doubledEffect'].includes(kind)) return;
+        const next = Boolean(enabled);
+        const previous = Boolean(pendingCast.adrenalineUses?.[kind]);
+        pendingCast.adrenalineUses ||= { strongStrike: false, doubledEffect: false };
+        pendingCast.adrenalineUses[kind] = next;
+        if (getPendingAdrenalineCost() > getCharacterAdrenaline(pendingCast.combatant)) {
+            pendingCast.adrenalineUses[kind] = previous;
+            global.showToast?.(`${pendingCast.combatant.name} não possui Adrenalina suficiente.`);
+            renderCharacterSpellCastModal();
+            return;
+        }
+        const rule = getSpellDamageRule(pendingCast.ability, pendingCast.baseCost);
+        if (kind === 'doubledEffect' && !next && rule?.multiHit) {
+            pendingCast.hitCount = Math.min(rule.multiHit.maxHits, pendingCast.hitCount);
+            ensurePendingMultiHitEntries(rule);
+        }
+        renderCharacterSpellCastModal();
+    }
+
+    function buildSpellCastHistoryMetadata(caster, target, ability, effective, energy, overloadResult, healingResult, damageResult, adrenalineSpend) {
         const participants = [caster, target]
             .filter(Boolean)
             .filter((entry, index, entries) => entries.findIndex(other => String(other.id) === String(entry.id)) === index)
@@ -856,6 +1274,7 @@
                 staminaSpent: energy?.staminaSpent || 0,
                 temporaryStSpent: energy?.temporaryStSpent || 0,
                 runeSourceSpent: energy?.runeSourceSpent || 0,
+                adrenaline: adrenalineSpend ? { ...adrenalineSpend } : null,
                 overload: overloadResult || null,
                 spellDamage: damageResult?.valid ? { ...damageResult } : null,
                 ...(healingResult?.applied ? {
@@ -882,6 +1301,8 @@
     function confirmCharacterSpellCast(random = Math.random) {
         if (!pendingCast) return null;
         const { combatant, ability, targetId, targetIds, overloadEffect } = pendingCast;
+        const adrenalineUses = getPendingAdrenalineUses();
+        const adrenalineCost = getPendingAdrenalineCost();
         const damageRule = getSpellDamageRule(ability, pendingCast.baseCost);
         const chosenTargetIds = damageRule
             ? [...targetIds]
@@ -899,8 +1320,18 @@
             .find(entry => String(entry.id) === String(chosenTargetIds[0] ?? targetId)) || combatant;
         const effective = getPendingEffectiveSpell();
         const availability = getSpellEnergyAvailability(combatant, ability);
-        if (effective.finalCost > availability.total) {
+        const multiHitCount = getPendingMultiHitCount(damageRule);
+        const multiHitCost = damageRule?.multiHit
+            ? multiHitCount * damageRule.multiHit.extraCostPerHit
+            : 0;
+        const finalCastCost = effective.finalCost + multiHitCost;
+        const castEffective = { ...effective, finalCost: finalCastCost };
+        if (finalCastCost > availability.total) {
             global.showToast?.(`${combatant.name} não possui EST suficiente.`);
+            return null;
+        }
+        if (adrenalineCost > getCharacterAdrenaline(combatant)) {
+            global.showToast?.(`${combatant.name} não possui Adrenalina suficiente.`);
             return null;
         }
 
@@ -956,15 +1387,35 @@
             };
         }
 
-        const damageInput = document.getElementById('characterSpellDamageRoll');
-        const spellDamage = damageRule
-            ? calculateSpellDamage(combatant, damageRule, damageInput?.value ?? pendingCast.damageInput, overloadResult, random)
-            : null;
+        const spellDamage = damageRule?.multiHit
+            ? calculateMultiHitSpellDamage(damageRule, ensurePendingMultiHitEntries(damageRule), overloadResult, adrenalineUses)
+            : damageRule
+                ? calculatePreparedSpellDamage(
+                    combatant,
+                    damageRule,
+                    ensurePendingSpellDamageEntries(damageRule),
+                    overloadResult,
+                    adrenalineUses,
+                    random
+                )
+                : null;
         if (damageRule && !spellDamage?.valid) {
-            global.showToast?.('Informe o resultado total do dano da magia.');
-            damageInput?.focus();
+            const noun = damageRule.multiHit ? 'impacto' : 'alvo';
+            global.showToast?.(`Preencha corretamente o D20, dano e local do ${noun} ${(spellDamage?.invalidIndex ?? 0) + 1}.`);
+            document.querySelectorAll?.('.character-spell-hit-card')?.[spellDamage?.invalidIndex ?? 0]
+                ?.querySelector('input')?.focus();
             return null;
         }
+
+        const multiHitCondition = damageRule?.multiHit
+            ? {
+                roll: Math.floor(random() * 100) + 1,
+                chance: damageRule.multiHit.conditionChance,
+                icon: damageRule.multiHit.conditionIcon,
+                name: damageRule.multiHit.conditionName
+            }
+            : null;
+        if (multiHitCondition) multiHitCondition.applied = multiHitCondition.roll <= multiHitCondition.chance;
 
         const appliesEffect = !healingRule && overloadResult?.success !== false && (
             Object.prototype.hasOwnProperty.call(ability, 'active')
@@ -973,19 +1424,40 @@
         if (appliesEffect) {
             const prepared = global.prepareCharacterSpellEffect?.(target, combatant, ability.id, {
                 baseCost: effective.baseCost,
-                finalCost: effective.finalCost,
-                overload: overloadResult
+                finalCost: finalCastCost,
+                overload: overloadResult,
+                effectMultiplier: (adrenalineUses.doubledEffect ? 2 : 1)
+                    * (overloadResult?.success !== false && overloadResult?.effect === 'duration' ? 2 : 1),
+                adrenalineUses: { ...adrenalineUses }
             });
             if (prepared === null) return null;
         }
 
         let energy = null;
         let healingResult = null;
+        let adrenalineSpend = null;
         const hpBefore = Math.max(0, Number(combatant.hpCurrent) || 0);
-        const label = `${combatant.name} conjurou ${ability.name}${overloadEffect ? ' com Sobrecarga Arcana' : ''} — ${effective.finalCost} EST`;
+        const selectedAdrenalineLabels = [
+            adrenalineUses.strongStrike ? 'Golpe Forte' : '',
+            adrenalineUses.doubledEffect ? 'Efeito Dobrado' : ''
+        ].filter(Boolean);
+        const label = `${combatant.name} conjurou ${ability.name}${overloadEffect ? ' com Sobrecarga Arcana' : ''}${selectedAdrenalineLabels.length ? ` e ${selectedAdrenalineLabels.join(' + ')}` : ''} — ${finalCastCost} EST`;
         const mutate = () => {
-            energy = spendSpellEnergy(combatant, ability, effective.finalCost);
+            energy = spendSpellEnergy(combatant, ability, finalCastCost);
             if (!energy) return null;
+
+            if (adrenalineCost && overloadResult?.success !== false) {
+                combatant.progression ||= {};
+                const before = getCharacterAdrenaline(combatant);
+                combatant.progression.adrenaline = before - adrenalineCost;
+                adrenalineSpend = {
+                    before,
+                    spent: adrenalineCost,
+                    after: combatant.progression.adrenaline,
+                    strongStrike: adrenalineUses.strongStrike,
+                    doubledEffect: adrenalineUses.doubledEffect
+                };
+            }
 
             if (overloadResult) {
                 const rewardResult = {
@@ -1036,6 +1508,10 @@
                 };
             }
 
+            if (multiHitCondition?.applied && overloadResult?.success !== false) {
+                global.addAutomationCondition?.(target, multiHitCondition.icon);
+            }
+
             global.savePlayersToStorage?.();
             if (typeof renderList === 'function') renderList(false);
             return energy;
@@ -1046,13 +1522,17 @@
                 `Alvo: ${target.name}`,
                 `Custo base: ${effective.baseCost} EST`,
                 ...effective.modifiers.map(modifier => modifier.label),
-                `Custo final: ${effective.finalCost} EST`,
+                ...(multiHitCost ? [`Rajadas: ${multiHitCount} × ${damageRule.multiHit.extraCostPerHit} EST = +${multiHitCost} EST`] : []),
+                `Custo final: ${finalCastCost} EST`,
                 [
                     energy?.runeSourceSpent ? `Fonte Rúnica ${energy.runeSourceBefore} → ${energy.runeSourceAfter}` : '',
                     energy?.temporaryStSpent ? `EST temporário ${energy.temporaryStBefore} → ${energy.temporaryStAfter}` : '',
                     `EST ${energy?.staminaBefore ?? availability.stamina} → ${energy?.staminaAfter ?? availability.stamina}`
                 ].filter(Boolean).join(' · ')
             ];
+            if (adrenalineSpend) {
+                lines.push(`Adrenalina: ${adrenalineSpend.before} → ${adrenalineSpend.after} · ${selectedAdrenalineLabels.join(' + ')}`);
+            }
             if (overloadResult) {
                 lines.push(`Sobrecarga: ${overloadResult.naturalRoll} + ${overloadResult.level} = ${overloadResult.total} contra CD 16`);
                 if (overloadResult.classification === 'critical') {
@@ -1075,12 +1555,24 @@
                 lines.push(`PV de ${target.name}: ${healingResult.hpBefore} → ${healingResult.hpAfter}`);
             }
             if (spellDamage?.valid) {
-                lines.push(`Dano preparado: ${spellDamage.notation || spellDamage.raw}`);
-                if (spellDamage.rolls.length) lines.push(`Rolagem: ${spellDamage.rolls.join('+')} = ${spellDamage.rolledTotal}`);
-                else lines.push(`Resultado informado: ${spellDamage.rolledTotal}`);
-                if (spellDamage.attributeBonus) lines.push(`Bônus de atributo: ${spellDamage.attributeBonus >= 0 ? '+' : ''}${spellDamage.attributeBonus}`);
-                if (spellDamage.overloadMultiplier > 1) lines.push(`Sobrecarga ×${spellDamage.overloadMultiplier}`);
-                lines.push(`Dano antes do alvo e local: ${spellDamage.total}`);
+                if (spellDamage.multiHit) {
+                    lines.push(`Rajadas: ${spellDamage.hits.length} impactos de ${spellDamage.notation}`);
+                    spellDamage.hits.forEach(hit => {
+                        const region = ({ head: 'Cabeça', torso: 'Tronco', arm: 'Braço', leg: 'Perna' })[hit.bodyPart] || hit.bodyPart;
+                        lines.push(`Impacto ${hit.index + 1}: D20 ${hit.naturalRoll} · ${hit.enteredDamage} dano${spellDamage.totalMultiplier > 1 ? ` ×${spellDamage.totalMultiplier} = ${hit.damage}` : ''} · ${region}${hit.critical ? ' · CRÍTICO' : ''}`);
+                    });
+                    lines.push(`Dano base somado antes de armadura e regiões: ${spellDamage.total}`);
+                    if (multiHitCondition) {
+                        lines.push(`${multiHitCondition.name}: d100 ${multiHitCondition.roll} contra ${multiHitCondition.chance}% · ${multiHitCondition.applied ? 'aplicado' : 'não aplicado'}`);
+                    }
+                } else if (spellDamage.prepared) {
+                    spellDamage.entries.forEach(entry => {
+                        const damageTarget = chosenTargets.find(candidate => String(candidate.id) === String(entry.targetId));
+                        const region = ({ head: 'Cabeça', torso: 'Tronco', arm: 'Braço', leg: 'Perna' })[entry.bodyPart] || entry.bodyPart;
+                        lines.push(`${damageTarget?.name || `Alvo ${entry.index + 1}`}: D20 ${entry.naturalRoll} · ${entry.enteredDamage} dano${spellDamage.totalMultiplier > 1 ? ` ×${spellDamage.totalMultiplier} = ${entry.damage}` : ''} · ${region}${entry.critical ? ' · CRÍTICO' : ''}`);
+                    });
+                    lines.push(`Dano base somado antes de armadura e regiões: ${spellDamage.total}`);
+                }
                 lines.push(`Alvos: ${chosenTargets.map(entry => entry.name).join(', ')}`);
             }
             return lines.join('\n');
@@ -1089,11 +1581,12 @@
             combatant,
             target,
             ability,
-            effective,
+            castEffective,
             energy,
             overloadResult,
             healingResult,
-            spellDamage
+            spellDamage,
+            adrenalineSpend
         );
         const result = global.trackCombatAction
             ? global.trackCombatAction(label, mutate, detail, metadata)
@@ -1102,15 +1595,38 @@
         if (!result) return null;
         closeCharacterSpellCast();
         if (spellDamage?.valid && overloadResult?.success !== false) {
-            global.startSpellDamageSequence?.({
-                casterId: combatant.id,
-                abilityId: ability.id,
-                abilityName: ability.name,
-                damage: spellDamage.total,
-                damageType: spellDamage.damageType,
-                targetIds: chosenTargets.map(entry => entry.id),
-                roll: spellDamage
-            });
+            if (spellDamage.multiHit) {
+                global.startSpellMultiHitSequence?.({
+                    casterId: combatant.id,
+                    casterName: combatant.name,
+                    abilityId: ability.id,
+                    abilityName: ability.name,
+                    targetId: chosenTargets[0]?.id,
+                    damageType: spellDamage.damageType,
+                    hits: spellDamage.hits,
+                    roll: spellDamage
+                });
+            } else if (spellDamage.prepared) {
+                global.startPreparedSpellDamageSequence?.({
+                    casterId: combatant.id,
+                    casterName: combatant.name,
+                    abilityId: ability.id,
+                    abilityName: ability.name,
+                    damageType: spellDamage.damageType,
+                    entries: spellDamage.entries,
+                    roll: spellDamage
+                });
+            } else {
+                global.startSpellDamageSequence?.({
+                    casterId: combatant.id,
+                    abilityId: ability.id,
+                    abilityName: ability.name,
+                    damage: spellDamage.total,
+                    damageType: spellDamage.damageType,
+                    targetIds: chosenTargets.map(entry => entry.id),
+                    roll: spellDamage
+                });
+            }
         }
         global.showToast?.(overloadResult?.success === false
             ? `💥 Sobrecarga falhou: ${combatant.name} sofreu ${overloadResult.backlash.total} de dano.`
@@ -1118,8 +1634,8 @@
                 ? healingResult.blocked
                     ? `🌿 ${ability.name}: a regeneração de ${target.name} está bloqueada.`
                     : `🌿 ${combatant.name} curou ${target.name} em ${healingResult.healed} PV.`
-                : `✨ ${combatant.name} conjurou ${ability.name} por ${effective.finalCost} EST.`);
-        return { energy, effective, overload: overloadResult, target, targets: chosenTargets, healing: healingResult, damage: spellDamage };
+                : `✨ ${combatant.name} conjurou ${ability.name} por ${finalCastCost} EST.`);
+        return { energy, adrenaline: adrenalineSpend, effective: castEffective, overload: overloadResult, target, targets: chosenTargets, healing: healingResult, damage: spellDamage };
     }
 
     global.renderCharacterSpellsPanel = renderCharacterSpellsPanel;
@@ -1132,7 +1648,11 @@
     global.updateCharacterSpellCastBaseCost = updateCharacterSpellCastBaseCost;
     global.updateCharacterSpellCastTarget = updateCharacterSpellCastTarget;
     global.updateCharacterSpellDamageRoll = updateCharacterSpellDamageRoll;
+    global.updateCharacterSpellDamageField = updateCharacterSpellDamageField;
+    global.updateCharacterSpellHitCount = updateCharacterSpellHitCount;
+    global.updateCharacterSpellHitField = updateCharacterSpellHitField;
     global.setCharacterSpellOverload = setCharacterSpellOverload;
+    global.toggleCharacterSpellAdrenaline = toggleCharacterSpellAdrenaline;
     global.confirmCharacterSpellCast = confirmCharacterSpellCast;
     global.characterSpellCasting = Object.freeze({
         SPELL_FILTERS,
@@ -1151,6 +1671,9 @@
         calculateSpellHealing,
         getSpellDamageRule,
         calculateSpellDamage,
+        calculatePreparedSpellDamage,
+        calculateMultiHitSpellDamage,
+        MULTI_HIT_SPELL_RULES,
         renderCharacterSpellsPanel,
         rollDice
     });

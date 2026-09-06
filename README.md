@@ -212,6 +212,8 @@ O controle compacto `✨` do pad reúne a aplicação de **Magias**, **Itens** e
 
 O relógio possui um motor temporal persistente e independente do horário real do dispositivo. Campanhas novas começam em **1º de janeiro de 1276 DR, às 08:00**, mas o mestre pode redefinir o início. Datas e eventos aceitam as eras **AR** e **DR**, inclusive em uma Linha do Tempo própria para a cronologia histórica do Continente.
 
+Na criação e edição da ficha completa, a identidade mostra a data atual da campanha ao lado da data de nascimento. Ao informar dia, mês e ano, a idade é recalculada imediatamente — inclusive entre as eras AR e DR — e permanece derivada do calendário, sem gravar um número que ficaria desatualizado.
+
 - cada troca de participante avança exatamente **1 minuto**, inclusive em turnos de monstros e NPCs;
 - uma rodada equivale à quantidade de participantes vivos em minutos;
 - atalhos permitem avançar **1 rodada, 10 minutos, 1 hora, 8 horas, 1 dia** ou um período personalizado;
@@ -487,7 +489,11 @@ Para usar, adicione um cavalo em **Itens → Etc. → Montarias**, selecione-o e
 - escolha do beneficiário, limitação pelo HP máximo e registro de cura solicitada, cura efetiva, fórmula e PV antes/depois;
 - identificação contextual das magias ofensivas, com rolagem manual ou automática da fórmula de dano;
 - seleção única para ataques direcionados e seleção por caixas para cones, raios, esferas e outras áreas;
-- sequência de dano por alvo usando o fluxo normal de localização, tipo, armadura, crítico, Escudo Mágico e confirmação;
+- modal unificado por alvo com resultado natural do `d20`, dano original e região atingida, sem repetir o pad para cada participante;
+- `20 natural` reconhecido dentro da conjuração, com crítico automático, armadura ignorada e encaminhamento ao ferimento da região; resultados normais nunca abrem esse fluxo;
+- gasto opcional de Adrenalina na própria conjuração: **Golpe Forte** dobra o dano e **Efeito Dobrado** amplia duração, pilhas ou limite da magia conforme sua regra;
+- combinação acumulativa de Golpe Forte, Sobrecarga Arcana, crítico e multiplicador regional, mantendo cada etapa discriminada no histórico;
+- sequência de dano por alvo usando localização, armadura, crítico, Escudo Mágico e confirmação automática;
 - reconhecimento automático de dano de Fogo nas conjurações para acionar Bafo de Dragão e Inflamador sem perguntas desnecessárias;
 - efeitos aplicáveis no combate com indicação de **conjurador → alvo**;
 - exportação das habilidades para uma planilha `.xlsx` no desktop;
@@ -569,7 +575,7 @@ Uma ficha pode ser ativada para consultar seu inventário e suas habilidades ou 
 
 ### 🎲 Perícias e testes durante o combate
 
-Os jogadores recebem um painel compacto de **Recursos** abaixo do card principal. Ele começa recolhido, mostra `🎲 Dado da Sorte` e `⚡ Adrenalina` no resumo e oferece controles manuais `−` e `+` ao ser expandido. Cada ajuste é limitado a zero, persiste na ficha vinculada e fica registrado no histórico. O painel também está disponível para fichas rápidas.
+Os jogadores recebem um painel compacto de **Recursos** abaixo do card principal. Ele começa recolhido, mostra `🎲 Dado da Sorte` e `⚡ Adrenalina` no resumo e oferece controles manuais `−` e `+` ao ser expandido. Cada recurso ocupa sua própria linha e explica seus usos: Dado da Sorte permite **Rolagem Certeira** e **Golpe Perfeito**; Adrenalina permite **Golpe Forte**, **Efeito Dobrado** e **Adrenalina de Combate**. Cada ajuste é limitado a zero, persiste na ficha vinculada e fica registrado no histórico. O painel também está disponível para fichas rápidas.
 
 Qualquer jogador ou inimigo com condições, magias ou itens ativos recebe também o painel **EFEITOS ATIVOS**. Ele informa a quantidade no cabeçalho, começa recolhido e pode ser aberto independentemente dos demais painéis. Ao expandir, preserva os cards completos, duração, stacks, edição e remoção de cada efeito; recolher o painel não pausa suas automações nem a contagem de rodadas.
 
@@ -595,7 +601,7 @@ Ao tocar em uma perícia, o aplicativo abre um assistente compacto que:
 6. informa sucesso, falha, margem e resultado final;
 7. registra todo o cálculo no histórico com um filtro próprio de **Teste**.
 
-Um **20 natural** recebe a classificação **Crítico**, concede `+1 Dado da Sorte` e, durante o combate, `+1 Adrenalina`. Esses recursos ficam persistidos na progressão do personagem e aparecem no painel próprio **RECURSOS**, onde também podem ser corrigidos manualmente. Quando um teste bem-sucedido de ataque corpo a corpo ou à distância obtém `20 natural`, o aplicativo prepara automaticamente o próximo dano daquele personagem como crítico, transporta a margem contra a defesa e reaproveita a Adrenalina já concedida. Depois de informar o dano e escolher a região, o fluxo crítico abre automaticamente sem conceder a recompensa duas vezes. Bloqueios e Esquivas com `20 natural` continuam abrindo suas próprias tabelas defensivas de `1d10`.
+Um **20 natural** recebe a classificação **Crítico**, concede `+1 Dado da Sorte` e, durante o combate, `+1 Adrenalina`. Esses recursos ficam persistidos na progressão do personagem e aparecem no painel próprio **RECURSOS**, onde também podem ser corrigidos manualmente. Quando um teste bem-sucedido de ataque corpo a corpo ou à distância obtém `20 natural`, o aplicativo prepara a margem contra a defesa e reaproveita a Adrenalina já concedida quando o mestre escolher **Dano Crítico**. Nas conjurações ofensivas, o `20 natural` informado no próprio alvo abre o fluxo crítico automaticamente. Um ataque normal informado apenas pelo pad permanece no seletor de tipo de dano e nunca herda um crítico silenciosamente. Bloqueios e Esquivas com `20 natural` continuam abrindo suas próprias tabelas defensivas de `1d10`.
 
 ### 👹 Bestiário e biblioteca personalizada
 
@@ -713,11 +719,15 @@ Quando houver condições, magias ou itens aplicados, abra **EFEITOS ATIVOS** ab
 
 O indicador `👣 MOV` no card principal mostra o Movimento total atual. Em fichas completas, equipar, desequipar, consumir ou transferir itens recalcula imediatamente peso, capacidade e Movimento conforme a preferência da campanha. Se surgir **Carregando Peso**, abra **EFEITOS ATIVOS** para conferir exatamente quanto o limite foi ultrapassado.
 
-Abra **MAGIAS** para consultar o repertório daquele personagem. Expanda `⌄` para ler a regra completa ou use **Conjurar**: escolha o alvo, informe o EST base quando a magia for variável e revise o custo final. Magia Expandida é calculada sem alterar o catálogo original. Se o personagem possuir Sobrecarga Arcana, a decisão e o teste aparecem dentro desse mesmo fluxo; um `20 natural` também concede Dado da Sorte e Adrenalina conforme as regras de testes em combate.
+Abra **MAGIAS** para consultar o repertório daquele personagem. Expanda `⌄` para ler a regra completa ou use **Conjurar**: escolha o alvo, informe o EST base quando a magia for variável e revise o custo final. Em cada alvo ofensivo, informe o `d20` natural, o dano original e a região. Magia Expandida é calculada sem alterar o catálogo original. O mesmo modal permite gastar Adrenalina em **Golpe Forte** ou **Efeito Dobrado** e, quando disponível, combinar essas escolhas com **Sobrecarga Arcana**. A Adrenalina só é consumida depois de uma conjuração confirmada e bem-sucedida.
+
+**Cenlly Graig** e **Granizo de Carys** possuem um fluxo próprio de rajadas. Escolha entre 1 e 5 impactos e informe, em um único modal, o resultado natural do d20, o dano de `2d6` e a região de cada acerto. **Efeito Dobrado** eleva o limite para 10 impactos; **Golpe Forte** dobra o dano de todos eles; com 2 pontos de Adrenalina, as duas opções podem ser combinadas. Cada impacto consome `+1 EST` e é processado separadamente com sua própria armadura e multiplicador regional. Um `20 natural` dobra apenas aquele impacto, ignora a armadura, concede Adrenalina e abre o ferimento crítico correspondente antes de continuar. A chance única de 10% de Sangramento ou Congelamento também é resolvida e registrada automaticamente.
+
+Os multiplicadores seguem sempre a mesma ordem auditável: dano original → Golpe Forte → Sobrecarga de dano → crítico → região. Assim, um resultado `12` com crítico, Golpe Forte e acerto na cabeça produz `12 × 2 × 2 × 3 = 144`; se também houver Sobrecarga de dano, o valor passa a `288` antes dos bônus próprios do ferimento crítico.
 
 Ao conjurar **Cura Mágica**, selecione o beneficiário e informe o resultado do `1d6` físico. Se a preferência de magias estiver em modo automático, o aplicativo rola esse dado, calcula `3 + bônus de Inteligência + 1d6`, limita a recuperação ao HP máximo e registra todo o cálculo.
 
-Se o teste de combate resultar em `1 natural`, ou em `20 natural` ao Bloquear/Esquivar, conclua a tabela contextual de `1d10`. Revise o participante afetado, a escolha oferecida e os dados complementares antes de aplicar; lembretes que dependem da decisão do mestre ficam no painel **CONSEQUÊNCIAS** do participante. Em um ataque bem-sucedido com `20 natural`, selecione o alvo, informe o dano pelo pad e escolha a região: a margem já calculada será usada automaticamente no fluxo de ferimento crítico.
+Se o teste de combate resultar em `1 natural`, ou em `20 natural` ao Bloquear/Esquivar, conclua a tabela contextual de `1d10`. Revise o participante afetado, a escolha oferecida e os dados complementares antes de aplicar; lembretes que dependem da decisão do mestre ficam no painel **CONSEQUÊNCIAS** do participante. Em um ataque bem-sucedido com `20 natural`, selecione o alvo, informe o dano pelo pad, escolha a região e toque em **Dano Crítico** para usar a margem preparada sem duplicar a Adrenalina.
 
 Quando uma habilidade profissional possuir resolução assistida, use **🎲 Realizar teste** no próprio card. O aplicativo calcula o confronto e deixa decisões narrativas ou efeitos condicionais sob controle do mestre.
 
@@ -813,19 +823,32 @@ O reparo baixa novamente os arquivos da aplicação e preserva fichas, combate e
 
 ## 🌐 Salas experimentais em tempo real
 
-Em **⋯ → Sala**, o Mestre pode criar uma sala protegida por senha e compartilhar
-o código com os jogadores. Cada jogador entra pelo próprio dispositivo, escolhe
-uma das fichas disponíveis e recebe uma visualização atualizada da campanha.
+Em **⋯ → Sala**, o Mestre pode criar uma sala protegida por senha e decidir se
+ela aparecerá no diretório público. O jogador toca em uma sala aberta, informa
+somente a senha e escolhe uma ficha livre da campanha, uma ficha salva no próprio
+dispositivo ou um JSON exportado pelo aplicativo.
 
 - o modo Mestre conserva todas as ferramentas da campanha;
 - o modo Jogador oculta configurações, backups, edição global, controle de turno
   e demais ações exclusivas do mestre;
 - alterações do Mestre são distribuídas automaticamente pelo WebSocket;
+- atualizações repetidas são agrupadas e o próprio snapshot do Mestre não é
+  reaplicado, evitando tremores e reconstruções desnecessárias dos cards;
 - o jogador pode ajustar Adrenalina e Dado da Sorte apenas da ficha vinculada;
+- testes de perícia do próprio personagem são publicados para toda a sala;
+- o pad do Jogador pode ser recolhido até a borda inferior e restaurado com um toque;
+- calendário, agenda e linha do tempo ficam disponíveis ao Jogador em modo somente leitura;
 - a presença mostra quem está conectado à sala;
+- o Mestre pode revogar dispositivos, consultar acessos e encerrar a sala;
+- ao sair, ser removido ou quando a sala é encerrada, o dispositivo do Jogador entra imediatamente em uma tela protegida sem acesso ao combate ou aos dados da campanha anterior;
+- a tela protegida permite somente procurar e autenticar a entrada em outra sala;
 - quedas de rede iniciam reconexão automática com um novo ticket temporário;
-- alterações permanentes estão classificadas como propostas que exigirão
-  aprovação do mestre nas próximas etapas;
+- alterações permanentes do jogador entram em uma fila para o Mestre aprovar,
+  ajustar ou rejeitar, com registro da decisão;
+- alterações feitas sem conexão ficam numa fila persistente em IndexedDB e são
+  reenviadas de forma idempotente quando a rede retorna;
+- versões incompatíveis são preservadas como conflitos e nunca substituem os
+  dados silenciosamente;
 - o indicador da sessão informa papel, conexão, envio pendente ou conflito;
 - o modo offline continua sendo o padrão e não exige conta.
 
@@ -835,8 +858,11 @@ token próprio e abre o WebSocket com um ticket curto de uso único. A projeçã
 Jogador remove preferências, anotações privadas e fichas alheias antes do envio.
 
 > [!NOTE]
-> O backend precisa ser publicado na conta Cloudflare e seu endereço informado
-> no painel Sala. Consulte [o guia de publicação](docs/cloudflare-room-deployment.md).
+> O endereço do serviço oficial já vem configurado no aplicativo. Mestre e
+> jogadores de salas públicas informam somente nome e senha; o código continua
+> disponível como alternativa para salas privadas. Consulte
+> [o guia de publicação](docs/cloudflare-room-deployment.md) para manter ou
+> publicar uma instalação própria.
 
 ## 💾 Dados, privacidade e backup
 
@@ -866,9 +892,9 @@ O **backup JSON completo** reúne toda a campanha. Para compartilhar somente um 
 | Estrutura | HTML5 semântico |
 | Interface | CSS3, Tailwind CSS e layout responsivo próprio |
 | Aplicação | JavaScript Vanilla organizado por domínio |
-| Persistência | LocalStorage e backups JSON |
+| Persistência | LocalStorage, IndexedDB e backups JSON |
 | PWA | Web App Manifest, Service Worker e Cache API |
-| Colaboração | Contrato versionado, campanhas locais, papéis e permissões |
+| Colaboração | Cloudflare Worker, Durable Objects SQLite, WebSockets, papéis, aprovações e conflitos |
 | Exportação | SheetJS para arquivos Excel |
 | Compatibilidade | APIs modernas de navegador, UTF-8, safe areas e modo standalone |
 
@@ -904,7 +930,7 @@ O projeto não exige framework JavaScript, bundler ou etapa de compilação.
 │   ├── combat/                  # Turnos, dano, renderização, efeitos e persistência
 │   ├── core/                    # Utilitários e notificações
 │   ├── campaign/                # Contêiner, migração e checkpoints da campanha
-│   ├── collaboration/           # Protocolo, permissões, sessão e cliente WebSocket
+│   ├── collaboration/           # Protocolo, permissões, fila offline, sessão e cliente WebSocket
 │   ├── ui/                      # Componentes de interface e modais
 │   ├── character-collections.js # Inventários e habilidades por participante
 │   ├── character-sheet-model.js # Regras, progressão e cálculos puros da ficha completa
@@ -973,6 +999,7 @@ node tests/collaboration-protocol.test.cjs
 node tests/campaign-store.test.cjs
 node tests/collaboration-session.test.cjs
 node tests/collaboration-realtime-client.test.cjs
+node tests/collaboration-offline-queue.test.cjs
 node tests/collaboration-room-worker.test.cjs
 ```
 
@@ -1001,6 +1028,11 @@ Os testes verificam o isolamento entre personagens, a migração e o backup do a
 - [x] Contrato colaborativo com comandos idempotentes, propostas e conflitos
 - [x] Prévia local dos modos Mestre e Jogador com permissões por ficha
 - [x] Sala experimental com código, senha, presença, reconexão e WebSockets via Cloudflare
+- [x] Diretório de salas públicas sem exposição de fichas, participantes ou credenciais
+- [x] Entrada com ficha livre, ficha local ou JSON importado diretamente para a partida
+- [x] Pad recolhível, rolagens próprias e calendário somente leitura no modo Jogador
+- [x] Revogação remota de dispositivos, encerramento administrativo e registro de acessos
+- [x] Bloqueio integral da campanha no dispositivo após saída, revogação ou encerramento da sala
 - [x] Assistente de evolução com múltiplos níveis, pontos protegidos, novas magias, histórico e desfazer
 - [x] Criação completa com raças, profissões, atributos, perícias e aprendizado de magias
 - [x] Nascimento, idade dinâmica e aniversário anual sincronizado entre fichas e calendário
@@ -1011,6 +1043,8 @@ Os testes verificam o isolamento entre personagens, a migração e o backup do a
 - [x] Cuidados, descanso, necessidades, benefícios diários e integrações profissionais persistentes
 - [x] Painel de magias conhecidas com detalhes, custo efetivo e conjuração direta no combate
 - [x] Magia Expandida e Sobrecarga Arcana integradas ao custo, teste, recursos e histórico
+- [x] Dano mágico por alvo com D20 natural, dano, região, crítico contextual e processamento automático
+- [x] Golpe Forte e Efeito Dobrado combináveis com Sobrecarga Arcana e rajadas de até dez impactos
 - [x] Cura Mágica com fórmula, rolagem configurável, escolha de alvo e histórico detalhado
 - [x] Assistente de testes manual ou automático, histórico e recompensas de crítico
 - [x] `20 natural` de ataque integrado ao próximo dano crítico, com margem transportada e Adrenalina sem duplicidade
@@ -1037,7 +1071,8 @@ Os testes verificam o isolamento entre personagens, a migração e o backup do a
 - [x] Consumo de poções pelo inventário com efeito ativo, automações e renovação segura
 - [x] Histórico detalhado, desfazer e relatório pós-combate com saques e recompensas
 - [x] Backup completo, atualização e reparo de cache
-- [ ] Sincronização opcional entre dispositivos
+- [x] Sincronização opcional com combate em tempo real, aprovações, conflitos e fila offline
+- [ ] Histórico navegável de snapshots e restauração de versões anteriores da sala
 - [ ] Perfis de regras para outros sistemas de RPG
 - [ ] Testes automatizados de interface ponta a ponta
 

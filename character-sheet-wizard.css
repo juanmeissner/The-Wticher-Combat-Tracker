@@ -390,6 +390,12 @@
     line-height: 1.4;
 }
 
+.character-birth-heading .character-birth-reference {
+    margin-top: 7px;
+    color: #7dd3fc;
+    font-weight: 700;
+}
+
 .character-birth-heading > span {
     flex: none;
     padding: 5px 8px;
@@ -399,6 +405,12 @@
     color: #7dd3fc;
     font-size: .67rem;
     font-weight: 800;
+}
+
+.character-birth-heading > span.is-pending {
+    border-color: #475569;
+    background: rgba(71, 85, 105, .18);
+    color: #94a3b8;
 }
 
 .character-birth-fields {

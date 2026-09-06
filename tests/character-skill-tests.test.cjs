@@ -108,7 +108,13 @@ context.toggleCharacterResourcesPanel('7');
 const expandedResources = context.renderCharacterResourcesPanel(combatant);
 assert.match(expandedResources, /Dado da Sorte/);
 assert.match(expandedResources, /Adrenalina/);
+assert.match(expandedResources, /Rolagem Certeira/);
+assert.match(expandedResources, /Golpe Perfeito/);
+assert.match(expandedResources, /Golpe Forte/);
+assert.match(expandedResources, /Efeito Dobrado/);
+assert.match(expandedResources, /Adrenalina de Combate/);
 assert.match(expandedResources, /adjustCharacterCombatResource/);
+assert.match(equipmentCss, /grid-template-columns:\s*minmax\(0, 1fr\)/);
 assert.equal(context.adjustCharacterCombatResource('7', 'luckDice', 1), true);
 assert.equal(combatant.progression.luckDice, 3);
 assert.match(historyEntries[0].label, /Dado da Sorte atualizado 2 → 3/);
@@ -203,6 +209,16 @@ assert.ok(
 assert.match(serviceWorkerSource, /js\/character-skill-tests\.js/);
 assert.match(equipmentCss, /character-skills-panel/);
 assert.match(equipmentCss, /character-resources-panel/);
+assert.match(
+    equipmentCss,
+    /character-resources-grid[\s\S]*repeat\(auto-fit,\s*minmax\(min\(100%,\s*280px\),\s*1fr\)\)/,
+    'Os recursos devem formar colunas apenas quando cada card tiver largura suficiente.'
+);
+assert.match(
+    equipmentCss,
+    /@media \(max-width:\s*520px\)[\s\S]*character-resources-grid[\s\S]*grid-template-columns:\s*minmax\(0,\s*1fr\)/,
+    'Dado da Sorte e Adrenalina devem ocupar linhas completas no mobile.'
+);
 assert.match(equipmentCss, /character-skill-test-dialog/);
 assert.match(equipmentCss, /character-professional-test-button/);
 assert.match(equipmentCss, /character-professional-reminder-tags/);

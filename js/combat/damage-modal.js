@@ -42,8 +42,6 @@ function closeDamageModals() {
         pendingDamageBodyPart = part;
         
         document.getElementById('damageBodyModal').style.display = 'none';
-
-        if (window.openPreparedCriticalDamageFlow?.()) return;
         
         document.getElementById('damageTypeModal').style.display = 'flex';
     }
@@ -253,6 +251,23 @@ function closeDamageModals() {
         )) return;
     }
 
+    function applyPreparedLocalizedDamage(options = {}) {
+        const target = combatants.find(c => String(c.id) === String(options.targetId));
+        const damage = Math.max(0, Math.floor(Number(options.damage) || 0));
+        const bodyPart = ['head', 'torso', 'arm', 'leg'].includes(options.bodyPart)
+            ? options.bodyPart
+            : '';
+        if (!target || !damage || !bodyPart) return false;
+
+        selectedId = target.id;
+        pendingDamageBase = damage;
+        pendingDamageBodyPart = bodyPart;
+        window.setPendingAutomationDamageContext?.(options.historyContext || {});
+        const calculate = window.applyCalculatedDamage || applyCalculatedDamage;
+        calculate(Number(options.typeMultiplier) || 1, Boolean(options.ignoreArmor));
+        return true;
+    }
+
     function applyDirectDamage(value, historyContext = {}) {
 
         const oldInput = currentInput;
@@ -329,3 +344,4 @@ function closeDamageModals() {
     }
 
     window.applyDirectDamage = applyDirectDamage;
+    window.applyPreparedLocalizedDamage = applyPreparedLocalizedDamage;

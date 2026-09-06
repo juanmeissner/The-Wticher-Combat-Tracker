@@ -47,9 +47,22 @@ assert.equal(online.mode, 'room');
 assert.equal(online.roomCode, 'ABC234XY');
 assert.equal(online.connectionState, 'synced');
 
+session.resetForTests();
+session.initialize({ storage: memoryStorage(), session: online });
+const accessEnded = session.endPlayerRoomAccess('revoked');
+assert.equal(accessEnded.role, 'player');
+assert.equal(accessEnded.mode, 'access-ended');
+assert.equal(accessEnded.accessEndReason, 'revoked');
+assert.equal(accessEnded.roomCode, null);
+assert.equal(accessEnded.memberToken, null);
+assert.equal(accessEnded.linkedParticipantId, null);
+assert.equal(session.isPlayerAccessEnded(), true);
+assert.match(session.getStatusPresentation().label, /Sem acesso/);
+
 const projectRoot = path.resolve(__dirname, '..');
 const indexSource = fs.readFileSync(path.join(projectRoot, 'index.html'), 'utf8');
 const sessionSource = fs.readFileSync(path.join(projectRoot, 'js', 'session-features.js'), 'utf8');
+const collaborationSource = fs.readFileSync(path.join(projectRoot, 'js', 'collaboration', 'collaboration-session.js'), 'utf8');
 const styles = fs.readFileSync(path.join(projectRoot, 'collaboration.css'), 'utf8');
 const workerSource = fs.readFileSync(path.join(projectRoot, 'js', 'service-worker.js'), 'utf8');
 
@@ -60,7 +73,13 @@ assert.match(sessionSource, /renderSessionToolsView\('collaboration'\)/);
 assert.match(sessionSource, /masterOnlyViews/);
 assert.match(sessionSource, /session-role-chip/);
 assert.match(styles, /data-collaboration-role="player"/);
-assert.match(workerSource, /witcher-combat-tracker-v105/);
+assert.match(workerSource, /witcher-combat-tracker-v111/);
+assert.match(indexSource, /playerPadCollapsedBar/);
+assert.match(sessionSource, /Calendário/);
+assert.match(styles, /player-pad-collapsed/);
+assert.match(styles, /data-collaboration-access="blocked"/);
+assert.match(styles, /collaboration-access-ended/);
+assert.match(collaborationSource, /endPlayerRoomAccess/);
 assert.match(workerSource, /js\/collaboration\/collaboration-session\.js/);
 
 session.resetForTests();

@@ -9,6 +9,10 @@
       {
         "name": "CAMPAIGN_ROOMS",
         "class_name": "CampaignRoom"
+      },
+      {
+        "name": "ROOM_DIRECTORY",
+        "class_name": "RoomDirectory"
       }
     ]
   },
@@ -16,6 +20,10 @@
     {
       "tag": "v1",
       "new_sqlite_classes": ["CampaignRoom"]
+    },
+    {
+      "tag": "v2",
+      "new_sqlite_classes": ["RoomDirectory"]
     }
   ],
   "vars": {

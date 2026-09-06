@@ -382,11 +382,47 @@
         `;
     }
 
+    function getWizardCampaignDateContext() {
+        const clock = global.campaignClock;
+        const snapshot = clock?.getSnapshot?.();
+        const currentMinute = Number(snapshot?.currentMinute);
+        if (Number.isFinite(currentMinute)) {
+            const parts = clock.getDateParts?.(currentMinute);
+            if (parts) {
+                return {
+                    minute: currentMinute,
+                    year: parts.year,
+                    era: parts.era,
+                    label: clock.formatDateLong?.(currentMinute) || `${parts.day}/${parts.month}/${parts.year} ${parts.era}`
+                };
+            }
+        }
+        const year = Math.max(1, Number(clock?.DEFAULT_CAMPAIGN_YEAR) || 1276);
+        return { minute: null, year, era: 'DR', label: `1 de janeiro de ${year} DR` };
+    }
+
+    function getWizardCharacterAge(birthDate = characterWizardDraft?.birthDate) {
+        const context = getWizardCampaignDateContext();
+        return global.campaignClock?.getCharacterAge?.(birthDate, context.minute ?? undefined);
+    }
+
+    function updateCharacterWizardBirthSummary() {
+        const badge = global.document?.getElementById('characterWizardAgeBadge');
+        if (!badge) return;
+        const age = getWizardCharacterAge();
+        const hasYear = Number(characterWizardDraft?.birthDate?.year) > 0;
+        badge.textContent = Number.isFinite(age)
+            ? `${age} anos`
+            : (hasYear ? 'Data futura ou incompleta' : 'Informe o ano');
+        badge.classList.toggle('is-pending', !Number.isFinite(age));
+    }
+
     function renderIdentityStep() {
         if (isCharacterLevelUpDraft()) return renderLevelUpIdentityStep();
 
         const birthDate = characterWizardDraft.birthDate || {};
-        const age = global.campaignClock?.getCharacterAge?.(birthDate);
+        const age = getWizardCharacterAge(birthDate);
+        const campaignDate = getWizardCampaignDateContext();
         const monthOptions = [
             'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
             'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
@@ -409,13 +445,13 @@
                 </div>
                 <div class="character-birth-section">
                     <div class="character-birth-heading">
-                        <div><strong>Data de nascimento</strong><small>O dia e o mês criam um aniversário anual no calendário da campanha.</small></div>
-                        ${Number.isFinite(age) ? `<span>${age} anos</span>` : ''}
+                        <div><strong>Data de nascimento</strong><small>O dia e o mês criam um aniversário anual no calendário da campanha.</small><small class="character-birth-reference">Hoje na campanha: ${escapeWizardHtml(campaignDate.label)}</small></div>
+                        <span id="characterWizardAgeBadge" class="${Number.isFinite(age) ? '' : 'is-pending'}">${Number.isFinite(age) ? `${age} anos` : (birthDate.year ? 'Data futura ou incompleta' : 'Informe o ano')}</span>
                     </div>
                     <div class="character-birth-fields">
                         <label>Dia<input class="session-input" type="number" min="1" max="31" inputmode="numeric" value="${birthDate.day || ''}" oninput="updateCharacterWizardBirthField('day', this.value)"></label>
                         <label>Mês<select class="session-input" onchange="updateCharacterWizardBirthField('month', this.value)"><option value="">Selecione</option>${monthOptions}</select></label>
-                        <label>Ano <small>(opcional)</small><input class="session-input" type="number" min="1" inputmode="numeric" value="${birthDate.year || ''}" oninput="updateCharacterWizardBirthField('year', this.value)"></label>
+                        <label>Ano <small>(para idade)</small><input class="session-input" type="number" min="1" inputmode="numeric" value="${birthDate.year || ''}" oninput="updateCharacterWizardBirthField('year', this.value)"></label>
                         <label>Era<select class="session-input" onchange="updateCharacterWizardBirthField('era', this.value)"><option value="DR" ${birthDate.era !== 'AR' ? 'selected' : ''}>DR</option><option value="AR" ${birthDate.era === 'AR' ? 'selected' : ''}>AR</option></select></label>
                     </div>
                 </div>
@@ -1578,6 +1614,7 @@
         }
         characterWizardDraft.birthDate = current.day || current.month || current.year ? current : null;
         persistCharacterWizardDraft();
+        updateCharacterWizardBirthSummary();
     }
 
     function normalizeWizardLearnedAbilities() {
