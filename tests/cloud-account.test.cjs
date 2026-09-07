@@ -89,17 +89,27 @@ test('contas privadas autenticam e isolam campanhas permanentes por proprietári
         schemaVersion: 1,
         id: 'campaign-geralt',
         revision: 7,
-        metadata: { name: 'Caçada em Velen' },
+        metadata: { name: 'Campanha local' },
         state: { combat: { round: 4, combatants: [] }, compatibility: {} }
     };
+    const invalidNameResponse = await accountService.handleAccountRequest(jsonRequest(
+        'https://account.test/api/account/campaigns/campaign-geralt',
+        'PUT',
+        { campaign, name: '', expectedRevision: null },
+        registered.token
+    ), d1);
+    assert.equal(invalidNameResponse.status, 400);
+
     const saveResponse = await accountService.handleAccountRequest(jsonRequest(
         'https://account.test/api/account/campaigns/campaign-geralt',
         'PUT',
-        { campaign, expectedRevision: null },
+        { campaign, name: 'Caçada em Velen', expectedRevision: null },
         registered.token
     ), d1);
     assert.equal(saveResponse.status, 201);
-    assert.equal((await saveResponse.json()).cloud.revision, 1);
+    const saved = await saveResponse.json();
+    assert.equal(saved.cloud.revision, 1);
+    assert.equal(saved.cloud.name, 'Caçada em Velen');
 
     const listResponse = await accountService.handleAccountRequest(new Request(
         'https://account.test/api/account/campaigns',
@@ -114,7 +124,9 @@ test('contas privadas autenticam e isolam campanhas permanentes por proprietári
         { headers: { authorization: `Bearer ${registered.token}` } }
     ), d1);
     assert.equal(loadResponse.status, 200);
-    assert.equal((await loadResponse.json()).campaign.state.combat.round, 4);
+    const loaded = await loadResponse.json();
+    assert.equal(loaded.campaign.state.combat.round, 4);
+    assert.equal(loaded.campaign.metadata.name, 'Caçada em Velen');
 
     const conflictResponse = await accountService.handleAccountRequest(jsonRequest(
         'https://account.test/api/account/campaigns/campaign-geralt',
@@ -135,6 +147,25 @@ test('contas privadas autenticam e isolam campanhas permanentes por proprietári
         { headers: { authorization: `Bearer ${secondAccount.token}` } }
     ), d1);
     assert.equal(forbiddenLoad.status, 404);
+
+    const deleteResponse = await accountService.handleAccountRequest(new Request(
+        'https://account.test/api/account/campaigns/campaign-geralt',
+        { method: 'DELETE', headers: { authorization: `Bearer ${registered.token}` } }
+    ), d1);
+    assert.equal(deleteResponse.status, 200);
+    assert.equal((await deleteResponse.json()).cloud.name, 'Caçada em Velen');
+
+    const deletedLoad = await accountService.handleAccountRequest(new Request(
+        'https://account.test/api/account/campaigns/campaign-geralt',
+        { headers: { authorization: `Bearer ${registered.token}` } }
+    ), d1);
+    assert.equal(deletedLoad.status, 404);
+
+    const emptyList = await accountService.handleAccountRequest(new Request(
+        'https://account.test/api/account/campaigns',
+        { headers: { authorization: `Bearer ${registered.token}` } }
+    ), d1);
+    assert.equal((await emptyList.json()).campaigns.length, 0);
 
     const logoutResponse = await accountService.handleAccountRequest(jsonRequest(
         'https://account.test/api/account/logout',
@@ -157,12 +188,16 @@ test('PWA carrega a conta opcional sem incluir o token em backups', () => {
     const workerSource = fs.readFileSync(path.join(projectRoot, 'js', 'service-worker.js'), 'utf8');
     const appInit = fs.readFileSync(path.join(projectRoot, 'js', 'app-init.js'), 'utf8');
     const sessionSource = fs.readFileSync(path.join(projectRoot, 'js', 'collaboration', 'collaboration-session.js'), 'utf8');
+    const accountSource = fs.readFileSync(path.join(projectRoot, 'js', 'collaboration', 'cloud-account.js'), 'utf8');
     const styles = fs.readFileSync(path.join(projectRoot, 'collaboration.css'), 'utf8');
     assert.match(indexSource, /cloud-account\.js[\s\S]+collaboration-session\.js/);
     assert.match(workerSource, /cloud-account\.js/);
-    assert.match(workerSource, /witcher-combat-tracker-v115/);
+    assert.match(workerSource, /witcher-combat-tracker-v116/);
     assert.match(appInit, /APP_SENSITIVE_STORAGE_KEYS/);
     assert.match(appInit, /dnd_cloud_account_session_v1/);
     assert.match(sessionSource, /cloudAccount.*getPanelMarkup/);
+    assert.match(accountSource, /Salvar campanha na nuvem/);
+    assert.match(accountSource, /requestDeleteCloudCampaign/);
     assert.match(styles, /cloud-account-panel/);
+    assert.match(styles, /cloud-campaign-card-actions/);
 });

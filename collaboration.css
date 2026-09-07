@@ -151,6 +151,10 @@
     gap: 3px;
 }
 
+.cloud-campaign-card > div:first-child {
+    flex: 1;
+}
+
 .cloud-campaign-card strong,
 .cloud-campaign-card small {
     overflow: hidden;
@@ -163,10 +167,29 @@
     font-size: .68rem;
 }
 
-.cloud-campaign-card button {
-    width: auto;
+.cloud-campaign-card-actions {
+    display: flex;
     flex: 0 0 auto;
+    gap: 6px;
+}
+
+.cloud-campaign-card-actions button {
+    width: auto;
+    min-height: 36px;
+    padding: 7px 10px;
     margin: 0;
+}
+
+.cloud-campaign-name-dialog .collaboration-field {
+    margin-top: 14px;
+}
+
+.cloud-campaign-name-dialog .session-input {
+    width: 100%;
+}
+
+.cloud-campaign-name-dialog .cloud-account-error[hidden] {
+    display: none;
 }
 
 .collaboration-room-list-heading,
@@ -719,6 +742,15 @@ html[data-collaboration-role="player"] button[onclick="openExpandedMagicModal()"
     .cloud-account-actions {
         align-items: stretch;
         flex-direction: column;
+    }
+
+    .cloud-campaign-card {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .cloud-campaign-card-actions > button {
+        flex: 1;
     }
 }
 

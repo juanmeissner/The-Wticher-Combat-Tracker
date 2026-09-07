@@ -863,7 +863,7 @@ Jogador remove preferências, anotações privadas e fichas alheias antes do env
 ### ☁️ Conta e campanhas permanentes
 
 Fora de uma sala, o painel **Conta e campanhas permanentes** permite criar uma
-conta opcional, salvar a campanha ativa e abri-la em outro dispositivo. As
+conta opcional, nomear e salvar a campanha ativa e abri-la em outro dispositivo. As
 campanhas ficam privadas por proprietário no **Cloudflare D1**, possuem revisão
 independente e recusam uma gravação desatualizada em vez de substituir uma versão
 mais recente silenciosamente.
@@ -872,6 +872,7 @@ mais recente silenciosamente.
 - a sessão da conta é revogável, expira e não é incluída no backup JSON;
 - cada conta enxerga somente as próprias campanhas;
 - carregar uma campanha da nuvem mantém a campanha local anterior disponível;
+- excluir uma campanha da nuvem exige confirmação e não remove sua cópia local;
 - o modo offline permanece completo e não exige cadastro;
 - somente o Mestre pode publicar a campanha ativa na conta durante a colaboração.
 
@@ -1057,6 +1058,7 @@ Os testes verificam o isolamento entre personagens, a migração e o backup do a
 - [x] Restauração automática da campanha offline após saída, expulsão ou encerramento da sala
 - [x] Contas opcionais com autenticação privada e sessões revogáveis
 - [x] Campanhas permanentes por proprietário no Cloudflare D1 com controle de revisão
+- [x] Nome personalizado ao salvar e exclusão confirmada de campanhas na nuvem
 - [x] Validação automatizada de saída voluntária, expulsão, encerramento e reconexão
 - [x] Assistente de evolução com múltiplos níveis, pontos protegidos, novas magias, histórico e desfazer
 - [x] Criação completa com raças, profissões, atributos, perícias e aprendizado de magias

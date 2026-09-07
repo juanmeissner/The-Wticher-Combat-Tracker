@@ -88,7 +88,10 @@
                     <strong>${escapeHtml(campaign.name)}</strong>
                     <small>Versão ${campaign.revision} · ${escapeHtml(new Date(campaign.updatedAt).toLocaleString('pt-BR'))}</small>
                 </div>
-                <button type="button" onclick="requestLoadCloudCampaign('${encodeURIComponent(campaign.id)}')">Carregar</button>
+                <div class="cloud-campaign-card-actions">
+                    <button type="button" class="session-secondary" onclick="requestLoadCloudCampaign('${encodeURIComponent(campaign.id)}')">Carregar</button>
+                    <button type="button" class="session-danger" onclick="requestDeleteCloudCampaign('${encodeURIComponent(campaign.id)}')" aria-label="Excluir ${escapeHtml(campaign.name)}">Excluir</button>
+                </div>
             </article>
         `).join('');
     }
@@ -102,7 +105,7 @@
             <p class="cloud-account-copy">Salve cópias privadas das suas campanhas para acessá-las em outros dispositivos.</p>
             ${errorMessage ? `<p class="cloud-account-error">${escapeHtml(errorMessage)}</p>` : ''}
             <div class="cloud-account-actions">
-                <button type="button" class="session-primary" onclick="saveActiveCampaignToCloud()" ${loading ? 'disabled' : ''}>${loading ? 'Aguarde...' : 'Salvar campanha atual'}</button>
+                <button type="button" class="session-primary" onclick="requestSaveActiveCampaignToCloud()" ${loading ? 'disabled' : ''}>${loading ? 'Aguarde...' : 'Salvar campanha atual'}</button>
                 <button type="button" class="session-secondary" onclick="refreshCloudAccount()" ${loading ? 'disabled' : ''}>Atualizar lista</button>
             </div>
             <div class="cloud-campaign-list">${renderCampaigns()}</div>
@@ -243,7 +246,69 @@
         return true;
     }
 
-    async function saveActiveCampaign() {
+    function closeCampaignNameDialog() {
+        root?.document?.getElementById('cloudCampaignNameDialog')?.remove();
+    }
+
+    function requestSaveActiveCampaign() {
+        if (!accountSession?.token || loading) return false;
+        const campaign = root?.campaignStore?.getActiveCampaign?.();
+        if (!campaign?.id) return false;
+        const known = campaigns.find(entry => String(entry.id) === String(campaign.id));
+        const suggestedName = String(known?.name || campaign.metadata?.name || '').trim();
+        const modal = root?.document?.createElement?.('div');
+        if (!modal) return false;
+        closeCampaignNameDialog();
+        modal.id = 'cloudCampaignNameDialog';
+        modal.className = 'session-overlay';
+        modal.innerHTML = `
+            <section class="session-dialog cloud-campaign-name-dialog" role="dialog" aria-modal="true" aria-labelledby="cloudCampaignNameTitle">
+                <h2 id="cloudCampaignNameTitle">Salvar campanha na nuvem</h2>
+                <p>Escolha o nome que identificará esta campanha nos seus dispositivos.</p>
+                <label class="collaboration-field">
+                    <span>Nome da campanha</span>
+                    <input id="cloudCampaignNameInput" class="session-input" maxlength="100" autocomplete="off" value="${escapeHtml(suggestedName)}" placeholder="Ex.: Caçada em Velen">
+                </label>
+                <p id="cloudCampaignNameError" class="cloud-account-error" hidden>Informe um nome para salvar a campanha.</p>
+                <div class="session-dialog-actions">
+                    <button type="button" class="session-secondary" onclick="closeCloudCampaignNameDialog()">Cancelar</button>
+                    <button type="button" class="session-primary" onclick="confirmSaveActiveCampaignToCloud()">Salvar</button>
+                </div>
+            </section>
+        `;
+        root.document.body.appendChild(modal);
+        const input = root.document.getElementById('cloudCampaignNameInput');
+        input?.focus?.();
+        input?.select?.();
+        input?.addEventListener?.('keydown', event => {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                void confirmSaveActiveCampaign();
+            }
+        });
+        return true;
+    }
+
+    async function confirmSaveActiveCampaign() {
+        const input = root?.document?.getElementById('cloudCampaignNameInput');
+        const name = String(input?.value || '').trim();
+        const error = root?.document?.getElementById('cloudCampaignNameError');
+        if (!name) {
+            if (error) error.hidden = false;
+            input?.focus?.();
+            return false;
+        }
+        const saved = await saveActiveCampaign(name);
+        if (saved) {
+            closeCampaignNameDialog();
+        } else if (error) {
+            error.textContent = errorMessage || 'Não foi possível salvar esta campanha agora.';
+            error.hidden = false;
+        }
+        return saved;
+    }
+
+    async function saveActiveCampaign(nameOverride = '') {
         if (!accountSession?.token || loading) return false;
         if (root?.collaborationSession?.isPlayer?.()) {
             errorMessage = 'Somente o Mestre pode salvar uma campanha na nuvem.';
@@ -253,6 +318,12 @@
         const campaign = root?.campaignStore?.checkpoint?.({ reason: 'cloud-campaign-save' })
             || root?.campaignStore?.getActiveCampaign?.();
         if (!campaign?.id) return false;
+        const name = String(nameOverride || campaign.metadata?.name || '').trim();
+        if (!name) return false;
+        const cloudCampaign = {
+            ...campaign,
+            metadata: { ...(campaign.metadata || {}), name }
+        };
         const known = campaigns.find(entry => String(entry.id) === String(campaign.id));
         loading = true;
         errorMessage = '';
@@ -261,14 +332,15 @@
             const result = await request(`/api/account/campaigns/${encodeURIComponent(campaign.id)}`, {
                 method: 'PUT',
                 body: {
-                    campaign,
+                    campaign: cloudCampaign,
+                    name,
                     expectedRevision: known?.revision ?? null
                 }
             });
             const index = campaigns.findIndex(entry => String(entry.id) === String(campaign.id));
             if (index >= 0) campaigns[index] = result.cloud;
             else campaigns.unshift(result.cloud);
-            root?.showToast?.(`☁️ ${campaign.metadata?.name || 'Campanha'} salva na nuvem.`);
+            root?.showToast?.(`☁️ ${name} salva na nuvem.`);
             return true;
         } catch (error) {
             errorMessage = error.code === 'cloud_campaign_conflict'
@@ -279,6 +351,42 @@
             loading = false;
             renderPanel();
         }
+    }
+
+    async function deleteCampaign(campaignId) {
+        if (!accountSession?.token || loading) return false;
+        loading = true;
+        errorMessage = '';
+        renderPanel();
+        try {
+            const result = await request(`/api/account/campaigns/${encodeURIComponent(campaignId)}`, {
+                method: 'DELETE'
+            });
+            campaigns = campaigns.filter(entry => String(entry.id) !== String(campaignId));
+            root?.showToast?.(`🗑️ ${result.cloud?.name || 'Campanha'} removida da nuvem.`);
+            return true;
+        } catch (error) {
+            errorMessage = error.message;
+            return false;
+        } finally {
+            loading = false;
+            renderPanel();
+        }
+    }
+
+    function requestDeleteCampaign(encodedId) {
+        const campaignId = decodeURIComponent(encodedId);
+        const campaign = campaigns.find(entry => String(entry.id) === String(campaignId));
+        const action = () => void deleteCampaign(campaignId);
+        if (root?.openSessionConfirm) {
+            root.openSessionConfirm({
+                title: 'Excluir campanha da nuvem?',
+                message: `${campaign?.name || 'Esta campanha'} será removida permanentemente da sua conta. A cópia local não será apagada.`,
+                confirmLabel: 'Excluir da nuvem',
+                danger: true,
+                onConfirm: action
+            });
+        } else if (root?.confirm?.(`Excluir ${campaign?.name || 'esta campanha'} da nuvem?`)) action();
     }
 
     async function loadCampaign(campaignId) {
@@ -334,7 +442,12 @@
         loginFromView,
         refreshAccount,
         logout,
+        requestSaveActiveCampaign,
+        confirmSaveActiveCampaign,
+        closeCampaignNameDialog,
         saveActiveCampaign,
+        deleteCampaign,
+        requestDeleteCampaign,
         loadCampaign,
         requestLoadCampaign,
         getState
@@ -345,7 +458,11 @@
     root.loginCloudAccount = loginFromView;
     root.refreshCloudAccount = refreshAccount;
     root.logoutCloudAccount = logout;
+    root.requestSaveActiveCampaignToCloud = requestSaveActiveCampaign;
+    root.confirmSaveActiveCampaignToCloud = confirmSaveActiveCampaign;
+    root.closeCloudCampaignNameDialog = closeCampaignNameDialog;
     root.saveActiveCampaignToCloud = saveActiveCampaign;
+    root.requestDeleteCloudCampaign = requestDeleteCampaign;
     root.requestLoadCloudCampaign = requestLoadCampaign;
     return api;
 });

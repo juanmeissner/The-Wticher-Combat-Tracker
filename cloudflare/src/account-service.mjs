@@ -245,11 +245,18 @@ async function saveCampaign(request, db, campaignId) {
     if (String(campaign.id || '') !== campaignId) {
         return errorResponse('campaign_id_mismatch', 'O identificador da campanha não corresponde ao endereço.');
     }
-    const snapshotJson = JSON.stringify(campaign);
+    const name = String(body.name ?? campaign.metadata?.name ?? '').trim();
+    if (!name || name.length > 100) {
+        return errorResponse('invalid_campaign_name', 'Informe um nome de campanha com até 100 caracteres.');
+    }
+    const storedCampaign = {
+        ...campaign,
+        metadata: { ...(campaign.metadata || {}), name }
+    };
+    const snapshotJson = JSON.stringify(storedCampaign);
     if (new TextEncoder().encode(snapshotJson).byteLength > MAX_BODY_BYTES) {
         return errorResponse('payload_too_large', 'A campanha ultrapassa o limite de 3 MB.', 413);
     }
-    const name = String(campaign.metadata?.name || 'Campanha sem nome').trim().slice(0, 100) || 'Campanha sem nome';
     const existing = await db.prepare(`
         SELECT id, revision, created_at FROM cloud_campaigns
         WHERE owner_user_id = ? AND id = ?
@@ -287,6 +294,26 @@ async function saveCampaign(request, db, campaignId) {
     }, existing ? 200 : 201);
 }
 
+async function deleteCampaign(request, db, campaignId) {
+    const auth = await requireAuthentication(request, db);
+    if (auth instanceof Response) return auth;
+    const existing = await db.prepare(`
+        SELECT id, name, revision, created_at, updated_at
+        FROM cloud_campaigns
+        WHERE owner_user_id = ? AND id = ?
+    `).bind(auth.user.id, campaignId).first();
+    if (!existing) return errorResponse('campaign_not_found', 'Campanha online não encontrada.', 404);
+
+    const removed = await db.prepare(`
+        DELETE FROM cloud_campaigns
+        WHERE owner_user_id = ? AND id = ?
+    `).bind(auth.user.id, campaignId).run();
+    if (Number(removed.meta?.changes) !== 1) {
+        return errorResponse('cloud_campaign_delete_failed', 'Não foi possível excluir esta campanha.', 409);
+    }
+    return jsonResponse({ ok: true, cloud: campaignSummary(existing) });
+}
+
 export function isAccountRequest(url) {
     return url.pathname === '/api/account/register'
         || url.pathname === '/api/account/login'
@@ -309,6 +336,7 @@ export async function handleAccountRequest(request, db, url = new URL(request.ur
             const campaignId = decodeURIComponent(campaignMatch[1]);
             if (request.method === 'GET') return getCampaign(request, db, campaignId);
             if (request.method === 'PUT') return saveCampaign(request, db, campaignId);
+            if (request.method === 'DELETE') return deleteCampaign(request, db, campaignId);
         }
         return errorResponse('not_found', 'Rota de conta não encontrada.', 404);
     } catch (error) {

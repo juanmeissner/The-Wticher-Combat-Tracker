@@ -80,12 +80,13 @@ revogável do dispositivo; a senha da sala não é persistida.
 
 1. Fora de uma sala, abra **⋯ → Sala → Conta e campanhas permanentes**.
 2. Crie uma conta com nome exibido, usuário e senha de pelo menos oito caracteres.
-3. Toque em **Salvar campanha atual** e confira a versão criada na lista.
+3. Toque em **Salvar campanha atual**, informe um nome e confira a versão criada na lista.
 4. Em outro dispositivo, entre com a mesma conta e toque em **Carregar**.
 5. Confirme que outra conta não consegue listar nem abrir essa campanha.
 6. Altere a campanha nos dois dispositivos e confirme que uma versão antiga gera
    conflito, sem sobrescrever silenciosamente a versão mais recente.
 7. Saia da conta e confirme que a sessão desaparece, mas a campanha local continua disponível.
+8. Use **Excluir**, confirme a remoção da campanha na nuvem e confira que a cópia local continua disponível.
 
 ## Fluxo de teste entre dois dispositivos
 
