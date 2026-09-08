@@ -1087,6 +1087,56 @@ function clearSessionHistory() {
     });
 }
 
+function closeWorldHub() {
+    document.getElementById('worldHubModal')?.remove();
+}
+
+function openWorldHub() {
+    closeWorldHub();
+
+    if (window.collaborationSession?.isPlayerAccessEnded?.()) {
+        showToast('A sala foi encerrada. Volte ao modo offline ou procure outra sala.');
+        return;
+    }
+
+    const playerMode = window.collaborationSession?.isPlayer?.() === true;
+    const modal = document.createElement('div');
+    modal.id = 'worldHubModal';
+    modal.className = 'session-overlay';
+    modal.addEventListener('click', event => {
+        if (event.target === modal) closeWorldHub();
+    });
+    modal.innerHTML = `
+        <section class="session-dialog world-hub-dialog" role="dialog" aria-modal="true" aria-labelledby="worldHubTitle">
+            <div class="session-dialog-header">
+                <div>
+                    <small class="world-hub-kicker">MUNDO DA CAMPANHA</small>
+                    <h2 id="worldHubTitle">Atlas e locais</h2>
+                </div>
+                <button type="button" class="session-close" onclick="closeWorldHub()" aria-label="Fechar">×</button>
+            </div>
+            <p class="world-hub-intro">Este será o acesso central para local atual, atlas político, cidades, NPCs, comerciantes e pontos personalizados da campanha.</p>
+            <div class="world-hub-preview" aria-label="Estrutura planejada do Mundo">
+                <span class="world-hub-preview-icon" aria-hidden="true">🌍</span>
+                <div>
+                    <strong>Fundação do Mundo é a próxima etapa</strong>
+                    <small>${playerMode
+                        ? 'Você poderá consultar as informações do mundo compartilhadas pelo mestre.'
+                        : 'O atlas será construído com locais hierárquicos e situação histórica por ano.'}</small>
+                </div>
+            </div>
+            <div class="world-hub-sections" aria-hidden="true">
+                <span>📍 Local atual</span>
+                <span>🗺️ Atlas</span>
+                <span>🧑 NPCs</span>
+                <span>🛒 Comerciantes</span>
+            </div>
+            <button type="button" class="session-secondary session-full" onclick="closeWorldHub()">Fechar</button>
+        </section>
+    `;
+    document.body.appendChild(modal);
+}
+
 function closeSessionTools() {
     document.getElementById('sessionToolsModal')?.remove();
 }
@@ -2204,6 +2254,8 @@ window.cancelSessionConfirm = cancelSessionConfirm;
 window.openSessionConfirm = openSessionConfirm;
 window.undoLastAction = undoLastAction;
 window.openSessionTools = openSessionTools;
+window.openWorldHub = openWorldHub;
+window.closeWorldHub = closeWorldHub;
 window.closeSessionTools = closeSessionTools;
 window.renderSessionToolsView = renderSessionToolsView;
 window.refreshSessionStatus = refreshSessionStatus;

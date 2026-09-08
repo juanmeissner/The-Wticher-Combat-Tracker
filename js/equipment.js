@@ -1827,7 +1827,6 @@ function renderMonsterSkillsPanel(combatant) {
     if (!combatant || combatant.type !== 'monster') return '';
 
     const skills = ensureMonsterSkills(combatant);
-    if (!skills.length) return '';
 
     const expanded = expandedMonsterSkillPanels.has(String(combatant.id));
     return `
@@ -1837,14 +1836,17 @@ function renderMonsterSkillsPanel(combatant) {
                 <small>${skills.length} ${skills.length === 1 ? 'perícia' : 'perícias'}</small>
             </button>
             ${expanded ? `
-                <div class="monster-skill-grid">
-                    ${skills.map(skill => `
-                        <div class="monster-skill-card">
-                            <span>${escapeEquipmentHtml(skill.name)}</span>
-                            ${skill.value ? `<strong>${escapeEquipmentHtml(skill.value)}</strong>` : ''}
-                        </div>
-                    `).join('')}
-                </div>
+                ${window.renderCombatantInitiativeAction?.(combatant) || ''}
+                ${skills.length ? `
+                    <div class="monster-skill-grid">
+                        ${skills.map(skill => `
+                            <div class="monster-skill-card">
+                                <span>${escapeEquipmentHtml(skill.name)}</span>
+                                ${skill.value ? `<strong>${escapeEquipmentHtml(skill.value)}</strong>` : ''}
+                            </div>
+                        `).join('')}
+                    </div>
+                ` : ''}
             ` : ''}
         </section>
     `;

@@ -19,6 +19,7 @@ const DEFAULT_APP_PREFERENCES = {
         abilities: 'manual',
         items: 'manual',
         skills: 'manual',
+        initiative: 'manual',
         negativeConditions: 'auto'
     }
 };
@@ -2148,6 +2149,7 @@ function renderPreferencesView(dialog) {
         ${renderRollMode('abilities', 'Magias e sinais', 'Padrão: perguntar o resultado informado na mesa.')}
         ${renderRollMode('items', 'Itens', 'Padrão: perguntar o resultado informado na mesa.')}
         ${renderRollMode('skills', 'Testes de perícia', 'Manual usa o d20 rolado na mesa; automática realiza a rolagem no aplicativo.', 'Manual')}
+        ${renderRollMode('initiative', 'Iniciativa', 'Manual solicita o resultado do d20; automática rola 1d20. O bônus de Destreza é somado nos dois modos.', 'Manual')}
         ${renderRollMode('negativeConditions', 'Status negativos', 'Padrão: rolagem automática para efeitos recorrentes.')}
         <button type="button" class="session-secondary session-full enhancement-top-gap" onclick="renderSessionToolsView('menu')">Voltar</button>
     `;

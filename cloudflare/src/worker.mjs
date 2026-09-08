@@ -455,6 +455,31 @@ export function applyResourceCommand(campaign, command, member) {
     return { applied: true, before, after };
 }
 
+export function applyInitiativeRoll(campaign, command, member) {
+    if (command?.type !== 'roll.publish' || command?.payload?.testKind !== 'initiative') {
+        return { applied: false, reason: 'unsupported' };
+    }
+    if (member.role !== 'master' && String(command.targetId) !== String(member.participantId)) {
+        return { applied: false, reason: 'forbidden' };
+    }
+
+    const naturalRoll = Math.trunc(Number(command.payload?.naturalRoll));
+    const dexterityBonus = Math.trunc(Number(command.payload?.dexterityBonus) || 0);
+    const finalResult = Math.trunc(Number(command.payload?.finalResult));
+    if (naturalRoll < 1 || naturalRoll > 20 || finalResult !== naturalRoll + dexterityBonus) {
+        return { applied: false, reason: 'invalid-initiative' };
+    }
+
+    const target = campaign?.state?.combat?.combatants?.find(entry =>
+        String(entry?.id || '') === String(command.targetId || ''));
+    if (!target) return { applied: false, reason: 'participant-not-found' };
+
+    const before = Number(target.initiative) || 0;
+    target.initiative = finalResult;
+    replaceCompatibilityEntity(campaign, ['dnd_combat_session', 'dnd_players'], target.id, target);
+    return { applied: true, before, after: finalResult };
+}
+
 export class RoomDirectory {
     constructor(ctx, env = {}) {
         this.ctx = ctx;
@@ -1048,6 +1073,14 @@ export class CampaignRoom {
                 const target = this.room.campaign?.state?.combat?.combatants?.find(entry =>
                     String(entry?.id || '') === String(member.participantId));
                 if (target) {
+                    if (command.payload?.testKind === 'initiative') {
+                        const initiativeResult = applyInitiativeRoll(this.room.campaign, command, member);
+                        if (!initiativeResult.applied) {
+                            this.send(socket, { type: 'command.rejected', commandId: command.id, reason: initiativeResult.reason });
+                            return;
+                        }
+                        resourceChanged = true;
+                    }
                     const luckDelta = Math.min(1, Math.max(0, Math.trunc(Number(command.payload?.luckDiceGained) || 0)));
                     const adrenalineDelta = Math.min(3, Math.max(0, Math.trunc(Number(command.payload?.adrenalineGained) || 0)));
                     if (luckDelta || adrenalineDelta) {

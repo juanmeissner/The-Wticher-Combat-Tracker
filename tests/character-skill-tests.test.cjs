@@ -13,7 +13,9 @@ const sources = [
 const indexSource = fs.readFileSync(path.join(projectRoot, 'index.html'), 'utf8');
 const serviceWorkerSource = fs.readFileSync(path.join(projectRoot, 'js', 'service-worker.js'), 'utf8');
 const equipmentCss = fs.readFileSync(path.join(projectRoot, 'equipment.css'), 'utf8');
+const equipmentSource = fs.readFileSync(path.join(projectRoot, 'js', 'equipment.js'), 'utf8');
 const combatRenderSource = fs.readFileSync(path.join(projectRoot, 'js', 'combat', 'combat-render.js'), 'utf8');
+const sessionSource = fs.readFileSync(path.join(projectRoot, 'js', 'session-features.js'), 'utf8');
 
 const context = vm.createContext({ console, encodeURIComponent, decodeURIComponent });
 vm.runInContext('var window = globalThis; var combatants = [];', context);
@@ -51,8 +53,13 @@ context.toggleCharacterProfessionalSkillsPanel('7');
 assert.match(context.renderCharacterSkillsPanel(combatant), /Percepção/);
 assert.match(context.renderCharacterSkillsPanel(combatant), /1 ativas/);
 assert.match(context.renderCharacterProfessionalSkillsPanel(combatant), new RegExp(professionalSkill.name));
-assert.equal(context.renderCharacterSkillsPanel({ ...combatant, creationMode: 'quick' }), '');
+assert.match(
+    context.renderCharacterSkillsPanel({ ...combatant, creationMode: 'quick' }),
+    /Iniciativa/,
+    'Fichas rápidas também devem poder definir iniciativa pelo painel de perícias.'
+);
 assert.equal(context.renderCharacterSkillsPanel({ ...combatant, type: 'monster' }), '');
+assert.match(context.renderCombatantInitiativeAction({ ...combatant, type: 'monster' }), /Iniciativa/);
 assert.match(context.renderCharacterResourcesPanel(combatant), /🎲 2 · ⚡ 1/);
 assert.match(
     context.renderCharacterResourcesPanel({ ...combatant, creationMode: 'quick' }),
@@ -119,6 +126,49 @@ assert.equal(context.adjustCharacterCombatResource('7', 'luckDice', 1), true);
 assert.equal(combatant.progression.luckDice, 3);
 assert.match(historyEntries[0].label, /Dado da Sorte atualizado 2 → 3/);
 assert.match(historyEntries[0].detail, /Ajuste manual: \+1/);
+historyEntries.length = 0;
+
+const initiativeCombatant = {
+    ...combatant,
+    id: 10,
+    name: 'Ciri',
+    initiative: 4,
+    attributes: { dexterity: { invested: 6 } }
+};
+context.__initiativeCombatant = initiativeCombatant;
+vm.runInContext('combatants.push(__initiativeCombatant)', context);
+formElements.combatantInitiativeNaturalRoll = { value: '14', focus() {} };
+context.appPreferences = { rollModes: { initiative: 'manual' } };
+context.sortCombatants = () => context.combatants?.sort?.((left, right) => right.initiative - left.initiative);
+const initiativePublications = [];
+context.collaborationSession = {
+    isOnlineRoom: () => true,
+    isPlayer: () => true,
+    getSession: () => ({ linkedParticipantId: '10' })
+};
+context.collaborationRealtime = {
+    publishRoll: (targetId, payload) => initiativePublications.push({ targetId, payload })
+};
+const manualInitiative = context.executeCombatantInitiativeTest('10');
+assert.equal(manualInitiative.naturalRoll, 14);
+assert.equal(manualInitiative.bonus, 3);
+assert.equal(manualInitiative.total, 17);
+assert.equal(initiativeCombatant.initiative, 17);
+assert.equal(initiativePublications.length, 1);
+assert.equal(initiativePublications[0].targetId, '10');
+assert.equal(initiativePublications[0].payload.testKind, 'initiative');
+assert.equal(initiativePublications[0].payload.finalResult, 17);
+assert.match(historyEntries[0].detail, /Bônus de Destreza: \+3/);
+historyEntries.length = 0;
+delete context.collaborationSession;
+delete context.collaborationRealtime;
+
+context.appPreferences.rollModes.initiative = 'auto';
+const automaticInitiative = context.executeCombatantInitiativeTest('10', () => 0.999);
+assert.equal(automaticInitiative.naturalRoll, 20);
+assert.equal(automaticInitiative.total, 23);
+assert.equal(initiativeCombatant.initiative, 23);
+context.appPreferences.rollModes.initiative = 'manual';
 historyEntries.length = 0;
 
 const professionalCritical = context.executeCharacterSkillTest(
@@ -220,9 +270,14 @@ assert.match(
     'Dado da Sorte e Adrenalina devem ocupar linhas completas no mobile.'
 );
 assert.match(equipmentCss, /character-skill-test-dialog/);
+assert.match(equipmentCss, /combat-initiative-card/);
+assert.match(equipmentSource, /renderCombatantInitiativeAction/);
 assert.match(equipmentCss, /character-professional-test-button/);
 assert.match(equipmentCss, /character-professional-reminder-tags/);
 assert.match(equipmentCss, /character-skill-context-options/);
 assert.match(combatRenderSource, /renderCharacterResourcesPanel/);
+assert.match(indexSource, /onclick="openWorldHub\(\)"/);
+assert.doesNotMatch(indexSource, /onclick="applyInitiative\(\)"/);
+assert.match(sessionSource, /function openWorldHub\(\)/);
 
 console.log('✓ Painéis de ficha completa, testes e recompensas de crítico validados.');

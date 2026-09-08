@@ -749,6 +749,78 @@ body {
     color: #fff;
 }
 
+.world-hub-dialog {
+    max-width: 520px;
+}
+
+.world-hub-kicker {
+    display: block;
+    margin-bottom: 4px;
+    color: #38bdf8;
+    font-size: .68rem;
+    font-weight: 900;
+    letter-spacing: .12em;
+}
+
+.world-hub-intro {
+    margin-bottom: 14px !important;
+}
+
+.world-hub-preview {
+    display: grid;
+    grid-template-columns: 52px minmax(0, 1fr);
+    align-items: center;
+    gap: 12px;
+    padding: 14px;
+    border: 1px solid rgba(14, 165, 233, .52);
+    border-radius: 14px;
+    background: linear-gradient(135deg, rgba(8, 47, 73, .84), rgba(15, 23, 42, .88));
+}
+
+.world-hub-preview-icon {
+    display: grid;
+    width: 52px;
+    height: 52px;
+    place-items: center;
+    border-radius: 14px;
+    background: rgba(2, 132, 199, .18);
+    font-size: 1.65rem;
+}
+
+.world-hub-preview strong,
+.world-hub-preview small {
+    display: block;
+}
+
+.world-hub-preview strong {
+    color: #e0f2fe;
+    font-size: .9rem;
+}
+
+.world-hub-preview small {
+    margin-top: 4px;
+    color: #a5d8f3;
+    font-size: .72rem;
+    line-height: 1.4;
+}
+
+.world-hub-sections {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    margin: 12px 0 16px;
+}
+
+.world-hub-sections span {
+    padding: 10px;
+    border: 1px solid rgba(71, 85, 105, .72);
+    border-radius: 10px;
+    background: rgba(30, 41, 59, .72);
+    color: #cbd5e1;
+    font-size: .72rem;
+    font-weight: 750;
+}
+
 .session-primary {
     background: #0284c7;
 }

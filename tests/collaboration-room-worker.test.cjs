@@ -170,6 +170,36 @@ test('comando de recurso respeita o personagem vinculado', async () => {
     assert.equal(forbidden.reason, 'forbidden');
 });
 
+test('rolagem de iniciativa do jogador atualiza somente o personagem vinculado', async () => {
+    const moduleUrl = pathToFileURL(path.resolve(__dirname, '..', 'cloudflare', 'src', 'worker.mjs')).href;
+    const worker = await import(moduleUrl);
+    const campaign = campaignFixture();
+    const member = { role: 'player', participantId: 'geralt' };
+    const applied = worker.applyInitiativeRoll(campaign, {
+        type: 'roll.publish',
+        targetId: 'geralt',
+        payload: { testKind: 'initiative', naturalRoll: 17, dexterityBonus: 3, finalResult: 20 }
+    }, member);
+    assert.equal(applied.applied, true);
+    assert.equal(applied.before, 0);
+    assert.equal(applied.after, 20);
+    assert.equal(campaign.state.combat.combatants.find(entry => entry.id === 'geralt').initiative, 20);
+
+    const forbidden = worker.applyInitiativeRoll(campaign, {
+        type: 'roll.publish',
+        targetId: 'ciri',
+        payload: { testKind: 'initiative', naturalRoll: 18, dexterityBonus: 2, finalResult: 20 }
+    }, member);
+    assert.equal(forbidden.reason, 'forbidden');
+
+    const inconsistent = worker.applyInitiativeRoll(campaign, {
+        type: 'roll.publish',
+        targetId: 'geralt',
+        payload: { testKind: 'initiative', naturalRoll: 18, dexterityBonus: 2, finalResult: 99 }
+    }, member);
+    assert.equal(inconsistent.reason, 'invalid-initiative');
+});
+
 test('alterações permanentes substituem somente a entidade autorizada', async () => {
     const moduleUrl = pathToFileURL(path.resolve(__dirname, '..', 'cloudflare', 'src', 'worker.mjs')).href;
     const worker = await import(moduleUrl);

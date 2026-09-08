@@ -51,6 +51,53 @@
             .filter(skill => skill.breakdown && skill.breakdown.total !== 0);
     }
 
+    function getInitiativeRollMode() {
+        if (typeof appPreferences !== 'undefined') {
+            return appPreferences.rollModes?.initiative || 'manual';
+        }
+
+        try {
+            return JSON.parse(localStorage.getItem('dnd_app_preferences') || '{}').rollModes?.initiative || 'manual';
+        } catch {
+            return 'manual';
+        }
+    }
+
+    function getCombatantInitiativeBonus(combatant) {
+        const explicitBonus = Number(combatant?.initiativeBonus);
+        if (Number.isFinite(explicitBonus)) return Math.trunc(explicitBonus);
+
+        if (isFullCharacter(combatant)) {
+            return Number(global.characterSheetModel?.getCharacterAttributeModifier?.(
+                'dexterity',
+                combatant.attributes
+            )) || 0;
+        }
+
+        return 0;
+    }
+
+    function renderCombatantInitiativeAction(combatant) {
+        if (!combatant || !['player', 'monster'].includes(combatant.type)) return '';
+
+        const encodedId = encodeURIComponent(String(combatant.id));
+        const bonus = getCombatantInitiativeBonus(combatant);
+        const current = Number(combatant.initiative) || 0;
+        const mode = getInitiativeRollMode();
+        const bonusLabel = bonus ? ` ${bonus >= 0 ? '+' : '−'} ${Math.abs(bonus)} DES` : '';
+
+        return `
+            <button type="button" class="combat-initiative-card" onclick="event.stopPropagation(); openCombatantInitiativeTest('${encodedId}')" title="Definir a iniciativa de ${escapeSkillHtml(combatant.name)}">
+                <span class="combat-initiative-icon" aria-hidden="true">🎲</span>
+                <span class="combat-initiative-copy">
+                    <strong>Iniciativa</strong>
+                    <small>1d20${bonusLabel} · Atual ${current} · ${mode === 'auto' ? 'Automática' : 'Manual'}</small>
+                </span>
+                <span class="combat-initiative-action">ROLAR</span>
+            </button>
+        `;
+    }
+
     const PROFESSIONAL_REMINDER_TRIGGER_LABELS = Object.freeze({
         'low-hp': 'PV baixo',
         'potion-active': 'Poção/Toxicidade',
@@ -288,8 +335,9 @@
     }
 
     function renderCharacterSkillsPanel(combatant) {
+        if (!combatant || combatant.type !== 'player') return '';
+
         const skills = getCharacterSkillEntries(combatant);
-        if (!skills.length) return '';
 
         const key = String(combatant.id);
         const encodedId = encodeURIComponent(key);
@@ -302,6 +350,7 @@
                     <small>${skills.length} ativas</small>
                 </button>
                 ${expanded ? `
+                    ${renderCombatantInitiativeAction(combatant)}
                     <div class="character-skill-grid">
                         ${skills.map(skill => `
                             <button type="button" class="character-skill-card" onclick="event.stopPropagation(); openCharacterSkillTest('${encodedId}', '${encodeURIComponent(skill.id)}')" title="${escapeSkillHtml(getSkillBonusOriginSummary(skill.breakdown))}">
@@ -317,6 +366,145 @@
                 ` : ''}
             </section>
         `;
+    }
+
+    function closeCombatantInitiativeTest() {
+        document.getElementById('combatantInitiativeModal')?.remove();
+    }
+
+    function openCombatantInitiativeTest(encodedCombatantId) {
+        closeCombatantInitiativeTest();
+
+        const combatantId = decodeURIComponent(String(encodedCombatantId));
+        const combatant = typeof combatants !== 'undefined'
+            ? combatants.find(entry => String(entry.id) === combatantId)
+            : null;
+        if (!combatant) {
+            global.showToast?.('Não foi possível localizar este participante.');
+            return null;
+        }
+
+        const playerSession = global.collaborationSession?.getSession?.();
+        if (
+            global.collaborationSession?.isPlayer?.()
+            && String(playerSession?.linkedParticipantId || '') !== combatantId
+        ) {
+            global.showToast?.('🔒 Você pode definir a iniciativa somente do seu personagem.');
+            return null;
+        }
+
+        if (getInitiativeRollMode() === 'auto') {
+            return executeCombatantInitiativeTest(encodedCombatantId);
+        }
+
+        const bonus = getCombatantInitiativeBonus(combatant);
+        const modal = document.createElement('div');
+        modal.id = 'combatantInitiativeModal';
+        modal.className = 'session-overlay';
+        modal.addEventListener('click', event => {
+            if (event.target === modal) closeCombatantInitiativeTest();
+        });
+        modal.innerHTML = `
+            <section class="session-dialog combat-initiative-dialog" role="dialog" aria-modal="true" aria-labelledby="combatantInitiativeTitle">
+                <div class="session-dialog-header">
+                    <div>
+                        <small class="character-skill-test-kicker">ORDEM DE COMBATE</small>
+                        <h2 id="combatantInitiativeTitle">Iniciativa</h2>
+                    </div>
+                    <button type="button" class="session-close" onclick="closeCombatantInitiativeTest()" aria-label="Fechar">×</button>
+                </div>
+                <p class="character-skill-test-actor">${escapeSkillHtml(combatant.name)}</p>
+                <label class="character-skill-field">
+                    <span>Resultado natural do d20</span>
+                    <input id="combatantInitiativeNaturalRoll" type="number" inputmode="numeric" min="1" max="20" placeholder="1 a 20">
+                </label>
+                <div class="character-skill-formula">1d20 ${bonus >= 0 ? '+' : '−'} ${Math.abs(bonus)} de Destreza</div>
+                <p class="combat-initiative-help">Ao confirmar, a iniciativa será atualizada e o Combat Tracker reorganizará todos os participantes.</p>
+                <div class="session-dialog-actions">
+                    <button type="button" class="session-secondary" onclick="closeCombatantInitiativeTest()">Cancelar</button>
+                    <button type="button" class="session-primary" onclick="executeCombatantInitiativeTest('${encodedCombatantId}')">Aplicar iniciativa</button>
+                </div>
+            </section>
+        `;
+
+        document.body.appendChild(modal);
+        document.getElementById('combatantInitiativeNaturalRoll')?.focus();
+        return modal;
+    }
+
+    function executeCombatantInitiativeTest(encodedCombatantId, random = Math.random) {
+        const combatantId = decodeURIComponent(String(encodedCombatantId));
+        const combatant = typeof combatants !== 'undefined'
+            ? combatants.find(entry => String(entry.id) === combatantId)
+            : null;
+        if (!combatant) return null;
+
+        const playerSession = global.collaborationSession?.getSession?.();
+        if (
+            global.collaborationSession?.isPlayer?.()
+            && String(playerSession?.linkedParticipantId || '') !== combatantId
+        ) {
+            global.showToast?.('🔒 Você pode definir a iniciativa somente do seu personagem.');
+            return null;
+        }
+
+        const rollMode = getInitiativeRollMode();
+        const input = document.getElementById('combatantInitiativeNaturalRoll');
+        const naturalRoll = rollMode === 'auto'
+            ? Math.floor(random() * 20) + 1
+            : Number(input?.value);
+
+        if (rollMode === 'manual' && (!input?.value?.trim() || naturalRoll < 1 || naturalRoll > 20)) {
+            global.showToast?.('Informe um resultado natural entre 1 e 20.');
+            input?.focus();
+            return null;
+        }
+
+        const bonus = getCombatantInitiativeBonus(combatant);
+        const previous = Number(combatant.initiative) || 0;
+        const total = naturalRoll + bonus;
+        const applyChange = () => {
+            combatant.initiative = total;
+            global.savePlayersToStorage?.();
+            global.sortCombatants?.();
+            global.renderList?.(true);
+        };
+        const label = `${combatant.name}: iniciativa ${previous} → ${total}`;
+        const detail = [
+            `Dado: ${naturalRoll}`,
+            `Bônus de Destreza: ${bonus >= 0 ? '+' : ''}${bonus}`,
+            `Iniciativa final: ${total}`,
+            `Modo: ${rollMode === 'auto' ? 'Automático' : 'Manual'}`
+        ].join('\n');
+        const metadata = {
+            type: 'participant',
+            source: { id: combatant.id, name: combatant.name },
+            target: { id: combatant.id, name: combatant.name },
+            participants: [{ id: combatant.id, name: combatant.name }],
+            combat: { action: 'initiative', naturalRoll, dexterityBonus: bonus, total, previous }
+        };
+
+        closeCombatantInitiativeTest();
+        if (typeof global.trackCombatAction === 'function') {
+            global.trackCombatAction(label, applyChange, detail, metadata);
+        } else {
+            applyChange();
+            global.addCombatHistoryEntry?.(label, detail, metadata);
+        }
+
+        if (global.collaborationSession?.isOnlineRoom?.() && global.collaborationSession?.isPlayer?.()) {
+            global.collaborationRealtime?.publishRoll?.(String(combatant.id), {
+                testKind: 'initiative',
+                skillName: 'Iniciativa',
+                naturalRoll,
+                dexterityBonus: bonus,
+                previousInitiative: previous,
+                finalResult: total
+            });
+        }
+
+        global.showToast?.(`🎲 ${combatant.name}: ${naturalRoll}${bonus ? ` ${bonus >= 0 ? '+' : '−'} ${Math.abs(bonus)}` : ''} = ${total} de iniciativa.`);
+        return { combatantId, naturalRoll, bonus, total, previous, mode: rollMode };
     }
 
     function renderCharacterProfessionalSkillsPanel(combatant) {
@@ -809,12 +997,18 @@
     global.characterSkillTests = Object.freeze({
         getCharacterSkillEntries,
         getCharacterProfessionalSkillEntries,
+        getCombatantInitiativeBonus,
+        getInitiativeRollMode,
         getProfessionalReminderPresentation,
         getSkillBonusOriginSummary,
         applyCharacterSkillTestRewards,
         renderCharacterResourcesPanel,
         adjustCharacterCombatResource
     });
+    global.renderCombatantInitiativeAction = renderCombatantInitiativeAction;
+    global.openCombatantInitiativeTest = openCombatantInitiativeTest;
+    global.closeCombatantInitiativeTest = closeCombatantInitiativeTest;
+    global.executeCombatantInitiativeTest = executeCombatantInitiativeTest;
     global.toggleCharacterResourcesPanel = toggleCharacterResourcesPanel;
     global.renderCharacterResourcesPanel = renderCharacterResourcesPanel;
     global.adjustCharacterCombatResource = adjustCharacterCombatResource;
