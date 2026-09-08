@@ -2,7 +2,7 @@
     'use strict';
 
     const CHARACTER_SHEET_SCHEMA_VERSION = 1;
-    const CHARACTER_RULES_VERSION = 12;
+    const CHARACTER_RULES_VERSION = 13;
     const CHARACTER_LEVEL_MINIMUM = 1;
     const CHARACTER_ATTRIBUTE_BASE_VALUE = 10;
     const CHARACTER_SKILL_INVESTMENT_CAP = 4;
@@ -580,6 +580,121 @@
             ])
         })
     ]);
+
+    const CHARACTER_SPECIALIZATION_SKILL_RECOMMENDATIONS = Object.freeze({
+        grey_roads_minstrel: Object.freeze({
+            summary: 'Viagem, leitura do povo e atuação em tavernas e estradas.',
+            skillIds: Object.freeze(['fine_arts', 'streetwise', 'persuasion', 'human_perception', 'survival', 'perception', 'history_geography', 'riding'])
+        }),
+        battlefield_herald: Object.freeze({
+            summary: 'Liderança, moral do grupo e leitura tática do campo de batalha.',
+            skillIds: Object.freeze(['leadership', 'courage', 'tactics', 'persuasion', 'intimidation', 'perception', 'first_aid', 'resist_coercion'])
+        }),
+        golden_court_tongue: Object.freeze({
+            summary: 'Influência social, intriga e domínio dos ambientes nobres.',
+            skillIds: Object.freeze(['social_etiquette', 'persuasion', 'deceit', 'human_perception', 'appearance_style', 'seduction', 'history_geography', 'leadership'])
+        }),
+        artisan: Object.freeze({
+            summary: 'Produção, comércio e análise técnica de materiais e preparados.',
+            skillIds: Object.freeze(['crafting', 'business', 'alchemy', 'education', 'investigation', 'perception', 'physique', 'first_aid'])
+        }),
+        professional_assassin: Object.freeze({
+            summary: 'Infiltração, execução precisa e retirada sem deixar rastros.',
+            skillIds: Object.freeze(['stealth', 'short_blades', 'reflex_dodge', 'acrobatics', 'perception', 'hunting', 'disguise', 'alchemy'])
+        }),
+        professional_thief: Object.freeze({
+            summary: 'Infiltração, furto, abertura de acessos e fuga improvisada.',
+            skillIds: Object.freeze(['lockpicking', 'stealth', 'sleight_of_hand', 'acrobatics', 'streetwise', 'perception', 'traps', 'forgery'])
+        }),
+        brawler: Object.freeze({
+            summary: 'Combate próximo, resistência física e intimidação nas ruas.',
+            skillIds: Object.freeze(['brawl', 'physique', 'tolerance', 'athletics', 'reflex_dodge', 'courage', 'intimidation', 'resist_coercion'])
+        }),
+        duelist: Object.freeze({
+            summary: 'Controle de distância, leitura do oponente e técnica com lâminas.',
+            skillIds: Object.freeze(['fencing', 'reflex_dodge', 'acrobatics', 'athletics', 'courage', 'human_perception', 'tactics', 'two_handed'])
+        }),
+        doctor: Object.freeze({
+            summary: 'Diagnóstico, tratamento, cirurgia e preparação de remédios.',
+            skillIds: Object.freeze(['first_aid', 'education', 'alchemy', 'investigation', 'perception', 'human_perception', 'tolerance', 'crafting'])
+        }),
+        mage: Object.freeze({
+            summary: 'Conjuração, defesa arcana e investigação de fenômenos mágicos.',
+            skillIds: Object.freeze(['spellcasting', 'resist_magic', 'education', 'investigation', 'deduction', 'perception', 'alchemy', 'teaching'])
+        }),
+        man_at_arms: Object.freeze({
+            summary: 'Versatilidade marcial com diferentes armas e consciência tática.',
+            skillIds: Object.freeze(['fencing', 'block', 'staff_spear', 'archery', 'athletics', 'physique', 'tactics', 'first_aid'])
+        }),
+        swordsman: Object.freeze({
+            summary: 'Domínio da espada, defesa ativa e exploração de brechas.',
+            skillIds: Object.freeze(['fencing', 'block', 'reflex_dodge', 'athletics', 'physique', 'courage', 'tactics', 'two_handed'])
+        }),
+        archer: Object.freeze({
+            summary: 'Precisão à distância, posicionamento e sobrevivência em campo.',
+            skillIds: Object.freeze(['archery', 'reflex_dodge', 'traps', 'hunting', 'deduction', 'perception', 'survival', 'tactics'])
+        }),
+        vanguard: Object.freeze({
+            summary: 'Defesa, resistência e controle da linha de frente.',
+            skillIds: Object.freeze(['physique', 'tolerance', 'block', 'brawl', 'courage', 'resist_coercion', 'tactics', 'riding'])
+        }),
+        merchant: Object.freeze({
+            summary: 'Negociação, contatos, leitura de pessoas e rotas comerciais.',
+            skillIds: Object.freeze(['business', 'persuasion', 'human_perception', 'streetwise', 'social_etiquette', 'deduction', 'riding', 'forgery'])
+        }),
+        melitele: Object.freeze({
+            summary: 'Cura, proteção e aconselhamento guiados por Melitele.',
+            skillIds: Object.freeze(['first_aid', 'human_perception', 'persuasion', 'education', 'spellcasting', 'nature', 'teaching', 'resist_magic'])
+        }),
+        druid: Object.freeze({
+            summary: 'Magia natural, sobrevivência e vínculo com plantas e animais.',
+            skillIds: Object.freeze(['nature', 'survival', 'alchemy', 'spellcasting', 'hunting', 'perception', 'monster_lore', 'resist_magic'])
+        }),
+        freya: Object.freeze({
+            summary: 'Presságios, purificação, liderança e proteção da comunidade.',
+            skillIds: Object.freeze(['spellcasting', 'first_aid', 'nature', 'survival', 'courage', 'leadership', 'resist_magic', 'perception'])
+        }),
+        eternal_fire: Object.freeze({
+            summary: 'Autoridade, fervor e perseguição de ameaças mágicas.',
+            skillIds: Object.freeze(['intimidation', 'persuasion', 'leadership', 'courage', 'spellcasting', 'resist_magic', 'social_etiquette', 'monster_lore'])
+        }),
+        noble: Object.freeze({
+            summary: 'Influência, comando, etiqueta e tradição cavaleiresca.',
+            skillIds: Object.freeze(['social_etiquette', 'leadership', 'persuasion', 'human_perception', 'history_geography', 'riding', 'resist_coercion', 'appearance_style'])
+        }),
+        wolf_school: Object.freeze({
+            summary: 'Equilíbrio entre espada, Sinais e preparação contra monstros.',
+            skillIds: Object.freeze(['fencing', 'spellcasting', 'monster_lore', 'reflex_dodge', 'hunting', 'perception', 'athletics', 'alchemy', 'intimidation', 'resist_coercion'])
+        }),
+        griffin_school: Object.freeze({
+            summary: 'Domínio de Sinais, concentração e defesa contra magia.',
+            skillIds: Object.freeze(['spellcasting', 'resist_magic', 'block', 'tactics', 'monster_lore', 'education', 'perception', 'alchemy', 'intimidation', 'resist_coercion'])
+        }),
+        viper_school: Object.freeze({
+            summary: 'Dupla empunhadura, venenos e ataques rápidos e discretos.',
+            skillIds: Object.freeze(['short_blades', 'fencing', 'two_handed', 'stealth', 'alchemy', 'reflex_dodge', 'traps', 'monster_lore', 'intimidation', 'resist_coercion'])
+        }),
+        manticore_school: Object.freeze({
+            summary: 'Alquimia, bombas e resistência aos riscos das próprias misturas.',
+            skillIds: Object.freeze(['alchemy', 'crafting', 'monster_lore', 'survival', 'hunting', 'tolerance', 'perception', 'traps', 'intimidation', 'resist_coercion'])
+        }),
+        bear_school: Object.freeze({
+            summary: 'Força, absorção de impacto e permanência na linha de frente.',
+            skillIds: Object.freeze(['physique', 'tolerance', 'block', 'courage', 'resist_coercion', 'fencing', 'athletics', 'monster_lore', 'intimidation', 'survival'])
+        }),
+        cat_school: Object.freeze({
+            summary: 'Execução veloz, furtividade e precisão com lâminas leves.',
+            skillIds: Object.freeze(['reflex_dodge', 'acrobatics', 'stealth', 'short_blades', 'fencing', 'athletics', 'perception', 'hunting', 'intimidation', 'resist_coercion'])
+        }),
+        raven_school: Object.freeze({
+            summary: 'Mobilidade, defesa adaptativa e sequências de golpes com espada.',
+            skillIds: Object.freeze(['fencing', 'reflex_dodge', 'athletics', 'acrobatics', 'block', 'tactics', 'perception', 'monster_lore', 'intimidation', 'resist_coercion'])
+        }),
+        lynx_school: Object.freeze({
+            summary: 'Caçada agressiva, reflexos e pressão constante sobre a presa.',
+            skillIds: Object.freeze(['reflex_dodge', 'athletics', 'hunting', 'survival', 'stealth', 'fencing', 'perception', 'tolerance', 'intimidation', 'resist_coercion'])
+        })
+    });
     const CHARACTER_PROFESSIONAL_SKILL_TREES = global.characterProfessionalSkillsData?.trees
         || Object.freeze({});
     const CHARACTER_PROFESSIONAL_SKILLS = global.characterProfessionalSkillsData?.skills
@@ -1235,6 +1350,40 @@
             )) || null;
     }
 
+    function getCharacterSkillRecommendationProfile(value = {}) {
+        const source = isPlainObject(value?.identity) ? value.identity : value;
+        const raceId = normalizeCharacterRaceId(source?.raceId);
+        const professionId = raceId === 'witcher'
+            ? 'witcher'
+            : normalizeCharacterProfessionId(source?.professionId);
+        const specialization = getCharacterSpecializationDefinition(
+            professionId,
+            source?.specializationId,
+            raceId
+        );
+        const recommendations = specialization
+            ? CHARACTER_SPECIALIZATION_SKILL_RECOMMENDATIONS[specialization.id]
+            : null;
+
+        if (!specialization || !recommendations) return null;
+
+        return Object.freeze({
+            specializationId: specialization.id,
+            name: specialization.name,
+            summary: recommendations.summary,
+            skillIds: recommendations.skillIds
+        });
+    }
+
+    function isCharacterSkillRecommended(skillId, value = {}) {
+        const normalizedSkillId = normalizeCharacterIdentifier(skillId);
+        return Boolean(
+            normalizedSkillId
+            && getCharacterSkillDefinition(normalizedSkillId)
+            && getCharacterSkillRecommendationProfile(value)?.skillIds.includes(normalizedSkillId)
+        );
+    }
+
     function normalizeCharacterAbilityProfession(value) {
         return normalizeCharacterIdentifier(value);
     }
@@ -1650,6 +1799,7 @@
         CHARACTER_RACES,
         CHARACTER_WITCHER_SCHOOLS,
         CHARACTER_PROFESSIONS,
+        CHARACTER_SPECIALIZATION_SKILL_RECOMMENDATIONS,
         CHARACTER_PROFESSIONAL_SKILL_TREES,
         CHARACTER_PROFESSIONAL_SKILLS,
         CHARACTER_PROFESSIONAL_SKILL_DEFINITIONS,
@@ -1696,6 +1846,8 @@
         getAvailableCharacterProfessions,
         getCharacterSpecializations,
         getCharacterSpecializationDefinition,
+        getCharacterSkillRecommendationProfile,
+        isCharacterSkillRecommended,
         normalizeCharacterAbilityProfession,
         getCharacterAbilityCatalog,
         getCharacterAbilityAccessProfile,

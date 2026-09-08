@@ -55,7 +55,7 @@ assert.match(
     'O modelo deve estar disponível no modo offline.'
 );
 assert.equal(model.CHARACTER_SHEET_SCHEMA_VERSION, 1);
-assert.equal(model.CHARACTER_RULES_VERSION, 12);
+assert.equal(model.CHARACTER_RULES_VERSION, 13);
 assert.equal(model.CHARACTER_ATTRIBUTE_BASE_VALUE, 10);
 assert.equal(model.CHARACTER_SKILL_INVESTMENT_CAP, 4);
 assert.equal(model.CHARACTER_ATTRIBUTES.length, 6);
@@ -102,6 +102,84 @@ assert.deepEqual(
     [...new Set(selectableTreeIds)].sort(),
     Object.keys(model.CHARACTER_PROFESSIONAL_SKILL_TREES).sort(),
     'Toda especialização selecionável deve possuir exatamente uma árvore profissional.'
+);
+assert.deepEqual(
+    Object.keys(model.CHARACTER_SPECIALIZATION_SKILL_RECOMMENDATIONS).sort(),
+    [...new Set(selectableTreeIds)].sort(),
+    'Toda especialização e escola deve possuir recomendações próprias de perícias.'
+);
+Object.entries(model.CHARACTER_SPECIALIZATION_SKILL_RECOMMENDATIONS).forEach(([specializationId, profile]) => {
+    const expectedSkillCount = specializationId.endsWith('_school') ? 10 : 8;
+    assert.equal(profile.skillIds.length, expectedSkillCount, `${specializationId} deve possuir o conjunto completo de recomendações.`);
+    assert.equal(new Set(profile.skillIds).size, expectedSkillCount, `${specializationId} não deve repetir perícias.`);
+    assert.equal(
+        profile.skillIds.every(skillId => Boolean(model.getCharacterSkillDefinition(skillId))),
+        true,
+        `${specializationId} deve apontar apenas para perícias válidas.`
+    );
+    assert.ok(profile.summary, `${specializationId} deve explicar o foco das recomendações.`);
+});
+model.CHARACTER_PROFESSIONS.forEach(profession => {
+    profession.specializations.forEach(specialization => {
+        const profile = model.getCharacterSkillRecommendationProfile({
+            raceId: 'human',
+            professionId: profession.id,
+            specializationId: specialization.id
+        });
+        assert.equal(profile?.specializationId, specialization.id);
+        assert.equal(profile?.name, specialization.name);
+    });
+});
+model.CHARACTER_WITCHER_SCHOOLS.forEach(school => {
+    const profile = model.getCharacterSkillRecommendationProfile({
+        raceId: 'witcher',
+        professionId: 'witcher',
+        specializationId: school.id
+    });
+    assert.equal(profile?.specializationId, school.id);
+    assert.equal(profile?.name, school.name);
+    assert.equal(profile?.skillIds.includes('intimidation'), true);
+    assert.equal(profile?.skillIds.includes('resist_coercion'), true);
+});
+assert.deepEqual(
+    JSON.parse(JSON.stringify(model.getCharacterSkillRecommendationProfile({
+        raceId: 'human',
+        professionId: 'warrior',
+        specializationId: 'archer'
+    }).skillIds)),
+    ['archery', 'reflex_dodge', 'traps', 'hunting', 'deduction', 'perception', 'survival', 'tactics']
+);
+assert.deepEqual(
+    JSON.parse(JSON.stringify(model.getCharacterSkillRecommendationProfile({
+        raceId: 'human',
+        professionId: 'warrior',
+        specializationId: 'vanguard'
+    }).skillIds)),
+    ['physique', 'tolerance', 'block', 'brawl', 'courage', 'resist_coercion', 'tactics', 'riding']
+);
+assert.equal(
+    model.getCharacterSkillRecommendationProfile({
+        raceId: 'witcher',
+        professionId: 'witcher',
+        specializationId: 'griffin_school'
+    }).name,
+    'Escola do Grifo'
+);
+assert.equal(
+    model.isCharacterSkillRecommended('spellcasting', {
+        raceId: 'witcher',
+        professionId: 'witcher',
+        specializationId: 'griffin_school'
+    }),
+    true
+);
+assert.equal(
+    model.isCharacterSkillRecommended('business', {
+        raceId: 'witcher',
+        professionId: 'witcher',
+        specializationId: 'griffin_school'
+    }),
+    false
 );
 assert.equal(
     model.CHARACTER_PROFESSIONAL_SKILLS.every(skill => (
@@ -573,7 +651,7 @@ const migratedSheet = migration.sheets[0];
 
 assert.equal(migration.changed, true);
 assert.equal(migratedSheet.schemaVersion, 1);
-assert.equal(migratedSheet.rulesVersion, 12);
+assert.equal(migratedSheet.rulesVersion, 13);
 assert.equal(migratedSheet.creationMode, 'quick');
 assert.equal(migratedSheet.raceId, 'vampire');
 assert.equal(migratedSheet.hpCurrent, 47);
@@ -720,7 +798,7 @@ vm.runInContext('syncCombatantsToCharacterSheets()', integrationContext);
 const stage10BackupRaw = integrationStorage.getItem('dnd_character_sheets_backup_stage10_v11');
 const stage10Backup = JSON.parse(stage10BackupRaw);
 assert.ok(stage10Backup.createdAt, 'A consolidação deve criar um backup local datado.');
-assert.equal(stage10Backup.rulesVersion, 12);
+assert.equal(stage10Backup.rulesVersion, 13);
 assert.equal(stage10Backup.sheets.length, 1);
 assert.equal(stage10Backup.sheets[0].schemaVersion, undefined, 'O backup deve preservar a ficha anterior à migração.');
 vm.runInContext('migrateCharacterSheetSchema()', integrationContext);
@@ -778,7 +856,7 @@ const renderedSheetList = vm.runInContext(`
 `, integrationContext);
 assert.match(renderedSheetList, /Humano · Mago/);
 assert.match(renderedSheetList, /Completa · Nv\. 4/);
-assert.match(renderedSheetList, /Regras v12/);
+assert.match(renderedSheetList, /Regras v13/);
 assert.match(renderedSheetList, /Movimento/);
 assert.match(renderedSheetList, /Carga/);
 assert.match(renderedSheetList, /Exportar/);

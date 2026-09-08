@@ -738,10 +738,11 @@
         const professionId = characterWizardDraft.raceId === 'witcher'
             ? 'witcher'
             : characterWizardDraft.professionId;
-        const profession = model?.getCharacterProfessionDefinition(professionId);
-        const professionName = professionId === 'witcher'
-            ? 'Witcher'
-            : (profession?.name || '');
+        const recommendationProfile = model?.getCharacterSkillRecommendationProfile?.({
+            raceId: characterWizardDraft.raceId,
+            professionId,
+            specializationId: characterWizardDraft.specializationId
+        });
         const activeAttribute = model?.getCharacterAttributeDefinition(characterWizardDraft.skillGroup)
             || model?.CHARACTER_ATTRIBUTES?.[0];
         const skills = model?.getCharacterSkillsByAttribute(activeAttribute?.id) || [];
@@ -773,6 +774,12 @@
                     <strong>${formatWizardSignedNumber(activeAttributeModifier)}</strong>
                     <span>Bônus de ${escapeWizardHtml(activeAttribute?.name || 'atributo')} aplicado a todas as ${skills.length} perícias deste grupo.</span>
                 </div>
+                ${recommendationProfile ? `
+                    <div class="character-skill-path-guidance">
+                        <strong>⭐ Prioridades de ${escapeWizardHtml(recommendationProfile.name)}</strong>
+                        <span>${escapeWizardHtml(recommendationProfile.summary)}</span>
+                    </div>
+                ` : ''}
                 <div class="character-skill-list">
                     ${skills.map(skill => {
                         const invested = Number(characterWizardDraft.skills?.[skill.id]?.invested) || 0;
@@ -787,8 +794,7 @@
                             && (summary?.skillPointsRemaining || 0) >= skill.pointCost;
                         const raceBonus = Number(breakdown?.raceBonus) || 0;
                         const isRecommended = Boolean(
-                            professionId
-                            && skill.recommendedProfessionIds?.includes(professionId)
+                            recommendationProfile?.skillIds.includes(skill.id)
                         );
                         const systemHighlights = Array.isArray(skill.systemHighlights)
                             ? skill.systemHighlights
@@ -802,7 +808,7 @@
                                 ? `<span class="character-skill-badge ${raceBonus > 0 ? 'is-race' : 'is-penalty'}">🧬 ${escapeWizardHtml(race?.name || 'Raça')} ${formatWizardSignedNumber(raceBonus)}</span>`
                                 : '',
                             isRecommended
-                                ? `<span class="character-skill-badge is-recommended">⭐ Recomendada para ${escapeWizardHtml(professionName)}</span>`
+                                ? `<span class="character-skill-badge is-recommended">⭐ Recomendada para ${escapeWizardHtml(recommendationProfile.name)}</span>`
                                 : '',
                             systemHighlights.length
                                 ? `<span class="character-skill-badge is-system">⚙️ ${escapeWizardHtml(systemHighlights.join(' · '))}</span>`

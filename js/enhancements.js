@@ -175,7 +175,7 @@ function buildCharacterSheetExportPackage(id) {
         format: CHARACTER_SHEET_TRANSFER_FORMAT,
         version: CHARACTER_SHEET_TRANSFER_VERSION,
         exportedAt: new Date().toISOString(),
-        appRulesVersion: window.characterSheetModel?.CHARACTER_RULES_VERSION || Number(sheet.rulesVersion) || 12,
+        appRulesVersion: window.characterSheetModel?.CHARACTER_RULES_VERSION || Number(sheet.rulesVersion) || 13,
         sheet: cloneEnhancementData(sheet)
     };
 }
@@ -321,7 +321,7 @@ function ensureCharacterSheetStage10Backup(sheets = characterSheets) {
 
     localStorage.setItem(CHARACTER_SHEETS_STAGE_10_BACKUP_KEY, JSON.stringify({
         createdAt: new Date().toISOString(),
-        rulesVersion: window.characterSheetModel?.CHARACTER_RULES_VERSION || 12,
+        rulesVersion: window.characterSheetModel?.CHARACTER_RULES_VERSION || 13,
         sheets: cloneEnhancementData(sheets)
     }));
     return true;
@@ -1424,7 +1424,7 @@ function renderCharacterSheetsView(dialog) {
                                 : 'Rápida'}</span>
                         </div>
                         ${sheet.creationMode === 'full'
-                            ? `<small class="character-sheet-card-path">${escapeEnhancementHtml(pathLabel || 'Caminho em definição')} · Regras v${Number(sheet.rulesVersion) || model?.CHARACTER_RULES_VERSION || 12}</small>`
+                            ? `<small class="character-sheet-card-path">${escapeEnhancementHtml(pathLabel || 'Caminho em definição')} · Regras v${Number(sheet.rulesVersion) || model?.CHARACTER_RULES_VERSION || 13}</small>`
                             : ''}
                         ${birthLabel ? `<small class="character-sheet-card-path">🎂 ${escapeEnhancementHtml(birthLabel)}${Number.isFinite(characterAge) ? ` · ${characterAge} anos` : ''}</small>` : ''}
                         <div class="character-sheet-card-resources">
