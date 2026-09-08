@@ -441,6 +441,31 @@
     margin-top: 0;
 }
 
+.character-spell-fixed-hit-count {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 3px 10px;
+    padding: 9px 11px;
+    border: 1px solid #334155;
+    border-radius: 10px;
+    background: rgba(15, 23, 42, .68);
+}
+
+.character-spell-fixed-hit-count span,
+.character-spell-fixed-hit-count strong {
+    font-size: .68rem;
+}
+
+.character-spell-fixed-hit-count strong {
+    color: #67e8f9;
+}
+
+.character-spell-fixed-hit-count small {
+    grid-column: 1 / -1;
+    color: #94a3b8;
+    font-size: .56rem;
+}
+
 .character-spell-hit-list {
     display: grid;
     gap: 8px;
@@ -496,6 +521,16 @@
     gap: 4px;
 }
 
+.character-spell-hit-fields .character-spell-hit-target {
+    grid-column: 1 / -1;
+}
+
+.character-spell-hit-fields label small {
+    color: #67e8f9;
+    font-size: .5rem;
+    font-weight: 800;
+}
+
 .character-spell-hit-fields span {
     overflow: hidden;
     color: #cbd5e1;
@@ -516,6 +551,12 @@
 
 .character-spell-hit-critical-note {
     color: #fecdd3;
+    font-size: .56rem;
+    line-height: 1.4;
+}
+
+.character-spell-hit-armor-note {
+    color: #93c5fd;
     font-size: .56rem;
     line-height: 1.4;
 }

@@ -2,7 +2,7 @@
     'use strict';
 
     const CHARACTER_SHEET_SCHEMA_VERSION = 1;
-    const CHARACTER_RULES_VERSION = 11;
+    const CHARACTER_RULES_VERSION = 12;
     const CHARACTER_LEVEL_MINIMUM = 1;
     const CHARACTER_ATTRIBUTE_BASE_VALUE = 10;
     const CHARACTER_SKILL_INVESTMENT_CAP = 4;
@@ -23,7 +23,7 @@
         Object.freeze({ id: 'constitution', name: 'Constituição', abbreviation: 'CON' })
     ]);
 
-    const CHARACTER_SKILLS = Object.freeze([
+    const CHARACTER_SKILL_BASE_DEFINITIONS = Object.freeze([
         Object.freeze({ id: 'block', name: 'Bloquear', attributeId: 'strength', pointCost: 1 }),
         Object.freeze({ id: 'brawl', name: 'Brigar', attributeId: 'strength', pointCost: 1 }),
         Object.freeze({ id: 'staff_spear', name: 'Cajado/Lança', attributeId: 'strength', pointCost: 1 }),
@@ -43,7 +43,7 @@
         Object.freeze({ id: 'athletics', name: 'Atletismo', attributeId: 'dexterity', pointCost: 1 }),
         Object.freeze({ id: 'archery', name: 'Arco e Flecha', attributeId: 'dexterity', pointCost: 1 }),
         Object.freeze({ id: 'stealth', name: 'Furtividade', attributeId: 'dexterity', pointCost: 1 }),
-        Object.freeze({ id: 'two_handed', name: 'Habilidade com Duas Mãos', attributeId: 'dexterity', pointCost: 1 }),
+        Object.freeze({ id: 'two_handed', name: 'Dupla Empunhadura', attributeId: 'dexterity', pointCost: 1 }),
         Object.freeze({ id: 'sleight_of_hand', name: 'Prestidigitação', attributeId: 'dexterity', pointCost: 1 }),
         Object.freeze({ id: 'reflex_dodge', name: 'Reflexo/Esquivas', attributeId: 'dexterity', pointCost: 1 }),
         Object.freeze({ id: 'riding', name: 'Cavalgar', attributeId: 'dexterity', pointCost: 1 }),
@@ -67,7 +67,6 @@
         Object.freeze({ id: 'crafting', name: 'Criar', attributeId: 'wisdom', pointCost: 2 }),
         Object.freeze({ id: 'disguise', name: 'Disfarce', attributeId: 'wisdom', pointCost: 1 }),
         Object.freeze({ id: 'first_aid', name: 'Primeiros Socorros', attributeId: 'wisdom', pointCost: 1 }),
-        Object.freeze({ id: 'trap_crafting', name: 'Criar Armadilhas', attributeId: 'wisdom', pointCost: 2 }),
         Object.freeze({ id: 'survival', name: 'Sobrevivência', attributeId: 'wisdom', pointCost: 1 }),
 
         Object.freeze({ id: 'appearance_style', name: 'Aparência e Estilo', attributeId: 'charisma', pointCost: 1 }),
@@ -83,6 +82,294 @@
         Object.freeze({ id: 'physique', name: 'Físico', attributeId: 'constitution', pointCost: 1 }),
         Object.freeze({ id: 'tolerance', name: 'Tolerância', attributeId: 'constitution', pointCost: 1 })
     ]);
+
+    const CHARACTER_SKILL_CONTENT = Object.freeze({
+        block: Object.freeze({
+            shortDescription: 'Defende ataques usando uma arma ou escudo.',
+            description: 'Utilizada para aparar golpes corpo a corpo e executar Bloqueios Armados. Também participa dos resultados de vacilo e bloqueio crítico.',
+            recommendedProfessionIds: Object.freeze(['warrior', 'witcher']),
+            systemHighlights: Object.freeze(['Bloqueio crítico'])
+        }),
+        brawl: Object.freeze({
+            shortDescription: 'Representa combate desarmado e luta corporal.',
+            description: 'Usada para socos, chutes, agarrões, imobilizações e outras ações físicas sem uma arma apropriada.',
+            recommendedProfessionIds: Object.freeze(['warrior', 'criminal'])
+        }),
+        staff_spear: Object.freeze({
+            shortDescription: 'Permite atacar utilizando cajados, lanças e armas semelhantes.',
+            description: 'Mede a habilidade de controlar armas longas de haste, mantendo alcance e precisão durante o combate.',
+            recommendedProfessionIds: Object.freeze(['warrior'])
+        }),
+        courage: Object.freeze({
+            shortDescription: 'Ajuda a enfrentar medo, terror e situações desesperadoras.',
+            description: 'Usada para resistir a criaturas aterrorizantes, ameaças sobrenaturais e acontecimentos capazes de fazer o personagem hesitar ou fugir.',
+            recommendedProfessionIds: Object.freeze(['warrior', 'noble', 'witcher'])
+        }),
+        fencing: Object.freeze({
+            shortDescription: 'Representa o domínio de espadas e lâminas de combate.',
+            description: 'Utilizada nos ataques com espadas, incluindo as espadas de aço e prata dos Witchers.',
+            recommendedProfessionIds: Object.freeze(['warrior', 'witcher', 'criminal'])
+        }),
+        short_blades: Object.freeze({
+            shortDescription: 'Controla ataques com adagas, facas e armas curtas.',
+            description: 'Indicada para golpes rápidos, combate próximo e armas discretas que exigem pouco espaço para serem manejadas.',
+            recommendedProfessionIds: Object.freeze(['criminal'])
+        }),
+        resist_coercion: Object.freeze({
+            shortDescription: 'Permite resistir a pressão, manipulação e ameaças.',
+            description: 'Defende o personagem contra interrogatórios, chantagens, intimidação, persuasão forçada e tentativas de controlar suas decisões.',
+            recommendedProfessionIds: Object.freeze(['bard', 'noble', 'witcher'])
+        }),
+        history_geography: Object.freeze({
+            shortDescription: 'Reúne conhecimentos sobre povos, lugares e acontecimentos históricos.',
+            description: 'Ajuda a reconhecer regiões, fronteiras, guerras, linhagens, ruínas, rotas e acontecimentos importantes do Continente.',
+            recommendedProfessionIds: Object.freeze(['noble', 'bard'])
+        }),
+        investigation: Object.freeze({
+            shortDescription: 'Permite encontrar pistas e interpretar evidências.',
+            description: 'Usada para examinar cenas, relacionar informações, identificar contradições e reconstruir o que aconteceu.',
+            recommendedProfessionIds: Object.freeze(['criminal', 'doctor', 'witcher'])
+        }),
+        spellcasting: Object.freeze({
+            shortDescription: 'Controla testes de conjuração e o domínio da magia.',
+            description: 'Utilizada para lançar magias e Sinais. Seu valor total também aumenta o ST de Magos, Clérigos, Druidas e Witchers.',
+            recommendedProfessionIds: Object.freeze(['mage', 'cleric', 'witcher']),
+            systemHighlights: Object.freeze(['Conjuração', 'ST'])
+        }),
+        nature: Object.freeze({
+            shortDescription: 'Representa o conhecimento sobre plantas, animais e ambientes naturais.',
+            description: 'Ajuda a identificar espécies, fenômenos naturais, comportamentos de animais, plantas perigosas e condições ambientais.',
+            recommendedProfessionIds: Object.freeze(['cleric', 'doctor'])
+        }),
+        tactics: Object.freeze({
+            shortDescription: 'Permite analisar o campo de batalha e elaborar estratégias.',
+            description: 'Usada para prever movimentos, organizar aliados, reconhecer vantagens de terreno e preparar planos de combate.',
+            recommendedProfessionIds: Object.freeze(['warrior', 'mage', 'noble'])
+        }),
+        lockpicking: Object.freeze({
+            shortDescription: 'Permite abrir fechaduras e mecanismos sem a chave.',
+            description: 'Usada para manipular fechaduras, cadeados e mecanismos delicados com as ferramentas adequadas.',
+            recommendedProfessionIds: Object.freeze(['criminal'])
+        }),
+        acrobatics: Object.freeze({
+            shortDescription: 'Controla equilíbrio, saltos e movimentos acrobáticos.',
+            description: 'Ajuda em quedas, travessias perigosas, cambalhotas, equilíbrio e manobras que exigem coordenação corporal.',
+            recommendedProfessionIds: Object.freeze(['criminal', 'warrior'])
+        }),
+        athletics: Object.freeze({
+            shortDescription: 'Representa corrida, escalada, natação e esforço corporal.',
+            description: 'Além dos testes físicos, seu valor total aumenta o Movimento e o ST das profissões não mágicas.',
+            recommendedProfessionIds: Object.freeze(['warrior', 'criminal', 'witcher']),
+            systemHighlights: Object.freeze(['Movimento', 'ST físico'])
+        }),
+        archery: Object.freeze({
+            shortDescription: 'Controla ataques realizados com arcos.',
+            description: 'Utilizada para disparos, precisão à distância e manuseio de arcos e suas munições.',
+            recommendedProfessionIds: Object.freeze(['warrior', 'witcher'])
+        }),
+        stealth: Object.freeze({
+            shortDescription: 'Permite mover-se e agir sem ser percebido.',
+            description: 'Usada para esconder-se, aproximar-se silenciosamente, evitar atenção e realizar infiltrações.',
+            recommendedProfessionIds: Object.freeze(['criminal', 'witcher'])
+        }),
+        two_handed: Object.freeze({
+            shortDescription: 'Permite lutar utilizando uma arma em cada mão.',
+            description: 'Usada quando o personagem empunha simultaneamente duas armas de uma mão, como adagas, espadas ou machados. Não representa uma única arma de duas mãos e não permite utilizar escudo ao mesmo tempo.',
+            recommendedProfessionIds: Object.freeze(['criminal', 'warrior', 'witcher'])
+        }),
+        sleight_of_hand: Object.freeze({
+            shortDescription: 'Representa movimentos rápidos e discretos com as mãos.',
+            description: 'Usada para esconder objetos, furtar bolsos, realizar truques manuais ou manipular pequenos itens sem ser notado.',
+            recommendedProfessionIds: Object.freeze(['criminal', 'bard'])
+        }),
+        reflex_dodge: Object.freeze({
+            shortDescription: 'Permite evitar ataques através de reação e movimento.',
+            description: 'Utilizada nas Esquivas, incluindo seus vacilos e resultados críticos, além de situações que exigem uma reação imediata.',
+            recommendedProfessionIds: Object.freeze(['warrior', 'criminal', 'witcher']),
+            systemHighlights: Object.freeze(['Esquiva crítica'])
+        }),
+        riding: Object.freeze({
+            shortDescription: 'Controla montarias em viagens e situações perigosas.',
+            description: 'Usada para conduzir, acalmar e manobrar uma montaria, especialmente em perseguições, saltos ou combate montado.',
+            recommendedProfessionIds: Object.freeze(['warrior', 'noble', 'merchant'])
+        }),
+        business: Object.freeze({
+            shortDescription: 'Ajuda a negociar preços e avaliar transações.',
+            description: 'Usada para barganhar, identificar negócios desfavoráveis, avaliar mercadorias e compreender práticas comerciais.',
+            recommendedProfessionIds: Object.freeze(['artisan', 'merchant'])
+        }),
+        traps: Object.freeze({
+            shortDescription: 'Permite encontrar, compreender, desarmar e construir armadilhas.',
+            description: 'Utilizada para reconhecer gatilhos e mecanismos, avaliar perigos, desativar armadilhas e construir novas armadilhas usando materiais e ferramentas adequados.',
+            recommendedProfessionIds: Object.freeze(['criminal', 'witcher'])
+        }),
+        hunting: Object.freeze({
+            shortDescription: 'Permite rastrear, localizar e abater animais ou criaturas.',
+            description: 'Usada para seguir pegadas, interpretar rastros, preparar emboscadas e encontrar presas.',
+            recommendedProfessionIds: Object.freeze(['witcher', 'warrior'])
+        }),
+        resist_magic: Object.freeze({
+            shortDescription: 'Defende o personagem contra efeitos mágicos hostis.',
+            description: 'Utilizada para resistir a encantamentos, controle mental, ilusões e outros efeitos sobrenaturais.',
+            recommendedProfessionIds: Object.freeze(['mage', 'cleric', 'witcher'])
+        }),
+        deduction: Object.freeze({
+            shortDescription: 'Permite chegar a conclusões usando informações disponíveis.',
+            description: 'Diferentemente de Investigação, interpreta pistas já conhecidas para descobrir relações, causas e respostas prováveis.',
+            recommendedProfessionIds: Object.freeze(['doctor', 'criminal', 'witcher'])
+        }),
+        education: Object.freeze({
+            shortDescription: 'Representa conhecimentos acadêmicos e formação geral.',
+            description: 'Usada para assuntos estudados, leitura, escrita, instituições, ciências e conhecimentos que exigem aprendizado formal.',
+            recommendedProfessionIds: Object.freeze(['doctor', 'mage', 'cleric', 'noble'])
+        }),
+        nordic: Object.freeze({
+            shortDescription: 'Representa conhecimento do idioma e da cultura dos Reinos do Norte.',
+            description: 'Permite compreender expressões, costumes, tradições e referências culturais das populações nórdicas.',
+            recommendedProfessionIds: Object.freeze(['bard', 'merchant', 'noble'])
+        }),
+        elder_speech: Object.freeze({
+            shortDescription: 'Representa o domínio da língua e da cultura élfica.',
+            description: 'Usada para falar, ler ou interpretar a Fala Ancestral e reconhecer costumes dos Povos Antigos.',
+            recommendedProfessionIds: Object.freeze(['bard', 'merchant', 'noble'])
+        }),
+        dwarven: Object.freeze({
+            shortDescription: 'Representa conhecimento do idioma e da cultura anã.',
+            description: 'Permite compreender a língua, as tradições, os costumes e as referências culturais dos anões.',
+            recommendedProfessionIds: Object.freeze(['artisan', 'merchant'])
+        }),
+        monster_lore: Object.freeze({
+            shortDescription: 'Permite identificar monstros, comportamentos e fraquezas.',
+            description: 'Ajuda a reconhecer uma criatura, prever seus ataques e recordar vulnerabilidades, resistências, hábitos e possíveis componentes de saque.',
+            recommendedProfessionIds: Object.freeze(['witcher', 'mage']),
+            systemHighlights: Object.freeze(['Bestiário'])
+        }),
+        nilfgaardian: Object.freeze({
+            shortDescription: 'Representa conhecimento do idioma e da cultura de Nilfgaard.',
+            description: 'Permite compreender a língua, os costumes, a estrutura política e as tradições do Império Nilfgaardiano.',
+            recommendedProfessionIds: Object.freeze(['bard', 'merchant', 'noble'])
+        }),
+        social_etiquette: Object.freeze({
+            shortDescription: 'Ajuda a agir corretamente em diferentes círculos sociais.',
+            description: 'Usada para reconhecer protocolos, títulos, hierarquias e comportamentos esperados em cortes, guildas e cerimônias.',
+            recommendedProfessionIds: Object.freeze(['bard', 'merchant', 'noble'])
+        }),
+        streetwise: Object.freeze({
+            shortDescription: 'Representa conhecimento prático sobre cidades e submundos.',
+            description: 'Ajuda a encontrar contatos, mercados clandestinos, esconderijos, rumores e regiões perigosas de uma cidade.',
+            recommendedProfessionIds: Object.freeze(['criminal', 'merchant', 'bard'])
+        }),
+        teaching: Object.freeze({
+            shortDescription: 'Permite transmitir conhecimento de maneira compreensível.',
+            description: 'Usada para instruir outra pessoa, explicar técnicas e acompanhar treinamentos ou aprendizados.',
+            recommendedProfessionIds: Object.freeze(['mage', 'doctor', 'cleric'])
+        }),
+        alchemy: Object.freeze({
+            shortDescription: 'Controla a preparação e o conhecimento de substâncias alquímicas.',
+            description: 'Utilizada para compreender receitas e produzir poções, óleos, misturas, pós e preparados alquímicos.',
+            recommendedProfessionIds: Object.freeze(['artisan', 'doctor', 'mage', 'witcher']),
+            systemHighlights: Object.freeze(['Alquimia'])
+        }),
+        perception: Object.freeze({
+            shortDescription: 'Permite perceber detalhes, perigos e presenças escondidas.',
+            description: 'Usada para enxergar, ouvir, farejar ou notar elementos que poderiam passar despercebidos.',
+            recommendedProfessionIds: Object.freeze(['witcher', 'doctor', 'warrior', 'criminal'])
+        }),
+        crafting: Object.freeze({
+            shortDescription: 'Representa fabricação, manutenção e reparo de equipamentos.',
+            description: 'Utilizada para produzir e reparar armas, armaduras, ferramentas e objetos artesanais.',
+            recommendedProfessionIds: Object.freeze(['artisan']),
+            systemHighlights: Object.freeze(['Criação', 'Reparo'])
+        }),
+        disguise: Object.freeze({
+            shortDescription: 'Permite alterar a aparência e ocultar a identidade.',
+            description: 'Usada para criar identidades falsas por meio de roupas, maquiagem, postura, voz e comportamento.',
+            recommendedProfessionIds: Object.freeze(['criminal', 'bard'])
+        }),
+        first_aid: Object.freeze({
+            shortDescription: 'Permite estabilizar feridos e realizar tratamentos emergenciais.',
+            description: 'Integrada ao tratamento de ferimentos críticos. Pode estabilizar uma vítima, impedir agravamentos e auxiliar sua recuperação.',
+            recommendedProfessionIds: Object.freeze(['doctor', 'cleric', 'warrior']),
+            systemHighlights: Object.freeze(['Ferimentos críticos'])
+        }),
+        survival: Object.freeze({
+            shortDescription: 'Ajuda a sobreviver e viajar em ambientes selvagens.',
+            description: 'Usada para orientação, coleta de recursos, preparação de acampamentos, previsão do tempo e resistência a ambientes hostis.',
+            recommendedProfessionIds: Object.freeze(['witcher', 'cleric', 'warrior'])
+        }),
+        appearance_style: Object.freeze({
+            shortDescription: 'Representa apresentação pessoal, vestimenta e primeira impressão.',
+            description: 'Usada para escolher uma aparência adequada, demonstrar status e causar uma impressão favorável em determinado ambiente.',
+            recommendedProfessionIds: Object.freeze(['bard', 'noble', 'merchant'])
+        }),
+        fine_arts: Object.freeze({
+            shortDescription: 'Controla apresentações e criações artísticas.',
+            description: 'Abrange música, canto, dança, poesia, pintura, interpretação e outras formas de expressão artística.',
+            recommendedProfessionIds: Object.freeze(['bard', 'noble'])
+        }),
+        leadership: Object.freeze({
+            shortDescription: 'Permite comandar, inspirar e organizar outras pessoas.',
+            description: 'Usada para transmitir ordens, recuperar a confiança de aliados e conduzir grupos sob pressão.',
+            recommendedProfessionIds: Object.freeze(['warrior', 'noble', 'cleric'])
+        }),
+        deceit: Object.freeze({
+            shortDescription: 'Permite mentir, omitir e manipular informações.',
+            description: 'Utilizada para criar histórias falsas, esconder intenções e levar outra pessoa a acreditar em algo incorreto.',
+            recommendedProfessionIds: Object.freeze(['bard', 'criminal', 'merchant'])
+        }),
+        persuasion: Object.freeze({
+            shortDescription: 'Permite convencer alguém através de argumentos.',
+            description: 'Usada para negociar decisões, pedir ajuda, mudar opiniões e obter cooperação sem recorrer a ameaças.',
+            recommendedProfessionIds: Object.freeze(['bard', 'merchant', 'noble', 'cleric'])
+        }),
+        human_perception: Object.freeze({
+            shortDescription: 'Ajuda a interpretar emoções, intenções e comportamentos.',
+            description: 'Utilizada para perceber mentiras, hesitação, medo, hostilidade e outras pistas sociais.',
+            recommendedProfessionIds: Object.freeze(['bard', 'merchant', 'noble', 'doctor'])
+        }),
+        forgery: Object.freeze({
+            shortDescription: 'Permite criar ou reconhecer documentos e objetos falsos.',
+            description: 'Usada para imitar assinaturas, selos, moedas, documentos e outras formas de autenticação.',
+            recommendedProfessionIds: Object.freeze(['criminal', 'merchant'])
+        }),
+        seduction: Object.freeze({
+            shortDescription: 'Permite atrair e influenciar através de charme pessoal.',
+            description: 'Utilizada para despertar interesse, criar intimidade ou conseguir cooperação por meio de atração e presença social.',
+            recommendedProfessionIds: Object.freeze(['bard', 'noble'])
+        }),
+        intimidation: Object.freeze({
+            shortDescription: 'Permite conseguir obediência através de medo e ameaça.',
+            description: 'Usada para pressionar, assustar ou forçar alguém a recuar, revelar informações ou cumprir uma exigência.',
+            recommendedProfessionIds: Object.freeze(['warrior', 'criminal', 'cleric'])
+        }),
+        physique: Object.freeze({
+            shortDescription: 'Representa resistência, condicionamento e força corporal sustentada.',
+            description: 'É uma perícia central para sobrevivência: seu valor total participa dos cálculos de HP, ST, Capacidade de Carga e Movimento, além de testes contra esforço, exaustão e efeitos físicos.',
+            recommendedProfessionIds: Object.freeze(['warrior', 'witcher', 'criminal', 'doctor']),
+            systemHighlights: Object.freeze(['HP', 'ST', 'Carga', 'Movimento']),
+            detailItems: Object.freeze([
+                'HP: (bônus de Constituição + Físico total) × nível + 10 + Constituição base.',
+                'ST: Físico participa das fórmulas de todas as profissões.',
+                'Carga: Físico total é somado à capacidade de carga.',
+                'Movimento: Físico total aumenta a movimentação antes das penalidades de peso.'
+            ])
+        }),
+        tolerance: Object.freeze({
+            shortDescription: 'Permite resistir a venenos, drogas, álcool e toxicidade.',
+            description: 'O aplicativo soma automaticamente Tolerância ao D20 em testes de poções, Veneno Negro, Fisstech e outros agentes tóxicos. A redução de toxicidade por turno corresponde a Tolerância total + nível.',
+            recommendedProfessionIds: Object.freeze(['witcher', 'warrior', 'criminal', 'doctor']),
+            systemHighlights: Object.freeze(['Toxicidade', 'Venenos', 'Fisstech']),
+            detailItems: Object.freeze([
+                'Testes automatizados: resultado natural do D20 + Tolerância total contra o ND.',
+                'Recuperação: a toxicidade diminui por turno em Tolerância total + nível do personagem.'
+            ])
+        })
+    });
+
+    const CHARACTER_SKILLS = Object.freeze(CHARACTER_SKILL_BASE_DEFINITIONS.map(skill => Object.freeze({
+        ...skill,
+        ...(CHARACTER_SKILL_CONTENT[skill.id] || {})
+    })));
 
     const CHARACTER_SKILL_DEFINITIONS = Object.freeze(Object.fromEntries(
         CHARACTER_SKILLS.map(skill => [skill.id, skill])
@@ -432,6 +719,38 @@
         };
     }
 
+    function selectStrongestCharacterAdjustment(currentValue, legacyValue) {
+        const current = normalizeCharacterAdjustment(currentValue);
+        const legacy = normalizeCharacterAdjustment(legacyValue);
+        return Math.abs(legacy) > Math.abs(current) ? legacy : current;
+    }
+
+    function mergeLegacyTrapSkillInvestment(investments) {
+        const source = isPlainObject(investments) ? investments : {};
+        if (!Object.prototype.hasOwnProperty.call(source, 'trap_crafting')) return source.traps;
+
+        const current = normalizeCharacterInvestmentRecord(source.traps, normalizeSkillInvestment);
+        const legacy = normalizeCharacterInvestmentRecord(source.trap_crafting, normalizeSkillInvestment);
+        const adjustmentKeys = [
+            'raceBonus',
+            'professionBonus',
+            'specializationBonus',
+            'equipmentBonus',
+            'temporaryBonus',
+            'manualAdjustment'
+        ];
+        const merged = {
+            ...legacy,
+            ...current,
+            invested: Math.max(current.invested, legacy.invested)
+        };
+
+        adjustmentKeys.forEach(key => {
+            merged[key] = selectStrongestCharacterAdjustment(current[key], legacy[key]);
+        });
+        return merged;
+    }
+
     function normalizeCharacterAttributeAllocations(investments) {
         const source = isPlainObject(investments) ? investments : {};
 
@@ -449,7 +768,10 @@
 
         return Object.fromEntries(CHARACTER_SKILLS.map(skill => [
             skill.id,
-            normalizeCharacterInvestmentRecord(source[skill.id], normalizeSkillInvestment)
+            normalizeCharacterInvestmentRecord(
+                skill.id === 'traps' ? mergeLegacyTrapSkillInvestment(source) : source[skill.id],
+                normalizeSkillInvestment
+            )
         ]));
     }
 

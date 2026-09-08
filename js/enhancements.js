@@ -11,6 +11,7 @@ const ENHANCEMENTS_LAST_COMBAT_REPORT_KEY = 'dnd_last_combat_report';
 const DEFAULT_APP_PREFERENCES = {
     theme: 'default',
     reducedMotion: false,
+    combatPanelsMode: 'all',
     carriedWeightMode: 'equipped',
     rollModes: {
         weapons: 'manual',
@@ -174,7 +175,7 @@ function buildCharacterSheetExportPackage(id) {
         format: CHARACTER_SHEET_TRANSFER_FORMAT,
         version: CHARACTER_SHEET_TRANSFER_VERSION,
         exportedAt: new Date().toISOString(),
-        appRulesVersion: window.characterSheetModel?.CHARACTER_RULES_VERSION || Number(sheet.rulesVersion) || 11,
+        appRulesVersion: window.characterSheetModel?.CHARACTER_RULES_VERSION || Number(sheet.rulesVersion) || 12,
         sheet: cloneEnhancementData(sheet)
     };
 }
@@ -320,7 +321,7 @@ function ensureCharacterSheetStage10Backup(sheets = characterSheets) {
 
     localStorage.setItem(CHARACTER_SHEETS_STAGE_10_BACKUP_KEY, JSON.stringify({
         createdAt: new Date().toISOString(),
-        rulesVersion: window.characterSheetModel?.CHARACTER_RULES_VERSION || 11,
+        rulesVersion: window.characterSheetModel?.CHARACTER_RULES_VERSION || 12,
         sheets: cloneEnhancementData(sheets)
     }));
     return true;
@@ -1423,7 +1424,7 @@ function renderCharacterSheetsView(dialog) {
                                 : 'Rápida'}</span>
                         </div>
                         ${sheet.creationMode === 'full'
-                            ? `<small class="character-sheet-card-path">${escapeEnhancementHtml(pathLabel || 'Caminho em definição')} · Regras v${Number(sheet.rulesVersion) || model?.CHARACTER_RULES_VERSION || 11}</small>`
+                            ? `<small class="character-sheet-card-path">${escapeEnhancementHtml(pathLabel || 'Caminho em definição')} · Regras v${Number(sheet.rulesVersion) || model?.CHARACTER_RULES_VERSION || 12}</small>`
                             : ''}
                         ${birthLabel ? `<small class="character-sheet-card-path">🎂 ${escapeEnhancementHtml(birthLabel)}${Number.isFinite(characterAge) ? ` · ${characterAge} anos` : ''}</small>` : ''}
                         <div class="character-sheet-card-resources">
@@ -1946,7 +1947,7 @@ function repairCurrentApplicationCache() {
 function restoreDefaultAppPreferences() {
     openSessionConfirm({
         title: 'Restaurar preferências?',
-        message: 'Tema, animações, cálculo de carga e modos de rolagem voltarão ao padrão. Fichas e combate não serão alterados.',
+        message: 'Tema, animações, painéis do combate, cálculo de carga e modos de rolagem voltarão ao padrão. Fichas e combate não serão alterados.',
         confirmLabel: 'Restaurar preferências',
         danger: true,
         onConfirm: () => {
@@ -2084,6 +2085,17 @@ function setCarriedWeightMode(value) {
     renderSessionToolsView('preferences');
 }
 
+function setCombatPanelsMode(value) {
+    appPreferences.combatPanelsMode = value === 'selected' ? 'selected' : 'all';
+    persistDevicePreferences();
+    window.resetExpandedCombatantDetails?.();
+    window.renderList?.(false);
+    showToast(appPreferences.combatPanelsMode === 'selected'
+        ? '▤ Os detalhes aparecerão somente no participante selecionado.'
+        : '▤ Todos os painéis dos participantes estão visíveis.');
+    renderSessionToolsView('preferences');
+}
+
 function renderPreferencesView(dialog) {
     const contrastActive = appPreferences.theme === 'contrast';
     const rollModes = {
@@ -2113,6 +2125,14 @@ function renderPreferencesView(dialog) {
         <div class="enhancement-preference-row">
             <div><strong>Reduzir animações</strong><small>Evita movimentos contínuos e transições.</small></div>
             <button type="button" class="session-small-button ${appPreferences.reducedMotion ? 'enhancement-active' : ''}" onclick="setAppPreference('reducedMotion', ${!appPreferences.reducedMotion})">${appPreferences.reducedMotion ? 'Ativo' : 'Ativar'}</button>
+        </div>
+        <h3 class="enhancement-section-title">Combat Tracker</h3>
+        <div class="enhancement-preference-row enhancement-preference-stack">
+            <div><strong>Painéis dos participantes</strong><small>Escolha entre manter todos os painéis visíveis ou abrir somente os detalhes do personagem ou inimigo tocado.</small></div>
+            <div class="enhancement-choice-group">
+                <button type="button" class="session-small-button ${appPreferences.combatPanelsMode !== 'selected' ? 'enhancement-active' : ''}" onclick="setCombatPanelsMode('all')">Sempre visíveis</button>
+                <button type="button" class="session-small-button ${appPreferences.combatPanelsMode === 'selected' ? 'enhancement-active' : ''}" onclick="setCombatPanelsMode('selected')">Ao selecionar</button>
+            </div>
         </div>
         <h3 class="enhancement-section-title">Peso e capacidade de carga</h3>
         <div class="enhancement-preference-row enhancement-preference-stack">

@@ -100,6 +100,28 @@ assert.equal(criticalHits.at(-1).bodyPart, 'head');
 assert.equal(criticalHits.at(-1).context.spellDamage.naturalRoll, 20);
 assert.equal(context.spellDamageAutomation.getActiveSequence(), null);
 
+const multiTargetStart = preparedHits.length;
+assert.equal(context.startSpellMultiHitSequence({
+    casterId: 'caster',
+    casterName: 'Yennefer',
+    abilityId: 'misseis_magicos',
+    abilityName: 'Mísseis Mágicos',
+    damageType: 'arcano',
+    ignoreArmor: true,
+    hits: [
+        { targetId: 'one', naturalRoll: 12, damage: 7, bodyPart: 'torso', ignoreArmor: true },
+        { targetId: 'two', naturalRoll: 13, damage: 8, bodyPart: 'leg', ignoreArmor: true }
+    ],
+    roll: { multiHit: true, ignoreArmor: true }
+}), true);
+assert.equal(preparedHits.length, multiTargetStart + 2);
+assert.equal(preparedHits.at(-2).targetId, 'one');
+assert.equal(preparedHits.at(-2).ignoreArmor, true);
+assert.equal(preparedHits.at(-1).targetId, 'two');
+assert.equal(preparedHits.at(-1).ignoreArmor, true);
+assert.equal(preparedHits.at(-1).historyContext.spellDamage.ignoreArmor, true);
+assert.equal(context.spellDamageAutomation.getActiveSequence(), null);
+
 assert.equal(context.startItemDamageSequence({
     sourceId: 'caster',
     sourceName: 'Yennefer',

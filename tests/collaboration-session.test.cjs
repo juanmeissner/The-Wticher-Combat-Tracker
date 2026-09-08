@@ -96,7 +96,7 @@ assert.match(sessionSource, /renderSessionToolsView\('collaboration'\)/);
 assert.match(sessionSource, /masterOnlyViews/);
 assert.match(sessionSource, /session-role-chip/);
 assert.match(styles, /data-collaboration-role="player"/);
-assert.match(workerSource, /witcher-combat-tracker-v116/);
+assert.match(workerSource, /witcher-combat-tracker-v120/);
 assert.match(indexSource, /playerPadCollapsedBar/);
 assert.match(sessionSource, /Calendário/);
 assert.match(styles, /player-pad-collapsed/);

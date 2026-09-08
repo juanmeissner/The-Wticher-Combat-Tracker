@@ -508,7 +508,7 @@ Em **⋯ → Fichas → Nova ficha**, é possível escolher entre criação ráp
 - nível configurável e orçamentos progressivos de atributo, perícia e treino;
 - seis atributos com valor base 10 e bônus derivado a cada dois pontos;
 - distribuição de atributos otimizada para celular, com nomes e cálculos completos, controles separados e adaptação automática para uma coluna em telas estreitas;
-- 53 perícias gerais e 280 habilidades profissionais com descrições completas;
+- 52 perícias gerais com explicações expansíveis e 280 habilidades profissionais com descrições completas;
 - cards mobile de perícias e habilidades profissionais com texto e controles em áreas separadas, impedindo descrições comprimidas;
 - posição da rolagem preservada ao aumentar ou remover níveis profissionais, perícias ou magias aprendidas;
 - pontos compartilhados entre perícias gerais e profissionais, com limite de investimento validado;
@@ -516,6 +516,7 @@ Em **⋯ → Fichas → Nova ficha**, é possível escolher entre criação ráp
 - permissões automáticas para Mago, Druida, Sacerdote/Clérigo, Ritual e Hex;
 - concessão gratuita dos nove sinais e habilidades oficiais para personagens Witcher;
 - busca e filtros na etapa de magias, além de resumo dos gastos na revisão;
+- navegação rápida no topo e no rodapé de todas as etapas, com controles compactos para avançar ou voltar sem percorrer novamente listas longas no mobile;
 - etapa exclusiva de valores derivados, com explicação dos cálculos de HP, EST, Carga e Movimento;
 - Fonte Mágica do Lobo e Sobrecarga Arcana integradas ao EST máximo;
 - Fonte Rúnica do Grifo mantida como uma reserva própria e visível no combate, priorizada no custo dos Sinais e regenerada junto do EST;
@@ -578,6 +579,8 @@ Uma ficha pode ser ativada para consultar seu inventário e suas habilidades ou 
 Os jogadores recebem um painel compacto de **Recursos** abaixo do card principal. Ele começa recolhido, mostra `🎲 Dado da Sorte` e `⚡ Adrenalina` no resumo e oferece controles manuais `−` e `+` ao ser expandido. Cada recurso ocupa sua própria linha e explica seus usos: Dado da Sorte permite **Rolagem Certeira** e **Golpe Perfeito**; Adrenalina permite **Golpe Forte**, **Efeito Dobrado** e **Adrenalina de Combate**. Cada ajuste é limitado a zero, persiste na ficha vinculada e fica registrado no histórico. O painel também está disponível para fichas rápidas.
 
 Qualquer jogador ou inimigo com condições, magias ou itens ativos recebe também o painel **EFEITOS ATIVOS**. Ele informa a quantidade no cabeçalho, começa recolhido e pode ser aberto independentemente dos demais painéis. Ao expandir, preserva os cards completos, duração, stacks, edição e remoção de cada efeito; recolher o painel não pausa suas automações nem a contagem de rodadas.
+
+Em **⋯ → Preferências → Combat Tracker**, o modo **Ao selecionar** transforma os participantes em um acordeão exclusivo. Todos começam compactos, tocar em um personagem ou inimigo revela somente seus painéis vinculados e abrir outro recolhe automaticamente o anterior. Um segundo toque no mesmo card volta a esconder seus detalhes. A opção vem desativada por padrão, mantendo todos os painéis visíveis como nas versões anteriores.
 
 Personagens criados pela ficha completa recebem outros três painéis independentes abaixo do card principal, todos recolhidos por padrão:
 
@@ -722,6 +725,8 @@ O indicador `👣 MOV` no card principal mostra o Movimento total atual. Em fich
 Abra **MAGIAS** para consultar o repertório daquele personagem. Expanda `⌄` para ler a regra completa ou use **Conjurar**: escolha o alvo, informe o EST base quando a magia for variável e revise o custo final. Em cada alvo ofensivo, informe o `d20` natural, o dano original e a região. Magia Expandida é calculada sem alterar o catálogo original. O mesmo modal permite gastar Adrenalina em **Golpe Forte** ou **Efeito Dobrado** e, quando disponível, combinar essas escolhas com **Sobrecarga Arcana**. A Adrenalina só é consumida depois de uma conjuração confirmada e bem-sucedida.
 
 **Cenlly Graig** e **Granizo de Carys** possuem um fluxo próprio de rajadas. Escolha entre 1 e 5 impactos e informe, em um único modal, o resultado natural do d20, o dano de `2d6` e a região de cada acerto. **Efeito Dobrado** eleva o limite para 10 impactos; **Golpe Forte** dobra o dano de todos eles; com 2 pontos de Adrenalina, as duas opções podem ser combinadas. Cada impacto consome `+1 EST` e é processado separadamente com sua própria armadura e multiplicador regional. Um `20 natural` dobra apenas aquele impacto, ignora a armadura, concede Adrenalina e abre o ferimento crítico correspondente antes de continuar. A chance única de 10% de Sangramento ou Congelamento também é resolvida e registrada automaticamente.
+
+**Mísseis Mágicos** e **Bolas das Sombras** usam o mesmo processamento individual com seleção de alvo em cada projétil, permitindo distribuir uma única conjuração entre diferentes participantes. Mísseis Mágicos calcula automaticamente `3 + bônus de Inteligência` impactos e, em cada um, soma o mesmo bônus ao resultado de `1d6`. Bolas das Sombras prepara duas esferas de `8d6`. Os dois feitiços ignoram armadura; d20, dano, região, crítico e ferimento continuam independentes por impacto. **Efeito Dobrado** duplica a quantidade de projéteis, enquanto Golpe Forte e Sobrecarga de dano preservam a ordem normal dos multiplicadores.
 
 Os multiplicadores seguem sempre a mesma ordem auditável: dano original → Golpe Forte → Sobrecarga de dano → crítico → região. Assim, um resultado `12` com crítico, Golpe Forte e acerto na cabeça produz `12 × 2 × 2 × 3 = 144`; se também houver Sobrecarga de dano, o valor passa a `288` antes dos bônus próprios do ferimento crítico.
 

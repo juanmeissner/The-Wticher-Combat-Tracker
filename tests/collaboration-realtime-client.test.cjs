@@ -21,7 +21,7 @@ const wrangler = fs.readFileSync(path.join(projectRoot, 'cloudflare', 'wrangler.
 
 assert.match(indexSource, /collaboration\/realtime-client\.js/);
 assert.match(indexSource, /collaboration\/offline-queue\.js/);
-assert.match(serviceWorker, /witcher-combat-tracker-v116/);
+assert.match(serviceWorker, /witcher-combat-tracker-v120/);
 assert.match(serviceWorker, /collaboration\/realtime-client\.js/);
 assert.match(serviceWorker, /collaboration\/offline-queue\.js/);
 assert.match(sessionSource, /createCollaborationRoomFromView/);

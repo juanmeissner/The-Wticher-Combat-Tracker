@@ -1,3 +1,40 @@
+    let expandedCombatantDetailsId = null;
+
+    function getCombatPanelsMode() {
+        if (typeof appPreferences !== 'undefined') {
+            return appPreferences.combatPanelsMode === 'selected' ? 'selected' : 'all';
+        }
+        try {
+            if (typeof localStorage !== 'undefined') {
+                const stored = JSON.parse(localStorage.getItem('dnd_app_preferences') || '{}');
+                return stored.combatPanelsMode === 'selected' ? 'selected' : 'all';
+            }
+        } catch {
+            // Preferências inválidas não devem impedir a renderização do combate.
+        }
+        return 'all';
+    }
+
+    function usesSelectedCombatantPanels() {
+        return getCombatPanelsMode() === 'selected';
+    }
+
+    function isCombatantDetailsExpanded(combatantId) {
+        return !usesSelectedCombatantPanels()
+            || String(expandedCombatantDetailsId ?? '') === String(combatantId ?? '');
+    }
+
+    function resetExpandedCombatantDetails() {
+        expandedCombatantDetailsId = null;
+    }
+
+    function toggleCombatantDetails(combatantId) {
+        if (!usesSelectedCombatantPanels()) return false;
+        const id = String(combatantId ?? '');
+        expandedCombatantDetailsId = String(expandedCombatantDetailsId ?? '') === id ? null : id;
+        return expandedCombatantDetailsId !== null;
+    }
+
     function isCombatantEliminatedForDisplay(combatant) {
         const deadMonster = combatant?.type === 'monster' && combatant.hpCurrent <= 0;
         const deadPlayer = combatant?.type === 'player' && combatant.deathSaves?.failures >= 3;
@@ -93,6 +130,13 @@
         updateActiveTurnName();
         container.innerHTML = "";
 
+        if (
+            expandedCombatantDetailsId !== null
+            && !combatants.some(combatant => String(combatant.id) === String(expandedCombatantDetailsId))
+        ) {
+            resetExpandedCombatantDetails();
+        }
+
         if (combatants.length === 0) {
             container.innerHTML = `<div class="text-slate-600 text-center mt-10">Lista vazia.</div>`;
             return;
@@ -147,8 +191,16 @@
                 overflow-hidden
                 ${selectedId === c.id ? 'card-selected' : ''}
                 ${activeTurnId === c.id && !isEliminated ? 'active-turn' : ''}
+                ${usesSelectedCombatantPanels() ? (isCombatantDetailsExpanded(c.id) ? 'combat-details-expanded' : 'combat-details-collapsed') : ''}
                 ${opacityClass}
                 `;
+
+            if (usesSelectedCombatantPanels()) {
+                card.setAttribute('role', 'button');
+                card.setAttribute('tabindex', '0');
+                card.setAttribute('aria-expanded', String(isCombatantDetailsExpanded(c.id)));
+                card.setAttribute('aria-label', `${c.name}: ${isCombatantDetailsExpanded(c.id) ? 'recolher' : 'mostrar'} painéis`);
+            }
 
             const pct = Math.max(0, Math.min(100, (c.hpCurrent / c.hpMax) * 100));
             const hpBarColor = getHPColor(pct);
@@ -366,19 +418,20 @@
             
             wrapper.appendChild(card);
 
-            const equipmentPanelHtml = window.renderCombatantEquipmentPanel?.(c) || '';
-            const mountPanelHtml = window.renderCombatantMountPanel?.(c) || '';
-            const characterResourcesPanelHtml = window.renderCharacterResourcesPanel?.(c) || '';
-            const activeEffectsPanelHtml = renderCombatantEffectsPanel(c);
-            const monsterActionsPanelHtml = window.renderMonsterActionsPanel?.(c) || '';
-            const monsterAbilitiesPanelHtml = window.renderMonsterAbilitiesPanel?.(c) || '';
-            const monsterSkillsPanelHtml = window.renderMonsterSkillsPanel?.(c) || '';
-            const characterSkillsPanelHtml = window.renderCharacterSkillsPanel?.(c) || '';
-            const characterProfessionalPanelHtml = window.renderCharacterProfessionalSkillsPanel?.(c) || '';
-            const characterSpellsPanelHtml = window.renderCharacterSpellsPanel?.(c) || '';
-            const criticalWoundsPanelHtml = window.renderCombatantCriticalWoundsPanel?.(c) || '';
-            const combatConsequencesPanelHtml = window.renderCombatantCombatConsequencesPanel?.(c) || '';
-            const monsterLootPanelHtml = window.renderCombatantLootPanel?.(c) || '';
+            const showCombatantPanels = isCombatantDetailsExpanded(c.id);
+            const equipmentPanelHtml = showCombatantPanels ? window.renderCombatantEquipmentPanel?.(c) || '' : '';
+            const mountPanelHtml = showCombatantPanels ? window.renderCombatantMountPanel?.(c) || '' : '';
+            const characterResourcesPanelHtml = showCombatantPanels ? window.renderCharacterResourcesPanel?.(c) || '' : '';
+            const activeEffectsPanelHtml = showCombatantPanels ? renderCombatantEffectsPanel(c) : '';
+            const monsterActionsPanelHtml = showCombatantPanels ? window.renderMonsterActionsPanel?.(c) || '' : '';
+            const monsterAbilitiesPanelHtml = showCombatantPanels ? window.renderMonsterAbilitiesPanel?.(c) || '' : '';
+            const monsterSkillsPanelHtml = showCombatantPanels ? window.renderMonsterSkillsPanel?.(c) || '' : '';
+            const characterSkillsPanelHtml = showCombatantPanels ? window.renderCharacterSkillsPanel?.(c) || '' : '';
+            const characterProfessionalPanelHtml = showCombatantPanels ? window.renderCharacterProfessionalSkillsPanel?.(c) || '' : '';
+            const characterSpellsPanelHtml = showCombatantPanels ? window.renderCharacterSpellsPanel?.(c) || '' : '';
+            const criticalWoundsPanelHtml = showCombatantPanels ? window.renderCombatantCriticalWoundsPanel?.(c) || '' : '';
+            const combatConsequencesPanelHtml = showCombatantPanels ? window.renderCombatantCombatConsequencesPanel?.(c) || '' : '';
+            const monsterLootPanelHtml = showCombatantPanels ? window.renderCombatantLootPanel?.(c) || '' : '';
 
             if (
                 equipmentPanelHtml ||
@@ -403,6 +456,14 @@
 
             card.addEventListener('click', () => {
                 selectedId = c.id;
+                toggleCombatantDetails(c.id);
+                renderList(false);
+            });
+            card.addEventListener('keydown', event => {
+                if (!usesSelectedCombatantPanels() || event.target !== card || !['Enter', ' '].includes(event.key)) return;
+                event.preventDefault();
+                selectedId = c.id;
+                toggleCombatantDetails(c.id);
                 renderList(false);
             });
             
@@ -1095,7 +1156,11 @@
     );
     const effectsPanelHtml = renderCombatantEffectsPanel(c);
 
-    if (oldEffectsPanel && effectsPanelHtml) {
+    const hideCombatantPanels = usesSelectedCombatantPanels() && !isCombatantDetailsExpanded(c.id);
+
+    if (hideCombatantPanels) {
+        wrapper?.querySelector('.combat-subpanels')?.remove();
+    } else if (oldEffectsPanel && effectsPanelHtml) {
         oldEffectsPanel.outerHTML = effectsPanelHtml;
     } else if (oldEffectsPanel) {
         oldEffectsPanel.remove();
@@ -1162,6 +1227,10 @@
         window.selectCombatant = selectCombatant;
         window.renderCombatantEffectsPanel = renderCombatantEffectsPanel;
         window.getCombatantMovementSummary = getCombatantMovementSummary;
+        window.getCombatPanelsMode = getCombatPanelsMode;
+        window.isCombatantDetailsExpanded = isCombatantDetailsExpanded;
+        window.toggleCombatantDetails = toggleCombatantDetails;
+        window.resetExpandedCombatantDetails = resetExpandedCombatantDetails;
 
         function selectEffect(combatantId, effectId, type){
 

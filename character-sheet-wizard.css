@@ -330,6 +330,48 @@
     color: #fff;
 }
 
+.character-wizard-quick-navigation {
+    display: grid;
+    grid-template-columns: 34px minmax(0, 1fr) 34px;
+    align-items: center;
+    gap: 10px;
+    margin: -7px 0 14px;
+}
+
+.character-wizard-quick-navigation button,
+.character-wizard-quick-navigation-spacer {
+    width: 34px;
+    height: 34px;
+}
+
+.character-wizard-quick-navigation button {
+    display: grid;
+    padding: 0;
+    place-items: center;
+    border: 1px solid #475569;
+    border-radius: 50%;
+    background: #1e293b;
+    color: #e2e8f0;
+    font-size: 1rem;
+    font-weight: 900;
+    line-height: 1;
+}
+
+.character-wizard-quick-navigation button.is-next {
+    border-color: #0ea5e9;
+    background: #0369a1;
+    color: #fff;
+}
+
+.character-wizard-quick-navigation > span:not(.character-wizard-quick-navigation-spacer) {
+    color: #7dd3fc;
+    font-size: .62rem;
+    font-weight: 800;
+    letter-spacing: .08em;
+    text-align: center;
+    text-transform: uppercase;
+}
+
 .character-wizard-step-copy h3 {
     margin: 0;
     font-size: 1.05rem;
@@ -1203,11 +1245,106 @@
 }
 
 .character-skill-row {
+    align-items: flex-start;
     padding: 8px 10px;
+}
+
+.character-skill-row.is-priority {
+    border-color: #0e7490;
+    background: linear-gradient(145deg, rgba(8, 145, 178, .13), #172033 68%);
+    box-shadow: inset 3px 0 0 #22d3ee;
+}
+
+.character-skill-row.has-racial-penalty {
+    border-color: #9f1239;
+    box-shadow: inset 3px 0 0 #fb7185;
 }
 
 .character-skill-row .character-skill-cost {
     color: #7f91a8;
+}
+
+.character-skill-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-top: 6px;
+}
+
+.character-skill-badge {
+    display: inline-flex !important;
+    width: fit-content;
+    max-width: 100%;
+    padding: 3px 6px;
+    border: 1px solid #334155;
+    border-radius: 999px;
+    background: #111b2e;
+    color: #cbd5e1 !important;
+    font-size: .55rem !important;
+    font-weight: 800;
+    line-height: 1.2 !important;
+    overflow-wrap: anywhere;
+}
+
+.character-skill-badge.is-race {
+    border-color: #0f766e;
+    background: rgba(6, 78, 59, .65);
+    color: #a7f3d0 !important;
+}
+
+.character-skill-badge.is-penalty {
+    border-color: #be123c;
+    background: rgba(76, 5, 25, .68);
+    color: #fecdd3 !important;
+}
+
+.character-skill-badge.is-recommended {
+    border-color: #a16207;
+    background: rgba(69, 26, 3, .7);
+    color: #fde68a !important;
+}
+
+.character-skill-badge.is-system {
+    border-color: #0369a1;
+    background: rgba(8, 47, 73, .72);
+    color: #bae6fd !important;
+}
+
+.character-skill-badge.is-advanced {
+    border-color: #6d28d9;
+    background: rgba(46, 16, 101, .65);
+    color: #ddd6fe !important;
+}
+
+.character-skill-summary,
+.character-skill-description p,
+.character-skill-description ul {
+    margin: 7px 0 0;
+    color: #b8c8d9;
+    font-size: .64rem;
+    line-height: 1.45;
+}
+
+.character-skill-description {
+    margin: 7px 0;
+}
+
+.character-skill-description summary {
+    width: fit-content;
+    color: #7dd3fc;
+    cursor: pointer;
+    font-size: .61rem;
+    font-weight: 800;
+}
+
+.character-skill-description ul {
+    display: grid;
+    gap: 4px;
+    padding-left: 18px;
+}
+
+.character-skill-description li::marker {
+    color: #22d3ee;
 }
 
 .character-skill-row .character-skill-math {
@@ -1234,6 +1371,7 @@
 
 .character-skill-control {
     grid-template-columns: 30px 26px 30px;
+    margin-top: 2px;
 }
 
 .character-skill-control button {
@@ -1517,6 +1655,21 @@
     .character-wizard-professional-copy,
     .character-professional-description {
         width: 100%;
+    }
+
+    .character-skill-badges {
+        gap: 5px;
+    }
+
+    .character-skill-badge {
+        font-size: .58rem !important;
+    }
+
+    .character-skill-summary,
+    .character-skill-description p,
+    .character-skill-description ul {
+        font-size: .66rem;
+        overflow-wrap: anywhere;
     }
 
     .character-professional-skill-row .character-allocation-control,

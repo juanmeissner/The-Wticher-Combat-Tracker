@@ -35,7 +35,8 @@
                     prepared: Boolean(activeSequence.prepared),
                     hitIndex: activeSequence.currentEntry?.index,
                     naturalRoll: activeSequence.currentEntry?.naturalRoll,
-                    bodyPart: activeSequence.currentEntry?.bodyPart
+                    bodyPart: activeSequence.currentEntry?.bodyPart,
+                    ignoreArmor: Boolean(activeSequence.currentEntry?.ignoreArmor || activeSequence.ignoreArmor)
                 }
             } : {}),
             ...(activeSequence.sourceKind === 'item' ? {
@@ -110,7 +111,7 @@
                     damage: currentEntry.damage,
                     bodyPart: currentEntry.bodyPart,
                     typeMultiplier: 1,
-                    ignoreArmor: false,
+                    ignoreArmor: Boolean(currentEntry.ignoreArmor || activeSequence.ignoreArmor),
                     historyContext: damageContext
                 });
                 if (applied !== false) return;
@@ -172,20 +173,20 @@
     }
 
     function startSpellMultiHitSequence(options = {}) {
-        const targetId = String(options.targetId ?? '');
+        const fallbackTargetId = String(options.targetId ?? '');
         const hits = Array.isArray(options.hits)
             ? options.hits
-                .slice(0, 10)
                 .map((hit, index) => ({
                     index,
-                    targetId,
+                    targetId: String(hit?.targetId ?? fallbackTargetId),
                     naturalRoll: Math.max(1, Math.min(20, Math.floor(Number(hit?.naturalRoll) || 1))),
                     damage: Math.max(0, Math.floor(Number(hit?.damage) || 0)),
                     bodyPart: ['head', 'torso', 'arm', 'leg'].includes(hit?.bodyPart) ? hit.bodyPart : 'torso',
-                    critical: Number(hit?.naturalRoll) === 20
+                    critical: Number(hit?.naturalRoll) === 20,
+                    ignoreArmor: Boolean(hit?.ignoreArmor || options.ignoreArmor)
                 }))
             : [];
-        if (!targetId || !hits.length || hits.some(hit => !hit.damage)) return false;
+        if (!hits.length || hits.some(hit => !hit.targetId || !hit.damage)) return false;
 
         if (activeSequence) cancelSpellDamageSequence('A sequência anterior de dano foi substituída.');
         activeSequence = {
@@ -196,6 +197,7 @@
             effectName: String(options.abilityName || 'Magia'),
             damage: 0,
             damageType: String(options.damageType || ''),
+            ignoreArmor: Boolean(options.ignoreArmor),
             roll: options.roll || null,
             remaining: hits,
             total: hits.length,

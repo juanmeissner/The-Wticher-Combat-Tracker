@@ -7,7 +7,7 @@
 - 8 escolas de bruxo.
 - 28 escolhas finais de árvore profissional, religiosa ou escolar.
 - Aproximadamente 280 habilidades profissionais na estrutura atual da planilha.
-- 6 atributos e 53 perícias comuns normalizados.
+- 6 atributos e 52 perícias comuns normalizados.
 - 7 perícias comuns com custo de 2 pontos por nível.
 - Limite de investimento de 0 a 4 encontrado nas validações da ficha.
 - Catálogo oficial do aplicativo mantido como fonte de magias, sinais, rituais e hexes.
@@ -140,12 +140,12 @@ O arquivo exportado contém diversos caracteres de substituição. Os textos fin
 |---|---:|---|
 | Força | 7 | Bloquear; Brigar; Cajado/Lança; Coragem; Esgrima; Lâminas Curtas; Resistir Coerção |
 | Inteligência | 5 | História e Geografia; Investigação; Lançar Feitiços; Natureza; Táticas |
-| Destreza | 9 | Abrir Trancas; Acrobacias; Atletismo; Arco e Flecha; Furtividade; Habilidade com Duas Mãos; Prestidigitação; Reflexo/Esquivas; Cavalgar |
-| Sabedoria | 21 | Negócios; Armadilhas; Caça; Resistir Magia; Dedução; Educação; Nórdico; Fala Ancestral; Anão; Sabedoria sobre Monstros; Nilfgaardiano; Etiqueta Social; Sabedoria das Ruas; Ensinar; Alquimia; Percepção; Criar; Disfarce; Primeiros Socorros; Criar Armadilhas; Sobrevivência |
+| Destreza | 9 | Abrir Trancas; Acrobacias; Atletismo; Arco e Flecha; Furtividade; Dupla Empunhadura; Prestidigitação; Reflexo/Esquivas; Cavalgar |
+| Sabedoria | 20 | Negócios; Armadilhas; Caça; Resistir Magia; Dedução; Educação; Nórdico; Fala Ancestral; Anão; Sabedoria sobre Monstros; Nilfgaardiano; Etiqueta Social; Sabedoria das Ruas; Ensinar; Alquimia; Percepção; Criar; Disfarce; Primeiros Socorros; Sobrevivência |
 | Carisma | 9 | Aparência e Estilo; Belas Artes; Liderança; Ludibriar/Enganar; Persuasão; Percepção Humana; Falsificação; Sedução; Intimidação |
 | Constituição | 2 | Físico; Tolerância |
 
-As perícias `Lançar Feitiços`, `Táticas`, `Resistir Magia`, `Sabedoria sobre Monstros`, `Alquimia`, `Criar` e `Criar Armadilhas` custam 2 pontos por nível investido. O marcador `(2)` da planilha foi convertido para o campo numérico `pointCost: 2`, sem permanecer acoplado ao nome exibido.
+As perícias `Lançar Feitiços`, `Táticas`, `Resistir Magia`, `Sabedoria sobre Monstros`, `Alquimia` e `Criar` custam 2 pontos por nível investido. `Armadilhas` reúne detecção, desarme e construção com custo de 1 ponto por nível. O marcador `(2)` da planilha foi convertido para o campo numérico `pointCost: 2`, sem permanecer acoplado ao nome exibido.
 
 ### Pré-requisitos profissionais
 

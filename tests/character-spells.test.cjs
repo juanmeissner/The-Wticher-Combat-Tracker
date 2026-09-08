@@ -215,6 +215,61 @@ assert.equal(casting.calculateMultiHitSpellDamage(
     { doubledEffect: true }
 ).valid, true, 'Efeito Dobrado deve permitir até dez impactos.');
 
+mage.attributes = { intelligence: { invested: 6 } };
+const magicMissileRule = casting.getSpellDamageRule(
+    context.predefinedAbilities.find(ability => ability.id === 'misseis_magicos'),
+    10
+);
+assert.equal(magicMissileRule.mode, 'multi-hit');
+assert.equal(magicMissileRule.multiHit.fixedHits, true);
+assert.equal(magicMissileRule.multiHit.perHitTarget, true);
+assert.equal(magicMissileRule.multiHit.ignoreArmor, true);
+const magicMissileDamage = casting.calculateMultiHitSpellDamage(
+    magicMissileRule,
+    Array.from({ length: 6 }, (_, index) => ({
+        targetId: index % 2 ? 'target-1' : 'mage-1',
+        naturalRoll: '12',
+        damage: '4',
+        bodyPart: 'torso'
+    })),
+    null,
+    {},
+    mage
+);
+assert.equal(magicMissileDamage.valid, true, 'Bônus de INT +3 deve produzir exatamente seis mísseis.');
+assert.equal(magicMissileDamage.hits[0].dieRoll, 4);
+assert.equal(magicMissileDamage.hits[0].attributeBonus, 3);
+assert.equal(magicMissileDamage.hits[0].damage, 7, 'Cada míssil deve calcular 1d6 + bônus de INT.');
+assert.equal(magicMissileDamage.hits[0].ignoreArmor, true);
+assert.equal(magicMissileDamage.hits[1].targetId, 'target-1');
+
+context.appPreferences = { rollModes: { abilities: 'auto' } };
+const automaticMissileDamage = casting.calculateMultiHitSpellDamage(
+    magicMissileRule,
+    Array.from({ length: 6 }, () => ({ targetId: 'target-1', naturalRoll: '10', bodyPart: 'torso' })),
+    null,
+    {},
+    mage,
+    () => 0
+);
+assert.equal(automaticMissileDamage.valid, true);
+assert.equal(automaticMissileDamage.hits[0].dieRoll, 1);
+assert.equal(automaticMissileDamage.hits[0].damage, 4, 'A rolagem automática também deve somar o bônus de INT.');
+delete context.appPreferences;
+
+const shadowBallRule = casting.getSpellDamageRule(
+    context.predefinedAbilities.find(ability => ability.id === 'bolas_das_sombras'),
+    15
+);
+const shadowBallDamage = casting.calculateMultiHitSpellDamage(shadowBallRule, [
+    { targetId: 'mage-1', naturalRoll: '11', damage: '25', bodyPart: 'arm' },
+    { targetId: 'target-1', naturalRoll: '20', damage: '32', bodyPart: 'head' }
+], null, {}, mage);
+assert.equal(shadowBallDamage.valid, true);
+assert.equal(shadowBallDamage.hits.length, 2);
+assert.equal(shadowBallDamage.hits[1].targetId, 'target-1');
+assert.equal(shadowBallDamage.hits[1].ignoreArmor, true);
+
 const preparedMultiHitSequences = [];
 context.startSpellMultiHitSequence = options => {
     preparedMultiHitSequences.push(options);
@@ -240,6 +295,29 @@ assert.equal(preparedMultiHitSequences.length, 1);
 assert.equal(preparedMultiHitSequences[0].hits.length, 2);
 assert.equal(preparedMultiHitSequences[0].hits[1].critical, true);
 assert.equal(preparedMultiHitSequences[0].hits[1].bodyPart, 'head');
+
+mage.learnedAbilityIds.push('misseis_magicos');
+mage.stCurrent = 100;
+vm.runInContext("activeTurnId = 'mage-1'; selectedId = 'target-1';", context);
+context.openCharacterSpellCast(encodeURIComponent(mage.id), encodeURIComponent('misseis_magicos'));
+assert.match(currentModal.markup, /Quantidade calculada/);
+assert.match(currentModal.markup, /6 impactos/);
+assert.match(currentModal.markup, /Alvo deste impacto/);
+assert.match(currentModal.markup, /ignora armadura/);
+assert.doesNotMatch(currentModal.markup, /value="mage-1"[^>]*selected/, 'O conjurador não deve vir escolhido em nenhum impacto.');
+for (let index = 0; index < 6; index += 1) {
+    context.updateCharacterSpellHitField(index, 'targetId', index % 2 ? 'target-1' : 'mage-1');
+    context.updateCharacterSpellHitField(index, 'naturalRoll', index === 5 ? '20' : '12');
+    context.updateCharacterSpellHitField(index, 'damage', '4');
+    context.updateCharacterSpellHitField(index, 'bodyPart', index === 5 ? 'head' : 'torso');
+}
+const missileCast = context.confirmCharacterSpellCast(() => 0.5);
+assert.equal(missileCast.damage.hits.length, 6);
+assert.equal(missileCast.damage.hits[0].damage, 7);
+assert.equal(missileCast.damage.hits[1].targetId, 'target-1');
+assert.equal(preparedMultiHitSequences.at(-1).hits[0].targetId, 'mage-1');
+assert.equal(preparedMultiHitSequences.at(-1).hits[1].targetId, 'target-1');
+assert.equal(preparedMultiHitSequences.at(-1).ignoreArmor, true);
 
 mage.progression.adrenaline = 2;
 overloadRollValue = '19';

@@ -84,6 +84,10 @@ const wizard = context.characterSheetWizard;
 
 assert.ok(wizard, 'O assistente deve expor seus utilitários de domínio.');
 assert.equal(wizard.WIZARD_STEPS.length, 9);
+assert.match(wizardSource, /character-wizard-quick-navigation/);
+assert.match(wizardSource, /aria-label="Continuar para a próxima etapa"/);
+assert.match(wizardSource, /onclick="moveCharacterWizard\(-1\)"/);
+assert.match(wizardCss, /\.character-wizard-quick-navigation/);
 const normalizedDraft = wizard.createCharacterWizardDraft({
     step: 2.9,
     name: 'Geralt de Rívia',
@@ -274,13 +278,29 @@ assert.match(wizardSource, /selectCharacterWizardAbilityTier/);
 assert.match(wizardSource, /getCharacterTrainingSummary/);
 assert.doesNotMatch(wizardSource, /atributo vinculado/);
 assert.match(wizardSource, /getCharacterSkillBreakdown/);
+assert.match(wizardSource, /character-skill-summary/);
+assert.match(wizardSource, /character-skill-description/);
+assert.match(wizardSource, /Recomendada para/);
+assert.match(wizardSource, /systemHighlights/);
 assert.match(wizardSource, /adjustCharacterWizardProfessionalSkill/);
 assert.match(wizardSource, /renderCharacterWizardStep\(\{ preserveScroll: true \}\)/);
 assert.match(wizardSource, /global\.requestAnimationFrame\(restoreScroll\)/);
 assert.match(wizardSource, /global\.setTimeout\?\.\(restoreScroll, 80\)/);
+const attributeAdjustmentSource = wizardSource.slice(
+    wizardSource.indexOf('function adjustCharacterWizardAttribute'),
+    wizardSource.indexOf('function selectCharacterWizardSkillGroup')
+);
+assert.match(
+    attributeAdjustmentSource,
+    /renderCharacterWizardStep\(\{ preserveScroll: true \}\)/,
+    'A distribuição de atributos deve preservar a rolagem do assistente.'
+);
 assert.match(wizardCss, /character-race-detail/);
 assert.match(wizardCss, /character-review-trait-list/);
 assert.match(wizardCss, /character-derived-grid/);
+assert.match(wizardCss, /character-skill-row\.is-priority/);
+assert.match(wizardCss, /character-skill-badge\.is-race/);
+assert.match(wizardCss, /character-skill-description summary/);
 assert.match(wizardSource, /calculateCharacterDerivedValues/);
 assert.match(wizardSource, /EVOLUÇÃO DE PERSONAGEM/);
 assert.match(wizardSource, /Já conhecida · preservada/);

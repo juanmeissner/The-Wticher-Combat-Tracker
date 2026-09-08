@@ -734,6 +734,14 @@
     function renderSkillsStep() {
         const model = getCharacterModel();
         const summary = getWizardAllocationSummary();
+        const race = model?.getCharacterRaceDefinition(characterWizardDraft.raceId);
+        const professionId = characterWizardDraft.raceId === 'witcher'
+            ? 'witcher'
+            : characterWizardDraft.professionId;
+        const profession = model?.getCharacterProfessionDefinition(professionId);
+        const professionName = professionId === 'witcher'
+            ? 'Witcher'
+            : (profession?.name || '');
         const activeAttribute = model?.getCharacterAttributeDefinition(characterWizardDraft.skillGroup)
             || model?.CHARACTER_ATTRIBUTES?.[0];
         const skills = model?.getCharacterSkillsByAttribute(activeAttribute?.id) || [];
@@ -777,12 +785,49 @@
                         const bonusOrigins = getWizardSkillBonusOrigins(breakdown);
                         const canIncrease = invested < (model?.CHARACTER_SKILL_INVESTMENT_CAP || 4)
                             && (summary?.skillPointsRemaining || 0) >= skill.pointCost;
+                        const raceBonus = Number(breakdown?.raceBonus) || 0;
+                        const isRecommended = Boolean(
+                            professionId
+                            && skill.recommendedProfessionIds?.includes(professionId)
+                        );
+                        const systemHighlights = Array.isArray(skill.systemHighlights)
+                            ? skill.systemHighlights
+                            : [];
+                        const detailItems = Array.isArray(skill.detailItems)
+                            ? skill.detailItems
+                            : [];
+                        const isPriority = raceBonus > 0 || isRecommended;
+                        const badges = [
+                            raceBonus !== 0
+                                ? `<span class="character-skill-badge ${raceBonus > 0 ? 'is-race' : 'is-penalty'}">🧬 ${escapeWizardHtml(race?.name || 'Raça')} ${formatWizardSignedNumber(raceBonus)}</span>`
+                                : '',
+                            isRecommended
+                                ? `<span class="character-skill-badge is-recommended">⭐ Recomendada para ${escapeWizardHtml(professionName)}</span>`
+                                : '',
+                            systemHighlights.length
+                                ? `<span class="character-skill-badge is-system">⚙️ ${escapeWizardHtml(systemHighlights.join(' · '))}</span>`
+                                : '',
+                            skill.pointCost === 2
+                                ? '<span class="character-skill-badge is-advanced">◆ Avançada · custo 2</span>'
+                                : ''
+                        ].filter(Boolean).join('');
 
                         return `
-                            <article class="character-skill-row">
+                            <article class="character-skill-row${isPriority ? ' is-priority' : ''}${raceBonus < 0 ? ' has-racial-penalty' : ''}">
                                 <div class="character-wizard-skill-copy">
                                     <strong>${escapeWizardHtml(skill.name)}</strong>
                                     <small class="character-skill-cost">${escapeWizardHtml(activeAttribute?.abbreviation || '')}${skill.pointCost === 2 ? ' · custa 2 pontos por nível' : ' · custa 1 ponto por nível'}${isCharacterLevelUpDraft() ? ` · preservado ${baseInvested}` : ''}</small>
+                                    ${badges ? `<div class="character-skill-badges">${badges}</div>` : ''}
+                                    <p class="character-skill-summary">${escapeWizardHtml(skill.shortDescription || 'Descrição em preparação.')}</p>
+                                    <details class="character-skill-description">
+                                        <summary>Ver explicação completa</summary>
+                                        <p>${escapeWizardHtml(skill.description || skill.shortDescription || 'Descrição em preparação.')}</p>
+                                        ${detailItems.length ? `
+                                            <ul>
+                                                ${detailItems.map(item => `<li>${escapeWizardHtml(item)}</li>`).join('')}
+                                            </ul>
+                                        ` : ''}
+                                    </details>
                                     <small class="character-skill-math">
                                         <span>${bonusOrigins.join(' · ')}</span>
                                         <b>Bônus ${formatWizardSignedNumber(breakdown?.bonusTotal)}</b>
@@ -1317,6 +1362,13 @@
                 </div>
             </div>
             ${renderWizardProgress()}
+            <nav class="character-wizard-quick-navigation" aria-label="Navegação rápida entre etapas">
+                <button type="button" onclick="moveCharacterWizard(-1)" title="${characterWizardDraft.step === 0 ? (editing ? 'Voltar às fichas' : 'Voltar aos modos') : 'Etapa anterior'}" aria-label="${characterWizardDraft.step === 0 ? (editing ? 'Voltar às fichas' : 'Voltar aos modos') : 'Voltar para a etapa anterior'}">←</button>
+                <span>Passo ${characterWizardDraft.step + 1} de ${WIZARD_STEPS.length}</span>
+                ${isReview
+                    ? '<span class="character-wizard-quick-navigation-spacer" aria-hidden="true"></span>'
+                    : '<button type="button" class="is-next" onclick="moveCharacterWizard(1)" title="Continuar" aria-label="Continuar para a próxima etapa">→</button>'}
+            </nav>
             ${stepContent}
             <div class="session-dialog-actions character-wizard-navigation">
                 <button type="button" class="session-secondary" onclick="moveCharacterWizard(-1)">${characterWizardDraft.step === 0 ? (editing ? 'Voltar às fichas' : 'Voltar aos modos') : 'Voltar'}</button>
@@ -1736,7 +1788,7 @@
             invested: Math.max(minimum, current + direction)
         };
         persistCharacterWizardDraft();
-        renderCharacterWizardStep();
+        renderCharacterWizardStep({ preserveScroll: true });
     }
 
     function selectCharacterWizardSkillGroup(attributeId) {

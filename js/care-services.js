@@ -50,7 +50,7 @@
         'nature', 'business', 'traps', 'hunting', 'resist_magic', 'deduction',
         'education', 'nordic', 'elder_speech', 'dwarven', 'monster_lore',
         'nilfgaardian', 'social_etiquette', 'streetwise', 'teaching', 'alchemy',
-        'perception', 'crafting', 'disguise', 'first_aid', 'trap_crafting', 'survival',
+        'perception', 'crafting', 'disguise', 'first_aid', 'survival',
         'fine_arts', 'deceit', 'human_perception', 'forgery'
     ]);
     const CARE_HYGIENE_SKILL_IDS = Object.freeze([

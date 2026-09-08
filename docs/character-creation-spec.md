@@ -367,7 +367,7 @@ Na primeira entrega das subclasses, habilidades complexas poderão começar como
 
 ### Implementado na Etapa 3
 
-- Catálogo normalizado de 6 atributos e 53 perícias comuns, extraído da estrutura da planilha.
+- Catálogo normalizado de 6 atributos e 52 perícias comuns, com descrições expansíveis e destaques contextuais por raça, profissão e impacto nos sistemas.
 - Identificação explícita das 7 perícias que custam 2 pontos por nível.
 - Distribuição de atributos sobre o valor base 10, sem limite máximo artificial.
 - Distribuição de perícias com limite de investimento entre 0 e 4.

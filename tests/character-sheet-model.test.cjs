@@ -55,12 +55,12 @@ assert.match(
     'O modelo deve estar disponível no modo offline.'
 );
 assert.equal(model.CHARACTER_SHEET_SCHEMA_VERSION, 1);
-assert.equal(model.CHARACTER_RULES_VERSION, 11);
+assert.equal(model.CHARACTER_RULES_VERSION, 12);
 assert.equal(model.CHARACTER_ATTRIBUTE_BASE_VALUE, 10);
 assert.equal(model.CHARACTER_SKILL_INVESTMENT_CAP, 4);
 assert.equal(model.CHARACTER_ATTRIBUTES.length, 6);
-assert.equal(model.CHARACTER_SKILLS.length, 53);
-assert.equal(model.CHARACTER_SKILLS.filter(skill => skill.pointCost === 2).length, 7);
+assert.equal(model.CHARACTER_SKILLS.length, 52);
+assert.equal(model.CHARACTER_SKILLS.filter(skill => skill.pointCost === 2).length, 6);
 assert.equal(model.CHARACTER_PROFESSIONAL_SKILLS.length, 280);
 assert.equal(Object.keys(model.CHARACTER_PROFESSIONAL_SKILL_TREES).length, 28);
 assert.deepEqual(
@@ -110,8 +110,17 @@ assert.equal(
     true,
     'Todos os bônus profissionais devem apontar para IDs válidos de perícias gerais.'
 );
-assert.equal(model.getCharacterSkillsByAttribute('wisdom').length, 21);
+assert.equal(model.CHARACTER_SKILLS.length, 52);
+assert.equal(model.getCharacterSkillsByAttribute('wisdom').length, 20);
 assert.equal(model.getCharacterSkillDefinition('spellcasting').pointCost, 2);
+assert.equal(model.getCharacterSkillDefinition('traps').pointCost, 1);
+assert.equal(model.getCharacterSkillDefinition('trap_crafting'), null);
+assert.equal(model.getCharacterSkillDefinition('two_handed').name, 'Dupla Empunhadura');
+assert.equal(
+    model.CHARACTER_SKILLS.every(skill => skill.shortDescription && skill.description),
+    true,
+    'Todas as perícias gerais devem oferecer resumo e explicação completa.'
+);
 assert.equal(model.CHARACTER_MOVEMENT_MINIMUM, 5);
 assert.equal(model.CHARACTER_MOVEMENT_MAXIMUM, 15);
 
@@ -219,6 +228,18 @@ assert.equal(
     3,
     'A perícia deve somar um ponto de bônus para cada dois pontos do atributo acima de 10.'
 );
+const migratedLegacyTrapSkill = model.normalizeCharacterSkillAllocations({
+    trap_crafting: { invested: 3, manualAdjustment: 1 }
+});
+assert.equal(migratedLegacyTrapSkill.traps.invested, 3);
+assert.equal(migratedLegacyTrapSkill.traps.manualAdjustment, 1);
+assert.equal(Object.hasOwn(migratedLegacyTrapSkill, 'trap_crafting'), false);
+const mergedLegacyTrapSkills = model.normalizeCharacterSkillAllocations({
+    traps: { invested: 2, manualAdjustment: 2 },
+    trap_crafting: { invested: 4, manualAdjustment: 1 }
+});
+assert.equal(mergedLegacyTrapSkills.traps.invested, 4, 'A unificação deve preservar o maior nível investido.');
+assert.equal(mergedLegacyTrapSkills.traps.manualAdjustment, 2, 'A unificação deve preservar o ajuste mais forte.');
 assert.deepEqual(
     JSON.parse(JSON.stringify(model.getCharacterSkillBreakdown(
         'archery',
@@ -552,7 +573,7 @@ const migratedSheet = migration.sheets[0];
 
 assert.equal(migration.changed, true);
 assert.equal(migratedSheet.schemaVersion, 1);
-assert.equal(migratedSheet.rulesVersion, 11);
+assert.equal(migratedSheet.rulesVersion, 12);
 assert.equal(migratedSheet.creationMode, 'quick');
 assert.equal(migratedSheet.raceId, 'vampire');
 assert.equal(migratedSheet.hpCurrent, 47);
@@ -699,7 +720,7 @@ vm.runInContext('syncCombatantsToCharacterSheets()', integrationContext);
 const stage10BackupRaw = integrationStorage.getItem('dnd_character_sheets_backup_stage10_v11');
 const stage10Backup = JSON.parse(stage10BackupRaw);
 assert.ok(stage10Backup.createdAt, 'A consolidação deve criar um backup local datado.');
-assert.equal(stage10Backup.rulesVersion, 11);
+assert.equal(stage10Backup.rulesVersion, 12);
 assert.equal(stage10Backup.sheets.length, 1);
 assert.equal(stage10Backup.sheets[0].schemaVersion, undefined, 'O backup deve preservar a ficha anterior à migração.');
 vm.runInContext('migrateCharacterSheetSchema()', integrationContext);
@@ -757,7 +778,7 @@ const renderedSheetList = vm.runInContext(`
 `, integrationContext);
 assert.match(renderedSheetList, /Humano · Mago/);
 assert.match(renderedSheetList, /Completa · Nv\. 4/);
-assert.match(renderedSheetList, /Regras v11/);
+assert.match(renderedSheetList, /Regras v12/);
 assert.match(renderedSheetList, /Movimento/);
 assert.match(renderedSheetList, /Carga/);
 assert.match(renderedSheetList, /Exportar/);
