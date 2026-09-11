@@ -128,7 +128,6 @@
     function renderList(shouldScroll = false) {
         const container = document.getElementById('combatList');
         updateActiveTurnName();
-        container.innerHTML = "";
 
         if (
             expandedCombatantDetailsId !== null
@@ -142,6 +141,7 @@
             return;
         }
 
+        const fragment = document.createDocumentFragment();
         let printedDivider = false;
         const combatantsForDisplay = orderCombatantsForDisplay(combatants);
 
@@ -160,7 +160,7 @@
                     </span>
                     <div class="h-px bg-slate-700 flex-1"></div>
                 `;
-                container.appendChild(divider);
+                fragment.appendChild(divider);
                 printedDivider = true;
             }
 
@@ -467,9 +467,10 @@
                 renderList(false);
             });
             
-            container.appendChild(wrapper);
+            fragment.appendChild(wrapper);
         });
 
+        container.replaceChildren(fragment);
         document.getElementById('roundCounter').innerText = round;
         if (shouldScroll) {
             const activeCard = container.querySelector('.active-turn');

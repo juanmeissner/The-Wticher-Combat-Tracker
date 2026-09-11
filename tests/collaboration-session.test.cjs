@@ -31,6 +31,8 @@ assert.equal(session.isPlayer(), true);
 assert.equal(session.authorize('participant.resource.adjust', 'geralt').decision, 'allow');
 assert.equal(session.authorize('participant.resource.adjust', 'ciri').decision, 'deny');
 assert.equal(session.authorize('sheet.update', 'sheet-geralt').decision, 'propose');
+assert.equal(session.authorize('merchant.transaction', 'geralt').decision, 'propose');
+assert.equal(session.authorize('merchant.transaction', 'ciri').decision, 'deny');
 assert.equal(session.authorize('campaign.preferences.change', null).decision, 'deny');
 assert.match(session.getStatusPresentation().label, /Jogador/);
 
@@ -96,7 +98,7 @@ assert.match(sessionSource, /renderSessionToolsView\('collaboration'\)/);
 assert.match(sessionSource, /masterOnlyViews/);
 assert.match(sessionSource, /session-role-chip/);
 assert.match(styles, /data-collaboration-role="player"/);
-assert.match(workerSource, /witcher-combat-tracker-v123/);
+assert.match(workerSource, /witcher-combat-tracker-v146/);
 assert.match(indexSource, /playerPadCollapsedBar/);
 assert.match(sessionSource, /Calendário/);
 assert.match(styles, /player-pad-collapsed/);

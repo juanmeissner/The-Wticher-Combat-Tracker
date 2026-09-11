@@ -135,6 +135,7 @@ assert.deepEqual(
     }
 );
 assert.equal(context.canRemoveTransportInventoryItem(owner.inventory[0]), true, 'Um segundo exemplar vazio ainda pode ser removido.');
+assert.equal(context.getRemovableTransportInventoryQuantity(owner.inventory[0]), 1, 'Somente a montaria realmente livre pode entrar em uma venda.');
 
 const secondMount = state.mounts[1];
 const firstVehicle = state.vehicles[0];
@@ -152,6 +153,7 @@ assert.equal(mount.cargo[0].quantity, 2, 'Falha de capacidade não deve alterar 
 
 secondMount.equipment.saddlebags = 'alforjesgrandes';
 assert.equal(context.canRemoveTransportInventoryItem(owner.inventory[0]), false, 'Nenhuma unidade pode ser removida quando todas possuem carga ou equipamento.');
+assert.equal(context.getRemovableTransportInventoryQuantity(owner.inventory[0]), 0, 'Montarias em uso devem ficar fora da quantidade vendável.');
 transfer = context.transferCargoBetweenStorages(
     owner.id,
     `mount:${mount.id}`,

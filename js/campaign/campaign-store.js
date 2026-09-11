@@ -171,7 +171,7 @@
         if (previous === next && options.force !== true) return getActiveCampaign();
 
         const now = options.now || new Date().toISOString();
-        activeCampaign.state = migrations.buildCampaignState(snapshot);
+        activeCampaign.state = migrations.buildCampaignState(snapshot, activeCampaign.state || {});
         activeCampaign.revision += 1;
         activeCampaign.updatedAt = now;
         activeCampaign.sync = {
@@ -307,6 +307,36 @@
         return getActiveCampaign();
     }
 
+    function updateStateSlice(key, valueOrUpdater, options = {}) {
+        if (!initialized) initialize({ installBridge: false });
+        if (!activeCampaign || !key) return null;
+
+        const stateKey = String(key);
+        const previous = migrations.clone(activeCampaign.state?.[stateKey]);
+        const nextValue = typeof valueOrUpdater === 'function'
+            ? valueOrUpdater(migrations.clone(previous))
+            : valueOrUpdater;
+        if (nextValue === undefined) return getActiveCampaign();
+        if (JSON.stringify(previous) === JSON.stringify(nextValue) && options.force !== true) {
+            return getActiveCampaign();
+        }
+
+        const now = options.now || new Date().toISOString();
+        activeCampaign.state = {
+            ...(activeCampaign.state || {}),
+            [stateKey]: migrations.clone(nextValue)
+        };
+        activeCampaign.revision += 1;
+        activeCampaign.updatedAt = now;
+        activeCampaign.entityVersions = {
+            ...(activeCampaign.entityVersions || {}),
+            [String(options.entityKey || `state:${stateKey}`)]: activeCampaign.revision
+        };
+        persistCampaign(activeCampaign);
+        emit(options.reason || `state:${stateKey}:updated`, { stateKey });
+        return getActiveCampaign();
+    }
+
     function applyRemoteCampaign(campaign, options = {}) {
         if (!initialized) initialize({ installBridge: false });
         if (!campaign || typeof campaign !== 'object' || !campaign.id) return null;
@@ -421,6 +451,7 @@
         createCampaign,
         activateCampaign,
         updateMetadata,
+        updateStateSlice,
         applyRemoteCampaign,
         isTransientRemoteCampaign,
         endTransientRemoteCampaign,

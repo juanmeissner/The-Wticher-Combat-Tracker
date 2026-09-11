@@ -1,0 +1,60 @@
+{
+  "schemaVersion": 1,
+  "id": "nolan-kotulan-the-continent",
+  "source": "../continent.png",
+  "format": "webp",
+  "quality": 90,
+  "tileSize": 256,
+  "originalWidth": 2880,
+  "originalHeight": 4096,
+  "minNativeZoom": -4,
+  "maxNativeZoom": 0,
+  "urlTemplate": "img/maps/continent/tiles/{z}/{x}/{y}.webp",
+  "levels": [
+    {
+      "zoom": -4,
+      "directory": "m4",
+      "width": 180,
+      "height": 256,
+      "columns": 1,
+      "rows": 1,
+      "tileCount": 1
+    },
+    {
+      "zoom": -3,
+      "directory": "m3",
+      "width": 360,
+      "height": 512,
+      "columns": 2,
+      "rows": 2,
+      "tileCount": 4
+    },
+    {
+      "zoom": -2,
+      "directory": "m2",
+      "width": 720,
+      "height": 1024,
+      "columns": 3,
+      "rows": 4,
+      "tileCount": 12
+    },
+    {
+      "zoom": -1,
+      "directory": "m1",
+      "width": 1440,
+      "height": 2048,
+      "columns": 6,
+      "rows": 8,
+      "tileCount": 48
+    },
+    {
+      "zoom": 0,
+      "directory": "0",
+      "width": 2880,
+      "height": 4096,
+      "columns": 12,
+      "rows": 16,
+      "tileCount": 192
+    }
+  ]
+}

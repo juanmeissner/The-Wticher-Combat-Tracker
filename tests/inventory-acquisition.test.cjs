@@ -75,6 +75,29 @@ assert.equal(context.__getInventory().find(item => item.id === 'flecha').quantit
 assert.match(history.at(-1)[1], /2 kits · 10 flechas por kit/);
 assert.match(history.at(-1)[1], /Total debitado: 10 Coroas/);
 
+result = context.purchaseCurrentInventoryItem('flecha', 2, 18);
+assert.equal(result.purchased, true);
+assert.equal(result.quantity, 20, 'A compra da loja deve preservar o tamanho do kit do catálogo.');
+assert.equal(context.__getInventory().find(item => item.id === 'flecha').quantity, 40);
+assert.equal(context.__getInventory().find(item => item.id === 'coroa').moneyValue, 42);
+
+result = context.payCurrentInventoryCrowns(12);
+assert.equal(result.paid, true);
+assert.equal(result.balanceAfter, 30);
+assert.equal(context.__getInventory().find(item => item.id === 'coroa').moneyValue, 30);
+assert.equal(context.payCurrentInventoryCrowns(31).paid, false);
+assert.equal(context.__getInventory().find(item => item.id === 'coroa').moneyValue, 30);
+
+result = context.sellCurrentInventoryItem('flecha', 1, 7);
+assert.equal(result.sold, true);
+assert.equal(result.acquisitionUnits, 1);
+assert.equal(result.packSize, 10, 'A venda deve tratar munição pela mesma unidade comercial da compra.');
+assert.equal(result.quantity, 10);
+assert.equal(result.balanceAfter, 37);
+assert.equal(context.__getInventory().find(item => item.id === 'flecha').quantity, 30);
+assert.equal(context.sellCurrentInventoryItem('flecha', 4, 28).reason, 'insufficient-quantity');
+assert.equal(context.__getInventory().find(item => item.id === 'flecha').quantity, 30);
+
 const staleItem = { id: 'pocao', name: 'Poção de Teste', category: 'usable', quantity: 1, description: '' };
 assert.equal(context.__getInventoryDisplayItem(staleItem).description, 'Descrição do catálogo.');
 assert.match(Array.from(context.__getTransportItemDetailFacts(context.predefinedItems[3])).join(' | '), /Concede 60 de capacidade de carga/);

@@ -70,6 +70,7 @@ flowchart LR
 | 🎁 Saque | Recompensas contextuais, rolagem de quantidades, distribuição de itens e divisão de Coroas |
 | 🌀 Condições | Painel responsivo em grade, duração, stacks e dano recorrente automatizado |
 | 🕰️ Tempo da campanha | Calendário iniciado em 1276 DR, eras AR/DR, fases lunares, nomes medievais e avanços temporais auditáveis |
+| 🌍 Mundo | Atlas político, locais, NPCs, comerciantes, estoques, serviços, deslocamentos e situação histórica por ano |
 | 🛏️ Cuidados | Alimentação, higiene, hospedagem, ciclos diários, recuperação e estados persistentes |
 | ☣️ Toxicidade | Poções com valores próprios, limiares cumulativos, Tolerância, overdose e Mel Branco |
 | ✨ Efeitos | Magias e itens ativos vinculados individualmente aos participantes |
@@ -262,6 +263,150 @@ Antes de um salto capaz de processar Sangramento, Chamas ou Veneno, a prévia pe
 Na virada da meia-noite, o motor encerra o dia anterior uma única vez e verifica alimentação, higiene e sono de cada personagem. Ausências acumulam **Faminto**, **Falta de Higiene** e **Privação de Sono**; cuidados registrados na data impedem a penalidade correspondente. Benefícios diários expiram pelo calendário, enquanto benefícios obtidos ao terminar uma noite de hospedagem permanecem válidos no novo dia.
 
 Saltos fora do combate também processam a passagem narrativa da toxicidade e o intervalo para **Abstinência de Fisstech**. A toxicidade reduz uma vez por dia conforme `Tolerância total + nível`; consequências e dano só são executados quando o mestre marca a confirmação apresentada na prévia. O Fisstech conserva a regra de dez turnos/minutos após o fim do efeito, sem contagem dupla nos turnos normais. Recuperações médicas informadas em horas ou dias recebem um prazo exato e mudam o ferimento de **Tratado** para **Curado** quando esse horário é alcançado.
+
+### 🌍 Mundo, Atlas e situação histórica
+
+O botão `🌍` do pad abre uma central própria para o mundo da campanha. Cada campanha mantém seu **local atual**, locais personalizados, NPCs, comerciantes, viagens e eventos regionais sem misturar os dados de outra mesa. A estrutura utiliza IDs estáveis e uma hierarquia comum — **O Continente → reino/território → província → local** — e compartilha suas coordenadas com o mapa visual.
+
+- o **Atlas político** reúne 69 reinos, impérios, ducados, vassalos, federações, províncias e territórios, com nomes alternativos, relações políticas, descrição e fontes;
+- **Locais** oferece 90 capitais, cidades, vilarejos, fortalezas, castelos, academias, ilhas, ruínas e pontos especiais canônicos;
+- a camada **Somente no mapa** acrescenta 97 assentamentos e pontos reconhecidos na cartografia fornecida, sem inventar informações canônicas ausentes;
+- cada ponto cartográfico possui coordenadas normalizadas em porcentagem, referência ao mapa e confiabilidade **Alta**, **Média** ou **Baixa**; as posições do catálogo foram auditadas diretamente sobre os pixels da imagem original para coincidir com seus símbolos e nomes cartográficos;
+- o catálogo unificado pode ser filtrado por busca, tipo, camada e confiabilidade em cards recolhíveis adequados ao mobile;
+- o mestre pode criar cidades, vilas, vilarejos, assentamentos, fortalezas, castelos e locais especiais próprios, escolher o território superior, descrição, visibilidade e coordenadas;
+- locais personalizados são editáveis e removíveis, mas ficam separados do catálogo oficial, que permanece somente leitura;
+- o mestre pode definir a posição atual do grupo, exportar somente o Mundo e importá-lo em outra campanha;
+- registros oficiais são restaurados por versão sem apagar coordenadas ou criações personalizadas;
+- jogadores conectados consultam apenas locais públicos; registros privados e seus descendentes permanecem ocultos.
+
+#### 🗺️ Mapa visual interativo
+
+A aba **Mapa** transforma a imagem completa do Continente em uma área cartográfica dedicada, aberta em tela cheia dentro do próprio módulo Mundo. A fundação utiliza **Leaflet 1.9.4 armazenado localmente**, sem depender de CDN para o mecanismo de navegação, e uma pirâmide própria de blocos WebP.
+
+- o mapa original de `2880 × 4096` utiliza um sistema de coordenadas simples, adequado ao mundo fictício e independente de latitude real;
+- arrastar, roda do mouse, gesto com dois dedos, duplo toque/clique, teclado e controles `−`, `⌂` e `+` permitem navegar e ampliar sem aplicar zoom à interface do aplicativo;
+- a posição e o nível de zoom são preservados enquanto o usuário alterna entre as seções do Mundo;
+- a imagem original foi dividida em **257 blocos WebP de 256 × 256**, distribuídos por cinco níveis de detalhe entre o zoom `-4` e a resolução nativa `0`;
+- o conjunto completo ocupa aproximadamente **3,55 MiB**, enquanto a imagem PNG original de 16 MiB permanece preservada como fonte;
+- somente os blocos visíveis são requisitados, evitando carregar o mapa inteiro quando o usuário observa apenas uma região;
+- os níveis de visão geral são pré-armazenados pela PWA, e os detalhes visitados entram progressivamente no cache offline;
+- um manifesto versionado descreve dimensões, formato, níveis, colunas e linhas da pirâmide;
+- os **126 pontos somente cartográficos** e **60 locais canônicos posicionados** usam coordenadas percentuais derivadas da resolução original de **2880 × 4096**, totalizando **186 marcadores oficiais** antes das criações do mestre;
+- círculos verdes nomeados como `location|Nome` no SVG do CorelDRAW são importados como coordenadas precisas; a importação regional atual posiciona **74 marcadores**, sem nomes desconhecidos ou ambíguos, e mantém os demais locais do catálogo inalterados;
+- a calibração mais recente inclui Stygga, Thurn, Glyswen, Sarda, New Forge, Rhys-Rhun, Tergano, Corvo, Vedette, Pomerol, Tigg, Riedbrune e Kagen, além da correção dos símbolos próximos no sul do Continente;
+- atualizações do catálogo migram automaticamente coordenadas oficiais antigas para as posições corrigidas, enquanto coordenadas precisas ou personalizadas definidas pelo mestre continuam preservadas;
+- locais com coordenadas recebem marcadores interativos identificados pela camada **Canônica**, **Somente no mapa** ou **Da campanha**;
+- a busca combina nome, nomes alternativos, descrição e caminho territorial;
+- filtros por reino/região, tipo, camada e confiabilidade podem ser combinados e enquadrados no mapa;
+- o popup de cada marcador apresenta tipo, região, descrição resumida, confiabilidade e caminho hierárquico;
+- quando houver conteúdo associado, o popup resume quantos NPCs, lojas e eventos existem no local ou em seus descendentes;
+- os atalhos contextuais abrem **NPCs**, **Lojas** ou **Agenda** já filtrados pelo ponto selecionado, incluindo eventos herdados do reino ou região;
+- o mestre pode definir o local atual diretamente pelo marcador, que passa a receber destaque verde;
+- jogadores não recebem locais privados e não visualizam o controle para alterar a posição da campanha;
+- o atalho **Ver no catálogo** abre a ficha correspondente na seção Locais;
+- a camada **Rede de estradas** utiliza atualmente **152 trechos vetoriais** traçados pelo mestre no CorelDRAW sobre as linhas do mapa: **68 principais**, **76 regionais** e **8 caminhos de montanha**;
+- **129 nós** conectam localidades e pontos intermediários, com **61 entroncamentos** identificados automaticamente pela topologia da rede;
+- o importador `scripts/import-map-roads.js` converte linhas e polilinhas do arquivo `continent-roads.svg`, preserva nome, categoria e permissão de carruagens e encaixa extremidades próximas no mesmo nó;
+- esta primeira exportação cobre a Liga de Hengfors, Redânia, Novigrad e Oxenfurt; o mesmo fluxo poderá substituir o catálogo novamente à medida que outras regiões forem desenhadas;
+- cada trecho informa origem, destino, tipo de estrada, disponibilidade para carruagens e distância aproximada;
+- as distâncias usam uma escala centralizada, padronizada em **100 km por quadrícula**; o Mestre pode alterar esse valor em **Mapa → Filtros → Calibração de distância**, sem redesenhar caminhos ou reposicionar marcadores;
+- a calibração é salva separadamente em cada campanha, participa de backups e sincronização e recalcula imediatamente quilômetros, duração e resumo da rede;
+- o grafo utiliza **A\*** para escolher a rota de menor duração entre os pontos conectados e respeita passagens que não aceitam carruagens;
+- o botão de edição de estradas aparece somente para o Mestre e abre a ferramenta sobre o próprio mapa, sem exigir um programa externo;
+- trechos existentes podem ser selecionados, enquadrados, renomeados, reclassificados e corrigidos por pontos numerados arrastáveis;
+- um toque sobre o caminho em edição insere um novo vértice no segmento mais próximo, enquanto pontos intermediários podem ser removidos individualmente;
+- novos caminhos são desenhados na ordem dos toques, com encaixe automático das extremidades em entroncamentos próximos e opção para permitir ou impedir carruagens;
+- no mobile, iniciar uma correção recolhe o editor em uma barra compacta para liberar o mapa; a barra conserva o modo e a contagem de pontos até o formulário ser reaberto;
+- mover uma extremidade compartilhada atualiza todos os trechos conectados ao mesmo nó, preservando a continuidade da rede;
+- os marcadores de locais podem ser ocultados temporariamente durante a calibração para facilitar a leitura das linhas tracejadas originais;
+- a rede corrigida é armazenada como cópia local, mantendo o catálogo original intacto, e pode ser exportada ou importada em JSON;
+- a ação **Restaurar catálogo** descarta somente a cópia manual após confirmação e recupera imediatamente a rede oficial.
+
+Para reconstruir os blocos depois de substituir a imagem original, execute:
+
+```bash
+python scripts/generate-map-tiles.py
+```
+
+O gerador cria tudo em uma área temporária e somente substitui a pirâmide anterior depois que o processamento termina com sucesso.
+
+#### 🧭 Calendário, viagens e eventos regionais
+
+A aba **Agenda** conecta o Mundo ao relógio da campanha. O Mestre escolhe o destino, o personagem de referência, a forma de viagem e os NPCs acompanhantes. O aplicativo calcula a rota e exige confirmação explícita antes de avançar o tempo uma única vez, mudar o local atual e registrar o deslocamento.
+
+- viagens podem ser feitas **a pé**, **a cavalo**, por **carruagem/veículo** ou através da magia **Portal Vertical**, desde que o recurso esteja disponível na ficha selecionada;
+- cavalos levam o responsável e até um passageiro adicional, enquanto carroças e carruagens permitem selecionar todos os demais personagens que acompanharão a viagem;
+- o Portal Vertical pode transportar o conjurador e qualquer combinação de personagens selecionados diretamente ao destino em **1 turno (1 minuto)**, sem depender da rede de estradas;
+- caminhada e cavalo podem combinar estradas com trechos fora de estrada, escolhendo o percurso de menor duração;
+- carruagens utilizam somente trechos contínuos marcados como compatíveis e ficam indisponíveis quando não existem animais atrelados, Movimento ou conexão viária;
+- o cálculo considera tipo de estrada, distância, velocidade-base do meio de transporte e Movimento atual da montaria ou veículo;
+- a prévia apresenta a linha da rota no mapa, quilômetros totais, parcela em estrada, velocidade média, duração e escala utilizada;
+- o popup de qualquer marcador público oferece ao Mestre um atalho para planejar a viagem até aquele ponto;
+- a viagem salva meio de transporte, personagem responsável, comitiva selecionada, montaria ou veículo, algoritmo da rota, distância, escala, partida e chegada no histórico da campanha;
+- concluir a viagem avança o relógio e aciona normalmente eventos regionais, horários de NPCs, abertura e reposição de lojas e demais efeitos temporais;
+
+- eventos podem pertencer ao Continente inteiro, a um reino, província ou local e repetir uma vez, diariamente, semanalmente ou anualmente;
+- eventos vinculados a uma região também aparecem em seus locais descendentes e são processados sem ocorrência duplicada;
+- cada NPC possui uma rotina semanal com dias, intervalo de horário, atividade, local e visibilidade pública ou privada;
+- os cards mostram a atividade atual do NPC de acordo com o calendário;
+- lojas podem definir dias e horários de funcionamento, fechando e reabrindo automaticamente;
+- compras e serviços ficam indisponíveis fora do horário, enquanto reposições manuais, diárias, semanais ou personalizadas continuam integradas ao relógio;
+- avanços de tempo exibem um resumo agrupado de eventos alcançados, mudanças de rotina, abertura de lojas e reposição;
+- viagens, rotinas e eventos privados permanecem exclusivos do mestre nas salas online.
+
+A aba **História** não modifica os dados permanentes do Atlas. Ela cruza a data corrente do calendário com **37 situações territoriais** e **15 acontecimentos estruturados**, resolvendo dinamicamente:
+
+- governante ou regência do período;
+- autoridade que controla o território;
+- soberania e situação política;
+- estado físico, como preservado, ocupado, devastado, destruído ou em reconstrução;
+- guerras e acontecimentos em curso;
+- mudanças anteriores mais recentes e suas consequências.
+
+Assim, Cintra pode aparecer independente antes de 1263 DR, ocupada durante a Primeira Guerra e ligada ao Império depois da Paz de Cintra; Aedirn, Vengerberg, Líria/Rívia e Dol Blathanna também mudam conforme o ano selecionado. Datas em **AR e DR** usam a mesma ordenação do relógio e da Linha do Tempo. Precisões existentes — ano, mês ou dia — são preservadas, e o card avisa quando a fonte não permite uma data civil exata.
+
+Quando a continuidade dos jogos acrescenta regicídios, anexações ou desfechos ramificados, o registro recebe uma identificação própria. A aplicação nunca escolhe silenciosamente um final variável de *The Witcher 2* ou *The Witcher 3*: exibe a disputa ou sucessão como variável e mantém as fontes acessíveis no próprio card.
+
+#### 🧑 Gerenciamento de NPCs
+
+A aba **NPCs** mantém personagens do mundo diretamente dentro da campanha. O mestre pode criar e editar cada registro, informar profissão, facção, relacionamento e localização atual, além de separar com clareza o que os jogadores conhecem do que pertence às suas anotações privadas.
+
+- relacionamentos possuem estados visuais: **Desconhecido, Neutro, Amigável, Aliado, Hostil** e **Rival**;
+- a localização utiliza os mesmos IDs estáveis do Atlas, dos pontos cartográficos e dos locais personalizados;
+- ao trocar o local, o sistema registra origem, destino, motivo, data, era e horário do calendário da campanha;
+- editar nome, profissão, facção ou relacionamento não cria um deslocamento indevido;
+- o histórico permanece consultável dentro do card do NPC, em ordem do movimento mais recente;
+- remover um local personalizado não apaga NPCs: eles passam para **Sem localização**, preservando o local anterior no histórico;
+- busca e filtros permitem localizar NPCs por nome, profissão, facção, relacionamento ou posição atual;
+- NPCs secretos, anotações privadas e deslocamentos associados a locais ocultos são removidos da projeção enviada aos jogadores;
+- criação, edição, deslocamentos e remoção permanecem restritos ao mestre, enquanto jogadores podem consultar somente os dados públicos recebidos.
+
+#### 🏪 Comerciantes e lojas
+
+A aba **Lojas** transforma qualquer NPC público em um comerciante vinculado ao Mundo. Cada estabelecimento mantém seu próprio catálogo, estoque, preços e serviços sem copiar o conteúdo completo dos itens: os produtos continuam referenciando o catálogo oficial por ID e recebem automaticamente correções futuras de nome, descrição, peso e regras.
+
+- categorias incluem **Ferreiro, Alfaiate, Coureiro, Herbalista, Fazendeiro, Comida e Bebida, Alquimista, Artesão, Minerador, Tratador de Montarias, Estalajadeiro, Mercador Geral** e outras;
+- cada produto possui estoque atual, estoque máximo, preço personalizado e quantidade adicionada em cada reposição;
+- munições preservam a compra por kits: uma unidade de estoque entrega o conteúdo definido no catálogo, como dez flechas;
+- serviços possuem nome, descrição e preço próprios, podendo ser ilimitados ou controlar disponibilidade e reposição;
+- a reposição pode ser **manual, diária, semanal ou personalizada em dias**;
+- o relógio processa reposições em saltos pequenos ou extensos e registra o último ciclo, impedindo que o mesmo período reponha uma loja duas vezes;
+- o mestre escolhe o comprador, e o sistema debita as Coroas, adiciona o item ao inventário correto, reduz o estoque e registra a operação no histórico;
+- a perícia **Negócios** usa o total completo do personagem em `1d20 + Negócios` contra o ND configurado pelo mestre;
+- em caso de sucesso, o percentual configurado reduz compras e aumenta ofertas de venda somente durante a visita atual, sem alterar os preços permanentes;
+- cada loja define seu percentual-base de recompra, e o mestre ainda pode ajustar a oferta unitária antes de confirmar uma venda;
+- a venda remove o item do inventário selecionado, credita as Coroas e devolve o produto ao estoque do comerciante;
+- flechas e setas são negociadas pelos mesmos kits usados na aquisição, evitando vender uma fração indevida do pacote;
+- a última unidade equipada fica protegida, e montarias ou equipamentos de transporte em uso precisam ser liberados antes da venda;
+- compras, vendas e serviços alimentam tanto o histórico geral da sessão quanto um histórico comercial persistente da própria loja;
+- jogadores conectados podem consultar lojas públicas e seus estoques e solicitar produtos ou serviços para o próprio personagem;
+- cada loja define se compras online exigem aprovação do mestre; quando a aprovação é desativada, o servidor valida o preço cadastrado antes de processar a compra direta;
+- compras online atualizam Coroas, inventário e estoque como uma única operação, evitando resultados parciais;
+- anotações e transações privadas da loja continuam exclusivas do mestre e são removidas da projeção enviada aos jogadores.
+
+#### 🌐 Mundo colaborativo
+
+O local atual, o relógio, as rotas confirmadas, as viagens, os eventos públicos, as rotinas públicas e o estado das lojas utilizam o mesmo instantâneo sincronizado da campanha. Alterações do Mestre são publicadas para todos os dispositivos conectados, enquanto a projeção de cada jogador remove locais secretos, NPCs privados, viagens privadas, anotações do mestre, históricos comerciais e demais informações restritas. Jogadores consultam o mapa e o resultado público dos deslocamentos, mas não recebem os controles de escala, estradas, posição ou viagem. Solicitações comerciais aparecem no painel do mestre com quantidade e valor para aprovação, ajuste ou rejeição.
 
 ### 🛏️ Cuidados, descanso e necessidades
 
@@ -930,6 +1075,15 @@ O **backup JSON completo** reúne toda a campanha. Para compartilhar somente um 
 
 O projeto não exige framework JavaScript, bundler ou etapa de compilação.
 
+### Desempenho e carregamento
+
+Para manter o Combat Tracker responsivo mesmo com campanhas grandes, os recursos mais pesados são ativados somente quando necessários:
+
+- Leaflet, o mapa interativo, o editor e o grafo completo de estradas são carregados ao abrir o mapa ou planejar uma viagem;
+- a biblioteca de planilhas é carregada somente ao exportar habilidades para Excel;
+- os cards do combate são preparados fora da tela e inseridos em um único lote, reduzindo recálculos visuais e tremores durante a atualização;
+- os recursos carregados sob demanda continuam incluídos no cache da PWA, preservando o uso offline após a instalação.
+
 ## 🗂️ Organização do código
 
 ```text
@@ -955,12 +1109,23 @@ O projeto não exige framework JavaScript, bundler ou etapa de compilação.
 ├── professional-skills-descriptions.js # Descrições profissionais normalizadas em UTF-8
 ├── .editorconfig                # Codificação UTF-8 consistente entre editores
 ├── .vscode/settings.json        # Configuração de UTF-8 para o VS Code
+├── scripts/
+│   ├── generate-map-tiles.py    # Gerador reproduzível da pirâmide cartográfica
+│   └── import-map-roads.js      # Importa estradas e círculos de locais do SVG do CorelDRAW
 ├── js/
 │   ├── abilities/               # Catálogo, inventário e exportação de habilidades
 │   ├── combat/                  # Turnos, dano, renderização, efeitos e persistência
 │   ├── core/                    # Utilitários e notificações
 │   ├── campaign/                # Contêiner, migração e checkpoints da campanha
 │   ├── collaboration/           # Protocolo, permissões, fila offline, sessão e cliente WebSocket
+│   ├── world/                   # Mundo, Atlas, locais canônicos/cartográficos/personalizados e História
+│   │   ├── world-feature-loader.js # Carregamento sob demanda do mapa, rotas, Leaflet e editor
+│   │   ├── world-road-data.js   # Grafo vetorial, entroncamentos, escala e distâncias das estradas
+│   │   ├── world-route-engine.js # A*, meios de transporte, estrada/terreno e duração das viagens
+│   │   ├── world-road-imported-data.js # Rede gerada a partir do SVG do mestre
+│   │   ├── world-location-imported-data.js # Coordenadas precisas geradas pelos círculos verdes
+│   │   ├── world-road-editor.js # Validação, persistência e transporte das correções viárias
+│   │   └── world-map.js         # Mapa visual, coordenadas, camadas e editor cartográfico
 │   ├── ui/                      # Componentes de interface e modais
 │   ├── character-collections.js # Inventários e habilidades por participante
 │   ├── character-sheet-model.js # Regras, progressão e cálculos puros da ficha completa
@@ -1031,9 +1196,12 @@ node tests/collaboration-session.test.cjs
 node tests/collaboration-realtime-client.test.cjs
 node tests/collaboration-offline-queue.test.cjs
 node tests/collaboration-room-worker.test.cjs
+node tests/world-foundation.test.cjs
+node tests/world-map.test.cjs
+node tests/world-route-engine.test.cjs
 ```
 
-Os testes verificam o isolamento entre personagens, a migração e o backup do armazenamento antigo, a criação completa, nascimento, idade, aniversários sincronizados, exportação e importação individual sem sobrescrita, a evolução de nível sem regressão de investimentos, a preservação de recursos, o histórico e o desfazer da última evolução, os seis modelos prontos, os orçamentos de progressão, as recomendações próprias das 28 subclasses e escolas, o aprendizado de magias, os painéis de perícias e magias, os custos efetivos, Magia Expandida, Sobrecarga Arcana, Cura Mágica, dano mágico por alvo, fórmulas ofensivas, áreas, tipo Fogo, Bafo de Dragão, Inflamador, Fisstech e sua Abstinência atrasada. Também cobrem a integridade dos 83 acontecimentos históricos, das 13 celebrações anuais, de seus dias adicionais, descrições e datas organizacionais, além do parsing de datas completas, ambíguas e relativas, ordenação AR/DR, busca, filtros e integração da cronologia com o calendário. O relógio da campanha continua validado em seu início em 1276 DR, ciclos lunares, conversões de minutos, passagem entre dias, nomes medievais, persistência, backup, efeitos em horas e dias, expiração vinculada, recompensas de eventos sem duplicidade e integração com turnos e sono. Cuidados e descanso, ciclos diários, contadores de ausência, duração e restauração dos benefícios, recursos temporários, testes de hospedagem, redução profissional de custos, Cuidado Prolongado, Dormir Leve, Balada do Sobrevivente e os benefícios de Freya também são validados. A suíte cobre ainda os itens instantâneos, seleção contextual de alvos, ablação em armadura e arma, preparação de dano por item, Veneno Negro, remoção de intoxicação, fórmula e recompensas dos testes, integração do `20 natural`, as quatro gravidades e os 24 ferimentos críticos, tratamento médico, vacilos, críticos defensivos, desarme, consequências avançadas, toxicidade, overdose e Mel Branco. Por fim, cobre a sincronização com fichas, a integridade do catálogo, equipamentos, munições, defesas, reparos, ataques de monstros, saque, Coroas, receitas, rendimentos, transferências entre armazenamentos, renderização de ícones na Central de Carga, o bloqueio global de zoom e a colaboração: campanhas versionadas, checkpoints, papéis, propostas, conflitos, projeções seguras, criação protegida de salas, autenticação por dispositivo e comandos de recursos em tempo real.
+Os testes verificam o isolamento entre personagens, a migração e o backup do armazenamento antigo, a criação completa, nascimento, idade, aniversários sincronizados, exportação e importação individual sem sobrescrita, a evolução de nível sem regressão de investimentos, a preservação de recursos, o histórico e o desfazer da última evolução, os seis modelos prontos, os orçamentos de progressão, as recomendações próprias das 28 subclasses e escolas, o aprendizado de magias, os painéis de perícias e magias, os custos efetivos, Magia Expandida, Sobrecarga Arcana, Cura Mágica, dano mágico por alvo, fórmulas ofensivas, áreas, tipo Fogo, Bafo de Dragão, Inflamador, Fisstech e sua Abstinência atrasada. Também cobrem a integridade dos 83 acontecimentos históricos, das 13 celebrações anuais, de seus dias adicionais, descrições e datas organizacionais, além do parsing de datas completas, ambíguas e relativas, ordenação AR/DR, busca, filtros e integração da cronologia com o calendário. O relógio da campanha continua validado em seu início em 1276 DR, ciclos lunares, conversões de minutos, passagem entre dias, nomes medievais, persistência, backup, efeitos em horas e dias, expiração vinculada, recompensas de eventos sem duplicidade e integração com turnos e sono. O Mundo é validado quanto à hierarquia, isolamento por campanha, IDs, exportação, 69 entidades políticas, 90 locais canônicos, 126 pontos cartográficos, coordenadas, confiabilidade, locais personalizados protegidos, NPCs, deslocamentos cronológicos, comerciantes, estoques, serviços, descontos de Negócios, reposição temporal sem duplicidade, remoção de locais em uso, privacidade online, 37 situações históricas, 15 acontecimentos, vínculos territoriais, fontes, períodos AR/DR e mudanças de governo, ocupação ou reconstrução conforme o calendário. A camada visual também valida 186 âncoras oficiais, os 74 círculos verdes importados do SVG sem conflitos, a migração das coordenadas oficiais corrigidas, 152 trechos viários, 61 entroncamentos, distâncias na escala comum, calibração por campanha, A*, modos a pé/cavalo/carruagem, restrições viárias e duração calculada. Cuidados e descanso, ciclos diários, contadores de ausência, duração e restauração dos benefícios, recursos temporários, testes de hospedagem, redução profissional de custos, Cuidado Prolongado, Dormir Leve, Balada do Sobrevivente e os benefícios de Freya também são validados. A suíte cobre ainda os itens instantâneos, seleção contextual de alvos, ablação em armadura e arma, preparação de dano por item, Veneno Negro, remoção de intoxicação, fórmula e recompensas dos testes, integração do `20 natural`, as quatro gravidades e os 24 ferimentos críticos, tratamento médico, vacilos, críticos defensivos, desarme, consequências avançadas, toxicidade, overdose e Mel Branco. Por fim, cobre a sincronização com fichas, a integridade do catálogo, equipamentos, munições, defesas, reparos, ataques de monstros, saque, Coroas, receitas, rendimentos, transferências entre armazenamentos, renderização de ícones na Central de Carga, o bloqueio global de zoom e a colaboração: campanhas versionadas, checkpoints, papéis, propostas, conflitos, projeções seguras, criação protegida de salas, autenticação por dispositivo e comandos de recursos em tempo real.
 
 ## ✅ Estado atual
 
@@ -1048,6 +1216,22 @@ Os testes verificam o isolamento entre personagens, a migração e o backup do a
 - [x] Datas comemorativas anuais separadas de marcos históricos informativos
 - [x] Conclusão de eventos com distribuição segura de Coroas, recompensa pendente e prevenção de crédito duplicado
 - [x] Eras AR/DR, calendário inicial em 1276 DR e ciclo lunar integrado
+- [x] Mundo por campanha com IDs estáveis, hierarquia, local atual, backup e importação
+- [x] Atlas político com relações, fontes e 90 cidades, fortalezas e pontos canônicos
+- [x] Camada histórica com governos, controle, guerras, ocupações, destruições e reconstruções por ano AR/DR
+- [x] Locais cartográficos com coordenadas, confiabilidade e catálogo separado das criações do mestre
+- [x] Fundação do mapa visual em tela cheia com Leaflet local, navegação, zoom isolado e cache PWA
+- [x] Pirâmide cartográfica com 257 blocos WebP, cinco níveis de zoom, manifesto e gerador reutilizável
+- [x] Marcadores interativos com busca, filtros combinados, navegação regional, privacidade e local atual
+- [x] Georreferência aproximada de 59 locais canônicos e atalhos contextuais para NPCs, lojas e eventos
+- [x] Rede viária vetorial com trechos, entroncamentos, distâncias, visibilidade alternável e restrição de carruagens
+- [x] Editor de estradas exclusivo do Mestre com vértices arrastáveis, novos trechos, encaixe de nós, JSON e restauração segura
+- [x] Rotas A* com viagem a pé, cavalo e carruagem, trechos fora de estrada, duração e confirmação do Mestre
+- [x] Escala de quilômetros editável por campanha sem alterar a geometria do mapa
+- [x] Criação, edição, privacidade e exclusão segura de locais personalizados por campanha
+- [x] NPCs por campanha com profissão, facção, relacionamento, dados públicos, notas privadas e histórico de deslocamentos
+- [x] Comerciantes vinculados a NPCs com catálogo, estoque, preços, serviços, reposição e descontos por Negócios
+- [x] Compras e vendas com Coroas, recompra configurável, estoque reverso e histórico comercial privado
 - [x] Durações narrativas em minutos, horas, dias e semanas com expiração automática
 - [x] Fechamento diário com necessidades, toxicidade narrativa, Abstinência de Fisstech e recuperação médica
 - [x] Agenda ordenada com eventos pontuais ou anuais, conclusão e processamento sem duplicidade

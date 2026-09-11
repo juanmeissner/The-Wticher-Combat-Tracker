@@ -10,7 +10,8 @@
 
     const PRIVATE_KEYS = new Set([
         'gmNotes', 'masterNotes', 'secretNotes', 'privateNotes', 'secrets',
-        'password', 'passwordHash', 'ownerSecret', 'accessLog', 'revokedDevices'
+        'password', 'passwordHash', 'ownerSecret', 'accessLog', 'revokedDevices',
+        'privateTransactions'
     ]);
 
     function sameId(left, right) {
@@ -91,6 +92,51 @@
         delete state.master;
         delete state.audit;
         delete state.access;
+
+        if (Array.isArray(state.world?.locations)) {
+            const hiddenIds = new Set(state.world.locations
+                .filter(location => location?.visibility === 'private')
+                .map(location => String(location.id)));
+            let changed = true;
+            while (changed) {
+                changed = false;
+                state.world.locations.forEach(location => {
+                    if (location?.parentId && hiddenIds.has(String(location.parentId)) && !hiddenIds.has(String(location.id))) {
+                        hiddenIds.add(String(location.id));
+                        changed = true;
+                    }
+                });
+            }
+            state.world.locations = state.world.locations.filter(location => !hiddenIds.has(String(location.id)));
+            if (state.world.currentLocationId && hiddenIds.has(String(state.world.currentLocationId))) {
+                state.world.currentLocationId = null;
+            }
+            if (Array.isArray(state.world.npcs)) {
+                state.world.npcs = state.world.npcs
+                    .filter(npc => npc?.visibility !== 'private'
+                        && (!npc?.currentLocationId || !hiddenIds.has(String(npc.currentLocationId))))
+                    .map(npc => ({
+                        ...npc,
+                        schedule: (Array.isArray(npc.schedule) ? npc.schedule : []).filter(entry =>
+                            entry?.visibility !== 'private'
+                            && (!entry?.locationId || !hiddenIds.has(String(entry.locationId)))),
+                        movements: (Array.isArray(npc.movements) ? npc.movements : []).filter(movement =>
+                            (!movement?.fromLocationId || !hiddenIds.has(String(movement.fromLocationId)))
+                            && (!movement?.toLocationId || !hiddenIds.has(String(movement.toLocationId))))
+                    }));
+            }
+            if (Array.isArray(state.world.travelHistory)) {
+                state.world.travelHistory = state.world.travelHistory.filter(travel =>
+                    travel?.visibility !== 'private'
+                    && (!travel?.fromLocationId || !hiddenIds.has(String(travel.fromLocationId)))
+                    && (!travel?.toLocationId || !hiddenIds.has(String(travel.toLocationId))));
+            }
+            if (Array.isArray(state.world.regionalEvents)) {
+                state.world.regionalEvents = state.world.regionalEvents.filter(event =>
+                    event?.visibility !== 'private'
+                    && (!event?.locationId || !hiddenIds.has(String(event.locationId))));
+            }
+        }
 
         if (Array.isArray(state.combat?.combatants)) {
             state.combat.combatants = state.combat.combatants.map(combatant => {

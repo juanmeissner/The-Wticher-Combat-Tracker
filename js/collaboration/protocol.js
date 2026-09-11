@@ -7,7 +7,7 @@
     'use strict';
 
     const PROTOCOL_VERSION = 1;
-    const CAMPAIGN_SCHEMA_VERSION = 1;
+    const CAMPAIGN_SCHEMA_VERSION = 2;
 
     const ROLES = Object.freeze({
         MASTER: 'master',
@@ -63,6 +63,7 @@
         'spell.learn': define('owned-sheet', { player: DECISIONS.PROPOSE }),
         'transfer.item': define('owned-participant', { player: DECISIONS.PROPOSE }),
         'transfer.crowns': define('owned-participant', { player: DECISIONS.PROPOSE }),
+        'merchant.transaction': define('owned-participant', { player: DECISIONS.PROPOSE }),
         'proposal.resolve': define('campaign'),
         'conflict.resolve': define('campaign'),
         'room.member.revoke': define('campaign'),
@@ -162,4 +163,3 @@
         evaluateConflict
     });
 });
-

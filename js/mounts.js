@@ -495,6 +495,20 @@
         return candidates.some(asset => kind === 'mount' ? canDiscardMount(asset, state) : canDiscardVehicle(asset));
     }
 
+    function getRemovableTransportInventoryQuantity(item) {
+        const kind = getTransportItemKind(item);
+        if (!kind) return Math.max(0, Number(item?.quantity) || 0);
+        const owner = global.getCharacterCollectionOwner?.();
+        const state = owner ? ensureTransportState(owner) : null;
+        if (!owner || !state) return Math.max(0, Number(item?.quantity) || 0);
+        if (kind === 'mount-gear') return getAvailableInventoryQuantity(owner, item);
+        const list = kind === 'mount' ? state.mounts : state.vehicles;
+        return list
+            .filter(asset => String(asset.templateId) === String(item.id))
+            .filter(asset => kind === 'mount' ? canDiscardMount(asset, state) : canDiscardVehicle(asset))
+            .length;
+    }
+
     function persist(owner, message = '') {
         synchronizeTransportAssets(owner);
         if (owner?.sheetId && typeof characterSheets !== 'undefined' && Array.isArray(characterSheets)) {
@@ -1288,6 +1302,7 @@
     global.renderTransportItemIcon = renderTransportItemIcon;
     global.isTransportSystemItem = isTransportSystemItem;
     global.canRemoveTransportInventoryItem = canRemoveTransportInventoryItem;
+    global.getRemovableTransportInventoryQuantity = getRemovableTransportInventoryQuantity;
     global.getTransportInventoryBadge = getTransportInventoryBadge;
     global.getSelectedTransportActionLabel = getSelectedTransportActionLabel;
     global.renderTransportDetailsAction = renderTransportDetailsAction;

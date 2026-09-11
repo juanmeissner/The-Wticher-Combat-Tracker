@@ -25,8 +25,9 @@ assert.match(zoomLockSource, /event\.touches\.length > 1/);
 assert.match(zoomLockSource, /event\.ctrlKey \|\| event\.metaKey/);
 assert.match(zoomLockSource, /\['\+', '-', '=', '0'\]/);
 assert.match(zoomLockSource, /passive:\s*false/);
+assert.match(zoomLockSource, /data-allow-map-zoom/);
 
-assert.match(workerSource, /witcher-combat-tracker-v123/);
+assert.match(workerSource, /witcher-combat-tracker-v146/);
 assert.match(workerSource, /zoom-lock\.css/);
 assert.match(workerSource, /js\/zoom-lock\.js/);
 

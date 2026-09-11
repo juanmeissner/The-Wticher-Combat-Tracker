@@ -6,6 +6,76 @@
     background: #020617;
 }
 
+/* Calendário, viagens, horários e eventos do Mundo */
+.world-travel-button { margin-top: 10px; width: 100%; }
+.session-dialog.world-time-dialog { width: min(680px, calc(100vw - 24px)); }
+.world-time-dialog form { display: grid; gap: 10px; min-width: 0; }
+.world-time-dialog form > label,
+.world-time-form-grid > label { display: grid; gap: 5px; min-width: 0; }
+.world-time-dialog input,
+.world-time-dialog select,
+.world-time-dialog textarea { width: 100%; max-width: 100%; min-width: 0; box-sizing: border-box; }
+.world-time-dialog select,
+.world-time-dialog textarea {
+    border: 1px solid #475569;
+    border-radius: 9px;
+    background: #172033;
+    color: #f8fafc;
+    padding: 9px 10px;
+}
+.world-time-dialog select { min-height: 42px; color-scheme: dark; }
+.world-time-dialog select option { background: #172033; color: #f8fafc; }
+.world-time-dialog textarea { resize: vertical; }
+.world-time-form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.world-travel-route-preview { display: grid; gap: 9px; min-width: 0; padding: 12px; border: 1px solid #0e7490; border-radius: 12px; background: #0b2034; }
+.world-travel-route-preview > p { margin: 0; color: #b8c7da; font-size: .77rem; line-height: 1.45; }
+.world-travel-route-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.world-travel-route-heading > div { display: grid; min-width: 0; gap: 3px; }
+.world-travel-route-heading small { color: #22d3ee; font-size: .65rem; font-weight: 900; letter-spacing: .06em; }
+.world-travel-route-heading strong { color: #f8fafc; line-height: 1.35; }
+.world-travel-route-heading > b { flex: 0 0 auto; color: #67e8f9; }
+.world-travel-route-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 7px; }
+.world-travel-route-stats span { display: grid; align-content: start; gap: 2px; padding: 8px; border: 1px solid #29445f; border-radius: 9px; color: #8fa5be; font-size: .65rem; }
+.world-travel-route-stats b { color: #f8fafc; font-size: .73rem; overflow-wrap: anywhere; }
+.world-travel-route-error { color: #fda4af !important; }
+.world-travel-confirm { display: grid !important; grid-template-columns: auto minmax(0, 1fr); align-items: start; gap: 9px !important; padding: 10px 11px; border: 1px solid #475569; border-radius: 10px; background: #172033; }
+.world-travel-confirm input { width: 18px !important; height: 18px; margin: 1px 0 0; }
+.world-travel-confirm span { color: #dbe7f5; font-size: .75rem; line-height: 1.4; }
+.world-time-checklist { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; padding: 12px; border: 1px solid #33445d; border-radius: 12px; }
+.world-time-checklist legend { padding: 0 6px; color: #9fb2cd; font-size: 12px; font-weight: 800; }
+.world-time-checklist label, .world-merchant-weekdays label { display: inline-flex; flex-direction: row; align-items: center; gap: 6px; margin: 0; }
+.world-time-checklist input, .world-merchant-weekdays input { width: auto; }
+.world-time-checklist.world-travel-party { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); margin: 0; background: #101c30; }
+.world-travel-party-help { grid-column: 1 / -1; color: #9fb2cd; line-height: 1.4; }
+.world-travel-party label { min-width: 0; padding: 8px 10px; border: 1px solid #31425c; border-radius: 9px; background: #172033; }
+.world-travel-party label span { min-width: 0; overflow-wrap: anywhere; }
+.world-travel-party-summary { padding-top: 8px; border-top: 1px solid #29445f; }
+.world-travel-party-history { color: #b8c7da; font-size: .75rem; line-height: 1.4; }
+.world-time-schedule-list, .world-regional-event-list, .world-travel-list { display: grid; gap: 10px; margin: 12px 0 18px; }
+.world-time-schedule-list article, .world-regional-event-card, .world-travel-card { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 12px; border: 1px solid #31425c; border-radius: 12px; background: #142035; }
+.world-time-schedule-list article > div, .world-regional-event-card > div, .world-travel-card > div { display: grid; gap: 4px; min-width: 0; }
+.world-regional-event-card strong, .world-travel-card strong { color: #f5f8ff; }
+.world-regional-event-card small, .world-travel-card small, .world-time-schedule-list span { color: #9fb2cd; }
+.world-regional-event-card p, .world-travel-card p { margin: 4px 0 0; color: #cad5e5; white-space: pre-wrap; }
+.world-time-current, .world-npc-routine, .world-merchant-open-status { display: flex; gap: 10px; align-items: flex-start; padding: 11px 12px; border: 1px solid #31425c; border-radius: 12px; background: #101c30; }
+.world-time-current > div, .world-npc-routine { display: grid; gap: 3px; }
+.world-time-current p, .world-npc-routine p { margin: 3px 0 0; }
+.world-npc-routine.is-active, .world-merchant-open-status.is-open { border-color: #168f6a; background: #0d2d2b; }
+.world-merchant-open-status.is-closed, .world-merchant-directory-facts .is-closed { border-color: #8a3943; color: #ff9aa7; }
+.world-merchant-open-status { justify-content: space-between; align-items: center; margin-bottom: 12px; }
+.world-merchant-weekdays { display: flex; flex-wrap: wrap; gap: 8px 12px; margin: 10px 0 14px; }
+.world-overview-events, .world-overview-travels { margin-top: 14px; padding: 12px; border: 1px solid #263a55; border-radius: 14px; background: #0c1729; }
+
+@media (max-width: 560px) {
+    .world-time-form-grid { grid-template-columns: 1fr; }
+    .world-travel-route-heading { display: grid; }
+    .world-travel-route-stats { grid-template-columns: 1fr; }
+    .world-time-checklist.world-travel-party { grid-template-columns: 1fr; }
+    .world-time-schedule-list article, .world-regional-event-card { flex-direction: column; }
+    .world-regional-event-card .world-location-card-actions { width: 100%; }
+    .world-regional-event-card .world-location-card-actions button { flex: 1; }
+}
+
 /* Detalhes e aquisição no catálogo de itens */
 #itemDetailsModal {
     z-index: 10070;
@@ -766,6 +836,34 @@ body {
     margin-bottom: 14px !important;
 }
 
+.world-hub-tabs {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 6px;
+    margin-bottom: 12px;
+    padding: 4px;
+    border: 1px solid #334155;
+    border-radius: 11px;
+    background: rgba(2, 6, 23, .72);
+}
+
+.world-hub-tabs button {
+    min-height: 38px;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    color: #94a3b8;
+    padding: 0 5px;
+    font-size: .67rem;
+    font-weight: 850;
+}
+
+.world-hub-tabs button.active {
+    background: #0284c7;
+    color: #fff;
+    box-shadow: 0 0 0 1px rgba(56, 189, 248, .45) inset;
+}
+
 .world-hub-preview {
     display: grid;
     grid-template-columns: 52px minmax(0, 1fr);
@@ -819,6 +917,1369 @@ body {
     color: #cbd5e1;
     font-size: .72rem;
     font-weight: 750;
+}
+
+.world-current-location {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-bottom: 12px;
+    padding: 13px;
+    border: 1px solid rgba(14, 165, 233, .55);
+    border-radius: 13px;
+    background: rgba(8, 47, 73, .42);
+}
+
+.world-current-location > small {
+    color: #38bdf8;
+    font-size: .62rem;
+    font-weight: 900;
+    letter-spacing: .1em;
+}
+
+.world-current-location > strong {
+    color: #f0f9ff;
+    font-size: 1rem;
+}
+
+.world-current-location > span {
+    color: #a5d8f3;
+    font-size: .7rem;
+    line-height: 1.35;
+}
+
+.world-current-location label {
+    margin-top: 7px;
+}
+
+.world-current-location select {
+    width: 100%;
+    min-height: 42px;
+    padding: 0 10px;
+    border: 1px solid #475569;
+    border-radius: 9px;
+    background: #172033;
+    color: #f8fafc;
+    font-size: .78rem;
+}
+
+.world-current-history {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin: -4px 0 12px;
+    padding: 11px 13px;
+    border-left: 3px solid #f59e0b;
+    border-radius: 0 10px 10px 0;
+    background: rgba(69, 26, 3, .42);
+}
+
+.world-current-history small {
+    color: #fbbf24;
+    font-size: .59rem;
+    font-weight: 900;
+    letter-spacing: .08em;
+}
+
+.world-current-history strong {
+    color: #fef3c7;
+    font-size: .78rem;
+}
+
+.world-current-history span,
+.world-current-history b {
+    color: #d6d3d1;
+    font-size: .66rem;
+    line-height: 1.4;
+}
+
+.world-hub-transfer-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.world-hub-transfer-actions button {
+    min-width: 0;
+    padding-inline: 8px;
+}
+
+.world-hub-version {
+    margin: 0 0 12px !important;
+    color: #64748b !important;
+    font-size: .65rem !important;
+    text-align: center;
+}
+
+.world-atlas-panel {
+    min-width: 0;
+}
+
+.world-atlas-toolbar {
+    display: grid;
+    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.world-location-toolbar {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.world-location-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+
+.world-location-heading div,
+.world-location-heading small,
+.world-location-heading strong {
+    display: block;
+    min-width: 0;
+}
+
+.world-location-heading small {
+    color: #38bdf8;
+    font-size: .58rem;
+    font-weight: 900;
+    letter-spacing: .08em;
+}
+
+.world-location-heading strong {
+    margin-top: 3px;
+    color: #f0f9ff;
+    font-size: .8rem;
+}
+
+.world-location-heading button {
+    flex: 0 0 auto;
+    min-height: 38px;
+    padding: 0 11px;
+    border-radius: 9px;
+    font-size: .68rem;
+    font-weight: 850;
+}
+
+.world-atlas-toolbar label,
+.world-atlas-toolbar label > span {
+    display: block;
+    min-width: 0;
+}
+
+.world-atlas-toolbar label > span {
+    margin: 0 0 5px 2px;
+    color: #94a3b8;
+    font-size: .62rem;
+    font-weight: 850;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+}
+
+.world-atlas-toolbar input,
+.world-atlas-toolbar select {
+    width: 100%;
+    min-width: 0;
+    min-height: 42px;
+    padding: 0 10px;
+    border: 1px solid #475569;
+    border-radius: 9px;
+    background: #172033;
+    color: #f8fafc;
+    font-size: .74rem;
+}
+
+.world-atlas-visible-count {
+    margin: 4px 0 9px !important;
+    color: #7dd3fc !important;
+    font-size: .67rem !important;
+    font-weight: 800;
+}
+
+.world-political-list {
+    display: grid;
+    gap: 8px;
+}
+
+.world-political-card {
+    overflow: hidden;
+    border: 1px solid #334155;
+    border-radius: 11px;
+    background: rgba(23, 32, 51, .9);
+}
+
+.world-political-card[hidden] {
+    display: none;
+}
+
+.world-political-card summary {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 10px;
+    min-height: 58px;
+    padding: 10px 12px;
+    cursor: pointer;
+    list-style: none;
+}
+
+.world-political-card summary::-webkit-details-marker {
+    display: none;
+}
+
+.world-political-card summary::after {
+    content: '⌄';
+    color: #38bdf8;
+    font-size: 1rem;
+    font-weight: 900;
+}
+
+.world-political-card[open] summary::after {
+    transform: rotate(180deg);
+}
+
+.world-political-card summary > span:first-child {
+    min-width: 0;
+}
+
+.world-political-card summary strong,
+.world-political-card summary small {
+    display: block;
+}
+
+.world-political-card summary strong {
+    overflow: hidden;
+    color: #f8fafc;
+    font-size: .82rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.world-political-card summary small {
+    margin-top: 3px;
+    color: #7dd3fc;
+    font-size: .63rem;
+}
+
+.world-political-status {
+    display: none;
+}
+
+.world-capital-chip {
+    padding: 4px 6px;
+    border: 1px solid rgba(250, 204, 21, .5);
+    border-radius: 999px;
+    background: rgba(113, 63, 18, .5);
+    color: #fde68a;
+    font-size: .58rem;
+    font-weight: 900;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+}
+
+.world-location-layer-chip {
+    max-width: 88px;
+    padding: 4px 6px;
+    border: 1px solid rgba(148, 163, 184, .35);
+    border-radius: 999px;
+    color: #cbd5e1;
+    font-size: .52rem;
+    font-weight: 900;
+    line-height: 1.15;
+    text-align: center;
+    text-transform: uppercase;
+}
+
+.world-location-layer-chip.cartographic {
+    border-color: rgba(245, 158, 11, .55);
+    background: rgba(120, 53, 15, .35);
+    color: #fde68a;
+}
+
+.world-location-layer-chip.custom {
+    border-color: rgba(168, 85, 247, .55);
+    background: rgba(88, 28, 135, .34);
+    color: #e9d5ff;
+}
+
+.world-cartographic-facts {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 7px;
+    margin-top: 10px;
+}
+
+.world-cartographic-facts span {
+    min-width: 0;
+    padding: 8px;
+    border: 1px solid rgba(245, 158, 11, .28);
+    border-radius: 8px;
+    background: rgba(69, 26, 3, .24);
+}
+
+.world-cartographic-facts small,
+.world-cartographic-facts b {
+    display: block;
+}
+
+.world-cartographic-facts small {
+    color: #fbbf24;
+    font-size: .52rem;
+    font-weight: 900;
+    letter-spacing: .04em;
+}
+
+.world-cartographic-facts b {
+    margin-top: 3px;
+    overflow-wrap: anywhere;
+    color: #fef3c7;
+    font-size: .62rem;
+    line-height: 1.35;
+}
+
+.world-cartographic-note {
+    padding: 8px;
+    border-radius: 7px;
+    background: rgba(120, 53, 15, .24);
+    color: #fde68a !important;
+}
+
+.world-location-card-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 7px;
+    margin-top: 11px;
+}
+
+.world-location-card-actions button {
+    min-height: 38px;
+    border-radius: 8px;
+    font-size: .67rem;
+    font-weight: 850;
+}
+
+.world-location-editor-overlay {
+    z-index: 1300;
+}
+
+.world-location-editor {
+    max-width: 500px;
+}
+
+.world-location-editor form,
+.world-location-editor label,
+.world-location-editor label > span {
+    display: block;
+    min-width: 0;
+}
+
+.world-location-editor form {
+    display: grid;
+    gap: 11px;
+}
+
+.world-location-editor label > span,
+.world-location-editor legend {
+    margin: 0 0 5px 2px;
+    color: #94a3b8;
+    font-size: .62rem;
+    font-weight: 850;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+}
+
+.world-location-editor input,
+.world-location-editor select,
+.world-location-editor textarea {
+    width: 100%;
+    min-width: 0;
+    border: 1px solid #475569;
+    border-radius: 9px;
+    background: #172033;
+    color: #f8fafc;
+    font: inherit;
+}
+
+.world-location-editor input,
+.world-location-editor select {
+    min-height: 43px;
+    padding: 0 10px;
+}
+
+.world-location-editor textarea {
+    resize: vertical;
+    padding: 10px;
+    line-height: 1.45;
+}
+
+.world-location-editor fieldset {
+    min-width: 0;
+    margin: 0;
+    padding: 10px;
+    border: 1px solid #334155;
+    border-radius: 10px;
+}
+
+.world-location-editor fieldset > small {
+    display: block;
+    margin-top: 7px;
+    color: #64748b;
+    font-size: .61rem;
+}
+
+.world-location-editor-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+}
+
+.world-npc-toolbar {
+    grid-template-columns: minmax(0, 1.4fr) repeat(2, minmax(0, 1fr));
+}
+
+.world-npc-relationship {
+    max-width: 80px;
+    padding: 4px 7px;
+    border: 1px solid rgba(148, 163, 184, .4);
+    border-radius: 999px;
+    color: #cbd5e1;
+    font-size: .53rem;
+    font-weight: 900;
+    letter-spacing: .03em;
+    text-align: center;
+    text-transform: uppercase;
+}
+
+.world-npc-relationship.is-friendly,
+.world-npc-relationship.is-allied {
+    border-color: rgba(52, 211, 153, .5);
+    background: rgba(6, 78, 59, .35);
+    color: #a7f3d0;
+}
+
+.world-npc-relationship.is-hostile,
+.world-npc-relationship.is-rival {
+    border-color: rgba(248, 113, 113, .5);
+    background: rgba(127, 29, 29, .35);
+    color: #fecaca;
+}
+
+.world-npc-private-notes {
+    margin-top: 10px;
+    padding: 9px;
+    border: 1px solid rgba(168, 85, 247, .42);
+    border-radius: 8px;
+    background: rgba(88, 28, 135, .24);
+}
+
+.world-npc-private-notes small {
+    display: block;
+    color: #c4b5fd;
+    font-size: .53rem;
+    font-weight: 900;
+    letter-spacing: .05em;
+}
+
+.world-npc-private-notes p {
+    margin-top: 5px !important;
+    color: #e9d5ff !important;
+}
+
+.world-npc-movements {
+    margin-top: 10px;
+    overflow: hidden;
+    border: 1px solid rgba(14, 165, 233, .35);
+    border-radius: 9px;
+    background: rgba(8, 47, 73, .2);
+}
+
+.world-npc-movements > summary {
+    display: flex;
+    min-height: 40px;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 10px;
+    color: #bae6fd;
+    font-size: .65rem;
+    font-weight: 850;
+}
+
+.world-npc-movements > summary::after {
+    content: none;
+}
+
+.world-npc-movements > summary b {
+    min-width: 23px;
+    padding: 3px 6px;
+    border-radius: 999px;
+    background: rgba(14, 165, 233, .18);
+    text-align: center;
+}
+
+.world-npc-movements ol {
+    display: grid;
+    gap: 7px;
+    margin: 0;
+    padding: 0 9px 9px;
+    list-style: none;
+}
+
+.world-npc-movements li {
+    padding: 8px;
+    border-left: 3px solid #0ea5e9;
+    border-radius: 6px;
+    background: rgba(15, 23, 42, .56);
+}
+
+.world-npc-movements li strong,
+.world-npc-movements li small,
+.world-npc-movements li span {
+    display: block;
+    overflow-wrap: anywhere;
+}
+
+.world-npc-movements li strong {
+    color: #e0f2fe;
+    font-size: .65rem;
+}
+
+.world-npc-movements li small,
+.world-npc-movements li span {
+    margin-top: 3px;
+    color: #94a3b8;
+    font-size: .58rem;
+    line-height: 1.35;
+}
+
+.world-npc-editor-overlay {
+    z-index: 1300;
+}
+
+.world-npc-editor {
+    max-width: 520px;
+}
+
+.world-npc-editor form,
+.world-npc-editor label,
+.world-npc-editor label > span {
+    display: block;
+    min-width: 0;
+}
+
+.world-npc-editor form {
+    display: grid;
+    gap: 11px;
+}
+
+.world-npc-editor-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+}
+
+.world-npc-editor label > span {
+    margin: 0 0 5px 2px;
+    color: #94a3b8;
+    font-size: .62rem;
+    font-weight: 850;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+}
+
+.world-npc-editor input,
+.world-npc-editor select,
+.world-npc-editor textarea {
+    width: 100%;
+    min-width: 0;
+    border: 1px solid #475569;
+    border-radius: 9px;
+    background: #172033;
+    color: #f8fafc;
+    font: inherit;
+}
+
+.world-npc-editor input,
+.world-npc-editor select {
+    min-height: 43px;
+    padding: 0 10px;
+}
+
+.world-npc-editor textarea {
+    resize: vertical;
+    padding: 10px;
+    line-height: 1.45;
+}
+
+.world-npc-private-field {
+    padding: 9px;
+    border: 1px solid rgba(168, 85, 247, .42);
+    border-radius: 9px;
+    background: rgba(88, 28, 135, .18);
+}
+
+.world-merchant-empty,
+.world-merchant-summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-top: 10px;
+    padding: 10px;
+    border: 1px solid rgba(245, 158, 11, .4);
+    border-radius: 10px;
+    background: rgba(120, 53, 15, .18);
+}
+
+.world-merchant-empty span {
+    color: #fde68a;
+    font-size: .66rem;
+}
+
+.world-merchant-summary > div:first-child,
+.world-merchant-directory-heading > div,
+.world-merchant-product > div,
+.world-merchant-service > div {
+    min-width: 0;
+}
+
+.world-merchant-summary small,
+.world-merchant-summary strong,
+.world-merchant-summary span,
+.world-merchant-directory-heading small,
+.world-merchant-directory-heading strong,
+.world-merchant-directory-heading span {
+    display: block;
+    overflow-wrap: anywhere;
+}
+
+.world-merchant-summary small,
+.world-merchant-directory-heading small {
+    color: #fbbf24;
+    font-size: .53rem;
+    font-weight: 900;
+    letter-spacing: .06em;
+}
+
+.world-merchant-summary strong,
+.world-merchant-directory-heading strong {
+    margin-top: 2px;
+    color: #fef3c7;
+    font-size: .75rem;
+}
+
+.world-merchant-summary span,
+.world-merchant-directory-heading span {
+    margin-top: 3px;
+    color: #d6d3d1;
+    font-size: .58rem;
+    line-height: 1.35;
+}
+
+.world-merchant-summary-actions {
+    display: flex;
+    flex: 0 0 auto;
+    gap: 6px;
+}
+
+.world-merchant-summary-actions button,
+.world-merchant-empty button {
+    min-height: 34px;
+    padding: 0 9px;
+    border-radius: 8px;
+    font-size: .61rem;
+    font-weight: 850;
+}
+
+.world-merchant-toolbar {
+    grid-template-columns: minmax(0, 1.4fr) repeat(2, minmax(0, 1fr));
+}
+
+.world-merchant-directory,
+.world-merchant-editor-list,
+.world-merchant-product-list,
+.world-merchant-service-list,
+.world-merchant-sale-list,
+.world-merchant-transaction-list {
+    display: grid;
+    gap: 9px;
+}
+
+.world-merchant-directory-card {
+    padding: 12px;
+    border: 1px solid rgba(245, 158, 11, .38);
+    border-radius: 12px;
+    background: linear-gradient(135deg, rgba(69, 26, 3, .3), rgba(30, 41, 59, .88));
+}
+
+.world-merchant-directory-card[hidden] {
+    display: none;
+}
+
+.world-merchant-directory-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.world-merchant-directory-heading button {
+    flex: 0 0 auto;
+    min-height: 38px;
+    border-radius: 8px;
+}
+
+.world-merchant-directory-card > p {
+    margin: 10px 0 0;
+    color: #cbd5e1;
+    font-size: .68rem;
+    line-height: 1.45;
+}
+
+.world-merchant-directory-facts {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+    margin-top: 10px;
+}
+
+.world-merchant-directory-facts span {
+    padding: 7px;
+    border-radius: 7px;
+    background: rgba(15, 23, 42, .62);
+    color: #fde68a;
+    font-size: .58rem;
+    line-height: 1.35;
+}
+
+.world-merchant-editor-overlay,
+.world-merchant-shop-overlay {
+    z-index: 1350;
+}
+
+.world-merchant-editor,
+.world-merchant-shop-dialog {
+    max-width: 620px;
+}
+
+.world-merchant-editor form,
+.world-merchant-editor label,
+.world-merchant-editor label > span,
+.world-merchant-shop-dialog label,
+.world-merchant-shop-dialog label > span {
+    display: block;
+    min-width: 0;
+}
+
+.world-merchant-editor form {
+    display: grid;
+    gap: 12px;
+}
+
+.world-merchant-form-grid,
+.world-merchant-entry-fields {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+}
+
+.world-merchant-entry-fields {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.world-merchant-editor label > span,
+.world-merchant-shop-dialog label > span {
+    margin: 0 0 4px 2px;
+    color: #94a3b8;
+    font-size: .57rem;
+    font-weight: 850;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+}
+
+.world-merchant-editor label > small {
+    display: block;
+    margin: 4px 2px 0;
+    color: #64748b;
+    font-size: .54rem;
+}
+
+.world-merchant-editor input,
+.world-merchant-editor select,
+.world-merchant-editor textarea,
+.world-merchant-shop-dialog input,
+.world-merchant-shop-dialog select {
+    width: 100%;
+    min-width: 0;
+    border: 1px solid #475569;
+    border-radius: 8px;
+    background: #172033;
+    color: #f8fafc;
+    font: inherit;
+}
+
+.world-merchant-editor input,
+.world-merchant-editor select,
+.world-merchant-shop-dialog input,
+.world-merchant-shop-dialog select {
+    min-height: 40px;
+    padding: 0 9px;
+}
+
+.world-merchant-editor textarea {
+    padding: 9px;
+    resize: vertical;
+    line-height: 1.4;
+}
+
+.world-merchant-editor-section,
+.world-merchant-shop-section,
+.world-merchant-negotiation,
+.world-merchant-buyer {
+    padding: 11px;
+    border: 1px solid rgba(245, 158, 11, .3);
+    border-radius: 11px;
+    background: rgba(69, 26, 3, .18);
+}
+
+.world-merchant-editor-heading,
+.world-merchant-shop-heading,
+.world-merchant-add-row,
+.world-merchant-entry-title,
+.world-merchant-buyer,
+.world-merchant-negotiation {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 9px;
+}
+
+.world-merchant-editor-heading small,
+.world-merchant-shop-heading small,
+.world-merchant-negotiation small,
+.world-merchant-buyer small {
+    display: block;
+    color: #fbbf24;
+    font-size: .55rem;
+    font-weight: 900;
+    letter-spacing: .06em;
+}
+
+.world-merchant-editor-heading strong,
+.world-merchant-shop-heading strong,
+.world-merchant-negotiation strong,
+.world-merchant-buyer strong,
+.world-merchant-negotiation span {
+    display: block;
+    margin-top: 2px;
+    color: #fef3c7;
+    font-size: .68rem;
+}
+
+.world-merchant-add-row {
+    margin: 9px 0;
+}
+
+.world-merchant-add-row select {
+    flex: 1 1 auto;
+}
+
+.world-merchant-editor-entry,
+.world-merchant-product,
+.world-merchant-service,
+.world-merchant-sale,
+.world-merchant-transaction {
+    padding: 9px;
+    border: 1px solid #334155;
+    border-radius: 9px;
+    background: rgba(15, 23, 42, .78);
+}
+
+.world-merchant-entry-title,
+.world-merchant-product,
+.world-merchant-service,
+.world-merchant-sale,
+.world-merchant-transaction {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+}
+
+.world-merchant-entry-title {
+    margin-bottom: 8px;
+}
+
+.world-merchant-entry-title > strong,
+.world-merchant-entry-title > input {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.world-merchant-entry-title img,
+.world-merchant-product > img,
+.world-merchant-product > span:first-child,
+.world-merchant-sale > img,
+.world-merchant-sale > span:first-child {
+    width: 32px;
+    height: 32px;
+    flex: 0 0 32px;
+    object-fit: contain;
+    font-size: 1.35rem;
+}
+
+.world-merchant-checkbox {
+    display: flex !important;
+    align-items: center;
+    gap: 6px;
+    min-height: 40px;
+}
+
+.world-merchant-checkbox input {
+    width: 18px;
+    min-height: 18px;
+}
+
+.world-merchant-checkbox span {
+    margin: 0 !important;
+}
+
+.world-merchant-buyer {
+    margin-bottom: 11px;
+}
+
+.world-merchant-buyer label {
+    flex: 1 1 auto;
+}
+
+.world-merchant-buyer > div {
+    flex: 0 0 auto;
+    text-align: right;
+}
+
+.world-merchant-negotiation {
+    margin-bottom: 11px;
+}
+
+.world-merchant-negotiation.is-success {
+    border-color: rgba(52, 211, 153, .5);
+    background: rgba(6, 78, 59, .28);
+}
+
+.world-merchant-negotiation label {
+    width: 105px;
+}
+
+.world-merchant-shop-section + .world-merchant-shop-section {
+    margin-top: 11px;
+}
+
+.world-merchant-shop-heading {
+    margin-bottom: 8px;
+}
+
+.world-merchant-product > div,
+.world-merchant-service > div,
+.world-merchant-sale > div,
+.world-merchant-transaction > div:first-child {
+    flex: 1 1 auto;
+}
+
+.world-merchant-product strong,
+.world-merchant-product span,
+.world-merchant-service strong,
+.world-merchant-service span,
+.world-merchant-service p,
+.world-merchant-sale strong,
+.world-merchant-sale span,
+.world-merchant-transaction strong,
+.world-merchant-transaction span,
+.world-merchant-transaction small {
+    display: block;
+    overflow-wrap: anywhere;
+}
+
+.world-merchant-product strong,
+.world-merchant-service strong,
+.world-merchant-sale strong,
+.world-merchant-transaction strong {
+    color: #f8fafc;
+    font-size: .7rem;
+}
+
+.world-merchant-product span,
+.world-merchant-service span,
+.world-merchant-product > small,
+.world-merchant-service > small,
+.world-merchant-sale span,
+.world-merchant-transaction span,
+.world-merchant-transaction small {
+    margin-top: 3px;
+    color: #fbbf24;
+    font-size: .58rem;
+}
+
+.world-merchant-service p {
+    margin: 4px 0 0;
+    color: #94a3b8;
+    font-size: .6rem;
+    line-height: 1.4;
+}
+
+.world-merchant-product label,
+.world-merchant-sale label {
+    width: 58px;
+    flex: 0 0 58px;
+}
+
+.world-merchant-product > button,
+.world-merchant-service > button,
+.world-merchant-sale > button {
+    flex: 0 0 auto;
+    min-height: 38px;
+    border-radius: 8px;
+}
+
+.world-merchant-product.is-sold-out,
+.world-merchant-service.is-sold-out {
+    opacity: .55;
+}
+
+.world-merchant-shop-heading > div > span {
+    display: block;
+    margin-top: 3px;
+    color: #94a3b8;
+    font-size: .56rem;
+}
+
+.world-merchant-transaction {
+    justify-content: space-between;
+}
+
+.world-merchant-transaction > div:last-child {
+    flex: 0 0 auto;
+    text-align: right;
+}
+
+.world-location-path {
+    color: #a5d8f3 !important;
+}
+
+.world-political-card-body {
+    padding: 0 12px 12px;
+    border-top: 1px solid rgba(71, 85, 105, .55);
+}
+
+.world-political-card-body p {
+    margin: 10px 0 0 !important;
+    color: #cbd5e1 !important;
+    font-size: .72rem !important;
+    line-height: 1.5;
+}
+
+.world-political-aliases,
+.world-political-parent {
+    color: #a5d8f3 !important;
+}
+
+.world-political-relations,
+.world-political-sources {
+    margin-top: 12px;
+}
+
+.world-political-relations > b,
+.world-political-sources > b {
+    display: block;
+    margin-bottom: 6px;
+    color: #e0f2fe;
+    font-size: .68rem;
+}
+
+.world-political-relations ul {
+    display: grid;
+    gap: 6px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.world-political-relations li {
+    padding: 8px;
+    border-left: 3px solid #0ea5e9;
+    border-radius: 6px;
+    background: rgba(8, 47, 73, .44);
+    color: #bae6fd;
+    font-size: .67rem;
+}
+
+.world-political-relations li small {
+    display: block;
+    margin-top: 3px;
+    color: #94a3b8;
+    line-height: 1.4;
+}
+
+.world-political-sources {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.world-political-sources > b {
+    flex-basis: 100%;
+}
+
+.world-political-sources a {
+    padding: 6px 8px;
+    border: 1px solid rgba(14, 165, 233, .48);
+    border-radius: 7px;
+    color: #7dd3fc;
+    font-size: .65rem;
+    font-weight: 750;
+    text-decoration: none;
+}
+
+.world-atlas-empty,
+.world-atlas-disclaimer {
+    padding: 10px;
+    border-radius: 9px;
+    background: rgba(30, 41, 59, .62);
+    color: #94a3b8 !important;
+    font-size: .67rem !important;
+    line-height: 1.45;
+}
+
+.world-atlas-disclaimer {
+    margin: 12px 0 !important;
+}
+
+.world-history-date-banner {
+    display: grid;
+    grid-template-columns: 40px minmax(0, 1fr);
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+    padding: 12px;
+    border: 1px solid rgba(245, 158, 11, .55);
+    border-radius: 12px;
+    background: linear-gradient(135deg, rgba(69, 26, 3, .76), rgba(30, 41, 59, .88));
+}
+
+.world-history-date-banner > span {
+    display: grid;
+    width: 40px;
+    height: 40px;
+    place-items: center;
+    border-radius: 10px;
+    background: rgba(245, 158, 11, .14);
+    font-size: 1.25rem;
+}
+
+.world-history-date-banner small,
+.world-history-date-banner strong,
+.world-history-date-banner p {
+    display: block;
+}
+
+.world-history-date-banner small {
+    color: #fbbf24;
+    font-size: .58rem;
+    font-weight: 900;
+    letter-spacing: .08em;
+}
+
+.world-history-date-banner strong {
+    margin-top: 2px;
+    color: #fff7ed;
+    font-size: .88rem;
+}
+
+.world-history-date-banner p {
+    margin: 4px 0 0 !important;
+    color: #d6d3d1 !important;
+    font-size: .65rem !important;
+    line-height: 1.35;
+}
+
+.world-history-section-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin: 14px 2px 7px;
+    color: #fbbf24;
+    font-size: .61rem;
+    font-weight: 900;
+    letter-spacing: .08em;
+}
+
+.world-history-section-heading b {
+    min-width: 24px;
+    padding: 3px 6px;
+    border-radius: 999px;
+    background: rgba(245, 158, 11, .16);
+    text-align: center;
+}
+
+.world-history-card summary {
+    grid-template-columns: minmax(0, 1fr) auto auto;
+}
+
+.world-history-state-chip,
+.world-history-event-chip {
+    max-width: 92px;
+    padding: 4px 6px;
+    border: 1px solid rgba(148, 163, 184, .35);
+    border-radius: 999px;
+    color: #cbd5e1;
+    font-size: .53rem;
+    font-weight: 900;
+    letter-spacing: .03em;
+    line-height: 1.15;
+    text-align: center;
+    text-transform: uppercase;
+}
+
+.world-history-event-chip.is-active {
+    border-color: rgba(248, 113, 113, .55);
+    background: rgba(127, 29, 29, .42);
+    color: #fecaca;
+}
+
+.world-history-facts {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 7px;
+    margin-top: 10px;
+}
+
+.world-history-facts > span {
+    min-width: 0;
+    padding: 8px;
+    border: 1px solid rgba(71, 85, 105, .52);
+    border-radius: 8px;
+    background: rgba(15, 23, 42, .58);
+}
+
+.world-history-facts small,
+.world-history-facts b {
+    display: block;
+}
+
+.world-history-facts small {
+    color: #94a3b8;
+    font-size: .52rem;
+    font-weight: 900;
+    letter-spacing: .05em;
+}
+
+.world-history-facts b {
+    margin-top: 3px;
+    overflow-wrap: anywhere;
+    color: #e2e8f0;
+    font-size: .63rem;
+    line-height: 1.3;
+}
+
+.world-history-note,
+.world-history-outcome {
+    padding: 8px;
+    border-radius: 7px;
+}
+
+.world-history-note {
+    background: rgba(120, 53, 15, .32);
+    color: #fde68a !important;
+}
+
+.world-history-outcome {
+    background: rgba(8, 47, 73, .38);
+    color: #bae6fd !important;
+}
+
+.world-history-continuity {
+    display: inline-block;
+    margin-top: 9px;
+    padding: 4px 7px;
+    border: 1px solid rgba(168, 85, 247, .44);
+    border-radius: 999px;
+    background: rgba(88, 28, 135, .26);
+    color: #ddd6fe;
+    font-size: .56rem;
+    font-weight: 850;
+}
+
+@media (max-width: 430px) {
+    .world-hub-tabs {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .world-atlas-toolbar,
+    .world-location-toolbar,
+    .world-npc-toolbar,
+    .world-merchant-toolbar {
+        grid-template-columns: 1fr;
+    }
+
+    .world-location-heading {
+        align-items: flex-end;
+    }
+
+    .world-location-editor-grid,
+    .world-npc-editor-grid,
+    .world-merchant-form-grid,
+    .world-merchant-entry-fields,
+    .world-cartographic-facts {
+        grid-template-columns: 1fr;
+    }
+
+    .world-merchant-summary,
+    .world-merchant-directory-heading,
+    .world-merchant-buyer,
+    .world-merchant-negotiation,
+    .world-merchant-product,
+    .world-merchant-service,
+    .world-merchant-sale {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .world-merchant-summary-actions {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .world-merchant-directory-facts {
+        grid-template-columns: 1fr;
+    }
+
+    .world-merchant-product label,
+    .world-merchant-negotiation label,
+    .world-merchant-sale label {
+        width: 100%;
+    }
+}
+
+@media (max-width: 360px) {
+    .world-history-card summary {
+        grid-template-columns: minmax(0, 1fr) auto;
+    }
+
+    .world-history-state-chip,
+    .world-history-event-chip {
+        display: none;
+    }
+
+    .world-history-facts {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 360px) {
+    .world-hub-transfer-actions {
+        grid-template-columns: 1fr;
+    }
 }
 
 .session-primary {

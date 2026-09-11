@@ -447,6 +447,99 @@ function getInventoryCrownBalance() {
     return Math.max(0, Number(inventory.find(item => item.id === 'coroa')?.moneyValue) || 0);
 }
 
+function purchaseCurrentInventoryItem(itemId, requestedUnits = 1, totalPrice = 0) {
+    const item = getInventoryCatalogItem(itemId);
+    if (!item || item.id === 'coroa') return { purchased: false, reason: 'invalid-item' };
+
+    const acquisitionUnits = Math.max(1, Math.floor(Number(requestedUnits) || 1));
+    const packSize = getInventoryAcquisitionPackSize(item);
+    const quantity = acquisitionUnits * packSize;
+    const total = Math.max(0, Math.round(Number(totalPrice) || 0));
+    const crown = inventory.find(entry => entry.id === 'coroa');
+    const balance = Math.max(0, Number(crown?.moneyValue) || 0);
+    if (total > balance) return { purchased: false, reason: 'insufficient-crowns', required: total, balance };
+
+    if (total > 0) {
+        if (!crown) return { purchased: false, reason: 'insufficient-crowns', required: total, balance: 0 };
+        crown.moneyValue = balance - total;
+    }
+    addItemQuantity(item.id, quantity, false, false);
+    saveInventory();
+    renderInventory();
+    return { purchased: true, itemId: item.id, quantity, acquisitionUnits, packSize, total, balanceAfter: balance - total };
+}
+
+function payCurrentInventoryCrowns(totalPrice = 0) {
+    const total = Math.max(0, Math.round(Number(totalPrice) || 0));
+    const crown = inventory.find(entry => entry.id === 'coroa');
+    const balance = Math.max(0, Number(crown?.moneyValue) || 0);
+    if (total > balance) return { paid: false, reason: 'insufficient-crowns', required: total, balance };
+    if (total > 0) {
+        if (!crown) return { paid: false, reason: 'insufficient-crowns', required: total, balance: 0 };
+        crown.moneyValue = balance - total;
+    }
+    saveInventory();
+    renderInventory();
+    return { paid: true, total, balanceAfter: balance - total };
+}
+
+function getCurrentInventoryItems() {
+    return inventory.map(item => ({ ...item }));
+}
+
+function sellCurrentInventoryItem(itemId, requestedUnits = 1, totalPrice = 0) {
+    const item = inventory.find(entry => String(entry.id) === String(itemId));
+    if (!item || item.id === 'coroa') return { sold: false, reason: 'invalid-item' };
+
+    const catalogItem = getInventoryCatalogItem(item.id) || item;
+    const acquisitionUnits = Math.max(1, Math.floor(Number(requestedUnits) || 1));
+    const packSize = getInventoryAcquisitionPackSize(catalogItem);
+    const quantity = acquisitionUnits * packSize;
+    const currentQuantity = Math.max(0, Math.floor(Number(item.quantity) || 0));
+    const reservedQuantity = window.isItemEquippedForCurrentOwner?.(item.id) ? 1 : 0;
+    let availableQuantity = Math.max(0, currentQuantity - reservedQuantity);
+    const removableTransportQuantity = window.getRemovableTransportInventoryQuantity?.(item);
+    if (Number.isFinite(Number(removableTransportQuantity))) {
+        availableQuantity = Math.min(availableQuantity, Math.max(0, Math.floor(Number(removableTransportQuantity))));
+    }
+
+    if (quantity > availableQuantity) {
+        return {
+            sold: false,
+            reason: availableQuantity < currentQuantity && window.getTransportItemKind?.(item) ? 'transport-in-use' : (reservedQuantity ? 'equipped-item' : 'insufficient-quantity'),
+            availableQuantity,
+            availableUnits: Math.floor(availableQuantity / packSize)
+        };
+    }
+    item.quantity = currentQuantity - quantity;
+    if (item.quantity <= 0) inventory = inventory.filter(entry => String(entry.id) !== String(item.id));
+
+    const total = Math.max(0, Math.round(Number(totalPrice) || 0));
+    let crown = inventory.find(entry => entry.id === 'coroa');
+    if (!crown && total > 0) {
+        const crownCatalog = getInventoryCatalogItem('coroa') || { id: 'coroa', name: 'Coroa', icon: '👑', category: 'misc' };
+        crown = { ...crownCatalog, quantity: 1, moneyValue: 0 };
+        inventory.push(crown);
+    }
+    const previousBalance = Math.max(0, Number(crown?.moneyValue) || 0);
+    if (crown) crown.moneyValue = previousBalance + total;
+
+    if (selectedInventoryItemId === item.id && item.quantity <= 0) selectedInventoryItemId = null;
+    window.synchronizeTransportAssets?.(window.getCharacterCollectionOwner?.());
+    saveInventory();
+    renderInventory();
+    return {
+        sold: true,
+        itemId: item.id,
+        itemName: item.name,
+        quantity,
+        acquisitionUnits,
+        packSize,
+        total,
+        balanceAfter: previousBalance + total
+    };
+}
+
 function getInventoryAcquisitionPackSize(item) {
     return Math.max(1, Math.floor(Number(item?.acquisitionPackSize) || 1));
 }
@@ -1268,6 +1361,11 @@ window.updateInventoryAcquisitionSummary = updateInventoryAcquisitionSummary;
 window.confirmInventoryItemAcquisition = confirmInventoryItemAcquisition;
 window.acquireInventoryItem = acquireInventoryItem;
 window.addItemQuantity = addItemQuantity;
+window.getInventoryCrownBalance = getInventoryCrownBalance;
+window.purchaseCurrentInventoryItem = purchaseCurrentInventoryItem;
+window.payCurrentInventoryCrowns = payCurrentInventoryCrowns;
+window.getCurrentInventoryItems = getCurrentInventoryItems;
+window.sellCurrentInventoryItem = sellCurrentInventoryItem;
 
 
 // =========================================

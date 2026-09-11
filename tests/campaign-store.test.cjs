@@ -30,7 +30,8 @@ const storage = createMemoryStorage({
 
 store.resetForTests();
 const migrated = store.initialize({ storage, installBridge: false, now: '2026-09-05T10:00:00.000Z' });
-assert.equal(migrated.schemaVersion, 1);
+assert.equal(migrated.schemaVersion, 2);
+assert.equal(migrated.state.world.locations[0].id, 'world-continent');
 assert.equal(migrated.revision, 0);
 assert.equal(migrated.state.combat.round, 4);
 assert.equal(migrated.state.characterSheets[0].id, 'sheet-geralt');

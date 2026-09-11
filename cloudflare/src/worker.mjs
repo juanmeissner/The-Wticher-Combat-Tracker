@@ -32,6 +32,7 @@ const COMMANDS = Object.freeze({
     'spell.learn': { player: 'propose', conflict: 'exclusive', scope: 'owned-sheet' },
     'transfer.item': { player: 'propose', conflict: 'exclusive', scope: 'owned-participant' },
     'transfer.crowns': { player: 'propose', conflict: 'exclusive', scope: 'owned-participant' },
+    'merchant.transaction': { player: 'propose', conflict: 'exclusive', scope: 'owned-participant' },
     'proposal.resolve': { player: 'deny', conflict: 'exclusive', scope: 'campaign' },
     'conflict.resolve': { player: 'deny', conflict: 'exclusive', scope: 'campaign' },
     'room.member.revoke': { player: 'deny', conflict: 'exclusive', scope: 'campaign' },
@@ -45,7 +46,8 @@ const PROPOSAL_LABELS = Object.freeze({
     'equipment.change': 'Alteração de equipamento',
     'spell.learn': 'Aprendizado de magia',
     'transfer.item': 'Transferência de item',
-    'transfer.crowns': 'Transferência de Coroas'
+    'transfer.crowns': 'Transferência de Coroas',
+    'merchant.transaction': 'Compra em loja'
 });
 
 function jsonResponse(value, status = 200, headers = {}) {
@@ -156,7 +158,8 @@ function sanitizeCampaign(value) {
 function stripPrivateFields(value) {
     const privateKeys = new Set([
         'gmNotes', 'masterNotes', 'secretNotes', 'privateNotes', 'secrets',
-        'password', 'passwordHash', 'ownerSecret', 'accessLog', 'revokedDevices'
+        'password', 'passwordHash', 'ownerSecret', 'accessLog', 'revokedDevices',
+        'privateTransactions'
     ]);
     if (Array.isArray(value)) return value.map(stripPrivateFields);
     if (!value || typeof value !== 'object') return value;
@@ -186,6 +189,50 @@ export function projectCampaignForMember(campaign, member = {}) {
     delete state.master;
     delete state.audit;
     delete state.access;
+    if (Array.isArray(state.world?.locations)) {
+        const hiddenIds = new Set(state.world.locations
+            .filter(location => location?.visibility === 'private')
+            .map(location => String(location.id)));
+        let changed = true;
+        while (changed) {
+            changed = false;
+            state.world.locations.forEach(location => {
+                if (location?.parentId && hiddenIds.has(String(location.parentId)) && !hiddenIds.has(String(location.id))) {
+                    hiddenIds.add(String(location.id));
+                    changed = true;
+                }
+            });
+        }
+        state.world.locations = state.world.locations.filter(location => !hiddenIds.has(String(location.id)));
+        if (state.world.currentLocationId && hiddenIds.has(String(state.world.currentLocationId))) {
+            state.world.currentLocationId = null;
+        }
+        if (Array.isArray(state.world.npcs)) {
+            state.world.npcs = state.world.npcs
+                .filter(npc => npc?.visibility !== 'private'
+                    && (!npc?.currentLocationId || !hiddenIds.has(String(npc.currentLocationId))))
+                .map(npc => ({
+                    ...npc,
+                    schedule: (Array.isArray(npc.schedule) ? npc.schedule : []).filter(entry =>
+                        entry?.visibility !== 'private'
+                        && (!entry?.locationId || !hiddenIds.has(String(entry.locationId)))),
+                    movements: (Array.isArray(npc.movements) ? npc.movements : []).filter(movement =>
+                        (!movement?.fromLocationId || !hiddenIds.has(String(movement.fromLocationId)))
+                        && (!movement?.toLocationId || !hiddenIds.has(String(movement.toLocationId))))
+                }));
+        }
+        if (Array.isArray(state.world.travelHistory)) {
+            state.world.travelHistory = state.world.travelHistory.filter(travel =>
+                travel?.visibility !== 'private'
+                && (!travel?.fromLocationId || !hiddenIds.has(String(travel.fromLocationId)))
+                && (!travel?.toLocationId || !hiddenIds.has(String(travel.toLocationId))));
+        }
+        if (Array.isArray(state.world.regionalEvents)) {
+            state.world.regionalEvents = state.world.regionalEvents.filter(event =>
+                event?.visibility !== 'private'
+                && (!event?.locationId || !hiddenIds.has(String(event.locationId))));
+        }
+    }
     if (Array.isArray(state.combat?.combatants)) {
         state.combat.combatants = state.combat.combatants.map(combatant => {
             if (String(combatant?.id) === String(member.participantId)) return combatant;
@@ -413,7 +460,143 @@ export function applyPermanentCommand(campaign, command) {
         return { applied: true, mode: 'participant' };
     }
 
+    if (command?.type === 'merchant.transaction') {
+        return applyMerchantTransaction(campaign, command);
+    }
+
     return { applied: false, reason: 'unsupported-payload' };
+}
+
+function getMerchantTransactionContext(campaign, command) {
+    const participant = campaign?.state?.combat?.combatants?.find(entry =>
+        String(entry?.id || '') === String(command?.targetId || ''));
+    const npc = campaign?.state?.world?.npcs?.find(entry =>
+        String(entry?.id || '') === String(command?.payload?.npcId || ''));
+    return { participant, npc, merchant: npc?.merchant };
+}
+
+function merchantTransactionNeedsApproval(campaign, command) {
+    const { merchant } = getMerchantTransactionContext(campaign, command);
+    return merchant?.purchaseApprovalRequired !== false;
+}
+
+function isMerchantOpenAtCampaignTime(campaign, merchant) {
+    const schedule = merchant?.openingSchedule;
+    if (!schedule?.enabled) return true;
+    const currentMinute = Number(campaign?.state?.campaignClock?.currentMinute);
+    if (!Number.isFinite(currentMinute)) return true;
+    const date = new Date(currentMinute * 60_000);
+    if (!(schedule.weekdays || []).map(Number).includes(date.getUTCDay())) return false;
+    const parseTime = value => {
+        const [hour, minute] = String(value || '00:00').split(':').map(Number);
+        return (Number(hour) || 0) * 60 + (Number(minute) || 0);
+    };
+    const current = date.getUTCHours() * 60 + date.getUTCMinutes();
+    const opens = parseTime(schedule.opensAt);
+    const closes = parseTime(schedule.closesAt);
+    return opens === closes || (opens < closes ? current >= opens && current < closes : current >= opens || current < closes);
+}
+
+export function applyMerchantTransaction(campaign, command) {
+    if (command?.type !== 'merchant.transaction') return { applied: false, reason: 'unsupported' };
+    const { participant, npc, merchant } = getMerchantTransactionContext(campaign, command);
+    if (!participant || !npc || !merchant?.enabled) return { applied: false, reason: 'merchant-or-participant-not-found' };
+    if (!isMerchantOpenAtCampaignTime(campaign, merchant)) return { applied: false, reason: 'merchant-closed' };
+    const kind = command.payload?.kind === 'service' ? 'service' : 'item';
+    const entryId = String(command.payload?.entryId || '');
+    const acquisitionUnits = Math.max(1, Math.min(100, Math.floor(Number(command.payload?.quantity) || 1)));
+    let unitPrice = Math.max(0, Math.min(1_000_000, Math.round(Number(command.payload?.unitPrice) || 0)));
+    if (merchant.purchaseApprovalRequired === false) {
+        const pricedEntry = kind === 'service'
+            ? merchant.services?.find(item => String(item?.id || '') === entryId)
+            : merchant.catalog?.find(item => String(item?.id || '') === entryId);
+        unitPrice = Math.max(0, Math.min(1_000_000, Math.round(Number(pricedEntry?.price) || 0)));
+    }
+    const total = unitPrice * acquisitionUnits;
+    const inventory = Array.isArray(participant.inventory) ? clone(participant.inventory) : [];
+    const crown = inventory.find(entry => String(entry?.id) === 'coroa');
+    const balance = Math.max(0, Number(crown?.moneyValue) || 0);
+    if (total > balance) return { applied: false, reason: 'insufficient-crowns' };
+
+    let itemName = '';
+    let itemId = null;
+    let deliveredQuantity = 1;
+    if (kind === 'item') {
+        const entry = merchant.catalog?.find(item => String(item?.id || '') === entryId && item.enabled !== false);
+        if (!entry || Number(entry.stock) < acquisitionUnits) return { applied: false, reason: 'insufficient-stock' };
+        itemId = String(entry.itemId || command.payload?.item?.id || '');
+        if (!itemId || itemId === 'coroa') return { applied: false, reason: 'invalid-item' };
+        const packSize = Math.max(1, Math.min(1000, Math.floor(Number(command.payload?.packSize) || 1)));
+        deliveredQuantity = acquisitionUnits * packSize;
+        const supplied = command.payload?.item && typeof command.payload.item === 'object' && !Array.isArray(command.payload.item)
+            ? clone(command.payload.item)
+            : { id: itemId, name: String(command.payload?.itemName || itemId) };
+        itemName = String(supplied.name || command.payload?.itemName || itemId).slice(0, 160);
+        const existing = inventory.find(item => String(item?.id) === itemId);
+        if (existing) existing.quantity = Math.max(0, Math.floor(Number(existing.quantity) || 0)) + deliveredQuantity;
+        else inventory.push({ ...supplied, id: itemId, name: itemName, quantity: deliveredQuantity });
+        entry.stock = Math.max(0, Math.floor(Number(entry.stock) || 0) - acquisitionUnits);
+        entry.updatedAt = new Date().toISOString();
+    } else {
+        const service = merchant.services?.find(item => String(item?.id || '') === entryId && item.enabled !== false);
+        if (!service || (!service.unlimited && Number(service.stock) < acquisitionUnits)) return { applied: false, reason: 'service-unavailable' };
+        if (!service.unlimited) service.stock = Math.max(0, Math.floor(Number(service.stock) || 0) - acquisitionUnits);
+        service.updatedAt = new Date().toISOString();
+        itemName = String(service.name || 'Serviço').slice(0, 160);
+    }
+
+    if (total > 0) crown.moneyValue = balance - total;
+    participant.inventory = inventory;
+    merchant.privateTransactions = Array.isArray(merchant.privateTransactions) ? merchant.privateTransactions : [];
+    const occurredAt = new Date().toISOString();
+    merchant.privateTransactions.push({
+        id: `world-merchant-transaction-${crypto.randomUUID()}`,
+        requestId: command.id,
+        type: kind === 'service' ? 'service' : 'purchase',
+        buyerId: participant.id,
+        buyerName: String(participant.name || 'Personagem').slice(0, 120),
+        itemId,
+        itemName,
+        quantity: deliveredQuantity,
+        acquisitionUnits,
+        unitPrice,
+        total,
+        discountPercent: Math.min(100, Math.max(0, Number(command.payload?.discountPercent) || 0)),
+        occurredAt
+    });
+    merchant.privateTransactions = merchant.privateTransactions.slice(-500);
+    merchant.updatedAt = occurredAt;
+    const historyEntry = {
+        id: `merchant-history-${crypto.randomUUID()}`,
+        label: kind === 'service'
+            ? `${participant.name || 'Personagem'} contratou ${itemName}`
+            : `${participant.name || 'Personagem'} comprou ${itemName} x${deliveredQuantity}`,
+        detail: `Loja: ${merchant.name || npc.name || 'Comerciante'}\nPreço unitário: ${unitPrice} Coroas\nTotal: ${total} Coroas\nSaldo: ${balance - total}`,
+        type: 'item',
+        participants: [{ id: String(participant.id), name: String(participant.name || 'Personagem') }],
+        source: { id: String(participant.id), name: String(participant.name || 'Personagem') },
+        target: { id: String(participant.id), name: String(participant.name || 'Personagem') },
+        round: Math.max(0, Number(campaign?.state?.combat?.round) || 0),
+        at: occurredAt
+    };
+    campaign.state.history = Array.isArray(campaign.state.history) ? campaign.state.history : [];
+    campaign.state.history.unshift(historyEntry);
+    campaign.state.history = campaign.state.history.slice(0, 1000);
+    const compatibility = campaign.state.compatibility;
+    if (compatibility && typeof compatibility === 'object') {
+        try {
+            const legacyHistory = typeof compatibility.dnd_session_history === 'string'
+                ? JSON.parse(compatibility.dnd_session_history)
+                : [];
+            const entries = Array.isArray(legacyHistory) ? legacyHistory : [];
+            entries.unshift(historyEntry);
+            compatibility.dnd_session_history = JSON.stringify(entries.slice(0, 1000));
+        } catch {
+            compatibility.dnd_session_history = JSON.stringify([historyEntry]);
+        }
+    }
+    replaceCompatibilityEntity(campaign, ['dnd_combat_session', 'dnd_players'], participant.id, participant);
+    return { applied: true, mode: 'merchant-transaction', kind, participantId: participant.id, npcId: npc.id, entryId, total, balanceAfter: balance - total, deliveredQuantity };
 }
 
 export function applyResourceCommand(campaign, command, member) {
@@ -1030,11 +1213,13 @@ export class CampaignRoom {
             this.send(socket, { type: 'command.rejected', commandId: command.id, reason: 'O participante não controla este alvo.' });
             return;
         }
-        if (member.role !== 'master' && definition.player === 'propose') {
+        const merchantAutoApproval = command.type === 'merchant.transaction'
+            && !merchantTransactionNeedsApproval(this.room.campaign, command);
+        if (member.role !== 'master' && definition.player === 'propose' && !merchantAutoApproval) {
             await this.createProposal(socket, member, command);
             return;
         }
-        if (member.role !== 'master' && definition.player !== 'allow') {
+        if (member.role !== 'master' && definition.player !== 'allow' && !merchantAutoApproval) {
             this.send(socket, { type: 'command.rejected', commandId: command.id, reason: 'Ação não permitida.' });
             return;
         }
@@ -1191,7 +1376,7 @@ export class CampaignRoom {
     async createProposal(socket, member, command) {
         const proposal = {
             id: `proposal-${crypto.randomUUID()}`,
-            label: PROPOSAL_LABELS[command.type] || command.type,
+            label: String(command.payload?.label || PROPOSAL_LABELS[command.type] || command.type).slice(0, 180),
             status: 'pending',
             memberId: member.id,
             memberName: member.name,

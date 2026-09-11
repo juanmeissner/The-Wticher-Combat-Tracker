@@ -1,11 +1,21 @@
 (function (root, factory) {
     const protocol = root?.collaborationProtocol
         || (typeof require === 'function' ? require('../collaboration/protocol.js') : null);
-    const api = factory(protocol);
+    const worldModel = root?.worldModel
+        || (typeof require === 'function' ? require('../world/world-model.js') : null);
+    const worldAtlasData = root?.worldAtlasData
+        || (typeof require === 'function' ? require('../world/world-atlas-data.js') : null);
+    const worldLocationData = root?.worldLocationData
+        || (typeof require === 'function' ? require('../world/world-location-data.js') : null);
+    const worldCartographicData = root?.worldCartographicData
+        || (typeof require === 'function' ? require('../world/world-cartographic-data.js') : null);
+    const worldHistoryData = root?.worldHistoryData
+        || (typeof require === 'function' ? require('../world/world-history-data.js') : null);
+    const api = factory(protocol, worldModel, worldAtlasData, worldLocationData, worldCartographicData, worldHistoryData);
 
     if (typeof module !== 'undefined' && module.exports) module.exports = api;
     if (root) root.campaignMigrations = api;
-})(typeof globalThis !== 'undefined' ? globalThis : this, function (protocol) {
+})(typeof globalThis !== 'undefined' ? globalThis : this, function (protocol, worldModel, worldAtlasData, worldLocationData, worldCartographicData, worldHistoryData) {
     'use strict';
 
     const CAMPAIGN_SCHEMA_VERSION = protocol?.CAMPAIGN_SCHEMA_VERSION || 1;
@@ -84,7 +94,7 @@
         return preferences;
     }
 
-    function buildCampaignState(snapshot = {}) {
+    function buildCampaignState(snapshot = {}, existingState = {}) {
         const combat = safeParse(snapshot.dnd_combat_session, null) || {
             version: 3,
             combatants: safeParse(snapshot.dnd_players, []),
@@ -109,6 +119,7 @@
                 carriedWeightMode: 'equipped',
                 rollModes: {}
             }),
+            world: worldHistoryData.seedHistoricalLayer(worldCartographicData.seedCartographicLocations(worldModel.normalizeWorld(existingState.world))),
             compatibility: clone(snapshot)
         };
     }
@@ -158,8 +169,9 @@
                 ...(source.metadata || {})
             },
             state: {
-                ...buildCampaignState(snapshot),
+                ...buildCampaignState(snapshot, source.state || {}),
                 ...(source.state || {}),
+                world: worldHistoryData.seedHistoricalLayer(worldCartographicData.seedCartographicLocations(worldModel.normalizeWorld(source.state?.world))),
                 compatibility: clone(snapshot)
             },
             entityVersions: source.entityVersions && typeof source.entityVersions === 'object'
@@ -205,4 +217,3 @@
         restoreLegacyStorage
     });
 });
-

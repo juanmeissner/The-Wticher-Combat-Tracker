@@ -278,6 +278,6 @@ assert.match(equipmentCss, /character-skill-context-options/);
 assert.match(combatRenderSource, /renderCharacterResourcesPanel/);
 assert.match(indexSource, /onclick="openWorldHub\(\)"/);
 assert.doesNotMatch(indexSource, /onclick="applyInitiative\(\)"/);
-assert.match(sessionSource, /function openWorldHub\(\)/);
+assert.match(sessionSource, /function openWorldHub\(view = 'overview', context = \{\}\)/);
 
 console.log('✓ Painéis de ficha completa, testes e recompensas de crítico validados.');

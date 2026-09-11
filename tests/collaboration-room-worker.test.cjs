@@ -214,6 +214,72 @@ test('alterações permanentes substituem somente a entidade autorizada', async 
     assert.equal(campaign.state.characterSheets[1].name, 'Ciri');
 });
 
+test('projeção do jogador oculta locais privados e seus descendentes', async () => {
+    const moduleUrl = pathToFileURL(path.resolve(__dirname, '..', 'cloudflare', 'src', 'worker.mjs')).href;
+    const worker = await import(moduleUrl);
+    const campaign = campaignFixture();
+    campaign.state.world = {
+        schemaVersion: 1,
+        rootLocationId: 'world-continent',
+        currentLocationId: 'world-location-secret',
+        locations: [
+            { id: 'world-continent', type: 'continent', parentId: null, name: 'O Continente', visibility: 'public' },
+            { id: 'world-realm-public', type: 'realm', parentId: 'world-continent', name: 'Teméria', visibility: 'public' },
+            { id: 'world-province-secret', type: 'province', parentId: 'world-realm-public', name: 'Base secreta', visibility: 'private' },
+            { id: 'world-location-secret', type: 'location', parentId: 'world-province-secret', name: 'Laboratório', visibility: 'public' }
+        ],
+        npcs: [
+            { id: 'npc-public', name: 'Ferreiro', visibility: 'public', currentLocationId: 'world-realm-public', privateNotes: 'Espião', movements: [], schedule: [{ id: 'public-time', visibility: 'public' }, { id: 'secret-time', visibility: 'private', privateNotes: 'Encontro secreto' }], merchant: { enabled: true, name: 'Forja', privateNotes: 'Contrabando', privateTransactions: [{ id: 'tx-secret', total: 50 }], catalog: [] } },
+            { id: 'npc-secret', name: 'Informante', visibility: 'private', currentLocationId: 'world-realm-public', privateNotes: 'Contato secreto', movements: [] },
+            { id: 'npc-hidden-place', name: 'Alquimista', visibility: 'public', currentLocationId: 'world-location-secret', movements: [] },
+            { id: 'npc-traveler', name: 'Viajante', visibility: 'public', currentLocationId: 'world-realm-public', movements: [
+                { id: 'move-secret', fromLocationId: 'world-location-secret', fromLocationName: 'Laboratório', toLocationId: 'world-realm-public', toLocationName: 'Teméria' },
+                { id: 'move-public', fromLocationId: null, fromLocationName: 'Sem localização', toLocationId: 'world-realm-public', toLocationName: 'Teméria' }
+            ] }
+        ],
+        travelHistory: [{ id: 'travel-public', visibility: 'public', toLocationId: 'world-realm-public' }, { id: 'travel-secret', visibility: 'private', toLocationId: 'world-realm-public' }],
+        regionalEvents: [{ id: 'event-public', visibility: 'public', locationId: 'world-realm-public' }, { id: 'event-secret', visibility: 'private', locationId: 'world-realm-public', privateNotes: 'Emboscada' }]
+    };
+    const projected = worker.projectCampaignForMember(campaign, { role: 'player', participantId: 'geralt', sheetId: 'sheet-geralt' });
+    assert.deepEqual(projected.state.world.locations.map(entry => entry.id), ['world-continent', 'world-realm-public']);
+    assert.equal(projected.state.world.currentLocationId, null);
+    assert.deepEqual(projected.state.world.npcs.map(entry => entry.id), ['npc-public', 'npc-traveler']);
+    assert.equal(projected.state.world.npcs[0].privateNotes, undefined);
+    assert.equal(projected.state.world.npcs[0].merchant.privateNotes, undefined);
+    assert.equal(projected.state.world.npcs[0].merchant.privateTransactions, undefined);
+    assert.equal(projected.state.world.npcs[0].merchant.name, 'Forja');
+    assert.deepEqual(projected.state.world.npcs[0].schedule.map(entry => entry.id), ['public-time']);
+    assert.deepEqual(projected.state.world.travelHistory.map(entry => entry.id), ['travel-public']);
+    assert.deepEqual(projected.state.world.regionalEvents.map(entry => entry.id), ['event-public']);
+    assert.deepEqual(projected.state.world.npcs[1].movements.map(entry => entry.id), ['move-public']);
+    assert.equal(campaign.state.world.locations.length, 4, 'A projeção não deve alterar a campanha do mestre.');
+    assert.equal(campaign.state.world.npcs.length, 4, 'A projeção não deve alterar os NPCs do mestre.');
+});
+
+test('compra online aprovada atualiza Coroas, inventário e estoque de forma atômica', async () => {
+    const moduleUrl = pathToFileURL(path.resolve(__dirname, '..', 'cloudflare', 'src', 'worker.mjs')).href;
+    const worker = await import(moduleUrl);
+    const campaign = campaignFixture();
+    const geralt = campaign.state.combat.combatants.find(entry => entry.id === 'geralt');
+    geralt.inventory = [{ id: 'coroa', name: 'Coroa', moneyValue: 100, quantity: 1 }];
+    campaign.state.world = { npcs: [{ id: 'npc-ferreiro', merchant: {
+        enabled: true, purchaseApprovalRequired: true,
+        catalog: [{ id: 'entry-espada', itemId: 'espada-teste', stock: 3, enabled: true, price: 20 }],
+        services: [], privateTransactions: []
+    } }] };
+    const result = worker.applyMerchantTransaction(campaign, {
+        id: 'request-purchase-1', type: 'merchant.transaction', targetId: 'geralt',
+        payload: { kind: 'item', npcId: 'npc-ferreiro', entryId: 'entry-espada', quantity: 2, unitPrice: 20, packSize: 1, item: { id: 'espada-teste', name: 'Espada de teste' } }
+    });
+    assert.equal(result.applied, true);
+    assert.equal(geralt.inventory.find(entry => entry.id === 'coroa').moneyValue, 60);
+    assert.equal(geralt.inventory.find(entry => entry.id === 'espada-teste').quantity, 2);
+    assert.equal(campaign.state.world.npcs[0].merchant.catalog[0].stock, 1);
+    assert.equal(campaign.state.world.npcs[0].merchant.privateTransactions[0].requestId, 'request-purchase-1');
+    assert.match(campaign.state.history[0].label, /Geralt comprou Espada de teste x2/);
+    assert.match(campaign.state.history[0].detail, /Total: 40 Coroas/);
+});
+
 test('proposta do jogador aguarda e registra decisão do mestre', async () => {
     const moduleUrl = pathToFileURL(path.resolve(__dirname, '..', 'cloudflare', 'src', 'worker.mjs')).href;
     const worker = await import(moduleUrl);

@@ -1,4 +1,36 @@
-function exportAbilitiesToExcel() {
+const XLSX_LIBRARY_URL = 'https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js';
+let xlsxLibraryPromise = null;
+
+function ensureXlsxLibrary() {
+    if (window.XLSX) return Promise.resolve(window.XLSX);
+    if (xlsxLibraryPromise) return xlsxLibraryPromise;
+
+    xlsxLibraryPromise = new Promise((resolve, reject) => {
+        const script = document.createElement('script');
+        script.src = XLSX_LIBRARY_URL;
+        script.async = true;
+        script.onload = () => window.XLSX
+            ? resolve(window.XLSX)
+            : reject(new Error('A biblioteca de planilhas não foi inicializada.'));
+        script.onerror = () => reject(new Error('Não foi possível carregar a biblioteca de planilhas.'));
+        document.head.appendChild(script);
+    }).catch(error => {
+        xlsxLibraryPromise = null;
+        throw error;
+    });
+
+    return xlsxLibraryPromise;
+}
+
+async function exportAbilitiesToExcel() {
+    let spreadsheet;
+    try {
+        window.showToast?.('Preparando a exportação das habilidades...');
+        spreadsheet = await ensureXlsxLibrary();
+    } catch (error) {
+        window.showToast?.(error?.message || 'Não foi possível preparar a planilha.');
+        return false;
+    }
 
     const rows = predefinedAbilities.map(a => ({
 
@@ -29,7 +61,7 @@ function exportAbilitiesToExcel() {
     }));
 
 
-    const worksheet = XLSX.utils.json_to_sheet(rows, {
+    const worksheet = spreadsheet.utils.json_to_sheet(rows, {
 
         header: [
 
@@ -51,22 +83,25 @@ function exportAbilitiesToExcel() {
     });
 
 
-    const workbook = XLSX.utils.book_new();
+    const workbook = spreadsheet.utils.book_new();
 
-    XLSX.utils.book_append_sheet(
+    spreadsheet.utils.book_append_sheet(
         workbook,
         worksheet,
         "Abilities"
     );
 
-    XLSX.writeFile(
+    spreadsheet.writeFile(
         workbook,
         "Abilities.xlsx"
     );
 
+    return true;
+
 }
 
 window.exportAbilitiesToExcel = exportAbilitiesToExcel;
+window.ensureXlsxLibrary = ensureXlsxLibrary;
 
 
 

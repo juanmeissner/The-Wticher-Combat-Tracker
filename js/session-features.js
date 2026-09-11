@@ -1088,10 +1088,549 @@ function clearSessionHistory() {
 }
 
 function closeWorldHub() {
+    window.worldMap?.destroy?.();
     document.getElementById('worldHubModal')?.remove();
 }
 
-function openWorldHub() {
+function getWorldLocationTypeLabel(type) {
+    return ({
+        continent: 'Continente',
+        realm: 'Reino ou território',
+        province: 'Província',
+        location: 'Local'
+    })[type] || 'Local';
+}
+
+function getWorldPoliticalTypeLabel(type) {
+    return ({
+        empire: 'Império',
+        kingdom: 'Reino',
+        'united-kingdom': 'União de reinos',
+        duchy: 'Ducado',
+        'vassal-kingdom': 'Reino vassalo',
+        'vassal-duchy': 'Ducado vassalo',
+        federation: 'Federação',
+        'free-city': 'Cidade livre',
+        'autonomous-territory': 'Território autônomo',
+        province: 'Província',
+        'geopolitical-region': 'Região geopolítica',
+        queendom: 'Reino matriarcal',
+        archipelago: 'Arquipélago'
+    })[type] || 'Entidade política';
+}
+
+function getWorldCanonicalTypeLabel(type) {
+    return ({
+        capital: 'Capital',
+        city: 'Cidade',
+        'port-city': 'Cidade portuária',
+        town: 'Vila ou cidade menor',
+        village: 'Vilarejo',
+        fortress: 'Fortaleza',
+        castle: 'Castelo',
+        keep: 'Forte',
+        palace: 'Palácio',
+        academy: 'Academia',
+        temple: 'Templo',
+        island: 'Ilha',
+        ruins: 'Ruínas',
+        tower: 'Torre',
+        battlefield: 'Campo de batalha',
+        'forest-settlement': 'Assentamento florestal',
+        'special-site': 'Local especial'
+    })[type] || 'Local canônico';
+}
+
+function getWorldCartographicTypeLabel(type) {
+    return ({
+        settlement: 'Assentamento',
+        'fortified-settlement': 'Assentamento fortificado',
+        castle: 'Castelo',
+        fort: 'Forte',
+        island: 'Ilha',
+        'special-site': 'Local especial'
+    })[type] || 'Local cartográfico';
+}
+
+function getWorldCustomTypeLabel(type) {
+    return ({
+        city: 'Cidade',
+        town: 'Vila ou cidade menor',
+        village: 'Vilarejo',
+        settlement: 'Assentamento',
+        fortress: 'Fortaleza',
+        castle: 'Castelo',
+        'special-site': 'Local especial'
+    })[type] || 'Local personalizado';
+}
+
+function getWorldReliabilityLabel(confidence) {
+    return ({
+        high: 'Alta — nome e território legíveis',
+        medium: 'Média — vínculo territorial aproximado',
+        low: 'Baixa — transcrição ou posição a confirmar'
+    })[confidence] || 'Não classificada';
+}
+
+function getWorldCatalogLayer(location) {
+    if (location?.origin === 'custom') return 'custom';
+    if (location?.cartographicStatus === 'map-only') return 'cartographic';
+    return 'canonical';
+}
+
+function getWorldCatalogType(location) {
+    return location?.canonicalType || location?.cartographicType || location?.customType || 'location';
+}
+
+function getWorldCatalogTypeLabel(location) {
+    if (location?.origin === 'custom') return getWorldCustomTypeLabel(location.customType);
+    if (location?.cartographicStatus === 'map-only') return getWorldCartographicTypeLabel(location.cartographicType);
+    return getWorldCanonicalTypeLabel(location?.canonicalType);
+}
+
+function normalizeWorldSearch(value) {
+    return String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+}
+
+function filterWorldPoliticalAtlas() {
+    const modal = document.getElementById('worldHubModal');
+    if (!modal) return;
+    const query = normalizeWorldSearch(modal.querySelector('#worldAtlasSearch')?.value);
+    const type = modal.querySelector('#worldAtlasType')?.value || 'all';
+    let visible = 0;
+    modal.querySelectorAll('.world-political-card').forEach(card => {
+        const matchesQuery = !query || normalizeWorldSearch(card.dataset.search).includes(query);
+        const matchesType = type === 'all' || card.dataset.politicalType === type;
+        card.hidden = !(matchesQuery && matchesType);
+        if (!card.hidden) visible += 1;
+    });
+    const empty = modal.querySelector('.world-atlas-empty');
+    if (empty) empty.hidden = visible > 0;
+    const count = modal.querySelector('.world-atlas-visible-count');
+    if (count) count.textContent = `${visible} ${visible === 1 ? 'entidade encontrada' : 'entidades encontradas'}`;
+}
+
+function filterWorldCanonicalCatalog() {
+    const modal = document.getElementById('worldHubModal');
+    if (!modal) return;
+    const query = normalizeWorldSearch(modal.querySelector('#worldLocationSearch')?.value);
+    const type = modal.querySelector('#worldLocationType')?.value || 'all';
+    const layer = modal.querySelector('#worldLocationLayer')?.value || 'all';
+    const confidence = modal.querySelector('#worldLocationConfidence')?.value || 'all';
+    let visible = 0;
+    modal.querySelectorAll('.world-location-card').forEach(card => {
+        const matchesQuery = !query || normalizeWorldSearch(card.dataset.search).includes(query);
+        const matchesType = type === 'all' || card.dataset.locationType === type;
+        const matchesLayer = layer === 'all' || card.dataset.locationLayer === layer;
+        const matchesConfidence = confidence === 'all' || card.dataset.locationConfidence === confidence;
+        card.hidden = !(matchesQuery && matchesType && matchesLayer && matchesConfidence);
+        if (!card.hidden) visible += 1;
+    });
+    const empty = modal.querySelector('.world-location-empty');
+    if (empty) empty.hidden = visible > 0;
+    const count = modal.querySelector('.world-location-visible-count');
+    if (count) count.textContent = `${visible} ${visible === 1 ? 'local encontrado' : 'locais encontrados'}`;
+}
+
+function closeWorldLocationEditor() {
+    document.getElementById('worldLocationEditorModal')?.remove();
+}
+
+function openWorldLocationEditor(locationId = '') {
+    closeWorldLocationEditor();
+    if (window.collaborationSession?.isPlayer?.()) {
+        showToast('Somente o mestre pode criar locais da campanha.');
+        return;
+    }
+    const world = window.worldStore?.getWorld?.();
+    const editing = locationId ? window.worldModel?.getLocation?.(world, locationId) : null;
+    if (editing && editing.origin !== 'custom') {
+        showToast('O catálogo oficial é somente leitura.');
+        return;
+    }
+    const parentOptions = (world?.locations || [])
+        .filter(location => location.id !== locationId && location.politicalType !== 'geopolitical-region')
+        .sort((left, right) => left.name.localeCompare(right.name, 'pt-BR'))
+        .map(location => {
+            const path = window.worldModel?.getLocationPath?.(world, location.id) || [location];
+            const label = path.map(entry => entry.name).join(' › ');
+            return `<option value="${escapeHtml(location.id)}"${editing?.parentId === location.id ? ' selected' : ''}>${escapeHtml(label)}</option>`;
+        }).join('');
+    const coordinates = editing?.coordinates || {};
+    const modal = document.createElement('div');
+    modal.id = 'worldLocationEditorModal';
+    modal.className = 'session-overlay world-location-editor-overlay';
+    modal.addEventListener('click', event => {
+        if (event.target === modal) closeWorldLocationEditor();
+    });
+    modal.innerHTML = `
+        <section class="session-dialog world-location-editor" role="dialog" aria-modal="true" aria-labelledby="worldLocationEditorTitle">
+            <div class="session-dialog-header">
+                <div><small class="world-hub-kicker">LOCAL DA CAMPANHA</small><h2 id="worldLocationEditorTitle">${editing ? 'Editar local' : 'Criar local personalizado'}</h2></div>
+                <button type="button" class="session-close" onclick="closeWorldLocationEditor()" aria-label="Fechar">×</button>
+            </div>
+            <p>Este registro pertence apenas à campanha e não altera o catálogo oficial.</p>
+            <form id="worldLocationEditorForm" onsubmit="saveWorldLocationFromForm(event, '${escapeHtml(locationId)}')">
+                <label><span>Nome *</span><input name="name" required maxlength="120" value="${escapeHtml(editing?.name || '')}" placeholder="Ex.: Aldeia do Carvalho"></label>
+                <label><span>Dentro de *</span><select name="parentId" required><option value="">Selecione o território</option>${parentOptions}</select></label>
+                <div class="world-location-editor-grid">
+                    <label><span>Tipo</span><select name="customType">
+                        ${['city', 'town', 'village', 'settlement', 'fortress', 'castle', 'special-site'].map(type => `<option value="${type}"${(editing?.customType || 'settlement') === type ? ' selected' : ''}>${getWorldCustomTypeLabel(type)}</option>`).join('')}
+                    </select></label>
+                    <label><span>Visibilidade</span><select name="visibility"><option value="public"${editing?.visibility !== 'private' ? ' selected' : ''}>Pública</option><option value="private"${editing?.visibility === 'private' ? ' selected' : ''}>Somente mestre</option></select></label>
+                </div>
+                <label><span>Descrição</span><textarea name="description" maxlength="4000" rows="4" placeholder="História, aparência e informações úteis para a campanha">${escapeHtml(editing?.description || '')}</textarea></label>
+                <fieldset><legend>Coordenadas no mapa (opcional)</legend><div class="world-location-editor-grid">
+                    <label><span>Horizontal X (%)</span><input name="coordinateX" type="number" min="0" max="100" step="0.1" value="${coordinates.x ?? ''}" placeholder="0–100"></label>
+                    <label><span>Vertical Y (%)</span><input name="coordinateY" type="number" min="0" max="100" step="0.1" value="${coordinates.y ?? ''}" placeholder="0–100"></label>
+                </div><small>0,0 é o canto superior esquerdo; 100,100 é o canto inferior direito.</small></fieldset>
+                <div class="session-dialog-actions"><button type="button" class="session-secondary" onclick="closeWorldLocationEditor()">Cancelar</button><button type="submit" class="session-primary">${editing ? 'Salvar alterações' : 'Criar local'}</button></div>
+            </form>
+        </section>`;
+    document.body.appendChild(modal);
+    modal.querySelector('input[name="name"]')?.focus();
+}
+
+function saveWorldLocationFromForm(event, locationId = '') {
+    event?.preventDefault?.();
+    const form = event?.currentTarget;
+    if (!form) return;
+    const data = new FormData(form);
+    const xValue = String(data.get('coordinateX') || '').trim();
+    const yValue = String(data.get('coordinateY') || '').trim();
+    if ((xValue && !yValue) || (!xValue && yValue)) {
+        showToast('Informe X e Y juntos ou deixe as duas coordenadas vazias.');
+        return;
+    }
+    const input = {
+        type: window.worldModel?.LOCATION_TYPES?.LOCATION || 'location',
+        origin: 'custom',
+        name: String(data.get('name') || '').trim(),
+        parentId: String(data.get('parentId') || ''),
+        customType: String(data.get('customType') || 'settlement'),
+        visibility: data.get('visibility') === 'private' ? 'private' : 'public',
+        description: String(data.get('description') || '').trim(),
+        coordinates: xValue && yValue ? { x: Number(xValue), y: Number(yValue) } : null
+    };
+    try {
+        if (locationId) window.worldStore?.updateLocation?.(locationId, input);
+        else window.worldStore?.createLocation?.(input);
+        closeWorldLocationEditor();
+        showToast(locationId ? '📍 Local atualizado.' : '📍 Local criado para a campanha.');
+        openWorldHub('locations');
+    } catch (error) {
+        showToast(error?.message || 'Não foi possível salvar o local.');
+    }
+}
+
+function requestDeleteWorldLocation(locationId) {
+    const world = window.worldStore?.getWorld?.();
+    const location = window.worldModel?.getLocation?.(world, locationId);
+    if (!location || location.origin !== 'custom') return;
+    openSessionConfirm({
+        title: `Excluir ${location.name}?`,
+        message: 'O local e todos os locais personalizados que estiverem dentro dele serão removidos desta campanha.',
+        confirmLabel: 'Excluir local',
+        danger: true,
+        onConfirm: () => {
+            try {
+                window.worldStore?.removeLocation?.(locationId);
+                showToast('🗑️ Local personalizado removido.');
+                openWorldHub('locations');
+            } catch (error) {
+                showToast(error?.message || 'Não foi possível remover o local.');
+            }
+        }
+    });
+}
+
+function getWorldNpcRelationshipLabel(value) {
+    return ({
+        unknown: 'Desconhecido',
+        neutral: 'Neutro',
+        friendly: 'Amigável',
+        allied: 'Aliado',
+        hostile: 'Hostil',
+        rival: 'Rival'
+    })[value] || 'Desconhecido';
+}
+
+function formatWorldNpcMovementDate(movement) {
+    const value = movement?.chronology;
+    if (!value) return 'Data da campanha não registrada';
+    const date = `${String(value.day).padStart(2, '0')}/${String(value.month).padStart(2, '0')}/${value.year} ${value.era}`;
+    return `${date} · ${String(value.hour).padStart(2, '0')}:${String(value.minute).padStart(2, '0')}`;
+}
+
+function filterWorldNpcs() {
+    const modal = document.getElementById('worldHubModal');
+    if (!modal) return;
+    const query = normalizeWorldSearch(modal.querySelector('#worldNpcSearch')?.value);
+    const relationship = modal.querySelector('#worldNpcRelationship')?.value || 'all';
+    const locationId = modal.querySelector('#worldNpcLocation')?.value || 'all';
+    let visible = 0;
+    modal.querySelectorAll('.world-npc-card').forEach(card => {
+        const matchesQuery = !query || normalizeWorldSearch(card.dataset.search).includes(query);
+        const matchesRelationship = relationship === 'all' || card.dataset.npcRelationship === relationship;
+        const locationPath = String(card.dataset.npcLocationPath || card.dataset.npcLocation || '').split('|');
+        const matchesLocation = locationId === 'all' || locationPath.includes(locationId);
+        card.hidden = !(matchesQuery && matchesRelationship && matchesLocation);
+        if (!card.hidden) visible += 1;
+    });
+    const empty = modal.querySelector('.world-npc-empty');
+    if (empty) empty.hidden = visible > 0;
+    const count = modal.querySelector('.world-npc-visible-count');
+    if (count) count.textContent = `${visible} ${visible === 1 ? 'NPC encontrado' : 'NPCs encontrados'}`;
+}
+
+function filterWorldMerchants() {
+    const modal = document.getElementById('worldHubModal');
+    if (!modal) return;
+    const query = normalizeWorldSearch(modal.querySelector('#worldMerchantSearch')?.value);
+    const category = modal.querySelector('#worldMerchantCategory')?.value || 'all';
+    const locationId = modal.querySelector('#worldMerchantLocation')?.value || 'all';
+    let visible = 0;
+    modal.querySelectorAll('.world-merchant-directory-card').forEach(card => {
+        const matchesQuery = !query || normalizeWorldSearch(card.dataset.search).includes(query);
+        const matchesCategory = category === 'all' || card.dataset.merchantCategory === category;
+        const locationPath = String(card.dataset.merchantLocationPath || card.dataset.merchantLocation || '').split('|');
+        const matchesLocation = locationId === 'all' || locationPath.includes(locationId);
+        card.hidden = !(matchesQuery && matchesCategory && matchesLocation);
+        if (!card.hidden) visible += 1;
+    });
+    const empty = modal.querySelector('.world-merchant-empty-result');
+    if (empty) empty.hidden = visible > 0;
+    const count = modal.querySelector('.world-merchant-visible-count');
+    if (count) count.textContent = `${visible} ${visible === 1 ? 'loja encontrada' : 'lojas encontradas'}`;
+}
+
+function closeWorldNpcEditor() {
+    document.getElementById('worldNpcEditorModal')?.remove();
+}
+
+function openWorldNpcEditor(npcId = '') {
+    closeWorldNpcEditor();
+    if (window.collaborationSession?.isPlayer?.()) {
+        showToast('Somente o mestre pode gerenciar NPCs.');
+        return;
+    }
+    const world = window.worldStore?.getWorld?.();
+    const editing = npcId ? window.worldModel?.getNpc?.(world, npcId) : null;
+    const selectedLocationId = editing?.currentLocationId || (!editing ? world?.currentLocationId : '') || '';
+    const locationOptions = (world?.locations || [])
+        .filter(location => location.politicalType !== 'geopolitical-region')
+        .sort((left, right) => left.name.localeCompare(right.name, 'pt-BR'))
+        .map(location => {
+            const path = window.worldModel?.getLocationPath?.(world, location.id) || [location];
+            return `<option value="${escapeHtml(location.id)}"${selectedLocationId === location.id ? ' selected' : ''}>${escapeHtml(path.map(entry => entry.name).join(' › '))}</option>`;
+        }).join('');
+    const modal = document.createElement('div');
+    modal.id = 'worldNpcEditorModal';
+    modal.className = 'session-overlay world-npc-editor-overlay';
+    modal.addEventListener('click', event => {
+        if (event.target === modal) closeWorldNpcEditor();
+    });
+    modal.innerHTML = `
+        <section class="session-dialog world-npc-editor" role="dialog" aria-modal="true" aria-labelledby="worldNpcEditorTitle">
+            <div class="session-dialog-header"><div><small class="world-hub-kicker">PERSONAGEM DO MUNDO</small><h2 id="worldNpcEditorTitle">${editing ? 'Editar NPC' : 'Criar NPC'}</h2></div><button type="button" class="session-close" onclick="closeWorldNpcEditor()" aria-label="Fechar">×</button></div>
+            <p>Informações públicas podem ser compartilhadas com os jogadores. As anotações privadas permanecem exclusivas do mestre.</p>
+            <form id="worldNpcEditorForm" onsubmit="saveWorldNpcFromForm(event, '${escapeHtml(npcId)}')">
+                <label><span>Nome *</span><input name="name" required maxlength="120" value="${escapeHtml(editing?.name || '')}" placeholder="Nome do NPC"></label>
+                <div class="world-npc-editor-grid">
+                    <label><span>Profissão</span><input name="profession" maxlength="120" value="${escapeHtml(editing?.profession || '')}" placeholder="Ex.: Ferreiro"></label>
+                    <label><span>Facção</span><input name="faction" maxlength="160" value="${escapeHtml(editing?.faction || '')}" placeholder="Ex.: Guarda de Vizima"></label>
+                    <label><span>Relacionamento</span><select name="relationship">${(window.worldModel?.NPC_RELATIONSHIPS || ['unknown', 'neutral', 'friendly', 'allied', 'hostile', 'rival']).map(value => `<option value="${value}"${(editing?.relationship || 'unknown') === value ? ' selected' : ''}>${getWorldNpcRelationshipLabel(value)}</option>`).join('')}</select></label>
+                    <label><span>Visibilidade</span><select name="visibility"><option value="public"${editing?.visibility !== 'private' ? ' selected' : ''}>Visível aos jogadores</option><option value="private"${editing?.visibility === 'private' ? ' selected' : ''}>NPC secreto</option></select></label>
+                </div>
+                <label><span>Localização atual</span><select name="currentLocationId"><option value="">Sem localização definida</option>${locationOptions}</select></label>
+                <label><span>Informações públicas</span><textarea name="publicInfo" maxlength="4000" rows="4" placeholder="Aparência, comportamento e fatos conhecidos pelos jogadores">${escapeHtml(editing?.publicInfo || '')}</textarea></label>
+                <label class="world-npc-private-field"><span>Anotações privadas do mestre</span><textarea name="privateNotes" maxlength="8000" rows="5" placeholder="Segredos, motivações, estatísticas e planos">${escapeHtml(editing?.privateNotes || '')}</textarea></label>
+                <label><span>${editing ? 'Motivo do deslocamento (se mudar o local)' : 'Nota da localização inicial'}</span><input name="movementNote" maxlength="1000" placeholder="Opcional"></label>
+                <div class="session-dialog-actions"><button type="button" class="session-secondary" onclick="closeWorldNpcEditor()">Cancelar</button><button type="submit" class="session-primary">${editing ? 'Salvar NPC' : 'Criar NPC'}</button></div>
+            </form>
+        </section>`;
+    document.body.appendChild(modal);
+    modal.querySelector('input[name="name"]')?.focus();
+}
+
+function saveWorldNpcFromForm(event, npcId = '') {
+    event?.preventDefault?.();
+    const form = event?.currentTarget;
+    if (!form) return;
+    const data = new FormData(form);
+    const input = {
+        name: String(data.get('name') || '').trim(),
+        profession: String(data.get('profession') || '').trim(),
+        faction: String(data.get('faction') || '').trim(),
+        relationship: String(data.get('relationship') || 'unknown'),
+        visibility: data.get('visibility') === 'private' ? 'private' : 'public',
+        currentLocationId: String(data.get('currentLocationId') || '') || null,
+        publicInfo: String(data.get('publicInfo') || '').trim(),
+        privateNotes: String(data.get('privateNotes') || '').trim()
+    };
+    const movementNote = String(data.get('movementNote') || '').trim();
+    try {
+        if (npcId) {
+            const previous = window.worldModel?.getNpc?.(window.worldStore?.getWorld?.(), npcId);
+            window.worldStore?.updateNpc?.(npcId, input);
+            if ((previous?.currentLocationId || null) !== input.currentLocationId) {
+                window.worldStore?.moveNpc?.(npcId, input.currentLocationId, { note: movementNote });
+            }
+        } else {
+            window.worldStore?.createNpc?.(input, { movementNote });
+        }
+        closeWorldNpcEditor();
+        showToast(npcId ? '🧑 NPC atualizado.' : '🧑 NPC criado para a campanha.');
+        openWorldHub('npcs');
+    } catch (error) {
+        showToast(error?.message || 'Não foi possível salvar o NPC.');
+    }
+}
+
+function requestDeleteWorldNpc(npcId) {
+    const npc = window.worldModel?.getNpc?.(window.worldStore?.getWorld?.(), npcId);
+    if (!npc || window.collaborationSession?.isPlayer?.()) return;
+    openSessionConfirm({
+        title: `Excluir ${npc.name}?`,
+        message: 'O NPC e seu histórico de deslocamentos serão removidos desta campanha.',
+        confirmLabel: 'Excluir NPC',
+        danger: true,
+        onConfirm: () => {
+            try {
+                window.worldStore?.removeNpc?.(npcId);
+                showToast('🗑️ NPC removido da campanha.');
+                openWorldHub('npcs');
+            } catch (error) {
+                showToast(error?.message || 'Não foi possível remover o NPC.');
+            }
+        }
+    });
+}
+
+function getWorldHistoryTypeLabel(type) {
+    return ({
+        situation: 'Situação territorial',
+        war: 'Guerra',
+        occupation: 'Ocupação',
+        destruction: 'Destruição',
+        reconstruction: 'Reconstrução',
+        political: 'Mudança política',
+        battle: 'Batalha'
+    })[type] || 'Acontecimento';
+}
+
+function getWorldHistoryTypeIcon(type) {
+    return ({
+        situation: '🏛️',
+        war: '⚔️',
+        occupation: '🚩',
+        destruction: '🔥',
+        reconstruction: '🏗️',
+        political: '📜',
+        battle: '🛡️'
+    })[type] || '📖';
+}
+
+function getWorldHistoryContinuityLabel(continuity) {
+    return ({
+        shared: 'Livros e jogos',
+        books: 'Livros',
+        games: 'Jogos'
+    })[continuity] || 'Continuidade compartilhada';
+}
+
+function filterWorldHistory() {
+    const modal = document.getElementById('worldHubModal');
+    if (!modal) return;
+    const query = normalizeWorldSearch(modal.querySelector('#worldHistorySearch')?.value);
+    const type = modal.querySelector('#worldHistoryType')?.value || 'all';
+    let visible = 0;
+    modal.querySelectorAll('.world-history-card').forEach(card => {
+        const matchesQuery = !query || normalizeWorldSearch(card.dataset.search).includes(query);
+        const matchesType = type === 'all' || card.dataset.historyType === type;
+        card.hidden = !(matchesQuery && matchesType);
+        if (!card.hidden) visible += 1;
+    });
+    const empty = modal.querySelector('.world-history-empty');
+    if (empty) empty.hidden = visible > 0;
+    const count = modal.querySelector('.world-history-visible-count');
+    if (count) count.textContent = `${visible} ${visible === 1 ? 'registro visível' : 'registros visíveis'}`;
+}
+
+function setCampaignCurrentWorldLocation(locationId) {
+    try {
+        window.worldStore?.setCurrentLocation?.(locationId || null);
+        showToast(locationId ? '📍 Local atual da campanha atualizado.' : '📍 Local atual removido.');
+        openWorldHub();
+    } catch (error) {
+        showToast(error?.message || 'Não foi possível atualizar o local atual.');
+    }
+}
+
+function exportCampaignWorld() {
+    try {
+        const packageData = window.worldStore?.exportWorld?.();
+        if (!packageData) throw new Error('O Mundo desta campanha não está disponível.');
+        const campaignName = window.campaignStore?.getActiveCampaign?.()?.metadata?.name || 'campanha';
+        const safeName = String(campaignName).normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+            .replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '').toLowerCase() || 'campanha';
+        const blob = new Blob([JSON.stringify(packageData, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `witcher-mundo-${safeName}.json`;
+        link.click();
+        URL.revokeObjectURL(url);
+        showToast('🌍 Backup do Mundo exportado.');
+    } catch (error) {
+        showToast(error?.message || 'Não foi possível exportar o Mundo.');
+    }
+}
+
+function requestCampaignWorldImport() {
+    document.getElementById('campaignWorldImportInput')?.click();
+}
+
+async function importCampaignWorldFile(event) {
+    const input = event?.target;
+    const file = input?.files?.[0];
+    if (!file) return;
+
+    try {
+        if (file.size > 3 * 1024 * 1024) throw new Error('O arquivo ultrapassa o limite de 3 MB.');
+        const packageData = JSON.parse(await file.text());
+        window.worldModel?.parseImportPackage?.(packageData);
+        openSessionConfirm({
+            title: 'Importar Mundo?',
+            message: 'A estrutura atual de locais desta campanha será substituída. As demais informações da campanha serão preservadas.',
+            confirmLabel: 'Importar',
+            danger: true,
+            onConfirm: () => {
+                try {
+                    window.worldStore?.importWorld?.(packageData);
+                    showToast('🌍 Mundo importado para a campanha atual.');
+                    openWorldHub();
+                } catch (error) {
+                    showToast(error?.message || 'Não foi possível importar o Mundo.');
+                }
+            }
+        });
+    } catch (error) {
+        showToast(error?.message || 'Não foi possível ler o arquivo de Mundo.');
+    } finally {
+        input.value = '';
+    }
+}
+
+async function openWorldHub(view = 'overview', context = {}) {
+    if (view === 'map') {
+        try {
+            await window.worldFeatureLoader?.ensureMapFeatures?.();
+        } catch (error) {
+            showToast(error?.message || 'Não foi possível preparar o mapa interativo.');
+            return null;
+        }
+    }
     closeWorldHub();
 
     if (window.collaborationSession?.isPlayerAccessEnded?.()) {
@@ -1100,41 +1639,567 @@ function openWorldHub() {
     }
 
     const playerMode = window.collaborationSession?.isPlayer?.() === true;
+    const world = window.worldStore?.getWorld?.() || window.worldModel?.createEmptyWorld?.();
+    const locations = Array.isArray(world?.locations) ? world.locations : [];
+    const politicalEntities = locations.filter(location => location.politicalType);
+    const canonicalLocations = locations.filter(location => location.canonicalType);
+    const cartographicLocations = locations.filter(location => location.cartographicStatus === 'map-only');
+    const customLocations = locations.filter(location => location.origin === 'custom'
+        && (!playerMode || location.visibility !== 'private'));
+    const catalogLocations = [...canonicalLocations, ...cartographicLocations, ...customLocations];
+    const npcs = (Array.isArray(world?.npcs) ? world.npcs : [])
+        .filter(npc => !playerMode || npc.visibility !== 'private');
+    const merchants = npcs.filter(npc => npc.merchant?.enabled);
+    const travelHistory = [...(world?.travelHistory || [])].reverse();
+    const locationById = new Map(locations.map(location => [location.id, location]));
+    const contextLocationId = locationById.has(String(context?.locationId || ''))
+        ? String(context.locationId)
+        : '';
+    const contextLocation = contextLocationId ? locationById.get(contextLocationId) : null;
+    const currentPath = window.worldStore?.getCurrentLocationPath?.() || [];
+    const currentLocation = currentPath[currentPath.length - 1] || null;
+    const clockSnapshot = window.campaignClock?.getSnapshot?.();
+    const regionalEvents = window.worldTime?.getRelevantRegionalEvents?.(world, contextLocationId || world.currentLocationId, Number(clockSnapshot?.currentMinute) || 0)
+        || (world?.regionalEvents || []);
+    const chronology = clockSnapshot && Number.isFinite(Number(clockSnapshot.currentMinute))
+        ? window.campaignClock?.getDateParts?.(clockSnapshot.currentMinute)
+        : { year: 1276, era: 'DR', month: 1, day: 1 };
+    const historyContinuity = 'games';
+    const historicalSnapshot = window.worldStore?.getHistoricalSnapshot?.(chronology, {
+        continuity: historyContinuity,
+        recentLimit: 8
+    }) || { situations: [], activeEvents: [], recentEvents: [] };
+    const counts = locations.reduce((result, location) => {
+        result[location.type] = (result[location.type] || 0) + 1;
+        return result;
+    }, {});
+    const sortedLocations = [...locations].sort((left, right) => {
+        const leftPath = window.worldModel?.getLocationPath?.(world, left.id) || [left];
+        const rightPath = window.worldModel?.getLocationPath?.(world, right.id) || [right];
+        return leftPath.map(entry => entry.name).join(' / ').localeCompare(
+            rightPath.map(entry => entry.name).join(' / '),
+            'pt-BR'
+        );
+    });
+    const sortedPoliticalEntities = [...politicalEntities].sort((left, right) =>
+        left.name.localeCompare(right.name, 'pt-BR'));
+    const politicalTypeOptions = [...new Set(sortedPoliticalEntities.map(location => location.politicalType))]
+        .sort((left, right) => getWorldPoliticalTypeLabel(left).localeCompare(getWorldPoliticalTypeLabel(right), 'pt-BR'));
+    const sortedCanonicalLocations = [...canonicalLocations].sort((left, right) =>
+        left.name.localeCompare(right.name, 'pt-BR'));
+    const canonicalTypeOptions = [...new Set(sortedCanonicalLocations.map(location => location.canonicalType))]
+        .sort((left, right) => getWorldCanonicalTypeLabel(left).localeCompare(getWorldCanonicalTypeLabel(right), 'pt-BR'));
+    const sortedCatalogLocations = [...catalogLocations].sort((left, right) =>
+        left.name.localeCompare(right.name, 'pt-BR'));
+    const catalogTypeOptions = [...new Set(sortedCatalogLocations.map(getWorldCatalogType))]
+        .sort((left, right) => {
+            const leftLocation = sortedCatalogLocations.find(location => getWorldCatalogType(location) === left);
+            const rightLocation = sortedCatalogLocations.find(location => getWorldCatalogType(location) === right);
+            return getWorldCatalogTypeLabel(leftLocation).localeCompare(getWorldCatalogTypeLabel(rightLocation), 'pt-BR');
+        });
+    const sortedNpcs = [...npcs].sort((left, right) => left.name.localeCompare(right.name, 'pt-BR'));
+    const sortedMerchants = [...merchants].sort((left, right) => left.merchant.name.localeCompare(right.merchant.name, 'pt-BR'));
+    const npcLocationIds = [...new Set(sortedNpcs.map(npc => npc.currentLocationId).filter(Boolean))];
+    if (contextLocationId && !npcLocationIds.includes(contextLocationId)) npcLocationIds.push(contextLocationId);
+    const npcLocationOptions = npcLocationIds
+        .map(id => locationById.get(id)).filter(Boolean)
+        .sort((left, right) => left.name.localeCompare(right.name, 'pt-BR'));
+    const merchantLocationIds = [...new Set(sortedMerchants.map(npc => npc.currentLocationId).filter(Boolean))];
+    if (contextLocationId && !merchantLocationIds.includes(contextLocationId)) merchantLocationIds.push(contextLocationId);
+    const merchantLocationOptions = merchantLocationIds
+        .map(id => locationById.get(id)).filter(Boolean)
+        .sort((left, right) => left.name.localeCompare(right.name, 'pt-BR'));
+    const currentHistoricalSituation = [...currentPath].reverse()
+        .map(location => window.worldStore?.getActiveHistoricalSituation?.(location.id, chronology, { continuity: historyContinuity }))
+        .find(Boolean) || null;
+    const getHistoricalControllerName = entry => entry?.controllerName
+        || locationById.get(entry?.controllerId)?.name
+        || '';
+    const renderPoliticalCard = location => {
+        const aliases = Array.isArray(location.aliases) ? location.aliases : [];
+        const relations = Array.isArray(location.relations) ? location.relations : [];
+        const sources = Array.isArray(location.sources) ? location.sources : [];
+        const region = location.politicalRegionId ? locationById.get(location.politicalRegionId) : null;
+        const parent = location.parentId && location.parentId !== window.worldModel?.ROOT_CONTINENT_ID
+            ? locationById.get(location.parentId)
+            : null;
+        const grouping = region || parent;
+        const search = [location.name, ...aliases, location.politicalStatus, location.description,
+            region?.name, parent?.name, ...relations.map(item => item.label)].filter(Boolean).join(' ');
+        return `
+            <details class="world-political-card" data-political-type="${escapeHtml(location.politicalType)}" data-search="${escapeHtml(search)}">
+                <summary>
+                    <span>
+                        <strong>${escapeHtml(location.name)}</strong>
+                        <small>${escapeHtml(getWorldPoliticalTypeLabel(location.politicalType))}${grouping ? ` · ${escapeHtml(grouping.name)}` : ''}</small>
+                    </span>
+                    <span class="world-political-status">${escapeHtml(location.politicalStatus || 'Entidade política')}</span>
+                </summary>
+                <div class="world-political-card-body">
+                    ${aliases.length ? `<p class="world-political-aliases"><b>Nomes alternativos:</b> ${escapeHtml(aliases.join(' · '))}</p>` : ''}
+                    <p>${escapeHtml(location.description || 'Descrição em preparação.')}</p>
+                    ${parent ? `<p class="world-political-parent"><b>Vínculo territorial:</b> ${escapeHtml(parent.name)}</p>` : ''}
+                    ${relations.length ? `
+                        <div class="world-political-relations">
+                            <b>Relações políticas</b>
+                            <ul>${relations.map(item => {
+                                const target = locationById.get(item.targetId);
+                                return `<li><strong>${escapeHtml(item.label || 'Relação')}</strong>${target ? ` · ${escapeHtml(target.name)}` : ''}${item.note ? `<small>${escapeHtml(item.note)}</small>` : ''}</li>`;
+                            }).join('')}</ul>
+                        </div>
+                    ` : ''}
+                    ${sources.length ? `
+                        <div class="world-political-sources">
+                            <b>Fontes</b>
+                            ${sources.map(item => `<a href="${escapeHtml(item.url)}" target="_blank" rel="noopener noreferrer">↗ ${escapeHtml(item.title)}</a>`).join('')}
+                        </div>
+                    ` : ''}
+                </div>
+            </details>`;
+    };
+    const renderCanonicalCard = location => {
+        const aliases = Array.isArray(location.aliases) ? location.aliases : [];
+        const sources = Array.isArray(location.sources) ? location.sources : [];
+        const path = window.worldModel?.getLocationPath?.(world, location.id) || [location];
+        const territoryPath = path.slice(1, -1).map(entry => entry.name).join(' › ');
+        const search = [location.name, ...aliases, location.description, location.canonicalStatus,
+            ...path.map(entry => entry.name)].filter(Boolean).join(' ');
+        return `
+            <details class="world-political-card world-canonical-card world-location-card" data-location-layer="canonical" data-location-type="${escapeHtml(location.canonicalType)}" data-location-confidence="" data-search="${escapeHtml(search)}">
+                <summary>
+                    <span>
+                        <strong>${escapeHtml(location.name)}</strong>
+                        <small>${escapeHtml(getWorldCanonicalTypeLabel(location.canonicalType))}${territoryPath ? ` · ${escapeHtml(territoryPath)}` : ''}</small>
+                    </span>
+                    ${location.isCapital ? '<span class="world-capital-chip">Capital</span>' : ''}
+                </summary>
+                <div class="world-political-card-body">
+                    ${aliases.length ? `<p class="world-political-aliases"><b>Nomes alternativos:</b> ${escapeHtml(aliases.join(' · '))}</p>` : ''}
+                    <p>${escapeHtml(location.description || 'Descrição em preparação.')}</p>
+                    <p class="world-location-path"><b>Localização:</b> ${escapeHtml(path.map(entry => entry.name).join(' › '))}</p>
+                    ${sources.length ? `
+                        <div class="world-political-sources">
+                            <b>Fontes</b>
+                            ${sources.map(item => `<a href="${escapeHtml(item.url)}" target="_blank" rel="noopener noreferrer">↗ ${escapeHtml(item.title)}</a>`).join('')}
+                        </div>
+                    ` : ''}
+                </div>
+            </details>`;
+    };
+    const renderCartographicCard = location => {
+        const path = window.worldModel?.getLocationPath?.(world, location.id) || [location];
+        const territoryPath = path.slice(1, -1).map(entry => entry.name).join(' › ');
+        const map = window.worldCartographicData?.MAP_REFERENCE || {};
+        const coordinates = location.coordinates || {};
+        const search = [location.name, ...(location.aliases || []), location.description,
+            ...path.map(entry => entry.name), getWorldReliabilityLabel(location.cartographicConfidence)].filter(Boolean).join(' ');
+        return `
+            <details class="world-political-card world-location-card world-cartographic-card" data-location-layer="cartographic" data-location-type="${escapeHtml(location.cartographicType)}" data-location-confidence="${escapeHtml(location.cartographicConfidence || '')}" data-search="${escapeHtml(search)}">
+                <summary>
+                    <span><strong>🗺️ ${escapeHtml(location.name)}</strong><small>${escapeHtml(getWorldCartographicTypeLabel(location.cartographicType))}${territoryPath ? ` · ${escapeHtml(territoryPath)}` : ''}</small></span>
+                    <span class="world-location-layer-chip cartographic">Somente no mapa</span>
+                </summary>
+                <div class="world-political-card-body">
+                    <p>${escapeHtml(location.description)}</p>
+                    <p class="world-location-path"><b>Localização:</b> ${escapeHtml(path.map(entry => entry.name).join(' › '))}</p>
+                    <div class="world-cartographic-facts">
+                        <span><small>CONFIABILIDADE</small><b>${escapeHtml(getWorldReliabilityLabel(location.cartographicConfidence))}</b></span>
+                        <span><small>COORDENADAS</small><b>X ${Number(coordinates.x).toFixed(1)}% · Y ${Number(coordinates.y).toFixed(1)}%</b></span>
+                    </div>
+                    <p class="world-cartographic-note">Posição ${location.coordinateConfidence === 'approximate' ? 'aproximada' : 'estimada'} no mapa <b>${escapeHtml(map.title || 'The Continent')}</b>${map.author ? `, de ${escapeHtml(map.author)}` : ''}. O registro preserva a leitura cartográfica sem apresentar detalhes não confirmados como canônicos.</p>
+                </div>
+            </details>`;
+    };
+    const renderCustomLocationCard = location => {
+        const path = window.worldModel?.getLocationPath?.(world, location.id) || [location];
+        const territoryPath = path.slice(1, -1).map(entry => entry.name).join(' › ');
+        const search = [location.name, location.description, ...path.map(entry => entry.name), getWorldCustomTypeLabel(location.customType)].filter(Boolean).join(' ');
+        return `
+            <details class="world-political-card world-location-card world-custom-location-card" data-location-layer="custom" data-location-type="${escapeHtml(location.customType || 'location')}" data-location-confidence="" data-search="${escapeHtml(search)}">
+                <summary>
+                    <span><strong>✍️ ${escapeHtml(location.name)}</strong><small>${escapeHtml(getWorldCustomTypeLabel(location.customType))}${territoryPath ? ` · ${escapeHtml(territoryPath)}` : ''}</small></span>
+                    <span class="world-location-layer-chip custom">${location.visibility === 'private' ? 'Somente mestre' : 'Campanha'}</span>
+                </summary>
+                <div class="world-political-card-body">
+                    <p>${escapeHtml(location.description || 'Local personalizado da campanha.')}</p>
+                    <p class="world-location-path"><b>Localização:</b> ${escapeHtml(path.map(entry => entry.name).join(' › '))}</p>
+                    ${location.coordinates ? `<p><b>Coordenadas:</b> X ${Number(location.coordinates.x).toFixed(1)}% · Y ${Number(location.coordinates.y).toFixed(1)}%</p>` : '<p>Sem coordenadas definidas no mapa.</p>'}
+                    ${playerMode ? '' : `<div class="world-location-card-actions"><button type="button" class="session-secondary" onclick="openWorldLocationEditor('${escapeHtml(location.id)}')">Editar</button><button type="button" class="session-danger" onclick="requestDeleteWorldLocation('${escapeHtml(location.id)}')">Excluir</button></div>`}
+                </div>
+            </details>`;
+    };
+    const renderNpcCard = npc => {
+        const location = npc.currentLocationId ? locationById.get(npc.currentLocationId) : null;
+        const path = location ? (window.worldModel?.getLocationPath?.(world, location.id) || [location]) : [];
+        const movements = [...(npc.movements || [])].reverse();
+        const activeRoutine = window.worldTime?.getNpcActiveSchedule?.(npc, Number(clockSnapshot?.currentMinute) || 0);
+        const routineLocation = activeRoutine?.locationId ? locationById.get(activeRoutine.locationId) : null;
+        const search = [npc.name, npc.profession, npc.faction, npc.publicInfo,
+            getWorldNpcRelationshipLabel(npc.relationship), ...path.map(entry => entry.name)].filter(Boolean).join(' ');
+        return `
+            <details class="world-political-card world-npc-card" data-npc-relationship="${escapeHtml(npc.relationship)}" data-npc-location="${escapeHtml(npc.currentLocationId || '')}" data-npc-location-path="${escapeHtml(path.map(entry => entry.id).join('|'))}" data-search="${escapeHtml(search)}">
+                <summary>
+                    <span><strong>🧑 ${escapeHtml(npc.name)}</strong><small>${escapeHtml(npc.profession || 'Profissão não informada')}${npc.faction ? ` · ${escapeHtml(npc.faction)}` : ''}</small></span>
+                    <span class="world-npc-relationship is-${escapeHtml(npc.relationship)}">${escapeHtml(getWorldNpcRelationshipLabel(npc.relationship))}</span>
+                </summary>
+                <div class="world-political-card-body world-npc-card-body">
+                    <p class="world-location-path"><b>Local atual:</b> ${path.length ? escapeHtml(path.map(entry => entry.name).join(' › ')) : 'Sem localização definida'}</p>
+                    <p>${escapeHtml(npc.publicInfo || 'Nenhuma informação pública registrada.')}</p>
+                    <div class="world-npc-routine ${activeRoutine ? 'is-active' : ''}"><small>ROTINA AGORA</small><strong>${escapeHtml(activeRoutine?.label || 'Sem atividade programada')}</strong>${activeRoutine ? `<span>${escapeHtml(`${activeRoutine.startsAt}–${activeRoutine.endsAt}${routineLocation ? ` · ${routineLocation.name}` : ''}`)}</span>${activeRoutine.publicInfo ? `<p>${escapeHtml(activeRoutine.publicInfo)}</p>` : ''}` : ''}</div>
+                    ${!playerMode && npc.privateNotes ? `<div class="world-npc-private-notes"><small>ANOTAÇÕES PRIVADAS DO MESTRE</small><p>${escapeHtml(npc.privateNotes)}</p></div>` : ''}
+                    <details class="world-npc-movements">
+                        <summary>Histórico de deslocamentos <b>${movements.length}</b></summary>
+                        ${movements.length ? `<ol>${movements.map(movement => `<li><strong>${escapeHtml(movement.fromLocationName)} → ${escapeHtml(movement.toLocationName)}</strong><small>${escapeHtml(formatWorldNpcMovementDate(movement))}</small>${movement.note ? `<span>${escapeHtml(movement.note)}</span>` : ''}</li>`).join('')}</ol>` : '<p>Nenhum deslocamento registrado.</p>'}
+                    </details>
+                    ${window.worldCommerce?.renderNpcCommerce?.(npc, { playerMode }) || ''}
+                    ${playerMode ? '' : `<div class="world-location-card-actions"><button type="button" class="session-secondary" onclick="openWorldNpcScheduleEditor('${escapeHtml(npc.id)}')">Horários</button><button type="button" class="session-secondary" onclick="openWorldNpcEditor('${escapeHtml(npc.id)}')">Editar e mover</button><button type="button" class="session-danger" onclick="requestDeleteWorldNpc('${escapeHtml(npc.id)}')">Excluir</button></div>`}
+                </div>
+            </details>`;
+    };
+    const renderMerchantDirectoryCard = npc => {
+        const merchant = npc.merchant;
+        const location = npc.currentLocationId ? locationById.get(npc.currentLocationId) : null;
+        const path = location ? (window.worldModel?.getLocationPath?.(world, location.id) || [location]) : [];
+        const products = merchant.catalog.filter(entry => entry.enabled);
+        const services = merchant.services.filter(entry => entry.enabled);
+        const shopOpen = window.worldTime?.isMerchantOpen?.(merchant, Number(clockSnapshot?.currentMinute) || 0) !== false;
+        const search = [merchant.name, npc.name, npc.profession, npc.faction, merchant.description,
+            window.worldCommerce?.getMerchantCategoryLabel?.(merchant.category), ...path.map(entry => entry.name)].filter(Boolean).join(' ');
+        return `<article class="world-merchant-directory-card" data-search="${escapeHtml(search)}" data-merchant-category="${escapeHtml(merchant.category)}" data-merchant-location="${escapeHtml(npc.currentLocationId || '')}" data-merchant-location-path="${escapeHtml(path.map(entry => entry.id).join('|'))}">
+            <div class="world-merchant-directory-heading"><div><small>${escapeHtml(window.worldCommerce?.getMerchantCategoryLabel?.(merchant.category) || 'Comerciante')}</small><strong>🏪 ${escapeHtml(merchant.name)}</strong><span>${escapeHtml(npc.name)}${path.length ? ` · ${escapeHtml(path.map(entry => entry.name).join(' › '))}` : ''}</span></div><button type="button" class="session-primary" onclick="openWorldMerchantShop('${escapeHtml(npc.id)}')">Ver loja</button></div>
+            <p>${escapeHtml(merchant.description || 'Nenhuma descrição pública cadastrada.')}</p>
+            <div class="world-merchant-directory-facts"><span class="${shopOpen ? 'is-open' : 'is-closed'}">${shopOpen ? '🟢 Aberta' : '🔴 Fechada'}${merchant.openingSchedule?.enabled ? ` · ${escapeHtml(merchant.openingSchedule.opensAt)}–${escapeHtml(merchant.openingSchedule.closesAt)}` : ''}</span><span>📦 ${products.length} produtos</span><span>🛠️ ${services.length} serviços</span><span>🔄 ${escapeHtml(window.worldCommerce?.getRestockLabel?.(merchant) || 'Manual')}</span><span>🤝 ${merchant.negotiationDifficulty > 0 && merchant.discountPercent > 0 ? `Negócios ND ${merchant.negotiationDifficulty} · ${merchant.discountPercent}%` : 'Sem desconto configurado'}</span></div>
+        </article>`;
+    };
+    const activeHistoricalEventIds = new Set((historicalSnapshot.activeEvents || []).map(entry => entry.id));
+    const displayedHistoricalEvents = [
+        ...(historicalSnapshot.activeEvents || []),
+        ...(historicalSnapshot.recentEvents || []).filter(entry => !activeHistoricalEventIds.has(entry.id))
+    ];
+    const renderHistoricalSituationCard = entry => {
+        const target = locationById.get(entry.targetId);
+        const controller = getHistoricalControllerName(entry);
+        const search = [target?.name, entry.ruler, controller, entry.sovereignty, entry.politicalStatus,
+            entry.physicalStatus, entry.summary].filter(Boolean).join(' ');
+        return `
+            <details class="world-political-card world-history-card" data-history-type="situation" data-search="${escapeHtml(search)}">
+                <summary>
+                    <span>
+                        <strong>🏛️ ${escapeHtml(target?.name || entry.targetId)}</strong>
+                        <small>${escapeHtml(entry.politicalStatus || entry.sovereignty || 'Situação territorial')}</small>
+                    </span>
+                    <span class="world-history-state-chip">${escapeHtml(entry.physicalStatus || 'Preservado')}</span>
+                </summary>
+                <div class="world-political-card-body world-history-card-body">
+                    <div class="world-history-facts">
+                        ${entry.ruler ? `<span><small>GOVERNO</small><b>${escapeHtml(entry.ruler)}</b></span>` : ''}
+                        ${controller ? `<span><small>CONTROLE</small><b>${escapeHtml(controller)}</b></span>` : ''}
+                        ${entry.sovereignty ? `<span><small>SOBERANIA</small><b>${escapeHtml(entry.sovereignty)}</b></span>` : ''}
+                        <span><small>VIGÊNCIA</small><b>${escapeHtml(window.worldHistoryData?.formatPeriod?.(entry) || '')}</b></span>
+                    </div>
+                    <p>${escapeHtml(entry.summary || 'Situação histórica catalogada para este período.')}</p>
+                    ${entry.chronologyNote ? `<p class="world-history-note">⚠ ${escapeHtml(entry.chronologyNote)}</p>` : ''}
+                    <span class="world-history-continuity">${escapeHtml(getWorldHistoryContinuityLabel(entry.continuity))}</span>
+                    ${entry.sources?.length ? `
+                        <div class="world-political-sources">
+                            <b>Fontes</b>
+                            ${entry.sources.map(item => `<a href="${escapeHtml(item.url)}" target="_blank" rel="noopener noreferrer">↗ ${escapeHtml(item.title)}</a>`).join('')}
+                        </div>
+                    ` : ''}
+                </div>
+            </details>`;
+    };
+    const renderHistoricalEventCard = entry => {
+        const targets = (entry.affectedIds || []).map(id => locationById.get(id)?.name).filter(Boolean);
+        const active = activeHistoricalEventIds.has(entry.id);
+        const search = [entry.title, entry.description, entry.outcome, ...targets].filter(Boolean).join(' ');
+        return `
+            <details class="world-political-card world-history-card world-history-event-card" data-history-type="${escapeHtml(entry.type)}" data-search="${escapeHtml(search)}">
+                <summary>
+                    <span>
+                        <strong>${getWorldHistoryTypeIcon(entry.type)} ${escapeHtml(entry.title)}</strong>
+                        <small>${escapeHtml(window.worldHistoryData?.formatPeriod?.(entry) || '')} · ${escapeHtml(getWorldHistoryTypeLabel(entry.type))}</small>
+                    </span>
+                    <span class="world-history-event-chip ${active ? 'is-active' : ''}">${active ? 'EM CURSO' : 'ANTERIOR'}</span>
+                </summary>
+                <div class="world-political-card-body world-history-card-body">
+                    <p>${escapeHtml(entry.description)}</p>
+                    ${entry.outcome ? `<p class="world-history-outcome"><b>Consequência:</b> ${escapeHtml(entry.outcome)}</p>` : ''}
+                    ${targets.length ? `<p class="world-location-path"><b>Locais envolvidos:</b> ${escapeHtml(targets.join(' · '))}</p>` : ''}
+                    ${entry.chronologyNote ? `<p class="world-history-note">⚠ ${escapeHtml(entry.chronologyNote)}</p>` : ''}
+                    <span class="world-history-continuity">${escapeHtml(getWorldHistoryContinuityLabel(entry.continuity))}</span>
+                    ${entry.sources?.length ? `
+                        <div class="world-political-sources">
+                            <b>Fontes</b>
+                            ${entry.sources.map(item => `<a href="${escapeHtml(item.url)}" target="_blank" rel="noopener noreferrer">↗ ${escapeHtml(item.title)}</a>`).join('')}
+                        </div>
+                    ` : ''}
+                </div>
+            </details>`;
+    };
+    const renderRegionalEventCard = event => {
+        const location = event.locationId ? locationById.get(event.locationId) : null;
+        const recurrence = window.worldTime?.RECURRENCE_LABELS?.[event.recurrence] || 'Uma vez';
+        return `<article class="world-regional-event-card"><div><small>${escapeHtml(recurrence.toUpperCase())}${event.visibility === 'private' ? ' · SOMENTE MESTRE' : ''}</small><strong>📍 ${escapeHtml(event.title)}</strong><span>${escapeHtml(window.worldTime?.formatCampaignMinute?.(event.startMinute) || '')}${location ? ` · ${escapeHtml(location.name)}` : ' · Todo o Continente'}</span>${event.description ? `<p>${escapeHtml(event.description)}</p>` : ''}${!playerMode && event.privateNotes ? `<div class="world-npc-private-notes"><small>ANOTAÇÃO PRIVADA</small><p>${escapeHtml(event.privateNotes)}</p></div>` : ''}</div>${playerMode ? '' : `<div class="world-location-card-actions"><button type="button" class="session-secondary" onclick="openWorldRegionalEventEditor('${escapeHtml(event.id)}')">Editar</button><button type="button" class="session-danger" onclick="removeWorldRegionalEvent('${escapeHtml(event.id)}')">Excluir</button></div>`}</article>`;
+    };
+    const renderTravelCard = travel => {
+        const travelers = (Array.isArray(travel.travelers) ? travel.travelers : []).map(entry => entry?.name).filter(Boolean);
+        const duration = travel.transportMode === 'portal'
+            ? '1 turno (1 min)'
+            : (window.campaignClock?.formatDuration?.(travel.durationMinutes) || `${travel.durationMinutes} min`);
+        return `<article class="world-travel-card"><span aria-hidden="true">${travel.transportMode === 'portal' ? '🌀' : '🧭'}</span><div><strong>${escapeHtml(travel.fromLocationName)} → ${escapeHtml(travel.toLocationName)}</strong><small>${escapeHtml(travel.transportLabel || 'A pé')}${Number(travel.distanceKm) > 0 ? ` · ${Number(travel.distanceKm).toLocaleString('pt-BR')} km` : ''} · ${escapeHtml(duration)} · ${escapeHtml(window.worldTime?.formatCampaignMinute?.(travel.arrivalMinute) || '')}</small>${travelers.length ? `<span class="world-travel-party-history">Viajantes: ${escapeHtml(travelers.join(', '))}</span>` : ''}${travel.note ? `<p>${escapeHtml(travel.note)}</p>` : ''}</div></article>`;
+    };
     const modal = document.createElement('div');
     modal.id = 'worldHubModal';
-    modal.className = 'session-overlay';
+    modal.className = `session-overlay${view === 'map' ? ' world-map-overlay' : ''}`;
     modal.addEventListener('click', event => {
         if (event.target === modal) closeWorldHub();
     });
     modal.innerHTML = `
-        <section class="session-dialog world-hub-dialog" role="dialog" aria-modal="true" aria-labelledby="worldHubTitle">
+        <section class="session-dialog world-hub-dialog${view === 'map' ? ' world-map-mode' : ''}" role="dialog" aria-modal="true" aria-labelledby="worldHubTitle">
             <div class="session-dialog-header">
                 <div>
                     <small class="world-hub-kicker">MUNDO DA CAMPANHA</small>
-                    <h2 id="worldHubTitle">Atlas e locais</h2>
+                    <h2 id="worldHubTitle">${view === 'map' ? 'Mapa do Continente' : 'Atlas, NPCs e comércio'}</h2>
                 </div>
                 <button type="button" class="session-close" onclick="closeWorldHub()" aria-label="Fechar">×</button>
             </div>
-            <p class="world-hub-intro">Este será o acesso central para local atual, atlas político, cidades, NPCs, comerciantes e pontos personalizados da campanha.</p>
-            <div class="world-hub-preview" aria-label="Estrutura planejada do Mundo">
+            ${view === 'map' ? '' : '<p class="world-hub-intro">O Mundo combina territórios, locais, NPCs, lojas e a situação histórica resolvida pela data atual da campanha.</p>'}
+            <nav class="world-hub-tabs" aria-label="Seções do Mundo">
+                <button type="button" class="${view === 'map' ? 'active' : ''}" onclick="openWorldHub('map')">Mapa</button>
+                <button type="button" class="${view === 'overview' ? 'active' : ''}" onclick="openWorldHub('overview')">Visão geral</button>
+                <button type="button" class="${view === 'atlas' ? 'active' : ''}" onclick="openWorldHub('atlas')">Atlas político</button>
+                <button type="button" class="${view === 'locations' ? 'active' : ''}" onclick="openWorldHub('locations')">Locais</button>
+                <button type="button" class="${view === 'npcs' ? 'active' : ''}" onclick="openWorldHub('npcs')">NPCs</button>
+                <button type="button" class="${view === 'merchants' ? 'active' : ''}" onclick="openWorldHub('merchants')">Lojas</button>
+                <button type="button" class="${view === 'events' ? 'active' : ''}" onclick="openWorldHub('events')">Agenda</button>
+                <button type="button" class="${view === 'history' ? 'active' : ''}" onclick="openWorldHub('history')">História</button>
+            </nav>
+            ${view === 'map' ? (window.worldMap?.renderView?.(world, { playerMode }) || '<p class="world-atlas-empty">O mapa visual não pôde ser carregado.</p>') : ''}
+            ${view === 'overview' ? `
+            <section class="world-current-location" aria-label="Local atual da campanha">
+                <small>LOCAL ATUAL</small>
+                <strong>${escapeHtml(currentLocation?.name || 'Não definido')}</strong>
+                <span>${currentPath.length ? escapeHtml(currentPath.map(location => location.name).join(' › ')) : 'Escolha onde o grupo se encontra.'}</span>
+                ${playerMode ? '' : `
+                    <label>
+                        <span class="sr-only">Alterar local atual</span>
+                        <select onchange="setCampaignCurrentWorldLocation(this.value)">
+                            <option value="">Não definido</option>
+                            ${sortedLocations.filter(location => location.politicalType !== 'geopolitical-region').map(location => {
+                                const path = window.worldModel?.getLocationPath?.(world, location.id) || [location];
+                                const depth = Math.max(0, path.length - 1);
+                                const prefix = depth ? '— '.repeat(depth) : '';
+                                return `<option value="${escapeHtml(location.id)}"${world.currentLocationId === location.id ? ' selected' : ''}>${escapeHtml(`${prefix}${location.name} · ${getWorldLocationTypeLabel(location.type)}`)}</option>`;
+                            }).join('')}
+                        </select>
+                    </label>
+                    <button type="button" class="session-primary world-travel-button" onclick="openWorldTravelPlanner()">🧭 Planejar viagem</button>
+                `}
+            </section>
+            ${currentHistoricalSituation ? `
+                <section class="world-current-history" aria-label="Situação histórica do local atual">
+                    <small>SITUAÇÃO EM ${escapeHtml(`${chronology.year} ${chronology.era}`)}</small>
+                    <strong>${escapeHtml(currentHistoricalSituation.politicalStatus || currentHistoricalSituation.sovereignty)}</strong>
+                    <span>${escapeHtml(currentHistoricalSituation.summary)}</span>
+                    ${getHistoricalControllerName(currentHistoricalSituation) ? `<b>Controle: ${escapeHtml(getHistoricalControllerName(currentHistoricalSituation))}</b>` : ''}
+                </section>
+            ` : ''}
+            <div class="world-hub-preview" aria-label="Fundação do Mundo">
                 <span class="world-hub-preview-icon" aria-hidden="true">🌍</span>
                 <div>
-                    <strong>Fundação do Mundo é a próxima etapa</strong>
+                    <strong>Mundo canônico integrado</strong>
                     <small>${playerMode
-                        ? 'Você poderá consultar as informações do mundo compartilhadas pelo mestre.'
-                        : 'O atlas será construído com locais hierárquicos e situação histórica por ano.'}</small>
+                        ? 'Você pode consultar o local atual e as informações públicas compartilhadas pelo mestre.'
+                        : 'Política, cidades e pontos especiais convivem com locais personalizados, usando IDs estáveis e fontes consultáveis.'}</small>
                 </div>
             </div>
-            <div class="world-hub-sections" aria-hidden="true">
-                <span>📍 Local atual</span>
-                <span>🗺️ Atlas</span>
-                <span>🧑 NPCs</span>
-                <span>🛒 Comerciantes</span>
+            <div class="world-hub-sections" aria-label="Resumo do catálogo">
+                <span>🏰 ${politicalEntities.length} entidades políticas</span>
+                <span>🧭 ${counts.province || 0} províncias</span>
+                <span>📍 ${canonicalLocations.length} locais canônicos</span>
+                <span>🗺️ ${cartographicLocations.length} pontos cartográficos</span>
+                <span>✍️ ${customLocations.length} locais da campanha</span>
+                <span>🧑 ${npcs.length} NPCs registrados</span>
+                <span>🏪 ${merchants.length} lojas ativas</span>
+                <span>🧭 ${travelHistory.length} viagens registradas</span>
+                <span>📅 ${regionalEvents.length} eventos regionais relevantes</span>
+                <span>📜 ${historicalSnapshot.situations?.length || 0} situações em ${escapeHtml(`${chronology.year} ${chronology.era}`)}</span>
+                <span>🔐 Campanha isolada</span>
             </div>
-            <button type="button" class="session-secondary session-full" onclick="closeWorldHub()">Fechar</button>
+            ${regionalEvents.length ? `<section class="world-overview-events"><div class="world-location-heading"><div><small>ACONTECENDO NA REGIÃO</small><strong>${regionalEvents.length} eventos relevantes</strong></div><button type="button" class="session-secondary" onclick="openWorldHub('events')">Ver agenda</button></div>${regionalEvents.slice(0, 3).map(renderRegionalEventCard).join('')}</section>` : ''}
+            ${travelHistory.length ? `<section class="world-overview-travels"><div class="world-location-heading"><div><small>VIAGENS RECENTES</small><strong>Deslocamentos da campanha</strong></div></div>${travelHistory.slice(0, 3).map(renderTravelCard).join('')}</section>` : ''}
+            ${playerMode ? '' : `
+                <div class="world-hub-transfer-actions">
+                    <button type="button" class="session-secondary" onclick="exportCampaignWorld()">⇩ Exportar Mundo</button>
+                    <button type="button" class="session-secondary" onclick="requestCampaignWorldImport()">⇧ Importar Mundo</button>
+                    <input id="campaignWorldImportInput" type="file" accept="application/json,.json" hidden onchange="importCampaignWorldFile(event)">
+                </div>
+            `}
+            ` : view === 'atlas' ? `
+            <section class="world-atlas-panel" aria-label="Atlas político do Continente">
+                <div class="world-atlas-toolbar">
+                    <label>
+                        <span>Buscar no Atlas</span>
+                        <input id="worldAtlasSearch" type="search" placeholder="Reino, território ou nome alternativo" oninput="filterWorldPoliticalAtlas()">
+                    </label>
+                    <label>
+                        <span>Categoria política</span>
+                        <select id="worldAtlasType" onchange="filterWorldPoliticalAtlas()">
+                            <option value="all">Todas as categorias</option>
+                            ${politicalTypeOptions.map(type => `<option value="${escapeHtml(type)}">${escapeHtml(getWorldPoliticalTypeLabel(type))}</option>`).join('')}
+                        </select>
+                    </label>
+                </div>
+                <p class="world-atlas-visible-count">${politicalEntities.length} entidades encontradas</p>
+                <div class="world-political-list">${sortedPoliticalEntities.map(renderPoliticalCard).join('')}</div>
+                <p class="world-atlas-empty" hidden>Nenhuma entidade corresponde aos filtros selecionados.</p>
+                <p class="world-atlas-disclaimer">Abra <b>História</b> para ver governo, controle e soberania calculados conforme ${escapeHtml(`${chronology.year} ${chronology.era}`)}.</p>
+            </section>
+            ` : view === 'locations' ? `
+            <section class="world-atlas-panel" aria-label="Catálogo de locais do Mundo">
+                <div class="world-location-heading">
+                    <div><small>CATÁLOGO DE LOCAIS</small><strong>Canônicos, cartográficos e da campanha</strong></div>
+                    ${playerMode ? '' : '<button type="button" class="session-primary" onclick="openWorldLocationEditor()">+ Criar local</button>'}
+                </div>
+                <div class="world-atlas-toolbar world-location-toolbar">
+                    <label>
+                        <span>Buscar local</span>
+                        <input id="worldLocationSearch" type="search" placeholder="Nome, território ou descrição" oninput="filterWorldCanonicalCatalog()">
+                    </label>
+                    <label>
+                        <span>Tipo de local</span>
+                        <select id="worldLocationType" onchange="filterWorldCanonicalCatalog()">
+                            <option value="all">Todos os tipos</option>
+                            ${catalogTypeOptions.map(type => {
+                                const sample = sortedCatalogLocations.find(location => getWorldCatalogType(location) === type);
+                                return `<option value="${escapeHtml(type)}">${escapeHtml(getWorldCatalogTypeLabel(sample))}</option>`;
+                            }).join('')}
+                        </select>
+                    </label>
+                    <label><span>Camada</span><select id="worldLocationLayer" onchange="filterWorldCanonicalCatalog()"><option value="all">Todas as camadas</option><option value="canonical">Canônicos</option><option value="cartographic">Somente no mapa</option><option value="custom">Locais da campanha</option></select></label>
+                    <label><span>Confiabilidade</span><select id="worldLocationConfidence" onchange="filterWorldCanonicalCatalog()"><option value="all">Todos os níveis</option><option value="high">Alta</option><option value="medium">Média</option><option value="low">Baixa</option></select></label>
+                </div>
+                <p class="world-atlas-visible-count world-location-visible-count">${catalogLocations.length} locais encontrados</p>
+                <div class="world-political-list">${sortedCatalogLocations.map(location => {
+                    if (location.origin === 'custom') return renderCustomLocationCard(location);
+                    if (location.cartographicStatus === 'map-only') return renderCartographicCard(location);
+                    return renderCanonicalCard(location);
+                }).join('')}</div>
+                <p class="world-atlas-empty world-location-empty" hidden>Nenhum local corresponde aos filtros selecionados.</p>
+                <p class="world-atlas-disclaimer">Os pontos “Somente no mapa” preservam o que é visível na cartografia fornecida. A confiabilidade informa o grau de certeza da transcrição e do vínculo territorial; locais do mestre permanecem separados do catálogo oficial.</p>
+            </section>
+            ` : view === 'npcs' ? `
+            <section class="world-atlas-panel world-npc-panel" aria-label="Gerenciamento de NPCs">
+                <div class="world-location-heading">
+                    <div><small>PERSONAGENS DO MUNDO</small><strong>NPCs, relações e deslocamentos</strong></div>
+                    ${playerMode ? '' : '<button type="button" class="session-primary" onclick="openWorldNpcEditor()">+ Criar NPC</button>'}
+                </div>
+                <div class="world-atlas-toolbar world-npc-toolbar">
+                    <label><span>Buscar NPC</span><input id="worldNpcSearch" type="search" placeholder="Nome, profissão ou facção" oninput="filterWorldNpcs()"></label>
+                    <label><span>Relacionamento</span><select id="worldNpcRelationship" onchange="filterWorldNpcs()"><option value="all">Todos</option>${(window.worldModel?.NPC_RELATIONSHIPS || []).map(value => `<option value="${value}">${escapeHtml(getWorldNpcRelationshipLabel(value))}</option>`).join('')}</select></label>
+                    <label><span>Localização atual</span><select id="worldNpcLocation" onchange="filterWorldNpcs()"><option value="all">Todos os locais</option>${npcLocationOptions.map(location => `<option value="${escapeHtml(location.id)}">${escapeHtml(location.name)}</option>`).join('')}</select></label>
+                </div>
+                <p class="world-atlas-visible-count world-npc-visible-count">${npcs.length} ${npcs.length === 1 ? 'NPC encontrado' : 'NPCs encontrados'}</p>
+                <div class="world-political-list">${sortedNpcs.map(renderNpcCard).join('')}</div>
+                <p class="world-atlas-empty world-npc-empty"${npcs.length ? ' hidden' : ''}>Nenhum NPC corresponde aos filtros selecionados.</p>
+                <p class="world-atlas-disclaimer">Cada mudança de localização registra origem, destino, data e horário da campanha. Jogadores recebem somente informações públicas; NPCs secretos, notas privadas e trajetos ligados a locais ocultos não são compartilhados.</p>
+            </section>
+            ` : view === 'merchants' ? `
+            <section class="world-atlas-panel world-merchant-panel" aria-label="Comerciantes e lojas">
+                <div class="world-location-heading"><div><small>COMÉRCIO DA CAMPANHA</small><strong>Catálogos, estoques e serviços</strong></div></div>
+                <div class="world-atlas-toolbar world-merchant-toolbar">
+                    <label><span>Buscar loja</span><input id="worldMerchantSearch" type="search" placeholder="Loja, NPC, profissão ou local" oninput="filterWorldMerchants()"></label>
+                    <label><span>Categoria</span><select id="worldMerchantCategory" onchange="filterWorldMerchants()"><option value="all">Todas</option>${Object.entries(window.worldCommerce?.CATEGORY_LABELS || {}).map(([value, label]) => `<option value="${escapeHtml(value)}">${escapeHtml(label)}</option>`).join('')}</select></label>
+                    <label><span>Localização</span><select id="worldMerchantLocation" onchange="filterWorldMerchants()"><option value="all">Todos os locais</option>${merchantLocationOptions.map(location => `<option value="${escapeHtml(location.id)}">${escapeHtml(location.name)}</option>`).join('')}</select></label>
+                </div>
+                <p class="world-atlas-visible-count world-merchant-visible-count">${merchants.length} ${merchants.length === 1 ? 'loja encontrada' : 'lojas encontradas'}</p>
+                <div class="world-merchant-directory">${sortedMerchants.map(renderMerchantDirectoryCard).join('')}</div>
+                <p class="world-atlas-empty world-merchant-empty-result"${merchants.length ? ' hidden' : ''}>Nenhuma loja corresponde aos filtros selecionados. Crie uma loja pelo card de um NPC.</p>
+                <p class="world-atlas-disclaimer">Os preços e estoques pertencem a cada comerciante. O desconto obtido em Negócios dura somente durante a visita aberta e não altera o preço cadastrado.</p>
+            </section>
+            ` : view === 'events' ? `
+            <section class="world-atlas-panel world-regional-events-panel" aria-label="Calendário, viagens e eventos regionais">
+                <div class="world-location-heading"><div><small>AGENDA DO MUNDO</small><strong>Viagens, eventos e rotinas temporais</strong></div>${playerMode ? '' : '<button type="button" class="session-primary" onclick="openWorldRegionalEventEditor()">+ Criar evento</button>'}</div>
+                ${contextLocation ? `<div class="world-map-context-banner"><span>📍</span><div><small>FILTRO ABERTO PELO MAPA</small><strong>${escapeHtml(contextLocation.name)}</strong><p>Eventos deste local, de seus territórios superiores e de seus locais descendentes.</p></div><button type="button" onclick="openWorldHub('events')">Limpar</button></div>` : ''}
+                <div class="world-time-current"><span>🕰️</span><div><small>AGORA</small><strong>${escapeHtml(window.worldTime?.formatCampaignMinute?.(Number(clockSnapshot?.currentMinute) || 0) || '')}</strong><p>Eventos vinculados a um reino ou região também são apresentados nos seus locais descendentes.</p></div></div>
+                <div class="world-history-section-heading"><span>EVENTOS REGIONAIS</span><b>${regionalEvents.length}</b></div>
+                <div class="world-regional-event-list">${regionalEvents.length ? regionalEvents.map(renderRegionalEventCard).join('') : `<p class="world-atlas-empty">Nenhum evento relevante para ${escapeHtml(contextLocation?.name || 'o local atual')}.</p>`}</div>
+                <div class="world-history-section-heading"><span>VIAGENS DA CAMPANHA</span><b>${travelHistory.length}</b></div>
+                ${playerMode ? '' : '<button type="button" class="session-secondary session-full" onclick="openWorldTravelPlanner()">🧭 Planejar novo deslocamento</button>'}
+                <div class="world-travel-list">${travelHistory.length ? travelHistory.map(renderTravelCard).join('') : '<p class="world-atlas-empty">Nenhuma viagem registrada.</p>'}</div>
+                <p class="world-atlas-disclaimer">O relógio processa eventos, mudanças de rotina, abertura e reposição das lojas uma única vez em cada avanço.</p>
+            </section>
+            ` : view === 'history' ? `
+            <section class="world-atlas-panel world-history-panel" aria-label="Camada histórica do Continente">
+                <div class="world-history-date-banner">
+                    <span aria-hidden="true">⌛</span>
+                    <div>
+                        <small>DATA DA CAMPANHA</small>
+                        <strong>${escapeHtml(`${String(chronology.day).padStart(2, '0')}/${String(chronology.month).padStart(2, '0')}/${chronology.year} ${chronology.era}`)}</strong>
+                        <p>A situação abaixo muda automaticamente ao avançar ou retroceder o calendário.</p>
+                    </div>
+                </div>
+                <div class="world-atlas-toolbar">
+                    <label>
+                        <span>Buscar na História</span>
+                        <input id="worldHistorySearch" type="search" placeholder="Reino, governante ou guerra" oninput="filterWorldHistory()">
+                    </label>
+                    <label>
+                        <span>Tipo de registro</span>
+                        <select id="worldHistoryType" onchange="filterWorldHistory()">
+                            <option value="all">Todos os registros</option>
+                            <option value="situation">Situação territorial</option>
+                            <option value="war">Guerras</option>
+                            <option value="occupation">Ocupações</option>
+                            <option value="destruction">Destruições</option>
+                            <option value="reconstruction">Reconstruções</option>
+                            <option value="political">Mudanças políticas</option>
+                            <option value="battle">Batalhas</option>
+                        </select>
+                    </label>
+                </div>
+                <p class="world-atlas-visible-count world-history-visible-count">${historicalSnapshot.situations.length + displayedHistoricalEvents.length} registros visíveis</p>
+                ${historicalSnapshot.activeEvents?.length ? `
+                    <div class="world-history-section-heading">
+                        <span>ACONTECIMENTOS EM CURSO</span>
+                        <b>${historicalSnapshot.activeEvents.length}</b>
+                    </div>
+                    <div class="world-political-list">${historicalSnapshot.activeEvents.map(renderHistoricalEventCard).join('')}</div>
+                ` : ''}
+                <div class="world-history-section-heading">
+                    <span>SITUAÇÃO DOS TERRITÓRIOS</span>
+                    <b>${historicalSnapshot.situations.length}</b>
+                </div>
+                <div class="world-political-list">${historicalSnapshot.situations
+                    .sort((left, right) => (locationById.get(left.targetId)?.name || '').localeCompare(locationById.get(right.targetId)?.name || '', 'pt-BR'))
+                    .map(renderHistoricalSituationCard).join('')}</div>
+                ${displayedHistoricalEvents.some(entry => !activeHistoricalEventIds.has(entry.id)) ? `
+                    <div class="world-history-section-heading">
+                        <span>MUDANÇAS ANTERIORES MAIS RECENTES</span>
+                    </div>
+                    <div class="world-political-list">${displayedHistoricalEvents.filter(entry => !activeHistoricalEventIds.has(entry.id)).map(renderHistoricalEventCard).join('')}</div>
+                ` : ''}
+                <p class="world-atlas-empty world-history-empty" hidden>Nenhum registro corresponde aos filtros selecionados.</p>
+                <p class="world-atlas-disclaimer">A consulta usa a continuidade dos jogos quando necessário e identifica esses registros no card. Desfechos variáveis não são convertidos em um único resultado canônico.</p>
+            </section>
+            ` : ''}
+            ${view === 'map' ? '' : `<p class="world-hub-version">Estrutura v${Number(world?.schemaVersion) || 1} · Atlas v${Number(world?.politicalAtlasVersion) || 0} · Locais v${Number(world?.canonicalCatalogVersion) || 0} · Mapa v${Number(world?.cartographicCatalogVersion) || 0} · História v${Number(world?.historicalCatalogVersion) || 0} · ${locations.length} locais · ${npcs.length} NPCs · ${merchants.length} lojas</p>
+            <button type="button" class="session-secondary session-full" onclick="closeWorldHub()">Fechar</button>`}
         </section>
     `;
     document.body.appendChild(modal);
+    if (view === 'map') {
+        requestAnimationFrame(() => window.worldMap?.initialize?.({ world, playerMode }));
+    } else if (contextLocationId && (view === 'npcs' || view === 'merchants')) {
+        requestAnimationFrame(() => {
+            const field = document.getElementById(view === 'npcs' ? 'worldNpcLocation' : 'worldMerchantLocation');
+            if (!field) return;
+            field.value = contextLocationId;
+            if (view === 'npcs') filterWorldNpcs();
+            else filterWorldMerchants();
+        });
+    }
 }
 
 function closeSessionTools() {
@@ -2255,7 +3320,24 @@ window.openSessionConfirm = openSessionConfirm;
 window.undoLastAction = undoLastAction;
 window.openSessionTools = openSessionTools;
 window.openWorldHub = openWorldHub;
+window.filterWorldPoliticalAtlas = filterWorldPoliticalAtlas;
+window.filterWorldCanonicalCatalog = filterWorldCanonicalCatalog;
+window.filterWorldHistory = filterWorldHistory;
+window.openWorldLocationEditor = openWorldLocationEditor;
+window.closeWorldLocationEditor = closeWorldLocationEditor;
+window.saveWorldLocationFromForm = saveWorldLocationFromForm;
+window.requestDeleteWorldLocation = requestDeleteWorldLocation;
+window.filterWorldNpcs = filterWorldNpcs;
+window.filterWorldMerchants = filterWorldMerchants;
+window.openWorldNpcEditor = openWorldNpcEditor;
+window.closeWorldNpcEditor = closeWorldNpcEditor;
+window.saveWorldNpcFromForm = saveWorldNpcFromForm;
+window.requestDeleteWorldNpc = requestDeleteWorldNpc;
 window.closeWorldHub = closeWorldHub;
+window.setCampaignCurrentWorldLocation = setCampaignCurrentWorldLocation;
+window.exportCampaignWorld = exportCampaignWorld;
+window.requestCampaignWorldImport = requestCampaignWorldImport;
+window.importCampaignWorldFile = importCampaignWorldFile;
 window.closeSessionTools = closeSessionTools;
 window.renderSessionToolsView = renderSessionToolsView;
 window.refreshSessionStatus = refreshSessionStatus;

@@ -1,0 +1,250 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<!-- Creator: CorelDRAW 2026 -->
+<svg xmlns="http://www.w3.org/2000/svg" xml:space="preserve" width="243.84mm" height="346.795mm" version="1.1" style="shape-rendering:geometricPrecision; text-rendering:geometricPrecision; image-rendering:optimizeQuality; fill-rule:evenodd; clip-rule:evenodd"
+viewBox="0 0 24384 34679.46"
+ xmlns:xlink="http://www.w3.org/1999/xlink"
+ xmlns:xodm="http://www.corel.com/coreldraw/odm/2003">
+ <defs>
+  <style type="text/css">
+   <![CDATA[
+    .str1 {stroke:#00E5FF;stroke-width:33.87;stroke-miterlimit:22.9256}
+    .str3 {stroke:#00E676;stroke-width:33.87;stroke-miterlimit:22.9256}
+    .str2 {stroke:#FF4D8D;stroke-width:33.87;stroke-miterlimit:22.9256}
+    .str0 {stroke:#FFD600;stroke-width:33.87;stroke-miterlimit:22.9256}
+    .fil0 {fill:none}
+    .fil1 {fill:#00E676}
+   ]]>
+  </style>
+ </defs>
+ <g id="Mapa_x0020_Base">
+  <metadata id="CorelCorpID_0Corel-Layer"/>
+  <image id="Mapa" x="0.01" y="0" width="24383.98" height="34679.46" xlink:href="continent-roads_Images\continent-roads_ImgID1.png"/>
+  <polyline id="road_x007c_regional_x007c_carriage_x007c_Yspaden_x0020_-_x0020_Luton" class="fil0 str0" points="10879.67,3894.66 10710.33,3708.4 10507.13,3547.53 10371.67,3496.73 10193.87,3488.26 10016.07,3386.66 9922.93,3242.73 9931.4,3107.26 "/>
+  <polyline id="road_x007c_regional_x007c_carriage_x007c_Entroncamento_x0020_Luton_x0020_-_x0020_Caminho_x0020_01" class="fil0 str0" points="11624.73,3412.06 11497.73,3530.6 11353.8,3623.73 11142.13,3691.46 11049,3767.66 10879.67,3894.66 "/>
+  <polyline id="road_x007c_regional_x007c_carriage_x007c_Entroncamento_x0020_Yspaden_x0020_-_x0020_Caminho_x0020_01" class="fil0 str0" points="9931.4,3107.26 10202.33,3175 10490.2,3234.26 10625.67,3259.66 10744.2,3217.33 10896.6,3217.33 11023.6,3242.73 11192.93,3293.53 11311.47,3302 11438.47,3352.8 11624.73,3412.06 "/>
+  <polyline id="road_x007c_regional_x007c_carriage_x007c_Luton_x0020_-_x0020_Blaviken" class="fil0 str0" points="11049,4461.93 10998.2,4267.2 10955.87,4072.46 10879.67,3894.66 "/>
+  <polyline id="road_x007c_regional_x007c_carriage_x007c_Entroncamento_x0020_Blaviken_x0020_-_x0020_Caminho_x0020_ao_x0020_Sul" class="fil0 str0" points="11226.8,4707.46 11082.87,4555.06 11049,4461.93 "/>
+  <polyline id="road_x007c_main_x007c_carriage_x007c_Entroncamento_x0020_Jamurlak_x0020_-_x0020_Caminho_x0020_ao_x0020_Leste" class="fil0 str1" points="13004.8,4351.86 12776.2,4368.8 12573,4360.33 12437.53,4436.53 12361.33,4495.8 12200.47,4461.93 12073.47,4402.66 11929.53,4402.66 11777.13,4436.53 11641.67,4478.86 11540.07,4563.53 11379.2,4656.66 11226.8,4707.46 "/>
+  <polyline id="road_x007c_main_x007c_carriage_x007c_Entroncamento_x0020_Sul_x0020_Blaviken_x0020_-_x0020_Caminho_x0020_ao_x0020_Sul_x0020_Redania" class="fil0 str1" points="11667.07,5494.86 11489.27,5350.93 11328.4,5105.4 11277.6,4910.66 11226.8,4707.46 "/>
+  <polyline id="road_x007c_regional_x007c_carriage_x007c_Entroncamento_x0020_Pindal_x0020_-_x0020_Caminho_x0020_ao_x0020_Leste" class="fil0 str0" points="12750.8,5088.46 12589.93,5088.46 12378.27,5173.13 12183.53,5257.8 11938,5401.73 11726.33,5469.46 11667.07,5494.86 "/>
+  <polyline id="road_x007c_regional_x007c_carriage_x007c_Entroncamento_x0020_Baldhorn_x0020_-_x0020_Caminho_x0020_ao_x0020_Oeste" class="fil0 str0" points="10507.13,5816.6 10684.93,5740.4 10862.73,5638.8 11057.47,5571.06 11269.13,5528.73 11514.67,5503.33 11667.07,5494.86 "/>
+  <polyline id="road_x007c_main_x007c_carriage_x007c_Entroncamento_x0020_Knotgrass_x0020_Meadow_x0020_-_x0020_Caminho_x0020_ao_x0020_Noroeste" class="fil0 str1" points="13055.6,5943.6 12920.13,5858.93 12708.47,5858.93 12471.4,5799.66 12251.27,5748.86 12107.33,5706.53 11853.33,5596.46 11667.07,5494.86 "/>
+  <polyline id="road_x007c_regional_x007c_carriage_x007c_Entroncamento_x0020_Pindal_x0020_-_x0020_Caminho_x0020_ao_x0020_Oeste" class="fil0 str0" points="13749.87,5317.06 13546.67,5308.6 13326.53,5223.93 13089.47,5173.13 12894.73,5113.86 12750.8,5088.46 "/>
+  <polyline id="road_x007c_regional_x007c_carriage_x007c_Entroncamento_x0020_Gelibol-_x0020_Caminho_x0020_ao_x0020_Leste" class="fil0 str0" points="14689.67,4953 14588.07,5105.4 14427.2,5173.13 14224,5181.6 14080.07,5223.93 13953.07,5207 13749.87,5317.06 "/>
+  <polyline id="road_x007c_regional_x007c_carriage_x007c_Entroncamento_x0020_Drakenborg_x0020_-_x0020_Caminho_x0020_ao_x0020_Norte" class="fil0 str0" points="14596.53,5884.33 14503.4,5765.8 14291.73,5672.66 13986.93,5528.73 13809.13,5401.73 13749.87,5317.06 "/>
+  <polyline id="road_x007c_regional_x007c_carriage_x007c_Entroncamento_x0020_Knotgrass_x0020_Meadow_x0020_-_x0020_Caminho_x0020_ao_x0020_Oeste" class="fil0 str0" points="13055.6,5943.6 13250.33,5892.8 13453.53,5892.8 13724.47,5935.13 14080.07,5943.6 "/>
+  <polyline id="road_x007c_regional_x007c_carriage_x007c_Entroncamento_x0020_Drakenborg_x0020_-_x0020_Caminho_x0020_ao_x0020_Leste" class="fil0 str0" points="14596.53,5884.33 14359.47,5935.13 14080.07,5943.6 "/>
+  <line id="road_x007c_regional_x007c_carriage_x007c_Entroncamento_x0020_Estrada_x0020_Sul_x0020_Drakenborg-_x0020_Caminho_x0020_ao_x0020_Sul" class="fil0 str0" x1="14240.93" y1="6146.8" x2="14080.07" y2= "5943.6" />
+  <polyline id="road_x007c_regional_x007c_carriage_x007c_Drakenborg_x0020_-_x0020_Floresta_x0020_Oeste" class="fil0 str0" points="14596.53,5884.33 14859,5892.8 15087.6,5918.2 15256.93,5909.73 15392.4,5867.4 15510.93,5833.53 "/>
+  <polyline id="road_x007c_regional_x007c_carriage_x007c_Entroncamento_x0020_Murivel_x0020_-_x0020_Caminho_x0020_ao_x0020_Norte" class="fil0 str0" points="14240.93,6146.8 14334.07,6273.8 14393.33,6409.26 14537.27,6502.4 14681.2,6570.13 14774.33,6680.2 14892.87,6773.33 "/>
+  <polyline id="road_x007c_main_x007c_carriage_x007c_Entroncamento_x0020_Knotgrass_x0020_-_x0020_Caminho_x0020_ao_x0020_Sul_x0020_para_x0020_Tretogor" class="fil0 str1" points="12827,6612.46 12852.4,6443.13 12903.2,6197.6 12987.87,6036.73 13055.6,5943.6 "/>
+  <polyline id="road_x007c_regional_x007c_carriage_x007c_Entroncamento_x0020_Estrada_x0020_Drakenborg_x0020_-_x0020_Caminho_x0020_para_x0020_Tretogor" class="fil0 str0" points="14240.93,6146.8 14113.93,6248.4 13961.53,6290.73 13809.13,6358.46 13673.67,6451.6 13538.2,6536.26 13343.47,6595.53 13123.33,6604 12903.2,6612.46 12828.67,6601.29 "/>
+  <line id="road_x007c_main_x007c_carriage_x007c_Entroncamento_x0020_Bifurcação_x0020_Coppertown_x0020_-_x0020_Caminho_x0020_de_x0020_Tretogor" class="fil0 str1" x1="12403.67" y1="6587.06" x2="12827" y2= "6612.46" />
+  <polyline id="road_x007c_main_x007c_carriage_x007c_Yspaden_x0020_-_x0020_Luton" class="fil0 str1" points="11980.33,6553.2 12200.47,6570.13 12403.67,6587.06 "/>
+  <polyline id="road_x007c_regional_x007c_carriage_x007c_Roggeven_x0020_-_x0020_Baldhorn" class="fil0 str0" points="9304.87,6781.8 9457.27,6578.6 9643.53,6434.66 9855.2,6324.6 10058.4,6129.86 10219.27,5977.46 10380.13,5858.93 10507.13,5816.6 "/>
+  <polyline id="road_x007c_regional_x007c_carriage_x007c_Roggeven_x0020_-_x0020_Denesle" class="fil0 str0" points="10202.33,7704.66 10033,7662.33 9846.73,7501.46 9702.8,7272.86 9584.27,7103.53 9372.6,6993.46 9254.07,6883.4 9304.87,6781.8 "/>
+  <polyline id="road_x007c_main_x007c_carriage_x007c_Denesle_x0020_-_x0020_Guamez" class="fil0 str1" points="11133.67,7433.73 10913.53,7450.66 10769.6,7509.93 10617.2,7577.66 10447.87,7628.46 10312.4,7670.8 10202.33,7704.66 "/>
+  <polyline id="road_x007c_regional_x007c_carriage_x007c_Murivel_x0020_-_x0020_Egremont" class="fil0 str0" points="15654.87,6722.53 15358.53,6739.46 15163.8,6773.33 14986,6764.86 14892.87,6773.33 "/>
+  <polyline id="road_x007c_regional_x007c_carriage_x007c_Rinde-_x0020_Murivel" class="fil0 str0" points="14334.07,7247.46 14478,7213.6 14554.2,7120.46 14655.8,7001.93 14732,6917.26 14808.2,6798.73 14892.87,6773.33 "/>
+  <polyline id="road_x007c_main_x007c_carriage_x007c_Zgraggen_x0020_-_x0020_Devil_x0027_s_x0020_Ford" class="fil0 str1" points="12683.07,8161.86 12386.73,8136.46 12132.73,8136.46 11938,8136.46 11785.6,8128 11616.27,8111.06 11430,8136.46 "/>
+  <polyline id="road_x007c_main_x007c_carriage_x007c_Entroncamento_x0020_Zgraggen_x0020_-_x0020_Caminho_x0020_ao_x0020_Leste" class="fil0 str1" points="10744.2,8365.06 10905.07,8331.2 11082.87,8229.6 11209.87,8178.8 11336.87,8170.33 11430,8136.46 "/>
+  <polyline id="road_x007c_main_x007c_carriage_x007c_Entroncamento_x0020_Caminho_x0020_de_x0020_Oxenfurt_x0020_-_x0020_Caminho_x0020_para_x0020_Novigrad" class="fil0 str1" points="10253.13,8424.33 10405.53,8382 10583.33,8365.06 10744.2,8365.06 "/>
+  <polyline id="road_x007c_main_x007c_carriage_x007c_Entroncamento_x0020_Novigrad_x0020_-_x0020_Rota_x0020_de_x0020_Saida" class="fil0 str1" points="9948.33,8729.13 9990.67,8627.53 10066.87,8534.4 10160,8475.13 10253.13,8424.33 "/>
+  <polyline id="road_x007c_main_x007c_carriage_x007c_Entroncamento_x0020_Deneslel_x0020_-_x0020_Caminho_x0020_ao_x0020_Sul" class="fil0 str1" points="10202.33,7704.66 10202.33,7882.46 10168.47,8026.4 10160,8161.86 10185.4,8288.86 10253.13,8424.33 "/>
+  <polyline id="road_x007c_main_x007c_carriage_x007c_Entroncamento_x0020_Oxenfurt_x0020_-_x0020_Caminho_x0020_ao_x0020_Norte" class="fil0 str1" points="10744.2,8365.06 10744.2,8466.66 10668,8576.73 10634.13,8703.73 10634.13,8839.2 "/>
+  <polyline id="road_x007c_main_x007c_carriage_x007c_Oxenfurt_x0020_-_x0020_Foam" class="fil0 str1" points="11116.73,8686.8 10964.33,8737.6 10845.8,8796.86 10634.13,8839.2 "/>
+  <polyline id="road_x007c_main_x007c_carriage_x007c_Entroncamento_x0020_Tretogor_x0020_-_x0020_Devil_x0027_s_x0020_Ford" class="fil0 str1" points="12750.8,6951.13 12733.87,7128.93 12767.73,7340.6 12818.53,7620 12793.13,7848.6 12767.73,8068.73 12683.07,8161.86 "/>
+  <polyline id="road_x007c_main_x007c_carriage_x007c_Entroncamento_x0020_Coppertown_x0020_-_x0020_Tretogor" class="fil0 str1" points="12454.47,6942.66 12420.6,6798.73 12412.13,6646.33 12403.67,6587.06 "/>
+  <polyline id="road_x007c_main_x007c_carriage_x007c_Entroncamento_x0020_Guamez_x0020_-_x0020_Estrada_x0020_para_x0020_Tretogor" class="fil0 str1" points="11133.67,7433.73 11336.87,7408.33 11684,7306.73 11836.4,7289.8 12031.13,7179.73 12183.53,7044.26 12352.87,6968.06 12454.47,6942.66 "/>
+  <line id="road_x007c_main_x007c_carriage_x007c_Entroncamento_x0020_Tretogor_x0020_-_x0020_Bifurcação_x0020_Leste" class="fil0 str1" x1="12750.8" y1="6951.13" x2="12454.47" y2= "6942.66" />
+  <polyline id="road_x007c_main_x007c_carriage_x007c_Tretogor_x0020_-_x0020_Rinde" class="fil0 str1" points="14334.07,7247.46 14130.87,7205.13 13927.67,7171.26 13716,7069.66 13487.4,6951.13 13224.93,6891.86 13072.53,6883.4 12750.8,6951.13 "/>
+  <polyline id="road_x007c_regional_x007c_carriage_x007c_Pindal_x0020_-_x0020_Knotgrass_x0020_Meadow" class="fil0 str0" points="12750.8,5088.46 12776.2,5274.73 12835.47,5511.8 12945.53,5748.86 13055.6,5943.6 "/>
+  <polyline id="road_x007c_regional_x007c_carriage_x007c_Entroncamento_x0020_Gelibol_x0020_-_x0020_Montecalvo" class="fil0 str0" points="14689.67,4953 14816.67,4876.8 14926.73,4834.46 15070.67,4826 15299.27,4826 "/>
+  <line id="road_x007c_regional_x007c_carriage_x007c_Entroncamento_x0020_Gelibol_x0020_-_x0020_Bifurcação_x0020_Norte" class="fil0 str0" x1="14545.73" y1="4885.26" x2="14676.64" y2= "4972.54" />
+  <polyline id="road_x007c_regional_x007c_carriage_x007c_Entroncamento_x0020_Mint_x0020_-_x0020_Bifurcação_x0020_Gelibol" class="fil0 str0" points="14181.67,4605.86 14342.53,4766.73 14461.07,4826 14545.73,4885.26 "/>
+  <polyline id="road_x007c_regional_x007c_carriage_x007c_Esteken_x0020_Manor_x0020_-_x0020_Mint" class="fil0 str0" points="13868.4,4216.4 13843,4318 13800.67,4394.2 13800.67,4445 13817.6,4512.73 13851.47,4546.6 13936.13,4588.93 14020.8,4597.4 14097,4614.33 14181.67,4605.86 "/>
+  <polyline id="road_x007c_regional_x007c_main_x007c_Devil_x0027_s_x0020_Ford_x0020_-_x0020_Windley" class="fil0 str1" points="12683.07,8161.86 12700,8263.46 12598.4,8466.66 12513.73,8627.53 12344.4,8737.6 12141.2,8822.26 12005.73,8839.2 "/>
+  <polyline id="road_x007c_main_x007c_carriage_x007c_Windley_x0020_-_x0020_Chippira" class="fil0 str1" points="12107.33,9279.46 12073.47,9160.93 12014.2,9008.53 12005.73,8839.2 "/>
+  <polyline id="road_x007c_regional_x007c_carriage_x007c_Chippira_x0020_-_x0020_La_x0020_Valette" class="fil0 str0" points="13741.4,8094.13 13648.27,8136.46 13580.53,8221.13 13478.93,8339.66 13318.07,8475.13 13208,8593.66 13047.13,8686.8 12911.67,8771.46 12843.93,8805.33 12708.47,8822.26 12539.13,8983.13 12412.13,9059.33 12251.27,9194.8 12107.33,9279.46 "/>
+  <line id="road_x007c_regional_x007c_carriage_x007c_Entroncamento_x0020_Findetann_x0020_-_x0020_Bifurcação_x0020_Oeste" class="fil0 str0" x1="11319.93" y1="9101.66" x2="11573.93" y2= "9127.06" />
+  <line id="road_x007c_main_x007c_carriage_x007c_Entroncamento_x0020_Chippira_x0020_-_x0020_Bifurcação_x0020_Leste" class="fil0 str1" x1="12107.33" y1="9279.46" x2="11929.53" y2= "9262.53" />
+  <polyline id="road_x007c_regional_x007c_carriage_x007c_Entroncamento_x0020_Findetann_x0020_e_x0020_Chippira-_x0020_Bifurcação_x0020_para_x0020_o_x0020_Sul" class="fil0 str0" points="11929.53,9262.53 11836.4,9169.4 11658.6,9152.46 11573.93,9127.06 "/>
+  <polyline id="road_x007c_regional_x007c_carriage_x007c_Entroncamento_x0020_Temeria_x0020_-_x0020_Bifurcação_x0020_Sul_x0020_de_x0020_Findetann" class="fil0 str0" points="11548.53,9398 11557,9304.86 11573.93,9127.06 "/>
+  <polyline id="road_x007c_main_x007c_carriage_x007c_Entroncamento_x0020_Chippira-_x0020_Bifurcação_x0020_Sudoeste" class="fil0 str1" points="11929.53,9262.53 11844.87,9347.2 11717.87,9372.6 11548.53,9398 "/>
+  <polyline id="road_x007c_main_x007c_carriage_x007c_Entroncamento_x0020_Tegmond_x0020_-_x0020_Bifurcação_x0020_Oeste" class="fil0 str1" points="11125.2,9474.2 11260.67,9448.8 11421.53,9398 11548.53,9398 "/>
+  <polyline id="road_x007c_regional_x007c_carriage_x007c_Entroncamento_x0020_Findetann_x0020_-_x0020_Bifurcação_x0020_Acorn_x0020_Bay" class="fil0 str0" points="10862.73,9279.46 11023.6,9237.13 11133.67,9160.93 11209.87,9110.13 11319.93,9101.66 "/>
+  <polyline id="road_x007c_regional_x007c_carriage_x007c_Entroncamento_x0020_Acorn_x0020_Bay_x0020_-_x0020_Bifurcação_x0020_Oeste" class="fil0 str0" points="10574.87,9304.86 10684.93,9313.33 10795,9287.93 10862.73,9279.46 "/>
+  <polyline id="road_x007c_main_x007c_carriage_x007c_Entroncamento_x0020_Oxenfurt_x0020_-_x0020_Bifurcação_x0020_Temeria" class="fil0 str1" points="10634.13,8839.2 10498.67,8830.73 10405.53,8881.53 10329.33,8957.73 10312.4,9042.4 10287,9135.53 10261.6,9211.73 10312.4,9330.26 "/>
+  <polyline id="road_x007c_regional_x007c_carriage_x007c_Entroncamento_x0020_Acorn_x0020_Bay_x0020_-_x0020_Bifurcação_x0020_Leste" class="fil0 str0" points="10574.87,9304.86 10490.2,9330.26 10414,9330.26 10312.4,9330.26 "/>
+  <polyline id="road_x007c_main_x007c_carriage_x007c_Entroncamento_x0020_Crow_x0027_s_x0020_Perch_x0020_-_x0020_Bifurcação_x0020_Divisa_x0020_Teméria_x0020_Redania" class="fil0 str1" points="10041.47,9533.46 10092.27,9448.8 10151.53,9389.53 10236.2,9355.66 10312.4,9330.26 "/>
+  <polyline id="road_x007c_main_x007c_carriage_x007c_Entroncamento_x0020_Tegmond_x0020_-_x0020_Bifurcação_x0020_Leste_x0020_Pone" class="fil0 str1" points="11125.2,9474.2 10981.27,9482.66 10845.8,9508.06 10701.87,9558.86 10583.33,9592.73 10371.67,9668.93 10270.07,9719.73 "/>
+  <polyline id="road_x007c_main_x007c_carriage_x007c_Entroncamento_x0020_Crow_x0027_s_x0020_Perch_x0020_-_x0020_Bifurcação_x0020_Sul_x0020_Ponte" class="fil0 str1" points="10041.47,9533.46 10151.53,9660.46 10236.2,9711.26 10270.07,9719.73 "/>
+  <polyline id="road_x007c_main_x007c_carriage_x007c_Entroncamento_x0020_Crow_x0027_s_x0020_Perch_x0020_Sul_x0020_-_x0020_Bifurcação_x0020_Sul_x0020_Anchor" class="fil0 str1" points="10761.13,10126.13 10634.13,10075.33 10473.27,9982.2 10388.6,9897.53 10337.8,9762.06 10270.07,9719.73 "/>
+  <line id="road_x007c_main_x007c_carriage_x007c_Entroncamento_x0020_Anchor_x0020_-_x0020_Bifurcação_x0020_Leste" class="fil0 str1" x1="10922" y1="10126.13" x2="10761.13" y2= "10126.13" />
+  <polyline id="road_x007c_main_x007c_carriage_x007c_Anchor_x0020_-_x0020_Dorian" class="fil0 str1" points="11794.07,9999.13 11624.73,10007.6 11497.73,10016.06 11353.8,10049.93 11184.47,10109.2 11074.4,10109.2 10922,10126.13 "/>
+  <polyline id="road_x007c_main_x007c_carriage_x007c_Anchor_x0020_-_x0020_Gors_x0020_Velen" class="fil0 str1" points="10557.93,10600.26 10625.67,10464.8 10676.47,10388.6 10684.93,10270.06 10693.4,10176.93 10761.13,10126.13 "/>
+  <polyline id="road_x007c_main_x007c_carriage_x007c_Entroncamento_x0020_Gors_x0020_Velen_x0020_-_x0020_Bifurcação_x0020_Sul" class="fil0 str1" points="10016.07,10498.66 10117.67,10498.66 10227.73,10498.66 10329.33,10498.66 10422.47,10498.66 10490.2,10574.86 10557.93,10600.26 10532.53,10668 "/>
+  <polyline id="road_x007c_main_x007c_carriage_x007c_Entroncamento_x0020_Findetann_x0020_-_x0020_Bifurcação_x0020_Sul_x0020_para_x0020_dorian" class="fil0 str1" points="11548.53,9398 11548.53,9499.6 11616.27,9652 11717.87,9863.66 11794.07,9999.13 "/>
+  <polyline id="road_x007c_main_x007c_carriage_x007c_Entroncamento_x0020_Dorian-_x0020_Bifurcação_x0020_Oeste_x0020_para_x0020_Murki_x0020_Waters" class="fil0 str1" points="12657.67,9660.46 12429.07,9762.06 12192,9821.33 12014.2,9872.13 11912.6,9922.93 11794.07,9999.13 "/>
+  <polyline id="road_x007c_regional_x007c_carriage_x007c_Entroncamento_x0020_Dorian_x0020_Sul_x0020_-_x0020_Bifurcação_x0020_Sul" class="fil0 str0" points="12606.87,10625.66 12539.13,10532.53 12462.93,10371.66 12327.47,10270.06 12166.6,10210.8 12031.13,10117.66 11912.6,10007.6 11794.07,9999.13 "/>
+  <polyline id="road_x007c_main_x007c_carriage_x007c_Entroncamento_x0020_Vizima-_x0020_Bifurcação_x0020_Leste" class="fil0 str1" points="13411.2,9177.86 13258.8,9279.46 13097.93,9321.8 12979.4,9406.46 12843.93,9516.53 12657.67,9660.46 "/>
+  <polyline id="road_x007c_regional_x007c_carriage_x007c_Entroncamento_x0020_Murky_x0020_Waters_x0020_-_x0020_Bifurcação_x0020_Norte" class="fil0 str0" points="13148.73,9889.06 12954,9812.86 12801.6,9753.6 12657.67,9660.46 "/>
+  <line id="road_x007c_main_x007c_carriage_x007c_Entroncamento_x0020_Vizima_x0020_Entrada_x0020_-_x0020_Bifurcação_x0020_Norte_x0020_de_x0020_Vizima" class="fil0 str1" x1="13673.67" y1="9474.2" x2="13411.2" y2= "9177.86" />
+  <polyline id="road_x007c_main_x007c_carriage_x007c_Vizima_x0020_-_x0020_White_x0020_Orchard" class="fil0 str1" points="14122.4,9838.26 13936.13,9812.86 13809.13,9779 13749.87,9652 13673.67,9474.2 "/>
+  <polyline id="road_x007c_main_x007c_carriage_x007c_Entroncamento_x0020_Rinde_x0020_-_x0020_Bifurcação_x0020_Sul_x0020_Travessia" class="fil0 str1" points="14511.87,7721.6 14435.67,7594.6 14427.2,7382.93 14334.07,7247.46 "/>
+  <polyline id="road_x007c_mountain_x007c_no-carriage_x007c_Drakenborg_x0020_Road_x0020_-_x0020_Beeches" class="fil0 str2" points="15510.93,5833.53 15756.47,5782.73 15917.33,5630.33 16120.53,5638.8 16298.33,5655.73 16425.33,5613.4 16493.07,5469.46 16518.47,5325.53 16611.6,5190.06 16603.13,5071.53 "/>
+  <polyline id="road_x007c_regional_x007c_carriage_x007c_Egremont_x0020_-_x0020_White_x0020_Bridge" class="fil0 str0" points="15654.87,6722.53 15688.73,7112 15790.33,7289.8 "/>
+  <polyline id="road_x007c_regional_x007c_carriage_x007c_White_x0020_Bridge_x0020_-_x0020_Flotsan" class="fil0 str0" points="16281.4,7027.33 16095.13,7086.6 15951.2,7188.2 15786.16,7282.51 "/>
+  <polyline id="road_x007c_regional_x007c_carriage_x007c_Bondar_x0020_-_x0020_White_x0020_Bridge" class="fil0 str0" points="14977.53,7493 15155.33,7382.93 15358.53,7289.8 15502.47,7247.46 15688.73,7264.4 15790.33,7289.8 "/>
+  <polyline id="road_x007c_regional_x007c_carriage_x007c_Entroncamento_x0020_Bondar_x0020_-_x0020_Bifurcação_x0020_Central" class="fil0 str0" points="14706.6,7620 14799.73,7509.93 14977.53,7493 "/>
+  <line id="road_x007c_regional_x007c_carriage_x007c_Entroncamento_x0020_Rinde_x0020_-_x0020_Bifurcação_x0020_Caminho_x0020_Bondar" class="fil0 str0" x1="14511.87" y1="7721.6" x2="14706.6" y2= "7620" />
+  <polyline id="road_x007c_regional_x007c_carriage_x007c_White_x0020_Bridge_x0020_-_x0020_Ellander" class="fil0 str0" points="15786.16,7282.51 15875,7450.66 15917.33,7603.06 15883.47,7763.93 "/>
+  <polyline id="road_x007c_regional_x007c_carriage_x007c_Ellander_x0020_-_x0020_Temple_x0020_of_x0020_Melitele" class="fil0 str0" points="16095.13,7518.4 16095.13,7569.2 16078.2,7620 16044.33,7679.26 15985.07,7730.06 15942.73,7763.93 15883.47,7763.93 "/>
+  <polyline id="road_x007c_regional_x007c_carriage_x007c_Entroncamento_x0020_Ellander_x0020_-_x0020_Conexão_x0020_á_x0020_Houtborg" class="fil0 str0" points="15722.6,8161.86 15824.2,7958.66 15866.53,7857.06 15883.47,7763.93 "/>
+  <polyline id="road_x007c_regional_x007c_carriage_x007c_Entroncamento_x0020_Houtborg-_x0020_Conexão_x0020_estrada_x0020_Leste" class="fil0 str0" points="16061.27,8195.73 15908.87,8195.73 15781.87,8170.33 15722.6,8161.86 "/>
+  <polyline id="road_x007c_main_x007c_carriage_x007c_Entroncamento_x0020_Vizima_x0020_-_x0020_Estrada_x0020_Divisa_x0020_Reino" class="fil0 str1" points="13411.2,9177.86 13546.67,8991.6 13749.87,8830.73 13944.6,8720.66 14054.67,8636 14181.67,8407.4 14266.33,8263.46 14359.47,8136.46 14410.27,8043.33 14435.67,7848.6 14511.87,7721.6 "/>
+  <polyline id="road_x007c_regional_x007c_carriage_x007c_Entroncamento_x0020_Bondar_x0020_-_x0020_Moen" class="fil0 str0" points="14791.27,8009.46 14765.87,7789.33 14765.87,7653.86 14706.6,7620 "/>
+  <polyline id="road_x007c_regional_x007c_carriage_x007c_Moen_x0020_-_x0020_Dorndal" class="fil0 str0" points="15036.8,8678.33 14994.47,8517.46 14892.87,8382 14825.13,8263.46 14791.27,8009.46 "/>
+  <polyline id="road_x007c_regional_x007c_carriage_x007c_Entroncamento_x0020_Houtbord_x0020_-_x0020_Estrada_x0020_Sul" class="fil0 str0" points="15722.6,8161.86 15637.93,8229.6 15561.73,8415.86 15544.8,8458.2 "/>
+  <polyline id="road_x007c_main_x007c_carriage_x007c_Cidaris_x0020_-_x0020_Caelf" class="fil0 str1" points="8644.47,10515.6 8813.8,10524.06 8966.2,10617.2 9101.67,10659.53 9254.07,10651.06 9372.6,10693.4 9525,10778.06 "/>
+  <polyline id="road_x007c_main_x007c_carriage_x007c_Caelf_x0020_-_x0020_Little_x0020_Marsh" class="fil0 str1" points="10066.87,11032.06 9965.27,10981.26 9880.6,10981.26 9787.47,10913.53 9694.33,10786.53 9626.6,10761.13 9525,10778.06 "/>
+  <line id="road_x007c_main_x007c_carriage_x007c_Entroncamento_x0020_Gors_x0020_Velen_x0020_-_x0020_Estrada_x0020_Sul" class="fil0 str1" x1="10532.53" y1="10668" x2="10541" y2= "10786.53" />
+  <polyline id="road_x007c_main_x007c_carriage_x007c_Little_x0020_Marsh_x0020_-_x0020_Gors_x0020_Velen" class="fil0 str1" points="10066.87,11032.06 10176.93,10964.33 10287,10879.66 10397.07,10820.4 10541,10786.53 "/>
+  <polyline id="road_x007c_main_x007c_carriage_x007c_Little_x0020_Marsh_x0020_-_x0020_Vartburg" class="fil0 str1" points="9939.87,11430 10075.33,11404.6 10143.07,11294.53 10176.93,11150.6 10066.87,11032.06 "/>
+  <polyline id="road_x007c_main_x007c_carriage_x007c_Ravelin_x0020_-_x0020_Vartburg" class="fil0 str1" points="9076.27,11557 9237.13,11565.46 9414.93,11531.6 9592.73,11472.33 9745.13,11421.53 9855.2,11413.06 9939.87,11430 "/>
+  <polyline id="road_x007c_main_x007c_carriage_x007c_Ravelin_x0020_-_x0020_Kerack" class="fil0 str1" points="9558.87,11811 9381.07,11811 9228.67,11785.6 9059.33,11675.53 9076.27,11557 "/>
+  <polyline id="road_x007c_regional_x007c_carriage_x007c_Entroncamento_x0020_Murku_x0020_Waters_x0020_-_x0020_Estrada_x0020_Sul" class="fil0 str0" points="13148.73,9889.06 13318.07,9914.46 13478.93,10007.6 13580.53,10058.4 13648.27,10176.93 "/>
+  <polyline id="road_x007c_regional_x007c_carriage_x007c_Entroncamento_x0020_White_x0020_Orchard_x0020_-_x0020_Estrada_x0020_Leste" class="fil0 str0" points="14122.4,9838.26 14003.87,9914.46 13902.27,9973.73 13766.8,10049.93 13699.07,10083.8 13648.27,10176.93 "/>
+  <polyline id="road_x007c_regional_x007c_carriage_x007c_Entroncamento_x0020_Murky_x0020_-_x0020_Estrada_x0020_Extremo_x0020_Sul" class="fil0 str0" points="13546.67,10600.26 13580.53,10447.86 13639.8,10354.73 13665.2,10278.53 13648.27,10176.93 "/>
+  <polyline id="road_x007c_regional_x007c_carriage_x007c_Jay_x0020_Forest_x0020_R2-_x0020_Estrada_x0020_Cleves" class="fil0 str0" points="12606.87,10625.66 12827,10617.2 12937.07,10608.73 13064.07,10574.86 13191.07,10557.93 13326.53,10566.4 13462,10566.4 13549.85,10585.92 "/>
+  <polyline id="road_x007c_regional_x007c_carriage_x007c_Petrelsteyn_x0020_-_x0020_R1_x0020_Jay_x0020_Forest" class="fil0 str0" points="11726.33,11226.8 11811,11023.6 11971.87,10930.46 12124.27,10888.13 12259.73,10795 12378.27,10684.93 12513.73,10617.2 12606.87,10625.66 "/>
+  <polyline id="road_x007c_regional_x007c_main_x007c_Gors_x0020_Velen_x0020_-_x0020_Petrelsteyn" class="fil0 str1" points="10541,10786.53 10701.87,10786.53 10837.33,10803.46 10972.8,10862.73 11065.93,10922 11150.6,10955.86 11243.73,10964.33 11345.33,10989.73 11446.93,11049 11531.6,11108.26 11616.27,11176 11726.33,11226.8 "/>
+  <polyline id="road_x007c_main_x007c_carriage_x007c_Rissberg_x0020_-_x0020_Petrelsteyn" class="fil0 str1" points="11311.47,11455.4 11421.53,11387.66 11472.33,11303 11531.6,11260.66 11590.87,11235.26 11726.33,11226.8 "/>
+  <polyline id="road_x007c_main_x007c_carriage_x007c_Kerack_x0020_-_x0020_Rissberg" class="fil0 str1" points="9558.87,11811 9736.67,11777.13 9846.73,11751.73 9956.8,11717.86 10100.73,11726.33 10210.8,11692.46 10337.8,11607.8 10430.93,11514.66 10566.4,11455.4 10718.8,11463.86 10803.47,11531.6 10922,11540.06 11057.47,11514.66 11176,11463.86 11311.47,11455.4 "/>
+  <polyline id="road_x007c_main_x007c_carriage_x007c_Petrelsteyn_x0020_-_x0020_Napeys" class="fil0 str1" points="12496.8,11303 12242.8,11286.06 12107.33,11286.06 11929.53,11226.8 11726.33,11226.8 "/>
+  <polyline id="road_x007c_main_x007c_carriage_x007c_Napeys_x0020_-_x0020_Vorune" class="fil0 str1" points="12742.33,11751.73 12615.33,11684 12547.6,11531.6 12496.8,11421.53 12496.8,11303 "/>
+  <polyline id="road_x007c_main_x007c_carriage_x007c_Vorune_x0020_-_x0020_Mortara" class="fil0 str1" points="13487.4,11760.2 13351.93,11760.2 13208,11827.93 13089.47,11861.8 12970.93,11861.8 12835.47,11802.53 12742.33,11751.73 "/>
+  <polyline id="road_x007c_main_x007c_carriage_x007c_Mortara_x0020_-_x0020_Cleves" class="fil0 str1" points="14283.27,11531.6 14088.53,11548.53 13868.4,11633.2 13707.53,11692.46 13555.13,11751.73 13487.4,11760.2 "/>
+  <polyline id="road_x007c_regional_x007c_carriage_x007c_Entroncamento_x0020_Murky_x0020_Waters_x0020_-_x0020_Cleves_x0020_ao_x0020_Sul" class="fil0 str0" points="13549.85,10585.92 13673.67,10684.93 13834.53,10828.86 13927.67,11006.66 14037.73,11226.8 14105.47,11362.26 14215.53,11463.86 14283.27,11531.6 "/>
+  <polyline id="road_x007c_main_x007c_carriage_x007c_White_x0020_Orchard_x0020_-_x0020_Burdorff" class="fil0 str1" points="14977.53,10253.13 14782.8,10219.26 14579.6,10134.6 14376.4,10024.53 14274.8,9897.53 14122.4,9838.26 "/>
+  <polyline id="road_x007c_main_x007c_carriage_x007c_Burdorff_x0020_-_x0020_Maribor" class="fil0 str1" points="14748.93,11692.46 14774.33,11540.06 14825.13,11379.2 14850.53,11243.73 14833.6,11099.8 14825.13,10913.53 14842.07,10803.46 14901.33,10591.8 14935.2,10473.26 14977.53,10253.13 "/>
+  <polyline id="road_x007c_main_x007c_carriage_x007c_Cleves_x0020_-_x0020_Maribor" class="fil0 str1" points="14283.27,11531.6 14401.8,11557 14503.4,11582.4 14605,11616.26 14748.93,11692.46 "/>
+  <polyline id="road_x007c_regional_x007c_carriage_x007c_Entroncamento_x0020_Dorndal_x0020_-_x0020_Estrada_x0020_Sul" class="fil0 str0" points="15036.8,8678.33 15223.07,8763 15367,8839.2 "/>
+  <line id="road_x007c_regional_x007c_carriage_x007c_Entroncamento_x0020_Houtborg_x0020_-_x0020_Estrada_x0020_Sul" class="fil0 str0" x1="15544.8" y1="8458.2" x2="15367" y2= "8839.2" />
+  <polyline id="road_x007c_regional_x007c_carriage_x007c_Entroncamento_x0020_Carreras_x0020_-_x0020_Estrada_x0020_ao_x0020_Norte" class="fil0 str0" points="15985.07,10117.66 15951.2,9914.46 15908.87,9719.73 15925.8,9516.53 15951.2,9338.73 15951.2,9220.2 15891.93,9084.73 15883.47,8915.4 15875,8737.6 15824.2,8619.06 15722.6,8568.26 15629.47,8542.86 15544.8,8458.2 "/>
+  <polyline id="road_x007c_regional_x007c_carriage_x007c_Entroncamento_x0020_Burdorff-_x0020_Estrada_x0020_Norte" class="fil0 str0" points="14977.53,10253.13 14943.67,10151.53 14952.13,9948.33 14943.67,9779 14960.6,9558.86 15002.93,9406.46 15113,9245.6 15299.27,8957.73 15367,8839.2 "/>
+  <polyline id="road_x007c_regional_x007c_carriage_x007c_Burdorff_x0020_-_x0020_Carreras" class="fil0 str0" points="15985.07,10117.66 15773.4,10100.73 15612.53,10100.73 15434.73,10151.53 15256.93,10185.4 15096.07,10227.73 14977.53,10253.13 "/>
+  <polyline id="road_x007c_regional_x007c_carriage_x007c_Entroncamento_x0020_Carreras-_x0020_Estrada_x0020_Oeste" class="fil0 str0" points="16391.47,10143.06 16289.87,10143.06 16171.33,10117.66 16069.73,10117.66 15985.07,10117.66 "/>
+  <polyline id="road_x007c_mountain_x007c_no-carriage_x007c_Carreras_x0020_-_x0020_Eysenlaan" class="fil0 str2" points="18034,9677.4 17847.73,9677.4 17712.27,9728.2 17576.8,9821.33 17509.07,9906 17390.53,9931.4 17314.33,9956.8 17238.13,9982.2 17136.53,10016.06 17068.8,10058.4 16984.13,10100.73 16907.93,10134.6 16806.33,10151.53 16662.4,10160 16577.73,10151.53 16467.67,10143.06 16391.47,10143.06 "/>
+  <polyline id="road_x007c_regional_x007c_carriage_x007c_Entroncamento_x0020_Zavada_x0020_-_x0020_Estrada_x0020_Norte" class="fil0 str0" points="15443.2,11192.93 15570.2,11201.4 15680.27,11091.33 15731.07,10972.8 15790.33,10879.66 15908.87,10828.86 16010.47,10761.13 16112.07,10608.73 16205.2,10422.46 16264.47,10303.93 16332.2,10210.8 16391.47,10143.06 "/>
+  <polyline id="road_x007c_regional_x007c_carriage_x007c_Maribor_x0020_-_x0020_Zavada" class="fil0 str0" points="14748.93,11692.46 14892.87,11675.53 15011.4,11582.4 15155.33,11514.66 15282.33,11438.46 15375.47,11336.86 15417.8,11243.73 15443.2,11192.93 "/>
+  <polyline id="road_x007c_main_x007c_carriage_x007c_Entroncamento_x0020_Mortara_x0020_-_x0020_Estrada_x0020_Ponte_x0020_do_x0020_Sul" class="fil0 str1" points="13665.2,12166.6 13614.4,12039.6 13538.2,11895.66 13487.4,11760.2 "/>
+  <polyline id="road_x007c_main_x007c_carriage_x007c_Entroncamento_x0020_Brenna_x0020_-_x0020_Estrada_x0020_Ponte_x0020_do_x0020_Norte" class="fil0 str1" points="14054.67,12302.06 13910.73,12268.2 13800.67,12200.46 13741.4,12158.13 13665.2,12166.6 "/>
+  <polyline id="road_x007c_main_x007c_carriage_x007c_Brenna_x0020_-_x0020_Old_x0020_Bottoms" class="fil0 str1" points="14427.2,11997.26 14308.67,12124.26 14198.6,12200.46 14042.22,12299.14 "/>
+  <polyline id="road_x007c_main_x007c_carriage_x007c_Entroncamento_x0020_Maribor_x0020_-_x0020_Estrada_x0020_Sul_x0020_de_x0020_Maribor" class="fil0 str1" points="14672.73,11861.8 14748.93,11811 14748.93,11692.46 "/>
+  <polyline id="road_x007c_main_x007c_carriage_x007c_Entroncamento_x0020_Old_x0020_Bottoms_x0020_-_x0020_Estrada_x0020_Norte_x0020_de_x0020_Old_x0020_Bottoms" class="fil0 str1" points="14427.2,11997.26 14511.87,11971.86 14579.6,11904.13 14672.73,11861.8 "/>
+  <polyline id="road_x007c_main_x007c_carriage_x007c_Entroncamento_x0020_Sul_x0020_Maribor_x0020_-_x0020_Estrada_x0020_Sul_x0020_Dregsdon" class="fil0 str1" points="16332.2,12843.93 16289.87,12742.33 16239.07,12640.73 16129,12573 16010.47,12547.6 15883.47,12556.06 15781.87,12564.53 15688.73,12547.6 15561.73,12471.4 15375.47,12369.8 15256.93,12344.4 15045.27,12259.73 14875.93,12183.53 14782.8,12081.93 14706.6,12014.2 14748.93,11811 "/>
+  <polyline id="road_x007c_main_x007c_carriage_x007c_Entroncamento_x0020_Estrada_x0020_Chotla_x0020_-_x0020_Estrada_x0020_da_x0020_Taverna" class="fil0 str1" points="13665.2,12166.6 13580.53,12276.66 13495.87,12386.73 13487.4,12496.8 13495.87,12556.06 "/>
+  <polyline id="road_x007c_regional_x007c_carriage_x007c_Entroncamento_x0020_Chotla_x0020_-_x0020_Taverna" class="fil0 str0" points="13682.13,12513.73 13614.4,12539.13 13495.87,12556.06 "/>
+  <polyline id="road_x007c_mountain_x007c_no-carriage_x007c_Estrada_x0020_Taverna_x0020_-_x0020_Floresta_x0020_Densa" class="fil0 str2" points="13064.07,12454.46 13157.2,12496.8 13258.8,12522.2 13411.2,12547.6 13495.87,12556.06 "/>
+  <polyline id="road_x007c_main_x007c_carriage_x007c_Entroncamento_x0020_Norte_x0020_Brugge_x0020_-_x0020_Brugge" class="fil0 str1" points="13665.2,13267.26 13673.67,13114.86 13656.73,12979.4 13580.53,12894.73 13529.73,12810.06 13521.27,12691.53 13495.87,12556.06 "/>
+  <polyline id="road_x007c_regional_x007c_carriage_x007c_Brenna_x0020_-Mayena" class="fil0 str0" points="14351,12810.06 14257.87,12759.26 14173.2,12733.86 14088.53,12700 14020.8,12691.53 13961.53,12623.8 13961.53,12505.26 13978.47,12386.73 14042.22,12299.14 "/>
+  <polyline id="road_x007c_regional_x007c_carriage_x007c_Mayena_x0020_-Razwan" class="fil0 str0" points="15002.93,12776.2 14884.4,12827 14765.87,12911.66 14655.8,12987.86 14562.67,13021.73 14469.53,13013.26 14418.73,12937.06 14351,12810.06 "/>
+  <polyline id="road_x007c_regional_x007c_carriage_x007c_Brugge_x0020_-_x0020_Mayena" class="fil0 str0" points="13665.2,13267.26 13843,13216.46 13961.53,13148.73 14046.2,13047.13 14147.8,12945.53 14249.4,12869.33 14351,12810.06 "/>
+  <polyline id="road_x007c_regional_x007c_carriage_x007c_Entroncamento_x0020_Razwam_x0020_-_x0020_Red_x0020_Port" class="fil0 str0" points="15002.93,12776.2 15163.8,12877.8 15307.73,12987.86 15417.8,13081 15510.93,13241.86 15663.33,13368.86 15815.73,13470.46 15959.67,13605.93 16095.13,13724.46 16222.13,13758.33 16264.47,13758.33 "/>
+  <polyline id="road_x007c_main_x007c_carriage_x007c_Entroncamento_x0020_Brugge_x0020_-_x0020_Estrada_x0020_Burnt_x0020_Stump" class="fil0 str1" points="12606.87,13970 12759.27,13919.2 12911.67,13758.33 13030.2,13648.26 13097.93,13546.66 13216.47,13495.86 13326.53,13470.46 13402.73,13428.13 13470.47,13318.06 13538.2,13275.73 13665.2,13267.26 "/>
+  <polyline id="road_x007c_regional_x007c_carriage_x007c_Burnt_x0020_Stump_x0020_-_x0020_Estrada_x0020_Sul" class="fil0 str0" points="12496.8,13843 12547.6,13902.26 12606.87,13970 "/>
+  <polyline id="road_x007c_main_x007c_carriage_x007c_Entroncamento_x0020_Burnt_x0020_Stump_x0020_Sul_x0020_-_x0020_Estrada_x0020_Owl_x0020_Hills" class="fil0 str1" points="12386.73,14156.26 12462.93,14080.06 12556.07,14012.33 12606.87,13970 "/>
+  <polyline id="road_x007c_regional_x007c_carriage_x007c_Estrada_x0020_Owl_x0020_Hills_x0020_-_x0020_Dillingen" class="fil0 str0" points="13072.53,14444.13 13004.8,14359.46 12920.13,14283.26 12827,14198.6 12733.87,14147.8 12589.93,14156.26 12446,14156.26 12386.73,14156.26 "/>
+  <polyline id="road_x007c_mountain_x007c_no-carriage_x007c_Owl_x0020_Hills_x0020_-_x0020_Kernow" class="fil0 str2" points="12496.8,14579.6 12505.27,14427.2 12454.47,14359.46 12395.2,14274.8 12395.2,14156.26 "/>
+  <polyline id="road_x007c_regional_x007c_carriage_x007c_Dillingen_x0020_-_x0020_Vidort" class="fil0 str0" points="14240.93,13843 14071.6,13868.4 13902.27,13876.86 13766.8,13927.66 13656.73,13995.4 13589,14088.53 13504.33,14215.53 13394.27,14334.06 13241.87,14435.66 13072.53,14444.13 "/>
+  <polyline id="road_x007c_regional_x007c_carriage_x007c_Entroncamento_x0020_Vidort_x0020_-_x0020_Estrada_x0020_Armeria" class="fil0 str0" points="14435.67,13546.66 14427.2,13690.6 14384.87,13800.66 14240.93,13843 "/>
+  <polyline id="road_x007c_regional_x007c_carriage_x007c_Entroncamento_x0020_Armeria-_x0020_Estrada_x0020_Sul" class="fil0 str0" points="14444.13,13284.2 14427.2,13436.6 14435.67,13546.66 "/>
+  <polyline id="road_x007c_regional_x007c_carriage_x007c_Entroncamento_x0020_Carcano_x0020_-_x0020_Estrada_x0020_Norte" class="fil0 str0" points="14935.2,13724.46 14816.67,13741.4 14715.07,13724.46 14613.47,13656.73 14503.4,13589 14435.67,13546.66 "/>
+  <polyline id="road_x007c_mountain_x007c_no-carriage_x007c_Carcano_x0020_-_x0020_Sodden_x0020_Hill" class="fil0 str2" points="15629.47,13716 15341.6,13707.53 14935.2,13724.46 "/>
+  <polyline id="road_x007c_mountain_x007c_no-carriage_x007c_Sodden_x0020_Hill_x0020_-_x0020_Red_x0020_Port" class="fil0 str2" points="16264.47,13758.33 16112.07,13809.13 15891.93,13775.26 15629.47,13716 "/>
+  <polyline id="road_x007c_main_x007c_carriage_x007c_Entroncamento_x0020_Red_x0020_Port_x0020_Sul_x0020_-_x0020_Estrada_x0020_Divisa_x0020_Sul" class="fil0 str1" points="16332.2,12843.93 16256,13140.26 16196.73,13360.4 16205.2,13589 16264.47,13758.33 "/>
+  <polyline id="road_x007c_regional_x007c_carriage_x007c_Entroncamento_x0020_Dregsdon_x0020_-_x0020_Estrada_x0020_Leste" class="fil0 str0" points="16662.4,12937.06 16484.6,12928.6 16332.2,12843.93 "/>
+  <polyline id="road_x007c_regional_x007c_carriage_x007c_Entroncamento_x0020_Dregsdon_x0020_-_x0020_Estrada_x0020_Oeste" class="fil0 str0" points="17475.2,12996.33 17288.93,13021.73 17102.67,13004.8 16941.8,12970.93 16840.2,12937.06 16662.4,12937.06 "/>
+  <polyline id="road_x007c_mountain_x007c_no-carriage_x007c_Caed_x0020_Dhu_x0020_-_x0020_Estrada_x0020_para_x0020_Rivia" class="fil0 str2" points="18889.13,12361.33 18745.2,12505.26 18584.33,12683.06 18389.6,12843.93 18110.2,12928.6 17780,12954 17475.2,12996.33 "/>
+  <line id="road_x007c_main_x007c_carriage_x007c_Entroncamento_x0020_Red_x0020_Port_x0020_Estrada_x0020_-_x0020_Red_x0020_Port" class="fil0 str1" x1="16459.2" y1="13868.4" x2="16264.47" y2= "13758.33" />
+  <polyline id="road_x007c_regional_x007c_carriage_x007c_Entroncamento_x0020_Burnt_x0020_Stump_x0020_-_x0020_Bodrog" class="fil0 str0" points="12395.2,14156.26 12208.93,14283.26 11988.8,14351 11827.93,14469.53 11700.93,14588.06 11540.07,14647.33 11404.6,14630.4 11328.4,14706.6 11243.73,14715.06 "/>
+  <polyline id="road_x007c_main_x007c_carriage_x007c_Red_x0020_Port_x0020_-_x0020_Kagen" class="fil0 str1" points="16806.33,14478 16687.8,14317.13 16653.93,14139.33 16577.73,13995.4 16459.2,13868.4 "/>
+  <polyline id="road_x007c_mountain_x007c_no-carriage_x007c_Caed_x0020_Dhu_x0020_-_x0020_Mt_x0020_Carbon" class="fil0 str2" points="18110.2,12928.6 17991.67,12708.46 17907,12234.33 17864.67,11997.26 17729.2,11819.46 17593.73,11700.93 17415.93,11607.8 17272,11565.46 17153.47,11506.2 17161.93,11324.16 "/>
+  <circle id="location_x007c_Denesle" class="fil1 str3" cx="10202.33" cy="7704.66" r="38.1"/>
+  <circle id="location_x007c_Guamez" class="fil1 str3" cx="11133.67" cy="7433.73" r="38.1"/>
+  <circle id="location_x007c_Tretogor" class="fil1 str3" cx="12750.8" cy="6951.13" r="38.1"/>
+  <circle id="location_x007c_Devil_x0027_s_x0020_Ford" class="fil1 str3" cx="12689.76" cy="8163.94" r="38.1"/>
+  <circle id="location_x007c_Rinde" class="fil1 str3" cx="14334.07" cy="7247.46" r="38.1"/>
+  <circle id="location_x007c_Coppertown" class="fil1 str3" cx="11970.9" cy="6555.41" r="38.1"/>
+  <circle id="location_x007c_Knotgrass_x0020_Meadow" class="fil1 str3" cx="13042.9" cy="5939.36" r="38.1"/>
+  <circle id="location_x007c_Zgraggen" class="fil1 str3" cx="11419.19" cy="8140.4" r="38.1"/>
+  <circle id="location_x007c_Novigrad" class="fil1 str3" cx="9910.23" cy="8729.13" r="38.1"/>
+  <circle id="location_x007c_Foam" class="fil1 str3" cx="11116.73" cy="8686.8" r="38.1"/>
+  <circle id="location_x007c_Oxenfurt" class="fil1 str3" cx="10634.13" cy="8839.2" r="38.1"/>
+  <circle id="location_x007c_Roggeven" class="fil1 str3" cx="9254.07" cy="6883.4" r="38.1"/>
+  <circle id="location_x007c_Baldhorn" class="fil1 str3" cx="10507.13" cy="5816.6" r="38.1"/>
+  <circle id="location_x007c_Murivel" class="fil1 str3" cx="14930.97" cy="6773.33" r="38.1"/>
+  <circle id="location_x007c_Drakenborg" class="fil1 str3" cx="14596.53" cy="5884.33" r="38.1"/>
+  <circle id="location_x007c_Gelibol" class="fil1 str3" cx="14676.64" cy="4972.54" r="38.1"/>
+  <circle id="location_x007c_Montecalvo" class="fil1 str3" cx="15261.17" cy="4826" r="38.1"/>
+  <circle id="location_x007c_Pindal" class="fil1 str3" cx="12750.8" cy="5088.46" r="38.1"/>
+  <circle id="location_x007c_Blaviken" class="fil1 str3" cx="11053.23" cy="4457.7" r="38.1"/>
+  <circle id="location_x007c_Luton" class="fil1 str3" cx="10879.67" cy="3894.66" r="38.1"/>
+  <circle id="location_x007c_Mint" class="fil1 str3" cx="14181.67" cy="4605.86" r="38.1"/>
+  <circle id="location_x007c_Esteken_x0020_Manor" class="fil1 str3" cx="13836.88" cy="4237.81" r="38.1"/>
+  <circle id="location_x007c_Yspaden" class="fil1 str3" cx="9931.4" cy="3107.26" r="38.1"/>
+  <circle id="location_x007c_Egremont" class="fil1 str3" cx="15654.87" cy="6722.53" r="38.1"/>
+  <circle id="location_x007c_White_x0020_Bridge" class="fil1 str3" cx="15786.16" cy="7282.51" r="38.1"/>
+  <circle id="location_x007c_Bondar" class="fil1 str3" cx="14951.83" cy="7464.88" r="38.1"/>
+  <circle id="location_x007c_Ellander" class="fil1 str3" cx="15856.04" cy="7737.49" r="38.1"/>
+  <circle id="location_x007c_Temple_x0020_of_x0020_Melitele" class="fil1 str3" cx="16095.13" cy="7518.4" r="38.1"/>
+  <circle id="location_x007c_Houtborg" class="fil1 str3" cx="16037.94" cy="8165.61" r="38.1"/>
+  <circle id="location_x007c_Moen" class="fil1 str3" cx="14791.27" cy="8009.46" r="38.1"/>
+  <circle id="location_x007c_Dorndal" class="fil1 str3" cx="15036.8" cy="8678.33" r="38.1"/>
+  <circle id="location_x007c_La_x0020_Valette" class="fil1 str3" cx="13741.4" cy="8094.13" r="38.1"/>
+  <circle id="location_x007c_Windley" class="fil1 str3" cx="11967.63" cy="8839.2" r="38.1"/>
+  <circle id="location_x007c_Chippira" class="fil1 str3" cx="12080.87" cy="9252.05" r="38.1"/>
+  <circle id="location_x007c_Findetann" class="fil1 str3" cx="11319.93" cy="9101.66" r="38.1"/>
+  <circle id="location_x007c_Acorn_x0020_Bay" class="fil1 str3" cx="10574.87" cy="9304.86" r="38.1"/>
+  <circle id="location_x007c_Crow_x0027_s_x0020_Perch" class="fil1 str3" cx="10041.47" cy="9495.36" r="38.1"/>
+  <circle id="location_x007c_Tegmond" class="fil1 str3" cx="11125.2" cy="9436.1" r="38.1"/>
+  <circle id="location_x007c_Dorian" class="fil1 str3" cx="11794.07" cy="9999.13" r="38.1"/>
+  <circle id="location_x007c_Anchor" class="fil1 str3" cx="10922" cy="10126.13" r="38.1"/>
+  <circle id="location_x007c_Gors_x0020_Velen" class="fil1 str3" cx="10557.93" cy="10600.26" r="38.1"/>
+  <circle id="location_x007c_Thanedd_x0020_Island" class="fil1 str3" cx="10016.07" cy="10498.66" r="38.1"/>
+  <circle id="location_x007c_Murky_x0020_Waters" class="fil1 str3" cx="13148.73" cy="9927.16" r="38.1"/>
+  <circle id="location_x007c_Vizima" class="fil1 str3" cx="13680.91" cy="9491.12" r="38.1"/>
+  <circle id="location_x007c_White_x0020_Orchard" class="fil1 str3" cx="14122.4" cy="9838.26" r="38.1"/>
+  <circle id="location_x007c_Burdorff" class="fil1 str3" cx="14977.53" cy="10253.13" r="38.1"/>
+  <circle id="location_x007c_Carreras" class="fil1 str3" cx="15985.07" cy="10117.66" r="38.1"/>
+  <circle id="location_x007c_Zavada" class="fil1 str3" cx="15443.2" cy="11192.93" r="38.1"/>
+  <circle id="location_x007c_Maribor" class="fil1 str3" cx="14748.93" cy="11692.46" r="38.1"/>
+  <circle id="location_x007c_Cleves" class="fil1 str3" cx="14258.13" cy="11502.98" r="38.1"/>
+  <circle id="location_x007c_Mortara" class="fil1 str3" cx="13487.4" cy="11760.2" r="38.1"/>
+  <circle id="location_x007c_Vorune" class="fil1 str3" cx="12615.33" cy="11684" r="38.1"/>
+  <circle id="location_x007c_Napeys" class="fil1 str3" cx="12496.8" cy="11303" r="38.1"/>
+  <circle id="location_x007c_Petrelsteyn" class="fil1 str3" cx="11726.33" cy="11226.8" r="38.1"/>
+  <circle id="location_x007c_Rissberg" class="fil1 str3" cx="11311.47" cy="11455.4" r="38.1"/>
+  <circle id="location_x007c_Cabana_x0020_na_x0020_Floresta" class="fil1 str3" cx="13064.07" cy="12454.46" r="38.1"/>
+  <circle id="location_x007c_Taverna_x0020_3_x0020_Florins" class="fil1 str3" cx="13682.13" cy="12513.73" r="38.1"/>
+  <circle id="location_x007c_Brenna" class="fil1 str3" cx="14054.67" cy="12302.06" r="38.1"/>
+  <circle id="location_x007c_Old_x0020_Bottoms" class="fil1 str3" cx="14427.2" cy="11997.26" r="38.1"/>
+  <circle id="location_x007c_Brugge" class="fil1 str3" cx="13665.2" cy="13267.26" r="38.1"/>
+  <circle id="location_x007c_Mayena" class="fil1 str3" cx="14351" cy="12810.06" r="38.1"/>
+  <circle id="location_x007c_Razwan" class="fil1 str3" cx="15002.93" cy="12776.2" r="38.1"/>
+  <circle id="location_x007c_Armeria" class="fil1 str3" cx="14444.13" cy="13284.2" r="38.1"/>
+  <circle id="location_x007c_Vidort" class="fil1 str3" cx="14240.93" cy="13843" r="38.1"/>
+  <circle id="location_x007c_Carcano" class="fil1 str3" cx="14935.2" cy="13724.46" r="38.1"/>
+  <circle id="location_x007c_Dilingen" class="fil1 str3" cx="13072.53" cy="14444.13" r="38.1"/>
+  <circle id="location_x007c_Burnt_x0020_Stump" class="fil1 str3" cx="12606.87" cy="13970" r="38.1"/>
+  <circle id="location_x007c_Kernow" class="fil1 str3" cx="12496.8" cy="14579.6" r="38.1"/>
+  <circle id="location_x007c_Dregsdon" class="fil1 str3" cx="16662.4" cy="12937.06" r="38.1"/>
+  <circle id="location_x007c_Caed_x0020_Dhu" class="fil1 str3" cx="18110.2" cy="12928.6" r="38.1"/>
+  <circle id="location_x007c_Red_x0020_Port" class="fil1 str3" cx="16264.47" cy="13758.33" r="38.1"/>
+  <circle id="location_x007c_Sodden_x0020_Hill" class="fil1 str3" cx="15629.47" cy="13716" r="38.1"/>
+  <circle id="location_x007c_Groundcherry_x0020_Forest" class="fil1 str3" cx="15870.77" cy="13000.56" r="38.1"/>
+  <circle id="location_x007c_Mt_x0020_Carbon" class="fil1 str3" cx="17161.93" cy="11324.16" r="38.1"/>
+ </g>
+</svg>
