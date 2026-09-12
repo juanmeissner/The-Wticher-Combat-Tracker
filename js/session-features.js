@@ -31,6 +31,7 @@ let historyFilter = 'all';
 let historyParticipantFilter = 'all';
 let expandedHistoryEntryId = null;
 let pendingSessionCancel = null;
+let appliedCampaignViewId = null;
 
 function loadSessionData(key, fallback) {
     try {
@@ -465,6 +466,19 @@ function applyRemoteCampaignView(campaign) {
     const remoteCombat = campaign?.state?.combat;
     if (!remoteCombat || !Array.isArray(remoteCombat.combatants)) return false;
 
+    const campaignViewId = String(campaign?.id || 'campaign');
+    const forceViewRefresh = appliedCampaignViewId !== campaignViewId;
+    const previousCombatFingerprint = JSON.stringify({
+        combatants,
+        activeTurnId,
+        selectedId,
+        round,
+        monsterCounter,
+        playerCounter
+    });
+    const previousInventoryFingerprint = JSON.stringify(inventory);
+    const previousAbilitiesFingerprint = JSON.stringify({ abilitiesInventory, expandedMagic });
+
     combatants = cloneSessionData(remoteCombat.combatants);
     activeTurnId = remoteCombat.activeTurnId ?? null;
     selectedId = remoteCombat.selectedId ?? null;
@@ -482,11 +496,25 @@ function applyRemoteCampaignView(campaign) {
     window.initializeCharacterCollections?.({ inventory, abilities: abilitiesInventory, expandedMagic });
     if (campaign.state?.campaignClock) window.campaignClock?.restoreSnapshot?.(campaign.state.campaignClock);
 
-    renderList(false);
-    renderInventory();
-    renderAbilities();
-    updateAbilitiesHeader();
+    const nextCombatFingerprint = JSON.stringify({
+        combatants,
+        activeTurnId,
+        selectedId,
+        round,
+        monsterCounter,
+        playerCounter
+    });
+    const nextInventoryFingerprint = JSON.stringify(inventory);
+    const nextAbilitiesFingerprint = JSON.stringify({ abilitiesInventory, expandedMagic });
+
+    if (forceViewRefresh || previousCombatFingerprint !== nextCombatFingerprint) renderList(false);
+    if (forceViewRefresh || previousInventoryFingerprint !== nextInventoryFingerprint) renderInventory();
+    if (forceViewRefresh || previousAbilitiesFingerprint !== nextAbilitiesFingerprint) {
+        renderAbilities();
+        updateAbilitiesHeader();
+    }
     refreshSessionStatus();
+    appliedCampaignViewId = campaignViewId;
     return true;
 }
 
@@ -1943,11 +1971,14 @@ async function openWorldHub(view = 'overview', context = {}) {
         return `<article class="world-regional-event-card"><div><small>${escapeHtml(recurrence.toUpperCase())}${event.visibility === 'private' ? ' · SOMENTE MESTRE' : ''}</small><strong>📍 ${escapeHtml(event.title)}</strong><span>${escapeHtml(window.worldTime?.formatCampaignMinute?.(event.startMinute) || '')}${location ? ` · ${escapeHtml(location.name)}` : ' · Todo o Continente'}</span>${event.description ? `<p>${escapeHtml(event.description)}</p>` : ''}${!playerMode && event.privateNotes ? `<div class="world-npc-private-notes"><small>ANOTAÇÃO PRIVADA</small><p>${escapeHtml(event.privateNotes)}</p></div>` : ''}</div>${playerMode ? '' : `<div class="world-location-card-actions"><button type="button" class="session-secondary" onclick="openWorldRegionalEventEditor('${escapeHtml(event.id)}')">Editar</button><button type="button" class="session-danger" onclick="removeWorldRegionalEvent('${escapeHtml(event.id)}')">Excluir</button></div>`}</article>`;
     };
     const renderTravelCard = travel => {
-        const travelers = (Array.isArray(travel.travelers) ? travel.travelers : []).map(entry => entry?.name).filter(Boolean);
+        const travelers = (Array.isArray(travel.travelers) ? travel.travelers : [])
+            .filter(entry => entry?.name)
+            .map(entry => `${entry.name} — ${entry.transportLabel || 'A pé'}`);
         const duration = travel.transportMode === 'portal'
             ? '1 turno (1 min)'
             : (window.campaignClock?.formatDuration?.(travel.durationMinutes) || `${travel.durationMinutes} min`);
-        return `<article class="world-travel-card"><span aria-hidden="true">${travel.transportMode === 'portal' ? '🌀' : '🧭'}</span><div><strong>${escapeHtml(travel.fromLocationName)} → ${escapeHtml(travel.toLocationName)}</strong><small>${escapeHtml(travel.transportLabel || 'A pé')}${Number(travel.distanceKm) > 0 ? ` · ${Number(travel.distanceKm).toLocaleString('pt-BR')} km` : ''} · ${escapeHtml(duration)} · ${escapeHtml(window.worldTime?.formatCampaignMinute?.(travel.arrivalMinute) || '')}</small>${travelers.length ? `<span class="world-travel-party-history">Viajantes: ${escapeHtml(travelers.join(', '))}</span>` : ''}${travel.note ? `<p>${escapeHtml(travel.note)}</p>` : ''}</div></article>`;
+        const icon = travel.transportMode === 'portal' ? '🌀' : travel.transportMode === 'group' ? '👥' : '🧭';
+        return `<article class="world-travel-card"><span aria-hidden="true">${icon}</span><div><strong>${escapeHtml(travel.fromLocationName)} → ${escapeHtml(travel.toLocationName)}</strong><small>${escapeHtml(travel.transportLabel || 'A pé')}${Number(travel.distanceKm) > 0 ? ` · ${Number(travel.distanceKm).toLocaleString('pt-BR')} km` : ''} · ${escapeHtml(duration)} · ${escapeHtml(window.worldTime?.formatCampaignMinute?.(travel.arrivalMinute) || '')}</small>${travelers.length ? `<span class="world-travel-party-history">Participantes: ${escapeHtml(travelers.join('; '))}</span>` : ''}${travel.note ? `<p>${escapeHtml(travel.note)}</p>` : ''}</div></article>`;
     };
     const modal = document.createElement('div');
     modal.id = 'worldHubModal';

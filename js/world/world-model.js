@@ -242,12 +242,25 @@
         const now = options.now || new Date().toISOString();
         const departureMinute = Number.isFinite(Number(source.departureMinute)) ? Math.floor(Number(source.departureMinute)) : null;
         const arrivalMinute = Number.isFinite(Number(source.arrivalMinute)) ? Math.floor(Number(source.arrivalMinute)) : departureMinute;
+        const fallbackTravelerMode = ['foot', 'horse', 'carriage', 'portal'].includes(source.transportMode) ? source.transportMode : 'foot';
+        const fallbackTravelerLabel = normalizeText(source.transportLabel, 'A pé', 160);
         const travelers = (Array.isArray(source.travelers) ? source.travelers : [])
-            .map(entry => ({
-                id: normalizeText(entry?.id, '', 180) || null,
-                name: normalizeText(entry?.name, 'Personagem', 160),
-                role: entry?.role === 'companion' ? 'companion' : 'leader'
-            }))
+            .map(entry => {
+                const role = entry?.role === 'companion' ? 'companion' : 'leader';
+                const transportMode = ['foot', 'horse', 'carriage', 'portal'].includes(entry?.transportMode) ? entry.transportMode : fallbackTravelerMode;
+                const fallbackRole = transportMode === 'foot' ? 'walker' : role === 'companion' ? 'passenger' : transportMode === 'portal' ? 'caster' : 'driver';
+                return {
+                    id: normalizeText(entry?.id, '', 180) || null,
+                    name: normalizeText(entry?.name, 'Personagem', 160),
+                    role,
+                    transportMode,
+                    transportRole: ['walker', 'driver', 'passenger', 'caster'].includes(entry?.transportRole) ? entry.transportRole : fallbackRole,
+                    transportAssetId: normalizeText(entry?.transportAssetId, '', 180) || null,
+                    transportLabel: normalizeText(entry?.transportLabel, fallbackTravelerLabel, 180),
+                    transportOwnerId: normalizeText(entry?.transportOwnerId, '', 180) || null,
+                    transportOwnerName: normalizeText(entry?.transportOwnerName, '', 160)
+                };
+            })
             .filter((entry, index, list) => list.findIndex(candidate =>
                 (entry.id && candidate.id === entry.id)
                 || (!entry.id && !candidate.id && candidate.name === entry.name)) === index);
@@ -267,7 +280,7 @@
             departureMinute,
             arrivalMinute,
             durationMinutes: Math.max(0, Math.floor(Number(source.durationMinutes) || 0)),
-            transportMode: ['foot', 'horse', 'carriage', 'portal'].includes(source.transportMode) ? source.transportMode : 'foot',
+            transportMode: ['foot', 'horse', 'carriage', 'portal', 'group'].includes(source.transportMode) ? source.transportMode : 'foot',
             transportLabel: normalizeText(source.transportLabel, 'A pé', 160),
             transportAssetId: normalizeText(source.transportAssetId, '', 180) || null,
             travelerId: normalizeText(source.travelerId, '', 180) || null,

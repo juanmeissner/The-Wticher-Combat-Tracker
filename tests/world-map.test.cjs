@@ -226,6 +226,23 @@ test('pirâmide converte a grade invertida do Leaflet para os blocos armazenados
     assert.match(read(path.join('scripts', 'generate-map-tiles.py')), /Image\.Resampling\.LANCZOS/);
 });
 
+test('manifesto dos blocos é reutilizado durante a sessão', async () => {
+    const originalFetch = global.fetch;
+    let requests = 0;
+    global.fetch = async () => {
+        requests += 1;
+        return { ok: true, json: async () => manifest };
+    };
+    try {
+        const first = await worldMap.loadTileManifest('test://continent-manifest');
+        const second = await worldMap.loadTileManifest('test://continent-manifest');
+        assert.equal(requests, 1);
+        assert.strictEqual(second, first);
+    } finally {
+        global.fetch = originalFetch;
+    }
+});
+
 test('rede viária preserva trechos, entroncamentos e escala cartográfica centralizada', () => {
     const summary = worldRoadData.getNetworkSummary();
     assert.equal(worldRoadData.ROAD_NETWORK_VERSION, 2);
@@ -265,6 +282,35 @@ test('grafo importado encontra rotas conectadas e preserva os vínculos com loca
     assert.equal(worldRoadData.findNodeByLocationId('world-canonical-tretogor').id, 'road-node-tretogor');
 });
 
+test('popup calcula a menor distância viária e rejeita locais sem estrada contínua', () => {
+    const network = { nodes: worldRoadData.ROAD_NODES, segments: worldRoadData.ROAD_SEGMENTS };
+    const route = worldMap.calculateRoadDistance(
+        'world-canonical-novigrad',
+        'world-canonical-oxenfurt',
+        network,
+        worldRoadData.MAP_REFERENCE
+    );
+    assert.equal(route.ok, true);
+    assert.ok(route.distanceKm > 0);
+    assert.ok(route.segmentIds.length > 0);
+
+    const disconnected = worldMap.calculateRoadDistance(
+        'world-canonical-novigrad',
+        'world-canonical-mount-carbon',
+        network,
+        worldRoadData.MAP_REFERENCE
+    );
+    assert.deepEqual(disconnected, { ok: false, reason: 'disconnected' });
+
+    const missing = worldMap.calculateRoadDistance(
+        'world-canonical-novigrad',
+        'world-custom-without-road',
+        network,
+        worldRoadData.MAP_REFERENCE
+    );
+    assert.deepEqual(missing, { ok: false, reason: 'destination-not-on-road' });
+});
+
 test('mapa usa Leaflet local, tela cheia e integração offline versionada', () => {
     const indexSource = read('index.html');
     const featureLoader = read(path.join('js', 'world', 'world-feature-loader.js'));
@@ -288,7 +334,7 @@ test('mapa usa Leaflet local, tela cheia e integração offline versionada', () 
     assert.match(styles, /height:\s*100dvh/);
     assert.match(styles, /\.world-interactive-map/);
     assert.match(zoomLock, /data-allow-map-zoom/);
-    assert.match(worker, /witcher-combat-tracker-v146/);
+    assert.match(worker, /witcher-combat-tracker-v153/);
     assert.match(worker, /js\/world\/world-road-imported-data\.js/);
     assert.match(worker, /vendor\/leaflet\/leaflet\.js/);
     assert.match(worker, /js\/world\/world-map\.js/);
@@ -303,6 +349,16 @@ test('mapa usa Leaflet local, tela cheia e integração offline versionada', () 
     assert.match(styles, /\.world-map-filter-panel/);
     assert.match(styles, /\.world-location-marker/);
     assert.match(styles, /\.world-map-popup-context/);
+    assert.match(styles, /\.world-map-popup-distance/);
+    assert.match(styles, /\.world-route-preview-casing/);
+    const mapSource = read(path.join('js', 'world', 'world-map.js'));
+    assert.doesNotMatch(mapSource, /worldMapLoading|Carregando os blocos do mapa|Preparando o mapa/);
+    assert.match(mapSource, /preferCanvas:\s*true/);
+    assert.match(mapSource, /updateWhenIdle:\s*true/);
+    assert.match(mapSource, /keepBuffer:\s*1/);
+    assert.match(styles, /\.world-route-preview-line/);
+    assert.match(styles, /\.world-route-preview-endpoint/);
+    assert.match(styles, /\.world-travel-map-preview-overlay/);
     assert.match(styles, /\.world-map-legend-dot\.canonical/);
     assert.match(sessionSource, /data-npc-location-path/);
     assert.match(sessionSource, /FILTRO ABERTO PELO MAPA/);

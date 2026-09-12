@@ -1,4 +1,4 @@
-const CACHE_NAME = 'witcher-combat-tracker-v146';
+const CACHE_NAME = 'witcher-combat-tracker-v153';
 
 const APP_SHELL = [
     './',
@@ -11,6 +11,7 @@ const APP_SHELL = [
     './vendor/leaflet/images/marker-icon-2x.png',
     './vendor/leaflet/images/marker-shadow.png',
     './style.css',
+    './tailwind-static.css',
     './zoom-lock.css',
     './mobile.css',
     './character-collections.css',
@@ -130,9 +131,7 @@ const APP_SHELL = [
 ];
 
 const OPTIONAL_REMOTE_ASSETS = [
-    'https://cdn.tailwindcss.com/',
-    'https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js',
-    'https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap'
+    'https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js'
 ];
 
 const APP_SHELL_URLS = new Set(

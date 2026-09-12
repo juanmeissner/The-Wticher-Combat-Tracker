@@ -95,13 +95,22 @@
 
     function formatCompactDuration(minutes) {
         const value = Math.max(0, Math.ceil(Number(minutes) || 0));
-        if (value >= 1440 && value % 1440 === 0) return `${value / 1440}d`;
-        if (value >= 60) {
-            const hours = Math.floor(value / 60);
-            const rest = value % 60;
-            return rest ? `${hours}h ${rest}min` : `${hours}h`;
+        if (global.campaignClock?.formatDuration) {
+            return global.campaignClock.formatDuration(value);
         }
-        return `${value}min`;
+
+        const days = Math.floor(value / 1440);
+        const hours = Math.floor((value % 1440) / 60);
+        const remainingMinutes = value % 60;
+        const parts = [];
+        if (days) parts.push(`${days} dia${days === 1 ? '' : 's'}`);
+        if (hours) parts.push(`${hours} hora${hours === 1 ? '' : 's'}`);
+        if (remainingMinutes || parts.length === 0) {
+            parts.push(`${remainingMinutes} minuto${remainingMinutes === 1 ? '' : 's'}`);
+        }
+        if (parts.length === 1) return parts[0];
+        if (parts.length === 2) return `${parts[0]} e ${parts[1]}`;
+        return `${parts.slice(0, -1).join(', ')} e ${parts.at(-1)}`;
     }
 
     function formatEffectDurationLabel(effect) {

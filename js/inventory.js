@@ -948,7 +948,7 @@ function renderInventory() {
         return;
     }
 
-    filteredInventory.forEach(item => {
+    container.innerHTML = filteredInventory.map(item => {
 
         const equipmentBadge = window.getInventoryEquipmentBadge?.(item.id)
             || window.getTransportInventoryBadge?.(item);
@@ -960,7 +960,7 @@ function renderInventory() {
             : Math.max(0, Number(item.quantity) || 0);
         const inventoryStackWeight = Math.round((unitWeight * weightQuantity + Number.EPSILON) * 100) / 100;
 
-        container.innerHTML += `
+        return `
     
             <div
     
@@ -1050,7 +1050,7 @@ function renderInventory() {
     
             </div>
         `;
-    });
+    }).join('');
 
     window.updateInventoryEquipmentAction?.();
 }
@@ -1283,9 +1283,9 @@ function renderInventoryItemsModal() {
         return;
     }
 
-    filteredItems.forEach(item => {
+    container.innerHTML = filteredItems.map(item => {
 
-        container.innerHTML += `
+        return `
 
         <button
     
@@ -1344,7 +1344,7 @@ function renderInventoryItemsModal() {
 
         </button>
         `;
-    });
+    }).join('');
 }
 
 function selectInventoryItem(itemId) {

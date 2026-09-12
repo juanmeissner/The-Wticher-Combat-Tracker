@@ -74,12 +74,9 @@
             .slice(0, Math.max(1, limit));
     }
 
-    function findAccessNodes(location, point, nodes, modeId) {
+    function findAccessNodes(location, point, nodes) {
         const exact = (Array.isArray(nodes) ? nodes : []).filter(node => String(node.locationId || '') === String(location?.id || ''));
-        if (exact.length) return exact.map(node => ({ node, distancePixels: pointDistancePixels(point, node.point) }));
-        const nearest = getNearestNodes(point, nodes, modeId === 'carriage' ? 1 : 4);
-        if (modeId !== 'carriage') return nearest;
-        return nearest.filter(entry => entry.distancePixels <= 24);
+        return exact.map(node => ({ node, distancePixels: pointDistancePixels(point, node.point) }));
     }
 
     function orientSegmentPoints(segment, fromNodeId) {
@@ -112,31 +109,22 @@
 
         const routeSegments = roadRoute.segmentIds.map(id => segments.find(segment => segment.id === id)).filter(Boolean);
         const roadDistanceKm = routeSegments.reduce((total, segment) => total + roads.getSegmentDistanceKm(segment, reference), 0);
-        const originAccessKm = roads.pixelsToKilometers(originAccess.distancePixels, reference);
-        const destinationAccessKm = roads.pixelsToKilometers(destinationAccess.distancePixels, reference);
-        const accessDistanceKm = originAccessKm + destinationAccessKm;
-        if (modeId === 'carriage' && accessDistanceKm > 0.01 && (originAccess.distancePixels > 24 || destinationAccess.distancePixels > 24)) return null;
-        const accessSpeed = modeId === 'carriage'
-            ? getTravelSpeedKmh(modeId, movement, 'regional')
-            : getTravelSpeedKmh(modeId, movement, null);
         const roadMinutes = routeSegments.reduce((total, segment) => total
             + roads.getSegmentDistanceKm(segment, reference) / getTravelSpeedKmh(modeId, movement, segment.type) * 60, 0);
-        const accessMinutes = accessDistanceKm / accessSpeed * 60;
         const points = [];
-        appendPoints(points, [originPoint]);
         appendPoints(points, [originAccess.node.point]);
         routeSegments.forEach((segment, index) => appendPoints(points, orientSegmentPoints(segment, roadRoute.nodeIds[index])));
-        appendPoints(points, [destinationAccess.node.point, destinationPoint]);
+        appendPoints(points, [destinationAccess.node.point]);
         return {
-            minutes: roadMinutes + accessMinutes,
-            distanceKm: roadDistanceKm + accessDistanceKm,
+            minutes: roadMinutes,
+            distanceKm: roadDistanceKm,
             roadDistanceKm,
-            offRoadDistanceKm: modeId === 'carriage' ? 0 : accessDistanceKm,
+            offRoadDistanceKm: 0,
             nodeIds: [...roadRoute.nodeIds],
             segmentIds: [...roadRoute.segmentIds],
             points,
             usesRoads: roadDistanceKm > 0,
-            usesOffRoad: modeId !== 'carriage' && accessDistanceKm > 0.01
+            usesOffRoad: false
         };
     }
 
@@ -178,8 +166,8 @@
             });
         }
 
-        const originNodes = findAccessNodes(origin, originPoint, nodes, modeId);
-        const destinationNodes = findAccessNodes(destination, destinationPoint, nodes, modeId);
+        const originNodes = findAccessNodes(origin, originPoint, nodes);
+        const destinationNodes = findAccessNodes(destination, destinationPoint, nodes);
         const candidates = [];
         originNodes.forEach(originAccess => destinationNodes.forEach(destinationAccess => {
             const candidate = buildRoadCandidate(originPoint, destinationPoint, originAccess, destinationAccess, {
@@ -188,24 +176,10 @@
             if (candidate) candidates.push(candidate);
         }));
 
-        if (modeId !== 'carriage') {
-            const directDistanceKm = roads.pixelsToKilometers(pointDistancePixels(originPoint, destinationPoint), reference);
-            candidates.push({
-                minutes: directDistanceKm / getTravelSpeedKmh(modeId, movement, null) * 60,
-                distanceKm: directDistanceKm,
-                roadDistanceKm: 0,
-                offRoadDistanceKm: directDistanceKm,
-                nodeIds: [],
-                segmentIds: [],
-                points: [originPoint, destinationPoint],
-                usesRoads: false,
-                usesOffRoad: true
-            });
-        }
         if (!candidates.length) {
             return { ok: false, error: modeId === 'carriage'
                 ? 'Não há uma rota contínua para carruagem entre estes locais. Ambos precisam estar ligados por estradas compatíveis.'
-                : 'Não foi possível calcular a rota entre estes locais.' };
+                : 'Não há uma rota contínua de estradas entre estes locais. A origem e o destino precisam estar ligados à rede viária.' };
         }
         const best = candidates.sort((left, right) => left.minutes - right.minutes)[0];
         return Object.freeze({
@@ -229,6 +203,99 @@
         });
     }
 
+    function planGroupRoute(input = {}) {
+        if (!roads) return { ok: false, error: 'A rede de estradas não está disponível.' };
+        const units = (Array.isArray(input.units) ? input.units : [])
+            .map((unit, index) => {
+                const mode = TRAVEL_MODES[unit?.mode]?.id;
+                if (!mode || mode === 'portal') return null;
+                return {
+                    id: String(unit.id || `travel-unit-${index + 1}`),
+                    mode,
+                    movement: Math.max(1, Number(unit.movement) || 10),
+                    label: String(unit.label || TRAVEL_MODES[mode].label),
+                    assetId: unit.assetId ? String(unit.assetId) : null,
+                    ownerId: unit.ownerId ? String(unit.ownerId) : null,
+                    ownerName: String(unit.ownerName || '')
+                };
+            })
+            .filter(Boolean);
+        if (!units.length) return { ok: false, error: 'Selecione como os participantes farão a viagem.' };
+
+        const origin = input.origin;
+        const destination = input.destination;
+        const nodes = Array.isArray(input.nodes) ? input.nodes : roads.ROAD_NODES;
+        const segments = Array.isArray(input.segments) ? input.segments : roads.ROAD_SEGMENTS;
+        const reference = buildReference(input.mapSettings);
+        const originPoint = locationToPixel(origin, reference);
+        const destinationPoint = locationToPixel(destination, reference);
+        if (!originPoint || !destinationPoint) return { ok: false, error: 'Origem e destino precisam possuir coordenadas no mapa.' };
+        if (String(origin?.id || '') === String(destination?.id || '')) return { ok: false, error: 'Escolha um destino diferente do local atual.' };
+
+        const originNodes = findAccessNodes(origin, originPoint, nodes);
+        const destinationNodes = findAccessNodes(destination, destinationPoint, nodes);
+        const carriageOnly = units.some(unit => unit.mode === 'carriage');
+        const getGroupSpeed = roadType => Math.min(...units.map(unit => getTravelSpeedKmh(unit.mode, unit.movement, roadType)));
+        const maximumRoadSpeed = getGroupSpeed('main');
+        const candidates = [];
+
+        originNodes.forEach(originAccess => destinationNodes.forEach(destinationAccess => {
+            const roadRoute = roads.findShortestRoute(originAccess.node.id, destinationAccess.node.id, {
+                nodes,
+                segments,
+                reference,
+                carriageOnly,
+                getCost: segment => roads.getSegmentDistanceKm(segment, reference) / getGroupSpeed(segment.type) * 60,
+                heuristic: nodeId => {
+                    const node = nodes.find(entry => entry.id === nodeId);
+                    return roads.pixelsToKilometers(pointDistancePixels(node?.point, destinationAccess.node.point), reference) / maximumRoadSpeed * 60;
+                }
+            });
+            if (!roadRoute) return;
+            const routeSegments = roadRoute.segmentIds.map(id => segments.find(segment => segment.id === id)).filter(Boolean);
+            const distanceKm = routeSegments.reduce((total, segment) => total + roads.getSegmentDistanceKm(segment, reference), 0);
+            const minutes = routeSegments.reduce((total, segment) => total
+                + roads.getSegmentDistanceKm(segment, reference) / getGroupSpeed(segment.type) * 60, 0);
+            const points = [];
+            appendPoints(points, [originAccess.node.point]);
+            routeSegments.forEach((segment, index) => appendPoints(points, orientSegmentPoints(segment, roadRoute.nodeIds[index])));
+            appendPoints(points, [destinationAccess.node.point]);
+            candidates.push({ minutes, distanceKm, nodeIds: [...roadRoute.nodeIds], segmentIds: [...roadRoute.segmentIds], points });
+        }));
+
+        if (!candidates.length) {
+            return { ok: false, error: carriageOnly
+                ? 'Não há uma rota contínua compatível com carruagens para todo o grupo.'
+                : 'Não há uma rota contínua de estradas entre estes locais para todo o grupo.' };
+        }
+
+        const best = candidates.sort((left, right) => left.minutes - right.minutes)[0];
+        const limitingUnit = units.reduce((slowest, unit) =>
+            getTravelSpeedKmh(unit.mode, unit.movement, 'regional') < getTravelSpeedKmh(slowest.mode, slowest.movement, 'regional') ? unit : slowest, units[0]);
+        const singleMode = new Set(units.map(unit => unit.mode)).size === 1 ? units[0].mode : 'group';
+        return Object.freeze({
+            ok: true,
+            algorithm: 'astar',
+            mode: units.length === 1 ? units[0].mode : singleMode,
+            modeLabel: units.length === 1 ? units[0].label : 'Grupo de viagem',
+            movement: limitingUnit.movement,
+            speedKmh: round(best.distanceKm / Math.max(1 / 60, best.minutes / 60), 1),
+            distanceKm: round(best.distanceKm, 1),
+            roadDistanceKm: round(best.distanceKm, 1),
+            offRoadDistanceKm: 0,
+            durationMinutes: Math.max(1, Math.ceil(best.minutes)),
+            nodeIds: Object.freeze(best.nodeIds),
+            segmentIds: Object.freeze(best.segmentIds),
+            points: Object.freeze(best.points.map(point => Object.freeze({ ...point }))),
+            usesRoads: true,
+            usesOffRoad: false,
+            carriageRestricted: carriageOnly,
+            limitingUnit: Object.freeze({ ...limitingUnit }),
+            units: Object.freeze(units.map(unit => Object.freeze({ ...unit }))),
+            scale: Object.freeze({ ...normalizeMapSettings(input.mapSettings) })
+        });
+    }
+
     return Object.freeze({
         ROUTE_ENGINE_VERSION,
         DEFAULT_MAP_SETTINGS,
@@ -240,6 +307,7 @@
         movementFactor,
         getTravelSpeedKmh,
         getNearestNodes,
-        planRoute
+        planRoute,
+        planGroupRoute
     });
 });

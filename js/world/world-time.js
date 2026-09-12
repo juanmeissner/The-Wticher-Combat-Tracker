@@ -208,71 +208,202 @@
         return getTransportOptions(owner).map(option => `<option value="${escapeHtml(option.value)}"${option.value === selectedValue ? ' selected' : ''}>${escapeHtml(option.label)}</option>`).join('');
     }
 
+    function encodeTravelReference(value) {
+        return encodeURIComponent(String(value || ''));
+    }
+
+    function getParticipantTransportOptions(ownerEntry, owners = getTravelOwners()) {
+        if (!ownerEntry) return [];
+        const own = getTransportOptions(ownerEntry.owner).map(option => ({
+            ...option,
+            kind: 'self',
+            ownerKey: ownerEntry.key,
+            ownerId: String(ownerEntry.owner?.id || '') || null,
+            ownerName: String(ownerEntry.owner?.name || 'Personagem')
+        }));
+        const shared = [];
+        owners.filter(entry => entry.key !== ownerEntry.key).forEach(provider => {
+            getTransportOptions(provider.owner)
+                .filter(option => option.mode === 'horse' || option.mode === 'carriage')
+                .forEach(option => shared.push({
+                    value: `passenger|${option.mode}|${encodeTravelReference(provider.key)}|${encodeTravelReference(option.assetId)}`,
+                    mode: 'passenger',
+                    targetMode: option.mode,
+                    targetOwnerKey: provider.key,
+                    targetOwnerId: String(provider.owner?.id || '') || null,
+                    targetOwnerName: String(provider.owner?.name || 'Personagem'),
+                    assetId: option.assetId,
+                    movement: option.movement,
+                    name: option.name,
+                    kind: 'passenger',
+                    label: option.mode === 'horse'
+                        ? `👥 Carona em ${option.name} · de ${provider.owner?.name || 'Personagem'}`
+                        : `🛒 Passageiro em ${option.name} · de ${provider.owner?.name || 'Personagem'}`
+                }));
+        });
+        return [...own, ...shared];
+    }
+
+    function getDefaultParticipantTransport(ownerEntry, options) {
+        const activeMountId = String(ownerEntry?.owner?.transport?.activeMountId || '');
+        return options.find(option => option.mode === 'horse' && String(option.assetId) === activeMountId)
+            || options.find(option => option.mode === 'horse')
+            || options.find(option => option.mode === 'foot')
+            || options[0];
+    }
+
+    function renderTravelPartyPlanner(owners) {
+        if (!owners.length) {
+            return '<section class="world-travel-party-planner is-empty"><p>Nenhum personagem jogador está disponível. O deslocamento geral será calculado a pé.</p></section>';
+        }
+        return `<section class="world-travel-party-planner" aria-label="Organização dos participantes"><div class="world-travel-party-heading"><div><small>COMPOSIÇÃO DO GRUPO</small><strong>Como cada personagem viajará?</strong></div><span>${owners.length} selecionado${owners.length === 1 ? '' : 's'}</span></div><p>Todos começam marcados. Escolha cavalo próprio, carona, carruagem ou caminhada para cada participante.</p><div class="world-travel-participant-list">${owners.map(entry => {
+            const options = getParticipantTransportOptions(entry, owners);
+            const selected = getDefaultParticipantTransport(entry, options);
+            return `<article class="world-travel-participant is-selected" data-travel-participant data-owner-key="${escapeHtml(entry.key)}"><label class="world-travel-participant-toggle"><input type="checkbox" name="participantKeys" value="${escapeHtml(entry.key)}" checked onchange="updateWorldTravelParticipant(this)"><span><b>${escapeHtml(entry.owner?.name || 'Personagem')}</b><small>Participará da viagem</small></span></label><label class="world-travel-participant-mode"><span>Forma de viagem</span><select data-travel-assignment onchange="updateWorldTravelPartyAssignment(this)">${options.map(option => `<option value="${escapeHtml(option.value)}"${option.value === selected?.value ? ' selected' : ''}>${escapeHtml(option.label)}</option>`).join('')}</select></label></article>`;
+        }).join('')}</div></section>`;
+    }
+
     function getTravelPlannerSelection() {
         const form = root.document?.querySelector?.('#worldTravelModal form');
         if (!form) return null;
-        const ownerEntry = getTravelOwners().find(entry => entry.key === String(form.elements.travelerKey?.value || '')) || null;
-        const owner = ownerEntry?.owner || null;
-        const options = getTransportOptions(owner);
-        const transport = options.find(option => option.value === form.elements.transport?.value) || options[0];
-        return { form, ownerEntry, owner, transport };
-    }
-
-    function renderTravelPartySelector(selection) {
-        const capacity = getTravelCapacity(selection?.transport?.mode);
-        const candidates = getTravelOwners().filter(entry => entry.key !== selection?.ownerEntry?.key);
-        if (!selection?.ownerEntry || capacity <= 0 || !candidates.length) return '';
-        const legend = capacity === 1
-            ? 'Passageiro adicional · escolha até 1'
-            : selection.transport.mode === 'portal'
-                ? 'Personagens que atravessarão o Portal Vertical'
-                : 'Personagens que viajarão na carroça';
-        const help = capacity === 1
-            ? 'O cavalo transporta o dono e mais um personagem.'
-            : 'Marque todos os personagens que acompanharão o responsável pela viagem.';
-        return `<fieldset class="world-time-checklist world-travel-party"><legend>${escapeHtml(legend)}</legend><small class="world-travel-party-help">${escapeHtml(help)}</small>${candidates.map(entry => `<label><input type="checkbox" name="travelerKeys" value="${escapeHtml(entry.key)}" onchange="updateWorldTravelCompanionSelection(this)"><span>${escapeHtml(entry.owner?.name || 'Personagem')}</span></label>`).join('')}</fieldset>`;
-    }
-
-    function getSelectedTravelers(selection) {
-        if (!selection?.ownerEntry) return [];
-        const selectedKeys = new Set(Array.from(selection.form.querySelectorAll?.('input[name="travelerKeys"]:checked') || []).map(input => String(input.value)));
-        const capacity = getTravelCapacity(selection.transport.mode);
-        const selectedCompanions = getTravelOwners()
-            .filter(entry => entry.key !== selection.ownerEntry.key && selectedKeys.has(entry.key));
-        const companions = Number.isFinite(capacity)
-            ? selectedCompanions.slice(0, capacity)
-            : selectedCompanions;
-        return [selection.ownerEntry, ...companions].map((entry, index) => ({
-            id: String(entry.owner?.id || '') || null,
-            name: String(entry.owner?.name || 'Personagem'),
-            role: index === 0 ? 'leader' : 'companion'
-        }));
-    }
-
-    function updateWorldTravelCompanions() {
-        const selection = getTravelPlannerSelection();
-        const area = root.document?.getElementById?.('worldTravelCompanionArea');
-        if (area) area.innerHTML = selection ? renderTravelPartySelector(selection) : '';
-        return updateWorldTravelPreview();
-    }
-
-    function updateWorldTravelCompanionSelection(changedInput) {
-        const selection = getTravelPlannerSelection();
-        const capacity = getTravelCapacity(selection?.transport?.mode);
-        if (changedInput?.checked && Number.isFinite(capacity)) {
-            const checked = Array.from(selection.form.querySelectorAll?.('input[name="travelerKeys"]:checked') || []);
-            checked.filter(input => input !== changedInput).slice(0, Math.max(0, checked.length - capacity)).forEach(input => { input.checked = false; });
+        const owners = getTravelOwners();
+        const ownerByKey = new Map(owners.map(entry => [entry.key, entry]));
+        const assignments = Array.from(form.querySelectorAll?.('[data-travel-participant]') || []).map(row => {
+            const ownerEntry = ownerByKey.get(String(row.dataset?.ownerKey || '')) || null;
+            const checkbox = row.querySelector?.('input[name="participantKeys"]');
+            const select = row.querySelector?.('[data-travel-assignment]');
+            if (!ownerEntry || !checkbox?.checked) return null;
+            const options = getParticipantTransportOptions(ownerEntry, owners);
+            const option = options.find(entry => entry.value === String(select?.value || '')) || getDefaultParticipantTransport(ownerEntry, options);
+            return option ? { ownerEntry, owner: ownerEntry.owner, option } : null;
+        }).filter(Boolean);
+        if (!owners.length) {
+            assignments.push({
+                ownerEntry: null,
+                owner: null,
+                option: { value: 'foot', mode: 'foot', movement: 10, assetId: null, name: 'A pé', label: '🥾 A pé', kind: 'self' }
+            });
         }
+        return { form, owners, assignments };
+    }
+
+    function resolveTravelParty(selection) {
+        const assignments = Array.isArray(selection?.assignments) ? selection.assignments : [];
+        if (!assignments.length) return { ok: false, error: 'Selecione ao menos um personagem para a viagem.' };
+
+        const portal = assignments.find(entry => entry.option?.mode === 'portal');
+        if (portal) {
+            const ordered = [portal, ...assignments.filter(entry => entry !== portal)];
+            return {
+                ok: true,
+                portal: true,
+                leader: portal.ownerEntry,
+                units: [],
+                transportLabel: `Portal Vertical${portal.owner?.name ? ` de ${portal.owner.name}` : ''}`,
+                transportAssetId: 'portal_vertical',
+                travelers: ordered.map((entry, index) => ({
+                    id: String(entry.owner?.id || '') || null,
+                    name: String(entry.owner?.name || 'Personagem'),
+                    role: index === 0 ? 'leader' : 'companion',
+                    transportMode: 'portal',
+                    transportRole: entry === portal ? 'caster' : 'passenger',
+                    transportAssetId: 'portal_vertical',
+                    transportLabel: entry === portal ? 'Conjurador do Portal Vertical' : `Portal de ${portal.owner?.name || 'outro personagem'}`,
+                    transportOwnerId: String(portal.owner?.id || '') || null,
+                    transportOwnerName: String(portal.owner?.name || '')
+                }))
+            };
+        }
+
+        const drivers = new Map();
+        assignments.forEach(entry => {
+            if (!['horse', 'carriage'].includes(entry.option?.mode)) return;
+            drivers.set(`${entry.ownerEntry?.key}|${entry.option.mode}|${entry.option.assetId}`, entry);
+        });
+        const passengerCounts = new Map();
+        const travelers = [];
+        const units = [];
+
+        for (const [index, entry] of assignments.entries()) {
+            const option = entry.option;
+            if (option.mode === 'passenger') {
+                const reference = `${option.targetOwnerKey}|${option.targetMode}|${option.assetId}`;
+                const driver = drivers.get(reference);
+                if (!driver) {
+                    return { ok: false, error: `${entry.owner?.name || 'Um personagem'} escolheu ${option.name}, mas ${option.targetOwnerName} não está usando esse transporte.` };
+                }
+                const count = (passengerCounts.get(reference) || 0) + 1;
+                if (option.targetMode === 'horse' && count > 1) {
+                    return { ok: false, error: `${option.name} aceita somente um passageiro além do cavaleiro.` };
+                }
+                passengerCounts.set(reference, count);
+                travelers.push({
+                    id: String(entry.owner?.id || '') || null,
+                    name: String(entry.owner?.name || 'Personagem'),
+                    role: index === 0 ? 'leader' : 'companion',
+                    transportMode: option.targetMode,
+                    transportRole: 'passenger',
+                    transportAssetId: String(option.assetId || '') || null,
+                    transportLabel: option.targetMode === 'horse' ? `Carona em ${option.name}` : `Passageiro em ${option.name}`,
+                    transportOwnerId: option.targetOwnerId,
+                    transportOwnerName: option.targetOwnerName
+                });
+                continue;
+            }
+
+            const mode = ['foot', 'horse', 'carriage'].includes(option.mode) ? option.mode : 'foot';
+            const transportLabel = mode === 'foot' ? 'A pé' : String(option.name || option.label || 'Transporte');
+            travelers.push({
+                id: String(entry.owner?.id || '') || null,
+                name: String(entry.owner?.name || 'Personagem'),
+                role: index === 0 ? 'leader' : 'companion',
+                transportMode: mode,
+                transportRole: mode === 'foot' ? 'walker' : 'driver',
+                transportAssetId: String(option.assetId || '') || null,
+                transportLabel,
+                transportOwnerId: String(entry.owner?.id || '') || null,
+                transportOwnerName: String(entry.owner?.name || '')
+            });
+            units.push({
+                id: `travel-unit-${entry.ownerEntry?.key || 'campaign'}-${option.value}`,
+                mode,
+                movement: Math.max(1, Number(option.movement) || 10),
+                label: transportLabel,
+                assetId: option.assetId,
+                ownerId: String(entry.owner?.id || '') || null,
+                ownerName: String(entry.owner?.name || 'Grupo')
+            });
+        }
+
+        if (!units.length) return { ok: false, error: 'A viagem precisa de ao menos um transporte conduzido ou um personagem a pé.' };
+        return {
+            ok: true,
+            portal: false,
+            leader: assignments[0]?.ownerEntry || null,
+            units,
+            travelers,
+            transportAssetId: units.length === 1 ? units[0].assetId : null
+        };
+    }
+
+    function updateWorldTravelParticipant(input) {
+        const row = input?.closest?.('[data-travel-participant]');
+        const select = row?.querySelector?.('[data-travel-assignment]');
+        if (select) select.disabled = !input.checked;
+        row?.classList?.toggle?.('is-selected', Boolean(input?.checked));
+        const selected = root.document?.querySelectorAll?.('#worldTravelModal input[name="participantKeys"]:checked')?.length || 0;
+        const badge = root.document?.querySelector?.('#worldTravelModal .world-travel-party-heading > span');
+        if (badge) badge.textContent = `${selected} selecionado${selected === 1 ? '' : 's'}`;
         return updateWorldTravelPreview();
     }
 
-    function updateWorldTravelTransports() {
-        const selection = getTravelPlannerSelection();
-        if (!selection) return;
-        const field = selection.form.elements.transport;
-        if (field) field.innerHTML = renderTransportOptions(selection.owner, 'foot');
-        updateWorldTravelCompanions();
+    function updateWorldTravelPartyAssignment() {
+        return updateWorldTravelPreview();
     }
+
+    function updateWorldTravelCompanions() { return updateWorldTravelPreview(); }
+    function updateWorldTravelCompanionSelection() { return updateWorldTravelPreview(); }
+    function updateWorldTravelTransports() { return updateWorldTravelPreview(); }
 
     function updateWorldTravelPreview() {
         const selection = getTravelPlannerSelection();
@@ -289,29 +420,58 @@
             if (submit) submit.disabled = true;
             return null;
         }
+        const party = resolveTravelParty(selection);
+        if (!party.ok) {
+            preview.innerHTML = `<p class="world-travel-route-error">${escapeHtml(party.error || 'Revise a composição do grupo antes de continuar.')}</p>`;
+            if (submit) submit.disabled = true;
+            return null;
+        }
         const network = root.worldMap?.getRoadNetwork?.() || { nodes: root.worldRoadData?.ROAD_NODES || [], segments: root.worldRoadData?.ROAD_SEGMENTS || [] };
-        const plan = root.worldRouteEngine?.planRoute?.({
-            origin,
-            destination,
-            mode: selection.transport.mode,
-            movement: selection.transport.movement,
-            mapSettings: world.mapSettings,
-            nodes: network.nodes,
-            segments: network.segments
-        });
+        const plan = party.portal
+            ? root.worldRouteEngine?.planRoute?.({
+                origin,
+                destination,
+                mode: 'portal',
+                movement: 0,
+                mapSettings: world.mapSettings,
+                nodes: network.nodes,
+                segments: network.segments
+            })
+            : root.worldRouteEngine?.planGroupRoute?.({
+                origin,
+                destination,
+                units: party.units,
+                mapSettings: world.mapSettings,
+                nodes: network.nodes,
+                segments: network.segments
+            });
         if (!plan?.ok) {
             preview.innerHTML = `<p class="world-travel-route-error">${escapeHtml(plan?.error || 'Não foi possível calcular esta rota.')}</p>`;
             if (submit) submit.disabled = true;
             return null;
         }
-        const travelers = getSelectedTravelers(selection);
-        pendingTravelPlan = { ...plan, destinationId: destination.id, transport: { ...selection.transport }, travelerId: selection.owner?.id || null, travelerName: selection.owner?.name || '', travelers };
-        root.worldMap?.showRoutePreview?.(plan.points);
+        const leader = party.leader?.owner || null;
+        const transportLabel = party.portal
+            ? party.transportLabel
+            : party.units.length === 1
+                ? party.units[0].label
+                : `Grupo misto · ritmo de ${plan.limitingUnit?.label || 'grupo'}`;
+        pendingTravelPlan = {
+            ...plan,
+            destinationId: destination.id,
+            travelerId: String(leader?.id || '') || null,
+            travelerName: String(leader?.name || ''),
+            travelers: party.travelers,
+            transportLabel,
+            transportAssetId: party.transportAssetId || null
+        };
+        root.worldMap?.showRoutePreview?.(plan);
         const isPortal = plan.mode === 'portal';
-        const routeLabel = isPortal ? 'Sem uso de estradas' : plan.usesRoads && plan.usesOffRoad ? 'Estradas e trechos fora de estrada' : plan.usesRoads ? 'Pelas estradas' : 'Fora de estrada';
+        const routeLabel = isPortal ? 'Sem uso de estradas' : 'Somente pelas estradas';
         const durationLabel = isPortal ? '1 turno · 1 min' : (root.campaignClock?.formatDuration?.(plan.durationMinutes) || `${plan.durationMinutes} min`);
-        const travelerNames = travelers.map(entry => entry.name).join(', ');
-        preview.innerHTML = `<div class="world-travel-route-heading"><div><small>${isPortal ? 'DESLOCAMENTO INSTANTÂNEO' : 'ROTA CALCULADA POR A*'}</small><strong>${escapeHtml(origin.name)} → ${escapeHtml(destination.name)}</strong></div><b>${escapeHtml(durationLabel)}</b></div><div class="world-travel-route-stats"><span><b>${plan.distanceKm.toLocaleString('pt-BR')} km</b>Distância no mapa</span><span><b>${isPortal ? 'Portal' : `${plan.speedKmh.toLocaleString('pt-BR')} km/h`}</b>${isPortal ? 'Viagem mágica' : 'Velocidade média'}</span><span><b>${escapeHtml(routeLabel)}</b>${isPortal ? 'Destino direto' : `${plan.roadDistanceKm.toLocaleString('pt-BR')} km em estrada`}</span></div>${travelerNames ? `<p class="world-travel-party-summary"><b>Viajantes:</b> ${escapeHtml(travelerNames)}</p>` : ''}<p>Escala usada: <b>${plan.scale.kilometersPerGrid.toLocaleString('pt-BR')} km por quadrícula</b>. Alterar a calibração do mapa recalculará esta viagem.</p>`;
+        const assignments = party.travelers.map(entry => `${entry.name} — ${entry.transportLabel}`).join('; ');
+        const paceLabel = isPortal ? 'Instantâneo' : (party.units.length > 1 ? (plan.limitingUnit?.label || 'Integrante mais lento') : transportLabel);
+        preview.innerHTML = `<div class="world-travel-route-heading"><div><small>${isPortal ? 'DESLOCAMENTO INSTANTÂNEO' : 'ROTA DO GRUPO CALCULADA POR A*'}</small><strong>${escapeHtml(origin.name)} → ${escapeHtml(destination.name)}</strong></div><b>${escapeHtml(durationLabel)}</b></div><div class="world-travel-route-stats"><span><b>${plan.distanceKm.toLocaleString('pt-BR')} km</b>Distância pela rota</span><span><b>${isPortal ? 'Portal' : `${plan.speedKmh.toLocaleString('pt-BR')} km/h`}</b>${isPortal ? 'Viagem mágica' : 'Velocidade do grupo'}</span><span><b>${escapeHtml(routeLabel)}</b>${isPortal ? 'Destino direto' : `${plan.roadDistanceKm.toLocaleString('pt-BR')} km em estrada`}</span></div><p class="world-travel-party-summary"><b>Ritmo do grupo:</b> ${escapeHtml(paceLabel)}</p>${assignments ? `<p class="world-travel-assignment-summary"><b>Participantes:</b> ${escapeHtml(assignments)}</p>` : ''}<p>Escala usada: <b>${plan.scale.kilometersPerGrid.toLocaleString('pt-BR')} km por quadrícula</b>. Alterar a calibração do mapa recalculará esta viagem.</p>`;
         if (submit) submit.disabled = false;
         return pendingTravelPlan;
     }
@@ -329,11 +489,12 @@
         const current = root.worldStore?.getCurrentLocation?.();
         const npcs = (world?.npcs || []).filter(npc => !current || npc.currentLocationId === current.id);
         const owners = getTravelOwners();
-        const firstOwner = owners[0]?.owner || null;
         const modal = root.document.createElement('div');
         modal.id = 'worldTravelModal';
-        modal.className = 'session-overlay world-time-overlay';
-        modal.innerHTML = `<section class="session-dialog world-time-dialog world-travel-dialog" role="dialog" aria-modal="true"><div class="session-dialog-header"><div><small class="world-hub-kicker">DESLOCAMENTO</small><h2>Planejar viagem</h2></div><button type="button" class="session-close" onclick="closeWorldTravelPlanner()">×</button></div><p>O sistema calcula a melhor rota, mostra a duração e só avança o relógio após a confirmação do mestre.</p><form onsubmit="confirmWorldTravel(event)"><label><span>Origem</span><input value="${escapeHtml(current?.name || 'Local não definido')}" disabled></label><label><span>Destino *</span><select name="destinationId" required onchange="updateWorldTravelPreview()"><option value="">Selecione o destino</option>${renderLocationOptions(world, destinationId, current?.id, { coordinatesOnly: true })}</select></label>${owners.length ? `<div class="world-time-form-grid"><label><span>Personagem responsável</span><select name="travelerKey" onchange="updateWorldTravelTransports()">${owners.map((entry, index) => `<option value="${escapeHtml(entry.key)}"${index === 0 ? ' selected' : ''}>${escapeHtml(entry.owner.name || 'Personagem')}</option>`).join('')}</select></label><label><span>Forma de viagem</span><select name="transport" onchange="updateWorldTravelCompanions()">${renderTransportOptions(firstOwner)}</select></label></div>` : `<label><span>Forma de viagem</span><select name="transport" onchange="updateWorldTravelCompanions()">${renderTransportOptions(null)}</select></label>`}<section id="worldTravelCompanionArea"></section><section id="worldTravelRoutePreview" class="world-travel-route-preview" aria-live="polite"><p>Selecione o destino para calcular a rota.</p></section><label><span>Observação</span><textarea name="note" rows="3" maxlength="2000" placeholder="Acontecimentos ou detalhes da viagem"></textarea></label><label><span>Visibilidade</span><select name="visibility"><option value="public">Visível aos jogadores</option><option value="private">Somente mestre</option></select></label>${npcs.length ? `<fieldset class="world-time-checklist"><legend>NPCs que viajam com o grupo</legend>${npcs.map(npc => `<label><input type="checkbox" name="movedNpcIds" value="${escapeHtml(npc.id)}"><span>${escapeHtml(npc.name)}</span></label>`).join('')}</fieldset>` : ''}<label class="world-travel-confirm"><input name="confirmRoute" type="checkbox" required><span>Confirmo esta rota e o avanço automático do relógio da campanha.</span></label><div class="session-dialog-actions"><button type="button" class="session-secondary" onclick="closeWorldTravelPlanner()">Cancelar</button><button id="worldTravelConfirmButton" type="submit" class="session-primary" disabled>Concluir viagem</button></div></form></section>`;
+        const mapIsOpen = root.worldMap?.getDebugState?.().initialized === true;
+        if (mapIsOpen) root.worldMap?.toggleFilters?.(false);
+        modal.className = `session-overlay world-time-overlay${mapIsOpen ? ' world-travel-map-preview-overlay' : ''}`;
+        modal.innerHTML = `<section class="session-dialog world-time-dialog world-travel-dialog" role="dialog" aria-modal="true"><div class="session-dialog-header"><div><small class="world-hub-kicker">DESLOCAMENTO</small><h2>Planejar viagem do grupo</h2></div><button type="button" class="session-close" onclick="closeWorldTravelPlanner()">×</button></div><p>Defina todos os participantes e como cada um viajará. O grupo inteiro chega junto no ritmo do transporte mais lento. Viagens físicas exigem uma rota contínua de estradas; Portal Vertical permanece instantâneo.</p><form onsubmit="confirmWorldTravel(event)"><label><span>Origem</span><input value="${escapeHtml(current?.name || 'Local não definido')}" disabled></label><label><span>Destino *</span><select name="destinationId" required onchange="updateWorldTravelPreview()"><option value="">Selecione o destino</option>${renderLocationOptions(world, destinationId, current?.id, { coordinatesOnly: true })}</select></label>${renderTravelPartyPlanner(owners)}<section id="worldTravelRoutePreview" class="world-travel-route-preview" aria-live="polite"><p>Selecione o destino para calcular a rota.</p></section><label><span>Observação</span><textarea name="note" rows="3" maxlength="2000" placeholder="Acontecimentos ou detalhes da viagem"></textarea></label><label><span>Visibilidade</span><select name="visibility"><option value="public">Visível aos jogadores</option><option value="private">Somente mestre</option></select></label>${npcs.length ? `<fieldset class="world-time-checklist"><legend>NPCs que viajam com o grupo</legend>${npcs.map(npc => `<label><input type="checkbox" name="movedNpcIds" value="${escapeHtml(npc.id)}"><span>${escapeHtml(npc.name)}</span></label>`).join('')}</fieldset>` : ''}<label class="world-travel-confirm"><input name="confirmRoute" type="checkbox" required><span>Confirmo esta rota e o avanço automático do relógio da campanha.</span></label><div class="session-dialog-actions"><button type="button" class="session-secondary" onclick="closeWorldTravelPlanner()">Cancelar</button><button id="worldTravelConfirmButton" type="submit" class="session-primary" disabled>Concluir viagem</button></div></form></section>`;
         modal.addEventListener('click', event => { if (event.target === modal) closeWorldTimeModal('worldTravelModal'); });
         root.document.body.appendChild(modal);
         if (destinationId) updateWorldTravelPreview();
@@ -361,8 +522,8 @@
             const travel = root.worldStore?.travelToLocation?.(destinationId, {
                 departureMinute, arrivalMinute, durationMinutes: minutes,
                 transportMode: plan.mode,
-                transportLabel: plan.transport.name || plan.modeLabel,
-                transportAssetId: plan.transport.assetId,
+                transportLabel: plan.transportLabel || plan.modeLabel,
+                transportAssetId: plan.transportAssetId,
                 travelerId: plan.travelerId,
                 travelerName: plan.travelerName,
                 travelers: plan.travelers,
@@ -377,8 +538,8 @@
                 note: String(data.get('note') || '').trim(),
                 visibility: data.get('visibility') === 'private' ? 'private' : 'public'
             });
-            const travelerNames = (travel.travelers || []).map(entry => entry.name).filter(Boolean).join(', ');
-            root.addCombatHistoryEntry?.(`Viagem concluída: ${travel.fromLocationName} → ${travel.toLocationName}`, `${travel.transportLabel} · ${travel.distanceKm.toLocaleString('pt-BR')} km\nDuração: ${plan.mode === 'portal' ? '1 turno (1 min)' : (root.campaignClock?.formatDuration?.(minutes) || `${minutes} min`)}${travelerNames ? `\nViajantes: ${travelerNames}` : ''}\nChegada: ${formatCampaignMinute(arrivalMinute)}${travel.note ? `\n${travel.note}` : ''}`, { type: 'turn' });
+            const travelerAssignments = (travel.travelers || []).map(entry => `${entry.name} — ${entry.transportLabel || 'A pé'}`).filter(Boolean).join('; ');
+            root.addCombatHistoryEntry?.(`Viagem concluída: ${travel.fromLocationName} → ${travel.toLocationName}`, `${travel.transportLabel} · ${travel.distanceKm.toLocaleString('pt-BR')} km\nDuração: ${plan.mode === 'portal' ? '1 turno (1 min)' : (root.campaignClock?.formatDuration?.(minutes) || `${minutes} min`)}${travelerAssignments ? `\nParticipantes: ${travelerAssignments}` : ''}\nChegada: ${formatCampaignMinute(arrivalMinute)}${travel.note ? `\n${travel.note}` : ''}`, { type: 'turn' });
             closeWorldTimeModal('worldTravelModal');
             root.showToast?.(`🧭 O grupo chegou a ${travel.toLocationName}.`);
             root.openWorldHub?.('overview');
@@ -471,7 +632,7 @@
         apply: context => collectTemporalChanges(context, false)
     });
 
-    const api = Object.freeze({ DAY_LABELS, RECURRENCE_LABELS, timeToMinute, isScheduleActive, isMerchantOpen, getNpcActiveSchedule, locationContains, getEventOccurrenceMinutes, getRelevantRegionalEvents, collectTemporalChanges, formatCampaignMinute, hasTravelAbility, getTravelCapacity, getTransportOptions });
+    const api = Object.freeze({ DAY_LABELS, RECURRENCE_LABELS, timeToMinute, isScheduleActive, isMerchantOpen, getNpcActiveSchedule, locationContains, getEventOccurrenceMinutes, getRelevantRegionalEvents, collectTemporalChanges, formatCampaignMinute, hasTravelAbility, getTravelCapacity, getTransportOptions, getParticipantTransportOptions, resolveTravelParty });
     root.worldTime = api;
     root.openWorldTravelPlanner = openWorldTravelPlanner;
     root.closeWorldTravelPlanner = () => closeWorldTimeModal('worldTravelModal');
@@ -479,6 +640,8 @@
     root.updateWorldTravelTransports = updateWorldTravelTransports;
     root.updateWorldTravelCompanions = updateWorldTravelCompanions;
     root.updateWorldTravelCompanionSelection = updateWorldTravelCompanionSelection;
+    root.updateWorldTravelParticipant = updateWorldTravelParticipant;
+    root.updateWorldTravelPartyAssignment = updateWorldTravelPartyAssignment;
     root.updateWorldTravelPreview = updateWorldTravelPreview;
     root.openWorldRegionalEventEditor = openWorldRegionalEventEditor;
     root.closeWorldRegionalEventEditor = () => closeWorldTimeModal('worldRegionalEventModal');

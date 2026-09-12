@@ -339,17 +339,21 @@
     function formatDuration(minutes, preferredUnit = '') {
         const value = Math.max(0, Math.floor(Number(minutes) || 0));
         if (preferredUnit === 'round') return '1 rodada';
-        if (value === MINUTES_PER_DAY) return '1 dia';
-        if (value === MINUTES_PER_DAY * 8) return '8 dias';
-        if (value % MINUTES_PER_DAY === 0 && value >= MINUTES_PER_DAY) {
-            const days = value / MINUTES_PER_DAY;
-            return `${days} dias`;
+        const days = Math.floor(value / MINUTES_PER_DAY);
+        const remainingAfterDays = value % MINUTES_PER_DAY;
+        const hours = Math.floor(remainingAfterDays / MINUTES_PER_HOUR);
+        const remainingMinutes = remainingAfterDays % MINUTES_PER_HOUR;
+        const parts = [];
+
+        if (days) parts.push(`${days} dia${days === 1 ? '' : 's'}`);
+        if (hours) parts.push(`${hours} hora${hours === 1 ? '' : 's'}`);
+        if (remainingMinutes || parts.length === 0) {
+            parts.push(`${remainingMinutes} minuto${remainingMinutes === 1 ? '' : 's'}`);
         }
-        if (value % MINUTES_PER_HOUR === 0 && value >= MINUTES_PER_HOUR) {
-            const hours = value / MINUTES_PER_HOUR;
-            return `${hours} hora${hours === 1 ? '' : 's'}`;
-        }
-        return `${value} minuto${value === 1 ? '' : 's'}`;
+
+        if (parts.length === 1) return parts[0];
+        if (parts.length === 2) return `${parts[0]} e ${parts[1]}`;
+        return `${parts.slice(0, -1).join(', ')} e ${parts.at(-1)}`;
     }
 
     function getSnapshot() {

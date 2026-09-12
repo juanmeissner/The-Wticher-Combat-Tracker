@@ -41,6 +41,8 @@
         ])
     });
     const EMPTY_TILE = 'data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=';
+    const normalizedTileManifestCache = new WeakMap();
+    const tileManifestRequestCache = new Map();
 
     let activeMap = null;
     let activeOverlay = null;
@@ -55,6 +57,7 @@
     let activeRoadEditorLayer = null;
     let activeMarkerLayer = null;
     let activeRouteLayer = null;
+    let activeRoutePreviewPointCount = 0;
     let activeMarkers = new Map();
     let activeRoads = new Map();
     let activePlayerMode = false;
@@ -249,6 +252,8 @@
 
     function normalizeTileManifest(value) {
         if (!value || !Array.isArray(value.levels) || !value.levels.length) return FALLBACK_TILE_MANIFEST;
+        const cached = typeof value === 'object' ? normalizedTileManifestCache.get(value) : null;
+        if (cached) return cached;
         const levels = value.levels.map(level => ({
             zoom: Number(level.zoom),
             directory: String(level.directory || ''),
@@ -258,7 +263,7 @@
             rows: Math.max(1, Number(level.rows) || 1)
         })).filter(level => Number.isInteger(level.zoom) && level.directory);
         if (!levels.length) return FALLBACK_TILE_MANIFEST;
-        return {
+        const normalized = {
             schemaVersion: Math.max(1, Number(value.schemaVersion) || 1),
             format: String(value.format || 'webp'),
             tileSize: Math.max(1, Number(value.tileSize) || 256),
@@ -268,18 +273,28 @@
             maxNativeZoom: Math.max(...levels.map(level => level.zoom)),
             levels
         };
+        normalizedTileManifestCache.set(value, normalized);
+        normalizedTileManifestCache.set(normalized, normalized);
+        return normalized;
     }
 
     async function loadTileManifest(url = BASE_LAYER.tileManifestUrl) {
         if (typeof root.fetch !== 'function') return FALLBACK_TILE_MANIFEST;
-        try {
-            const response = await root.fetch(url, { cache: 'force-cache' });
-            if (!response.ok) throw new Error(`HTTP ${response.status}`);
-            return normalizeTileManifest(await response.json());
-        } catch (error) {
-            console.warn('Manifesto do mapa indisponível; usando configuração local segura.', error);
-            return FALLBACK_TILE_MANIFEST;
-        }
+        const cacheKey = String(url || BASE_LAYER.tileManifestUrl);
+        if (tileManifestRequestCache.has(cacheKey)) return tileManifestRequestCache.get(cacheKey);
+        const request = root.fetch(cacheKey, { cache: 'force-cache' })
+            .then(response => {
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                return response.json();
+            })
+            .then(normalizeTileManifest)
+            .catch(error => {
+                tileManifestRequestCache.delete(cacheKey);
+                console.warn('Manifesto do mapa indisponível; usando configuração local segura.', error);
+                return FALLBACK_TILE_MANIFEST;
+            });
+        tileManifestRequestCache.set(cacheKey, request);
+        return request;
     }
 
     function getTileSourceCoordinate(tileCoordinate, manifest = FALLBACK_TILE_MANIFEST) {
@@ -404,28 +419,12 @@
                     </aside>
                     ${options.playerMode === true ? '' : renderRoadEditorPanel()}
                     <div id="worldMapMarkerStatus" class="world-map-marker-status"><strong>${mappableCount}</strong> locais visíveis</div>
-                    <div id="worldMapLoading" class="world-map-loading" role="status">
-                        <span aria-hidden="true">🗺️</span>
-                        <strong>Preparando o mapa…</strong>
-                    </div>
                 </div>
                 <div class="world-map-footer">
                     <span><i class="world-map-legend-dot canonical"></i> Canônico · <i class="world-map-legend-dot cartographic"></i> Cartográfico · <i class="world-map-legend-dot custom"></i> Campanha · <i class="world-map-legend-road"></i> Estrada</span>
                     <span>Mapa: ${escapeHtml(reference.author)} · Exploração 11.5</span>
                 </div>
             </section>`;
-    }
-
-    function setLoadingState(state, message = '') {
-        const element = root.document?.getElementById?.('worldMapLoading');
-        if (!element) return;
-        element.dataset.state = state;
-        if (message) {
-            const strong = element.querySelector('strong');
-            if (strong) strong.textContent = message;
-        }
-        if (state === 'ready') element.setAttribute('hidden', '');
-        else element.removeAttribute('hidden');
     }
 
     function getMarkerStyle(location, isCurrent = false) {
@@ -451,6 +450,43 @@
 
     function formatRoadDistance(distanceKm) {
         return `${Math.round(Number(distanceKm) || 0).toLocaleString('pt-BR')} km`;
+    }
+
+    function formatRouteDistance(distanceKm) {
+        return `${Math.max(0, Number(distanceKm) || 0).toLocaleString('pt-BR', { maximumFractionDigits: 1 })} km`;
+    }
+
+    function calculateRoadDistance(fromLocationId, toLocationId, network = getActiveRoadNetwork(), reference = getDistanceReference()) {
+        const fromId = String(fromLocationId || '');
+        const toId = String(toLocationId || '');
+        if (!fromId || !toId) return Object.freeze({ ok: false, reason: 'missing-location' });
+        if (fromId === toId) return Object.freeze({ ok: true, distanceKm: 0, nodeIds: Object.freeze([]), segmentIds: Object.freeze([]) });
+
+        const nodes = Array.isArray(network?.nodes) ? network.nodes : [];
+        const segments = Array.isArray(network?.segments) ? network.segments : [];
+        const origins = nodes.filter(node => String(node.locationId || '') === fromId);
+        const destinations = nodes.filter(node => String(node.locationId || '') === toId);
+        if (!origins.length || !destinations.length) {
+            return Object.freeze({
+                ok: false,
+                reason: !origins.length ? 'origin-not-on-road' : 'destination-not-on-road'
+            });
+        }
+
+        const routes = [];
+        origins.forEach(origin => destinations.forEach(destination => {
+            const route = roads?.findShortestRoute?.(origin.id, destination.id, { nodes, segments, reference });
+            if (route) routes.push(route);
+        }));
+        if (!routes.length) return Object.freeze({ ok: false, reason: 'disconnected' });
+
+        const best = routes.sort((left, right) => Number(left.distanceKm) - Number(right.distanceKm))[0];
+        return Object.freeze({
+            ok: true,
+            distanceKm: Math.round((Number(best.distanceKm) || 0) * 10) / 10,
+            nodeIds: Object.freeze([...(best.nodeIds || [])]),
+            segmentIds: Object.freeze([...(best.segmentIds || [])])
+        });
     }
 
     function renderRoadPopup(segment) {
@@ -947,6 +983,13 @@
         const summary = description.length > 240 ? `${description.slice(0, 237).trim()}…` : description;
         const identifier = escapeHtml(JSON.stringify(location.id));
         const context = getLocationContext(activeWorld, location.id, { includePrivate: !activePlayerMode });
+        const current = (activeWorld?.locations || []).find(entry => entry.id === activeWorld?.currentLocationId) || null;
+        const roadDistance = current ? calculateRoadDistance(current.id, location.id) : null;
+        const distanceContent = !current
+            ? '<span class="world-map-popup-distance-icon">⌁</span><div><small>DISTÂNCIA PELA ESTRADA</small><strong>Local atual não definido</strong><em>Defina onde o grupo está para calcular a rota.</em></div>'
+            : roadDistance?.ok
+                ? `<span class="world-map-popup-distance-icon">${roadDistance.distanceKm === 0 ? '📍' : '⌁'}</span><div><small>DISTÂNCIA PELA ESTRADA</small><strong>${roadDistance.distanceKm === 0 ? 'Você está aqui' : escapeHtml(formatRouteDistance(roadDistance.distanceKm))}</strong><em>${roadDistance.distanceKm === 0 ? escapeHtml(location.name) : `${escapeHtml(current.name)} → ${escapeHtml(location.name)} · menor rota viária`}</em></div>`
+                : `<span class="world-map-popup-distance-icon">⚠</span><div><small>DISTÂNCIA PELA ESTRADA</small><strong>Rota indisponível</strong><em>${roadDistance?.reason === 'destination-not-on-road' ? 'Este local ainda não está ligado à rede viária.' : roadDistance?.reason === 'origin-not-on-road' ? 'O local atual ainda não está ligado à rede viária.' : 'Não existe uma estrada contínua entre estes locais.'}</em></div>`;
         return `<article class="world-map-popup">
             <small>${escapeHtml(getLayerLabel(layer).toUpperCase())}${location.visibility === 'private' ? ' · SOMENTE MESTRE' : ''}</small>
             <strong>${escapeHtml(location.name)}</strong>
@@ -956,6 +999,7 @@
                 ${location.cartographicConfidence ? `<b>Confiabilidade ${escapeHtml(getConfidenceLabel(location.cartographicConfidence))}</b>` : ''}
                 ${path.length > 1 ? `<em>${escapeHtml(path.map(entry => entry.name).join(' › '))}</em>` : ''}
             </div>
+            <div class="world-map-popup-distance${roadDistance?.ok ? ' is-available' : ''}">${distanceContent}</div>
             ${(context.npcs.length || context.merchants.length || context.events.length) ? `<div class="world-map-popup-context" aria-label="Conteúdo vinculado ao local">
                 ${context.npcs.length ? `<button type="button" onclick="worldMap.openContext('npcs', ${identifier})"><span>🧑</span><b>${context.npcs.length}</b> NPC${context.npcs.length === 1 ? '' : 's'}</button>` : ''}
                 ${context.merchants.length ? `<button type="button" onclick="worldMap.openContext('merchants', ${identifier})"><span>🏪</span><b>${context.merchants.length}</b> loja${context.merchants.length === 1 ? '' : 's'}</button>` : ''}
@@ -986,7 +1030,7 @@
             const isCurrent = location.id === activeWorld.currentLocationId;
             const marker = root.L.circleMarker([coordinate.lat, coordinate.lng], getMarkerStyle(location, isCurrent));
             marker.bindTooltip(escapeHtml(location.name), { direction: 'top', offset: [0, -7], opacity: 0.96 });
-            marker.bindPopup(renderMarkerPopup(location), { className: 'world-map-popup-shell', maxWidth: 320, minWidth: 230 });
+            marker.bindPopup(() => renderMarkerPopup(location), { className: 'world-map-popup-shell', maxWidth: 340, minWidth: 250 });
             marker.addTo(activeMarkerLayer);
             activeMarkers.set(location.id, marker);
         });
@@ -1108,25 +1152,63 @@
 
     function clearRoutePreview() {
         activeRouteLayer?.clearLayers?.();
+        activeRoutePreviewPointCount = 0;
     }
 
-    function showRoutePreview(points = []) {
+    function showRoutePreview(route = []) {
         clearRoutePreview();
-        if (!activeMap || !activeRouteLayer || !Array.isArray(points) || points.length < 2) return false;
+        const plan = Array.isArray(route) ? { points: route, mode: 'foot' } : (route || {});
+        const points = Array.isArray(plan.points) ? plan.points : [];
+        if (!activeMap || !activeRouteLayer || points.length < 2) return false;
         const coordinates = points.map(pixelToMapCoordinate).filter(Boolean);
         if (coordinates.length < 2) return false;
-        const line = root.L.polyline(coordinates.map(point => [point.lat, point.lng]), {
+        activeMap.closePopup?.();
+        const latLngs = coordinates.map(point => [point.lat, point.lng]);
+        const isPortal = plan.mode === 'portal';
+        root.L.polyline(latLngs, {
             pane: 'worldRoutePane',
-            color: '#22d3ee',
-            weight: 5,
-            opacity: 0.96,
-            dashArray: '12 8',
+            color: '#082f49',
+            weight: 10,
+            opacity: 0.9,
+            dashArray: isPortal ? '14 10' : null,
+            lineCap: 'round',
+            lineJoin: 'round',
+            interactive: false,
+            className: 'world-route-preview-casing'
+        }).addTo(activeRouteLayer);
+        const line = root.L.polyline(latLngs, {
+            pane: 'worldRoutePane',
+            color: isPortal ? '#c084fc' : '#22d3ee',
+            weight: 6,
+            opacity: 1,
+            dashArray: isPortal ? '14 10' : null,
             lineCap: 'round',
             lineJoin: 'round',
             interactive: false,
             className: 'world-route-preview-line'
         }).addTo(activeRouteLayer);
-        activeMap.fitBounds(line.getBounds(), { animate: true, padding: [54, 54], maxZoom: 0.5 });
+        const endpointStyle = {
+            pane: 'worldRoutePane',
+            radius: 7,
+            color: '#e0f2fe',
+            weight: 3,
+            fillColor: isPortal ? '#a855f7' : '#0284c7',
+            fillOpacity: 1,
+            interactive: false,
+            className: 'world-route-preview-endpoint'
+        };
+        root.L.circleMarker(latLngs[0], endpointStyle).addTo(activeRouteLayer);
+        root.L.circleMarker(latLngs[latLngs.length - 1], endpointStyle).addTo(activeRouteLayer);
+        activeRoutePreviewPointCount = coordinates.length;
+        const viewportWidth = Number(root.document?.documentElement?.clientWidth) || 0;
+        const plannerBesideMap = viewportWidth >= 900
+            && root.document?.getElementById?.('worldTravelModal')?.classList?.contains?.('world-travel-map-preview-overlay');
+        activeMap.fitBounds(line.getBounds(), {
+            animate: true,
+            paddingTopLeft: [54, 54],
+            paddingBottomRight: [plannerBesideMap ? Math.min(580, viewportWidth * 0.46) : 54, 54],
+            maxZoom: 0.5
+        });
         return true;
     }
 
@@ -1146,11 +1228,10 @@
         const container = root.document?.getElementById?.(options.containerId || 'worldInteractiveMap');
         if (!container) return null;
         if (!L?.map || !L?.CRS?.Simple || !L?.TileLayer?.extend) {
-            setLoadingState('error', 'O mecanismo do mapa não pôde ser carregado.');
+            root.showToast?.('O mecanismo do mapa não pôde ser carregado.');
             return null;
         }
 
-        setLoadingState('loading', 'Carregando os blocos do mapa…');
         const manifest = normalizeTileManifest(options.manifest || await loadTileManifest(options.manifestUrl));
         if (revision !== initializationRevision || !container.isConnected) return null;
 
@@ -1174,7 +1255,10 @@
             dragging: true,
             touchZoom: true,
             doubleClickZoom: true,
-            scrollWheelZoom: true
+            scrollWheelZoom: true,
+            preferCanvas: true,
+            fadeAnimation: false,
+            markerZoomAnimation: false
         });
 
         const ContinentTileLayer = L.TileLayer.extend({
@@ -1192,8 +1276,11 @@
             maxNativeZoom: manifest.maxNativeZoom,
             minZoom: -5,
             maxZoom: 1.5,
-            keepBuffer: 2,
+            keepBuffer: 1,
+            updateWhenIdle: true,
             updateWhenZooming: false,
+            updateInterval: 250,
+            detectRetina: false,
             errorTileUrl: EMPTY_TILE,
             className: 'world-map-tile'
         });
@@ -1201,8 +1288,7 @@
             tileErrors += 1;
         });
         activeOverlay.once('load', () => {
-            if (tileErrors) setLoadingState('error', 'Alguns blocos do mapa não puderam ser carregados.');
-            else setLoadingState('ready');
+            if (tileErrors) console.warn(`${tileErrors} bloco(s) do mapa não puderam ser carregados.`);
         });
         activeOverlay.addTo(activeMap);
         activeWorld = options.world || root.worldStore?.getWorld?.() || { locations: [] };
@@ -1259,6 +1345,7 @@
         activeRoadEditorLayer = null;
         activeMarkerLayer = null;
         activeRouteLayer = null;
+        activeRoutePreviewPointCount = 0;
         activeMarkers = new Map();
         activeRoads = new Map();
         activePlayerMode = false;
@@ -1301,6 +1388,8 @@
             roadEditorOpen: roadEditorState.open,
             roadEditorMode: roadEditorState.mode,
             playerMode: activePlayerMode,
+            routePreviewActive: activeRoutePreviewPointCount >= 2,
+            routePreviewPointCount: activeRoutePreviewPointCount,
             rememberedView: rememberedView ? { center: [...rememberedView.center], zoom: rememberedView.zoom } : null
         };
     }
@@ -1316,6 +1405,7 @@
         getLocationPath,
         getLocationScopeIds,
         getLocationContext,
+        calculateRoadDistance,
         getLocationLayer,
         getLocationType,
         getLocationTypeLabel,

@@ -123,7 +123,10 @@ function mergeCustomLibrary() {
 }
 
 function persistCharacterSheets() {
-    localStorage.setItem(CHARACTER_SHEETS_KEY, JSON.stringify(characterSheets));
+    const serialized = JSON.stringify(characterSheets);
+    if (localStorage.getItem(CHARACTER_SHEETS_KEY) === serialized) return false;
+    localStorage.setItem(CHARACTER_SHEETS_KEY, serialized);
+    return true;
 }
 
 function syncCharacterSheetBirthday(sheet) {
@@ -570,6 +573,7 @@ function syncCombatantsToCharacterSheets() {
         .filter(combatant => combatant.type === 'player' && combatant.characterPersistence !== 'combat-only')
         .forEach(combatant => {
         let sheet = characterSheets.find(entry => entry.id === combatant.sheetId);
+        let createdSheet = false;
 
         if (!sheet) {
             sheet = characterSheets.find(entry => entry.name.trim().toLowerCase() === combatant.name.trim().toLowerCase());
@@ -578,47 +582,42 @@ function syncCombatantsToCharacterSheets() {
         if (!sheet) {
             sheet = buildSheetFromCombatant(combatant);
             characterSheets.push(sheet);
-            changed = true;
+            createdSheet = true;
         }
+
+        const previousFingerprint = createdSheet ? '' : getCharacterSheetSyncFingerprint(sheet);
 
         const combatantHasFoundation = combatant.creationMode === 'quick'
             || combatant.creationMode === 'full';
 
         if (!combatantHasFoundation || (sheet.creationMode === 'full' && combatant.creationMode !== 'full')) {
             copyCharacterFoundation(combatant, sheet);
-            changed = true;
         } else {
             copyCharacterFoundation(sheet, combatant);
         }
 
         if (combatant.sheetId !== sheet.id) {
             combatant.sheetId = sheet.id;
-            changed = true;
         }
 
         if (!Array.isArray(combatant.inventory)) {
             combatant.inventory = cloneEnhancementData(sheet.inventory || []);
-            changed = true;
         }
 
         if (!Array.isArray(combatant.abilities)) {
             combatant.abilities = cloneEnhancementData(sheet.abilities || []);
-            changed = true;
         }
 
         if (!Number.isFinite(Number(combatant.expandedMagic))) {
             combatant.expandedMagic = Math.max(0, Number(sheet.expandedMagic) || 0);
-            changed = true;
         }
 
         if (!combatant.equipment || typeof combatant.equipment !== 'object') {
             combatant.equipment = cloneEnhancementData(sheet.equipment || {});
-            changed = true;
         }
 
         if (!combatant.transport || typeof combatant.transport !== 'object') {
             combatant.transport = cloneEnhancementData(sheet.transport || {});
-            changed = true;
         }
 
         window.ensureEquipmentLoadout?.(combatant);
@@ -645,13 +644,23 @@ function syncCombatantsToCharacterSheets() {
             transport: cloneEnhancementData(combatant.transport || {}),
             careState: cloneEnhancementData(window.serializeCareState?.(combatant) || combatant.careState || null),
             criticalWounds: cloneEnhancementData(combatant.criticalWounds || []),
-            criticalWoundBaseResources: cloneEnhancementData(combatant.criticalWoundBaseResources || null),
-            updatedAt: new Date().toISOString()
+            criticalWoundBaseResources: cloneEnhancementData(combatant.criticalWoundBaseResources || null)
         });
-        changed = true;
+
+        if (createdSheet || previousFingerprint !== getCharacterSheetSyncFingerprint(sheet)) {
+            sheet.updatedAt = new Date().toISOString();
+            changed = true;
+        }
     });
 
     if (changed) persistCharacterSheets();
+}
+
+function getCharacterSheetSyncFingerprint(sheet) {
+    if (!sheet || typeof sheet !== 'object') return '';
+    const comparable = { ...sheet };
+    delete comparable.updatedAt;
+    return JSON.stringify(comparable);
 }
 
 function syncActiveSheetCollections() {
@@ -664,10 +673,13 @@ function syncActiveSheetCollections() {
 
     if (!activeSheet) return;
 
+    const previousFingerprint = getCharacterSheetSyncFingerprint(activeSheet);
     activeSheet.inventory = cloneEnhancementData(inventory);
     activeSheet.abilities = cloneEnhancementData(abilitiesInventory);
-    activeSheet.updatedAt = new Date().toISOString();
-    persistCharacterSheets();
+    if (previousFingerprint !== getCharacterSheetSyncFingerprint(activeSheet)) {
+        activeSheet.updatedAt = new Date().toISOString();
+        persistCharacterSheets();
+    }
 }
 
 function buildCharacterSheetRecord(foundation = {}, overrides = {}) {

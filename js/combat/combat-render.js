@@ -125,6 +125,34 @@
         `;
     }
 
+    function getCombatListNodeKey(node) {
+        return node?.dataset?.combatListKey || '';
+    }
+
+    function reconcileCombatList(container, fragment) {
+        const nextNodes = Array.from(fragment.children);
+
+        nextNodes.forEach((nextNode, index) => {
+            const key = getCombatListNodeKey(nextNode);
+            const currentNode = container.children[index] || null;
+
+            if (currentNode && getCombatListNodeKey(currentNode) === key) {
+                if (!currentNode.isEqualNode(nextNode)) container.replaceChild(nextNode, currentNode);
+                return;
+            }
+
+            const matchingNode = Array.from(container.children)
+                .slice(index + 1)
+                .find(node => getCombatListNodeKey(node) === key && node.isEqualNode(nextNode));
+
+            container.insertBefore(matchingNode || nextNode, currentNode);
+        });
+
+        while (container.children.length > nextNodes.length) {
+            container.lastElementChild?.remove();
+        }
+    }
+
     function renderList(shouldScroll = false) {
         const container = document.getElementById('combatList');
         updateActiveTurnName();
@@ -153,6 +181,7 @@
             if (isEliminated && !printedDivider) {
                 const divider = document.createElement('div');
                 divider.className = "eliminated-divider flex items-center gap-4 my-4 cursor-pointer hover:opacity-80 transition-opacity py-2 bg-slate-800/20 rounded-lg";
+                divider.dataset.combatListKey = 'eliminated-divider';
                 divider.innerHTML = `
                     <div class="h-px bg-slate-700 flex-1"></div>
                     <span class="text-slate-500 text-xs font-bold uppercase tracking-widest flex items-center gap-2">
@@ -415,6 +444,7 @@
             const wrapper = document.createElement('div');
 
             wrapper.className = "combat-wrapper";
+            wrapper.dataset.combatListKey = `combatant-${c.id}`;
             
             wrapper.appendChild(card);
 
@@ -470,7 +500,7 @@
             fragment.appendChild(wrapper);
         });
 
-        container.replaceChildren(fragment);
+        reconcileCombatList(container, fragment);
         document.getElementById('roundCounter').innerText = round;
         if (shouldScroll) {
             const activeCard = container.querySelector('.active-turn');

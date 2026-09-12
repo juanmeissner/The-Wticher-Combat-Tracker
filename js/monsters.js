@@ -135,9 +135,9 @@ function filterPresetMonsters() {
                 .includes(search)
         );
 
-    filtered.forEach(monster => {
+    container.innerHTML = filtered.map(monster => {
 
-        container.innerHTML += `
+        return `
 
         <button
     
@@ -193,7 +193,7 @@ function filterPresetMonsters() {
     
         </button>
     `;
-    });
+    }).join('');
 }
 
 function toggleMonsterLore(type) {

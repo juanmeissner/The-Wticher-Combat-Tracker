@@ -44,9 +44,9 @@ function renderAbilities() {
         return;
     }
 
-    abilitiesInventory.forEach(ability => {
+    container.innerHTML = abilitiesInventory.map(ability => {
 
-        container.innerHTML += `
+        return `
 
             <div
 
@@ -100,7 +100,7 @@ function renderAbilities() {
 
 </div>
         `;
-    });
+    }).join('');
 }
 
 function addAbility(abilityId) {

@@ -92,6 +92,10 @@ assert.equal(clock.getDayNumber(), 1);
 assert.equal(clock.formatDuration(10), '10 minutos');
 assert.equal(clock.formatDuration(60), '1 hora');
 assert.equal(clock.formatDuration(1440), '1 dia');
+assert.equal(clock.formatDuration(443), '7 horas e 23 minutos');
+assert.equal(clock.formatDuration(1500), '1 dia e 1 hora');
+assert.equal(clock.formatDuration(1603), '1 dia, 2 horas e 43 minutos');
+assert.equal(clock.formatDuration(2881), '2 dias e 1 minuto');
 assert.equal(clock.formatDuration(4, 'round'), '1 rodada');
 
 const reminder = clock.upsertEvent({
@@ -224,7 +228,7 @@ assert.match(sessionSource, /window\.campaignClock\?\.restoreSnapshot/);
 assert.match(sessionSource, /advanceByMinutes\?\.\(1, \{ source: 'combat-turn' \}\)/);
 assert.match(sessionSource, /time: \{ icon: '🕰️', label: 'Tempo' \}/);
 assert.match(appInitSource, /'dnd_campaign_clock'/);
-assert.match(workerSource, /witcher-combat-tracker-v146/);
+assert.match(workerSource, /witcher-combat-tracker-v153/);
 assert.match(workerSource, /js\/campaign-timeline-data\.js/);
 assert.match(indexSource, /js\/campaign-timeline-data\.js[\s\S]+js\/campaign-clock\.js/);
 assert.match(workerSource, /js\/campaign-daily-processing\.js/);

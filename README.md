@@ -218,6 +218,7 @@ Na criação e edição da ficha completa, a identidade mostra a data atual da c
 - cada troca de participante avança exatamente **1 minuto**, inclusive em turnos de monstros e NPCs;
 - uma rodada equivale à quantidade de participantes vivos em minutos;
 - atalhos permitem avançar **1 rodada, 10 minutos, 1 hora, 8 horas, 1 dia** ou um período personalizado;
+- durações são apresentadas de forma legível e combinada, convertendo automaticamente minutos em dias, horas e minutos — por exemplo, `443 minutos` aparece como **7 horas e 23 minutos**;
 - todo avanço manual apresenta a data anterior e a nova antes da confirmação;
 - o histórico cria uma ação agrupada, com período, horários e dia resultante;
 - o relógio faz parte do estado de Desfazer, dos backups completos e da restauração do aplicativo;
@@ -289,6 +290,8 @@ A aba **Mapa** transforma a imagem completa do Continente em uma área cartográ
 - a imagem original foi dividida em **257 blocos WebP de 256 × 256**, distribuídos por cinco níveis de detalhe entre o zoom `-4` e a resolução nativa `0`;
 - o conjunto completo ocupa aproximadamente **3,55 MiB**, enquanto a imagem PNG original de 16 MiB permanece preservada como fonte;
 - somente os blocos visíveis são requisitados, evitando carregar o mapa inteiro quando o usuário observa apenas uma região;
+- o mapa não bloqueia mais a navegação com um aviso central de carregamento: os blocos aparecem progressivamente conforme ficam disponíveis;
+- movimentos e zoom aguardam o fim do gesto antes de requisitar novos blocos, mantendo somente uma faixa pequena ao redor da área visível;
 - os níveis de visão geral são pré-armazenados pela PWA, e os detalhes visitados entram progressivamente no cache offline;
 - um manifesto versionado descreve dimensões, formato, níveis, colunas e linhas da pirâmide;
 - os **126 pontos somente cartográficos** e **60 locais canônicos posicionados** usam coordenadas percentuais derivadas da resolução original de **2880 × 4096**, totalizando **186 marcadores oficiais** antes das criações do mestre;
@@ -332,17 +335,21 @@ O gerador cria tudo em uma área temporária e somente substitui a pirâmide ant
 
 #### 🧭 Calendário, viagens e eventos regionais
 
-A aba **Agenda** conecta o Mundo ao relógio da campanha. O Mestre escolhe o destino, o personagem de referência, a forma de viagem e os NPCs acompanhantes. O aplicativo calcula a rota e exige confirmação explícita antes de avançar o tempo uma única vez, mudar o local atual e registrar o deslocamento.
+A aba **Agenda** conecta o Mundo ao relógio da campanha. O Mestre escolhe o destino e organiza, em um único modal, todos os personagens jogadores e a forma de viagem de cada um. O aplicativo calcula a rota coletiva e exige confirmação explícita antes de avançar o tempo uma única vez, mudar o local atual e registrar o deslocamento.
 
 - viagens podem ser feitas **a pé**, **a cavalo**, por **carruagem/veículo** ou através da magia **Portal Vertical**, desde que o recurso esteja disponível na ficha selecionada;
-- cavalos levam o responsável e até um passageiro adicional, enquanto carroças e carruagens permitem selecionar todos os demais personagens que acompanharão a viagem;
+- cada participante pode caminhar, conduzir seu próprio cavalo ou veículo, pegar carona no cavalo de outro personagem ou viajar como passageiro em uma carroça/carruagem;
+- cavalos levam o cavaleiro e até um passageiro adicional; o sistema impede caronas sem o condutor selecionado e bloqueia mais de uma carona no mesmo cavalo;
+- carroças e carruagens permitem acomodar todo o grupo, desde que o personagem responsável também esteja selecionado e conduzindo aquele veículo;
+- grupos mistos chegam juntos e usam sempre a velocidade do integrante ou transporte mais lento; a presença de uma carruagem também restringe todo o trajeto a estradas compatíveis com veículos;
 - o Portal Vertical pode transportar o conjurador e qualquer combinação de personagens selecionados diretamente ao destino em **1 turno (1 minuto)**, sem depender da rede de estradas;
-- caminhada e cavalo podem combinar estradas com trechos fora de estrada, escolhendo o percurso de menor duração;
+- viagens físicas a pé, a cavalo ou em veículos só podem ser planejadas quando origem e destino estiverem ligados por uma rota contínua da rede de estradas;
 - carruagens utilizam somente trechos contínuos marcados como compatíveis e ficam indisponíveis quando não existem animais atrelados, Movimento ou conexão viária;
-- o cálculo considera tipo de estrada, distância, velocidade-base do meio de transporte e Movimento atual da montaria ou veículo;
-- a prévia apresenta a linha da rota no mapa, quilômetros totais, parcela em estrada, velocidade média, duração e escala utilizada;
+- o cálculo considera tipo de estrada, distância, velocidade-base, Movimento individual das montarias e veículos e a composição completa do grupo;
+- a prévia destaca sobre o mapa todo o traçado viário escolhido pelo A*, com contorno, pontos de origem e destino, quilômetros totais, velocidade média, duração e escala utilizada;
+- o popup de cada local calcula sob demanda a menor distância pela estrada desde o local atual, sem usar distância em linha reta; locais sem ligação ou em redes separadas são identificados como rota indisponível;
 - o popup de qualquer marcador público oferece ao Mestre um atalho para planejar a viagem até aquele ponto;
-- a viagem salva meio de transporte, personagem responsável, comitiva selecionada, montaria ou veículo, algoritmo da rota, distância, escala, partida e chegada no histórico da campanha;
+- a viagem salva a atribuição de transporte de cada participante, condutores, passageiros, montarias ou veículos, integrante limitante, algoritmo da rota, distância, escala, partida e chegada no histórico da campanha;
 - concluir a viagem avança o relógio e aciona normalmente eventos regionais, horários de NPCs, abertura e reposição de lojas e demais efeitos temporais;
 
 - eventos podem pertencer ao Continente inteiro, a um reino, província ou local e repetir uma vez, diariamente, semanalmente ou anualmente;
@@ -1065,7 +1072,7 @@ O **backup JSON completo** reúne toda a campanha. Para compartilhar somente um 
 | Camada | Tecnologia |
 |---|---|
 | Estrutura | HTML5 semântico |
-| Interface | CSS3, Tailwind CSS e layout responsivo próprio |
+| Interface | CSS3, Tailwind CSS pré-compilado e layout responsivo próprio |
 | Aplicação | JavaScript Vanilla organizado por domínio |
 | Persistência | LocalStorage, IndexedDB e backups JSON |
 | PWA | Web App Manifest, Service Worker e Cache API |
@@ -1073,15 +1080,23 @@ O **backup JSON completo** reúne toda a campanha. Para compartilhar somente um 
 | Exportação | SheetJS para arquivos Excel |
 | Compatibilidade | APIs modernas de navegador, UTF-8, safe areas e modo standalone |
 
-O projeto não exige framework JavaScript, bundler ou etapa de compilação.
+O aplicativo distribuído não exige framework JavaScript nem compilação para ser executado. Ao adicionar ou remover classes utilitárias do Tailwind, gere novamente o arquivo estático com `npm install` e `npm run build:css` antes de publicar.
 
 ### Desempenho e carregamento
 
 Para manter o Combat Tracker responsivo mesmo com campanhas grandes, os recursos mais pesados são ativados somente quando necessários:
 
 - Leaflet, o mapa interativo, o editor e o grafo completo de estradas são carregados ao abrir o mapa ou planejar uma viagem;
+- o manifesto da pirâmide do mapa é carregado e normalizado uma única vez por sessão, evitando novas leituras e reconstruções a cada bloco ou reabertura;
+- estradas, entroncamentos e marcadores utilizam renderização em Canvas, reduzindo a quantidade de elementos visuais mantidos pelo navegador;
+- os blocos cartográficos são atualizados somente ao concluir movimentos e zoom, com uma margem mínima de pré-carregamento ao redor da tela;
 - a biblioteca de planilhas é carregada somente ao exportar habilidades para Excel;
-- os cards do combate são preparados fora da tela e inseridos em um único lote, reduzindo recálculos visuais e tremores durante a atualização;
+- o Tailwind é pré-compilado em um CSS estático pequeno, eliminando a compilação de estilos e a dependência do CDN durante a abertura;
+- a interface usa fontes do próprio sistema operacional, evitando uma requisição externa de fonte no carregamento inicial;
+- os cards do combate são preparados fora da tela e reconciliados individualmente, preservando os participantes que não mudaram e reduzindo recálculos visuais e tremores;
+- listas extensas de inventário, habilidades, catálogo de itens e bestiário são compostas em memória e inseridas no DOM uma única vez;
+- snapshots online com alterações somente em combate, inventário ou habilidades atualizam apenas a área correspondente;
+- fichas sem alterações não são serializadas novamente no armazenamento nem geram checkpoints desnecessários;
 - os recursos carregados sob demanda continuam incluídos no cache da PWA, preservando o uso offline após a instalação.
 
 ## 🗂️ Organização do código
@@ -1226,7 +1241,8 @@ Os testes verificam o isolamento entre personagens, a migração e o backup do a
 - [x] Georreferência aproximada de 59 locais canônicos e atalhos contextuais para NPCs, lojas e eventos
 - [x] Rede viária vetorial com trechos, entroncamentos, distâncias, visibilidade alternável e restrição de carruagens
 - [x] Editor de estradas exclusivo do Mestre com vértices arrastáveis, novos trechos, encaixe de nós, JSON e restauração segura
-- [x] Rotas A* com viagem a pé, cavalo e carruagem, trechos fora de estrada, duração e confirmação do Mestre
+- [x] Rotas A* com viagem a pé, cavalo e carruagem exclusivamente por estradas conectadas, traçado visual, duração e confirmação do Mestre
+- [x] Planejamento coletivo com transporte por participante, carona em cavalos, passageiros em veículos e chegada conjunta pelo ritmo mais lento
 - [x] Escala de quilômetros editável por campanha sem alterar a geometria do mapa
 - [x] Criação, edição, privacidade e exclusão segura de locais personalizados por campanha
 - [x] NPCs por campanha com profissão, facção, relacionamento, dados públicos, notas privadas e histórico de deslocamentos

@@ -603,8 +603,31 @@
     font-weight: 900;
 }
 
+.world-route-preview-casing {
+    filter: drop-shadow(0 1px 3px rgba(2, 8, 23, .9));
+}
+
 .world-route-preview-line {
-    filter: drop-shadow(0 0 4px rgba(34, 211, 238, .75));
+    filter: drop-shadow(0 0 5px rgba(34, 211, 238, .9));
+}
+
+.world-route-preview-endpoint {
+    filter: drop-shadow(0 0 5px rgba(14, 165, 233, .95));
+}
+
+@media (min-width: 900px) {
+    .world-travel-map-preview-overlay {
+        align-items: stretch;
+        justify-content: flex-end;
+        padding: 16px 18px;
+        background: rgba(2, 6, 23, .42);
+    }
+
+    .world-travel-map-preview-overlay .world-travel-dialog {
+        width: min(520px, 42vw);
+        max-height: calc(100dvh - 32px);
+        margin: 0;
+    }
 }
 
 .world-map-filter-actions {
@@ -782,6 +805,54 @@
     font-style: normal;
 }
 
+.world-map-popup-distance {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    gap: 8px;
+    margin: 4px 0 2px;
+    padding: 8px 9px;
+    border: 1px solid #475569;
+    border-radius: 9px;
+    background: rgba(15, 23, 42, .88);
+}
+
+.world-map-popup-distance.is-available {
+    border-color: rgba(14, 165, 233, .58);
+    background: rgba(7, 89, 133, .22);
+}
+
+.world-map-popup-distance-icon {
+    color: #38bdf8;
+    font-size: 1rem;
+}
+
+.world-map-popup-distance > div {
+    display: grid;
+    min-width: 0;
+    gap: 1px;
+}
+
+.world-map-popup-distance small {
+    color: #7dd3fc;
+    font-size: .52rem;
+    font-weight: 900;
+    letter-spacing: .06em;
+}
+
+.world-map-popup-distance strong {
+    color: #f8fafc;
+    font-size: .78rem;
+}
+
+.world-map-popup-distance em {
+    color: #94a3b8;
+    font-size: .58rem;
+    font-style: normal;
+    line-height: 1.3;
+    overflow-wrap: anywhere;
+}
+
 .world-road-popup-route {
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
@@ -940,28 +1011,6 @@
 .world-interactive-map .leaflet-control-attribution {
     background: rgba(2, 6, 23, .78);
     color: #cbd5e1;
-}
-
-.world-map-loading {
-    position: absolute;
-    inset: 50% auto auto 50%;
-    z-index: 450;
-    display: flex;
-    align-items: center;
-    gap: 9px;
-    max-width: calc(100% - 32px);
-    transform: translate(-50%, -50%);
-    padding: 11px 14px;
-    border: 1px solid #334155;
-    border-radius: 12px;
-    background: rgba(15, 23, 42, .94);
-    color: #f8fafc;
-    white-space: nowrap;
-}
-
-.world-map-loading[data-state="error"] {
-    border-color: #be123c;
-    color: #fecdd3;
 }
 
 .world-map-footer {

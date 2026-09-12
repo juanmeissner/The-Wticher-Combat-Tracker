@@ -112,7 +112,7 @@ test('Fundação do Mundo é carregada e distribuída no cache offline', () => {
     const indexSource = fs.readFileSync(path.join(projectRoot, 'index.html'), 'utf8');
     const workerSource = fs.readFileSync(path.join(projectRoot, 'js', 'service-worker.js'), 'utf8');
     assert.match(indexSource, /world\/world-model\.js[\s\S]+world\/world-atlas-data\.js[\s\S]+world\/world-location-data\.js[\s\S]+world\/world-cartographic-data\.js[\s\S]+world\/world-history-data\.js[\s\S]+campaign\/campaign-migrations\.js[\s\S]+campaign\/campaign-store\.js[\s\S]+world\/world-store\.js/);
-    assert.match(workerSource, /witcher-combat-tracker-v146/);
+    assert.match(workerSource, /witcher-combat-tracker-v153/);
     assert.match(workerSource, /world\/world-model\.js/);
     assert.match(workerSource, /world\/world-atlas-data\.js/);
     assert.match(workerSource, /world\/world-location-data\.js/);

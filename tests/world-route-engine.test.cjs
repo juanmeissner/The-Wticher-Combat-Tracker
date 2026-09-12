@@ -7,6 +7,7 @@ const projectRoot = path.resolve(__dirname, '..');
 const roads = require('../js/world/world-road-data.js');
 const routeEngine = require('../js/world/world-route-engine.js');
 const worldModel = require('../js/world/world-model.js');
+const worldTime = require('../js/world/world-time.js');
 
 function node(id, x, y, locationId = null) {
     return { id, name: id, point: { x, y }, type: 'location', locationId };
@@ -68,7 +69,11 @@ test('pé, cavalo, carruagem e Portal Vertical respeitam suas regras de deslocam
     const portal = routeEngine.planRoute({ ...input, mode: 'portal', movement: 0 });
     assert.equal(foot.algorithm, 'astar');
     assert.equal(foot.usesRoads, true);
+    assert.equal(foot.usesOffRoad, false);
+    assert.equal(foot.offRoadDistanceKm, 0);
     assert.ok(horse.durationMinutes < foot.durationMinutes);
+    assert.equal(horse.usesRoads, true);
+    assert.equal(horse.usesOffRoad, false);
     assert.equal(carriage.ok, true);
     assert.equal(carriage.offRoadDistanceKm, 0);
     assert.deepEqual(carriage.segmentIds, ['ab', 'bc']);
@@ -85,6 +90,109 @@ test('pé, cavalo, carruagem e Portal Vertical respeitam suas regras de deslocam
     });
     assert.equal(blocked.ok, false);
     assert.match(blocked.error, /carruagem/i);
+});
+
+test('viagens físicas são bloqueadas quando os locais não possuem uma estrada contínua', () => {
+    const isolatedNodes = [...nodes, node('isolated', 520, 420, 'isolated')];
+    const input = {
+        origin: location('origin', 100, 100),
+        destination: location('isolated', 520, 420),
+        nodes: isolatedNodes,
+        segments,
+        mapSettings: { pixelsPerGrid: 576, kilometersPerGrid: 100 }
+    };
+
+    for (const mode of ['foot', 'horse', 'carriage']) {
+        const result = routeEngine.planRoute({ ...input, mode, movement: 10 });
+        assert.equal(result.ok, false, `${mode} não deve criar uma linha direta fora das estradas`);
+        assert.match(result.error, /rota contínua/i);
+    }
+
+    const portal = routeEngine.planRoute({ ...input, mode: 'portal' });
+    assert.equal(portal.ok, true);
+    assert.equal(portal.algorithm, 'portal');
+    assert.deepEqual(portal.segmentIds, []);
+});
+
+test('grupo usa uma única rota e chega no ritmo do transporte mais lento', () => {
+    const input = {
+        origin: location('origin', 100, 100),
+        destination: location('destination', 300, 100),
+        nodes,
+        segments,
+        mapSettings: { pixelsPerGrid: 576, kilometersPerGrid: 100 }
+    };
+    const horse = routeEngine.planRoute({ ...input, mode: 'horse', movement: 10 });
+    const carriage = routeEngine.planRoute({ ...input, mode: 'carriage', movement: 10 });
+    const group = routeEngine.planGroupRoute({
+        ...input,
+        units: [
+            { id: 'horse-geralt', mode: 'horse', movement: 10, label: 'Carpeado', ownerName: 'Geralt' },
+            { id: 'carriage-ciri', mode: 'carriage', movement: 10, label: 'Carruagem de Ciri', ownerName: 'Ciri' }
+        ]
+    });
+
+    assert.equal(group.ok, true);
+    assert.equal(group.mode, 'group');
+    assert.equal(group.limitingUnit.mode, 'carriage');
+    assert.equal(group.durationMinutes, carriage.durationMinutes);
+    assert.ok(group.durationMinutes > horse.durationMinutes);
+    assert.equal(group.carriageRestricted, true);
+    assert.equal(group.offRoadDistanceKm, 0);
+    assert.deepEqual(group.segmentIds, carriage.segmentIds);
+});
+
+test('presença de carruagem impede o grupo de usar atalhos incompatíveis', () => {
+    const restrictedSegments = segments.map(entry => entry.id === 'bc' ? { ...entry, carriageAllowed: false } : entry);
+    const result = routeEngine.planGroupRoute({
+        origin: location('origin', 100, 100),
+        destination: location('destination', 300, 100),
+        nodes,
+        segments: restrictedSegments,
+        mapSettings: { pixelsPerGrid: 576, kilometersPerGrid: 100 },
+        units: [
+            { id: 'horse', mode: 'horse', movement: 12 },
+            { id: 'carriage', mode: 'carriage', movement: 10 }
+        ]
+    });
+    assert.equal(result.ok, true);
+    assert.deepEqual(result.segmentIds, ['ad', 'dc']);
+});
+
+test('composição do grupo valida carona no cavalo e preserva uma única unidade de ritmo', () => {
+    const geralt = { id: 'hero-1', name: 'Geralt' };
+    const ciri = { id: 'hero-2', name: 'Ciri' };
+    const selection = {
+        assignments: [
+            {
+                ownerEntry: { key: 'combat:hero-1', owner: geralt },
+                owner: geralt,
+                option: { value: 'horse:roach', mode: 'horse', movement: 12, assetId: 'roach', name: 'Carpeado', label: 'Carpeado' }
+            },
+            {
+                ownerEntry: { key: 'combat:hero-2', owner: ciri },
+                owner: ciri,
+                option: { value: 'passenger|horse|combat%3Ahero-1|roach', mode: 'passenger', targetMode: 'horse', targetOwnerKey: 'combat:hero-1', targetOwnerId: 'hero-1', targetOwnerName: 'Geralt', assetId: 'roach', name: 'Carpeado' }
+            }
+        ]
+    };
+    const party = worldTime.resolveTravelParty(selection);
+    assert.equal(party.ok, true);
+    assert.equal(party.units.length, 1);
+    assert.equal(party.units[0].mode, 'horse');
+    assert.equal(party.travelers[1].transportRole, 'passenger');
+    assert.equal(party.travelers[1].transportOwnerName, 'Geralt');
+
+    const yennefer = { id: 'hero-3', name: 'Yennefer' };
+    const overCapacity = worldTime.resolveTravelParty({
+        assignments: [...selection.assignments, {
+            ownerEntry: { key: 'combat:hero-3', owner: yennefer },
+            owner: yennefer,
+            option: { value: 'passenger|horse|combat%3Ahero-1|roach', mode: 'passenger', targetMode: 'horse', targetOwnerKey: 'combat:hero-1', targetOwnerId: 'hero-1', targetOwnerName: 'Geralt', assetId: 'roach', name: 'Carpeado' }
+        }]
+    });
+    assert.equal(overCapacity.ok, false);
+    assert.match(overCapacity.error, /somente um passageiro/i);
 });
 
 test('Mundo migra a escala padrão e preserva os detalhes calculados da viagem', () => {
@@ -105,17 +213,23 @@ test('Mundo migra a escala padrão e preserva os detalhes calculados da viagem',
     world.currentLocationId = 'origin';
     world.mapSettings = { pixelsPerGrid: 576, kilometersPerGrid: 210.5 };
     const result = worldModel.recordTravel(world, {
-        toLocationId: 'destination', durationMinutes: 180, transportMode: 'horse', transportLabel: 'Carpeado',
-        transportAssetId: 'mount-1', travelerId: 'hero-1', travelerName: 'Geralt',
-        travelers: [{ id: 'hero-1', name: 'Geralt', role: 'leader' }, { id: 'hero-2', name: 'Ciri', role: 'companion' }], distanceKm: 28.4,
+        toLocationId: 'destination', durationMinutes: 180, transportMode: 'group', transportLabel: 'Grupo misto · ritmo de Carruagem',
+        travelerId: 'hero-1', travelerName: 'Geralt',
+        travelers: [
+            { id: 'hero-1', name: 'Geralt', role: 'leader', transportMode: 'horse', transportRole: 'driver', transportAssetId: 'mount-1', transportLabel: 'Carpeado', transportOwnerId: 'hero-1', transportOwnerName: 'Geralt' },
+            { id: 'hero-2', name: 'Ciri', role: 'companion', transportMode: 'carriage', transportRole: 'passenger', transportAssetId: 'vehicle-1', transportLabel: 'Passageiro em Carruagem', transportOwnerId: 'hero-3', transportOwnerName: 'Yennefer' }
+        ], distanceKm: 28.4,
         roadDistanceKm: 21, offRoadDistanceKm: 7.4, routeNodeIds: ['a', 'b'], routeSegmentIds: ['ab'],
         routeAlgorithm: 'astar', scaleKilometersPerGrid: 210.5
     });
-    assert.equal(result.travel.transportMode, 'horse');
-    assert.equal(result.travel.transportLabel, 'Carpeado');
+    assert.equal(result.travel.transportMode, 'group');
+    assert.equal(result.travel.transportLabel, 'Grupo misto · ritmo de Carruagem');
     assert.equal(result.travel.distanceKm, 28.4);
     assert.equal(result.travel.routeAlgorithm, 'astar');
     assert.deepEqual(result.travel.travelers.map(entry => entry.name), ['Geralt', 'Ciri']);
+    assert.equal(result.travel.travelers[0].transportLabel, 'Carpeado');
+    assert.equal(result.travel.travelers[1].transportRole, 'passenger');
+    assert.equal(result.travel.travelers[1].transportOwnerName, 'Yennefer');
     assert.equal(result.world.mapSettings.kilometersPerGrid, 210.5);
 });
 
@@ -125,17 +239,25 @@ test('interface e pacote offline incluem planejamento, confirmação e calibraç
     const featureLoader = fs.readFileSync(path.join(projectRoot, 'js', 'world', 'world-feature-loader.js'), 'utf8');
     const worker = fs.readFileSync(path.join(projectRoot, 'js', 'service-worker.js'), 'utf8');
     const index = fs.readFileSync(path.join(projectRoot, 'index.html'), 'utf8');
-    assert.match(timeSource, /ROTA CALCULADA POR A\*/);
+    assert.match(timeSource, /ROTA DO GRUPO CALCULADA POR A\*/);
     assert.match(timeSource, /confirmRoute/);
     assert.match(timeSource, /advanceByMinutes/);
     assert.match(timeSource, /getMountMovement/);
     assert.match(timeSource, /getVehicleMovement/);
     assert.match(timeSource, /Portal Vertical/);
-    assert.match(timeSource, /travelerKeys/);
+    assert.match(timeSource, /Viagens físicas exigem uma rota contínua de estradas/);
+    assert.match(timeSource, /showRoutePreview\?\.\(plan\)/);
+    assert.match(timeSource, /world-travel-map-preview-overlay/);
+    assert.match(timeSource, /COMPOSIÇÃO DO GRUPO/);
+    assert.match(timeSource, /updateWorldTravelParticipant/);
+    assert.match(timeSource, /planGroupRoute/);
+    assert.match(timeSource, /Ritmo do grupo/);
     assert.match(mapSource, /Calibração de distância/);
     assert.match(mapSource, /saveMapScale/);
+    assert.match(mapSource, /world-route-preview-casing/);
+    assert.match(mapSource, /circleMarker/);
     assert.match(index, /world-feature-loader\.js/);
     assert.match(featureLoader, /world-route-engine\.js/);
     assert.match(worker, /world-route-engine\.js/);
-    assert.match(worker, /witcher-combat-tracker-v146/);
+    assert.match(worker, /witcher-combat-tracker-v153/);
 });

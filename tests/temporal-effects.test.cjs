@@ -10,6 +10,18 @@ let saves = 0;
 global.campaignClock = {
     describeMinute: () => ({ epochMinute: currentMinute }),
     formatDateShort: minute => `minuto ${minute}`,
+    formatDuration(minutes) {
+        const days = Math.floor(minutes / 1440);
+        const hours = Math.floor((minutes % 1440) / 60);
+        const remainingMinutes = minutes % 60;
+        const parts = [];
+        if (days) parts.push(`${days} dia${days === 1 ? '' : 's'}`);
+        if (hours) parts.push(`${hours} hora${hours === 1 ? '' : 's'}`);
+        if (remainingMinutes || parts.length === 0) parts.push(`${remainingMinutes} minuto${remainingMinutes === 1 ? '' : 's'}`);
+        if (parts.length === 1) return parts[0];
+        if (parts.length === 2) return `${parts[0]} e ${parts[1]}`;
+        return `${parts.slice(0, -1).join(', ')} e ${parts.at(-1)}`;
+    },
     getRoundMinutes: () => 2,
     registerTimeProcessor(value) { processors.push(value); }
 };
@@ -33,7 +45,11 @@ temporal.attachTemporalEffect(direct, { amount: 1, unit: 'hours' });
 assert.equal(direct.remainingTurns, 0);
 assert.equal(direct.temporal.startedAtMinute, 1000);
 assert.equal(direct.temporal.expiresAtMinute, 1060);
-assert.match(temporal.formatEffectDurationLabel(direct), /1h/);
+assert.match(temporal.formatEffectDurationLabel(direct), /1 hora/);
+
+const longDuration = { id: 'long-ritual', type: 'ability', name: 'Ritual longo', remainingTurns: 0 };
+temporal.attachTemporalEffect(longDuration, { amount: 1603, unit: 'minutes' });
+assert.match(temporal.formatEffectDurationLabel(longDuration), /1 dia, 2 horas e 43 minutos/);
 
 const legacy = {
     id: 1,

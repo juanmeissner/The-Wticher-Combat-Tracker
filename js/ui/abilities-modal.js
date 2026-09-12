@@ -76,9 +76,9 @@ function renderAbilitiesModal() {
         return;
     }
 
-    filteredAbilities.forEach(ability => {
+    container.innerHTML = filteredAbilities.map(ability => {
 
-        container.innerHTML += `
+        return `
 
         <button
     
@@ -128,7 +128,7 @@ function renderAbilitiesModal() {
     
         </button>
     `;
-    });
+    }).join('');
 }
 
 function openAbilityDetails(id) {
