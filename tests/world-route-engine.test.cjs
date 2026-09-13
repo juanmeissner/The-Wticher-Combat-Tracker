@@ -92,6 +92,14 @@ test('pé, cavalo, carruagem e Portal Vertical respeitam suas regras de deslocam
     assert.match(blocked.error, /carruagem/i);
 });
 
+test('viagem a pé nunca ultrapassa 4 km por hora', () => {
+    assert.equal(routeEngine.getTravelSpeedKmh('foot', 10, 'regional'), 4);
+    assert.equal(routeEngine.getTravelSpeedKmh('foot', 15, 'main'), 4);
+    assert.ok(routeEngine.getTravelSpeedKmh('foot', 5, 'mountain') < 4);
+    assert.ok(routeEngine.getTravelSpeedKmh('horse', 15, 'main') > 4);
+    assert.ok(routeEngine.getTravelSpeedKmh('carriage', 15, 'main') > 4);
+});
+
 test('viagens físicas são bloqueadas quando os locais não possuem uma estrada contínua', () => {
     const isolatedNodes = [...nodes, node('isolated', 520, 420, 'isolated')];
     const input = {
@@ -256,8 +264,9 @@ test('interface e pacote offline incluem planejamento, confirmação e calibraç
     assert.match(mapSource, /saveMapScale/);
     assert.match(mapSource, /world-route-preview-casing/);
     assert.match(mapSource, /circleMarker/);
+    assert.match(mapSource, /getPane\('worldRoutePane'\)\.style\.pointerEvents = 'none'/);
     assert.match(index, /world-feature-loader\.js/);
     assert.match(featureLoader, /world-route-engine\.js/);
     assert.match(worker, /world-route-engine\.js/);
-    assert.match(worker, /witcher-combat-tracker-v153/);
+    assert.match(worker, /witcher-combat-tracker-v158/);
 });

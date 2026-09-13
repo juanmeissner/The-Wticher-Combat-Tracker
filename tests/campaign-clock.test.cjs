@@ -228,7 +228,7 @@ assert.match(sessionSource, /window\.campaignClock\?\.restoreSnapshot/);
 assert.match(sessionSource, /advanceByMinutes\?\.\(1, \{ source: 'combat-turn' \}\)/);
 assert.match(sessionSource, /time: \{ icon: '🕰️', label: 'Tempo' \}/);
 assert.match(appInitSource, /'dnd_campaign_clock'/);
-assert.match(workerSource, /witcher-combat-tracker-v153/);
+assert.match(workerSource, /witcher-combat-tracker-v158/);
 assert.match(workerSource, /js\/campaign-timeline-data\.js/);
 assert.match(indexSource, /js\/campaign-timeline-data\.js[\s\S]+js\/campaign-clock\.js/);
 assert.match(workerSource, /js\/campaign-daily-processing\.js/);

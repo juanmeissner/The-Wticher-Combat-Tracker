@@ -76,7 +76,7 @@ test('listas extensas são compostas uma única vez antes de entrar no DOM', () 
 
 test('cache offline mantém os recursos carregados sob demanda', () => {
     const workerSource = read(path.join('js', 'service-worker.js'));
-    assert.match(workerSource, /witcher-combat-tracker-v153/);
+    assert.match(workerSource, /witcher-combat-tracker-v158/);
     assert.match(workerSource, /js\/world\/world-feature-loader\.js/);
     assert.match(workerSource, /js\/world\/world-road-imported-data\.js/);
     assert.match(workerSource, /vendor\/leaflet\/leaflet\.js/);

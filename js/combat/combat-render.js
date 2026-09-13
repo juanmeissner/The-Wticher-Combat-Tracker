@@ -1,4 +1,5 @@
     let expandedCombatantDetailsId = null;
+    let combatViewportRestoreRevision = 0;
 
     function getCombatPanelsMode() {
         if (typeof appPreferences !== 'undefined') {
@@ -153,8 +154,41 @@
         }
     }
 
+    function captureCombatListViewport(container, shouldScroll) {
+        if (!container || shouldScroll) return null;
+        return {
+            scrollTop: Number(container.scrollTop) || 0,
+            scrollLeft: Number(container.scrollLeft) || 0
+        };
+    }
+
+    function restoreCombatListViewport(container, viewport) {
+        if (!container || !viewport) return;
+
+        const maximumScrollTop = Math.max(0, container.scrollHeight - container.clientHeight);
+        const preservedScrollTop = Math.min(viewport.scrollTop, maximumScrollTop);
+        const previousScrollBehavior = container.style.scrollBehavior;
+
+        // Os cards são reconciliados por inteiro. Sem esta restauração, o navegador
+        // tenta compensar a troca do nó focado e desloca a lista ao recolher painéis.
+        container.style.scrollBehavior = 'auto';
+        container.scrollTop = preservedScrollTop;
+        container.scrollLeft = viewport.scrollLeft;
+        container.style.scrollBehavior = previousScrollBehavior;
+    }
+
+    function releaseCombatPanelFocus(container, shouldScroll) {
+        if (!container || shouldScroll || typeof document === 'undefined') return;
+        const activeElement = document.activeElement;
+        if (!activeElement || !container.contains(activeElement)) return;
+        if (activeElement.closest?.('.combat-subpanel-header')) activeElement.blur?.();
+    }
+
     function renderList(shouldScroll = false) {
         const container = document.getElementById('combatList');
+        const preservedViewport = captureCombatListViewport(container, shouldScroll);
+        const viewportRestoreRevision = ++combatViewportRestoreRevision;
+        releaseCombatPanelFocus(container, shouldScroll);
         updateActiveTurnName();
 
         if (
@@ -501,6 +535,13 @@
         });
 
         reconcileCombatList(container, fragment);
+        restoreCombatListViewport(container, preservedViewport);
+        if (preservedViewport && typeof requestAnimationFrame === 'function') {
+            requestAnimationFrame(() => {
+                if (viewportRestoreRevision !== combatViewportRestoreRevision) return;
+                restoreCombatListViewport(container, preservedViewport);
+            });
+        }
         document.getElementById('roundCounter').innerText = round;
         if (shouldScroll) {
             const activeCard = container.querySelector('.active-turn');

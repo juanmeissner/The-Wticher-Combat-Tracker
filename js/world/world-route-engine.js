@@ -11,7 +11,7 @@
     const ROUTE_ENGINE_VERSION = 1;
     const DEFAULT_MAP_SETTINGS = Object.freeze({ pixelsPerGrid: 576, kilometersPerGrid: 100 });
     const TRAVEL_MODES = Object.freeze({
-        foot: Object.freeze({ id: 'foot', label: 'A pé', icon: '🥾', baseSpeedKmh: 5, offRoadMultiplier: 0.65 }),
+        foot: Object.freeze({ id: 'foot', label: 'A pé', icon: '🥾', baseSpeedKmh: 4, maximumSpeedKmh: 4, offRoadMultiplier: 0.65 }),
         horse: Object.freeze({ id: 'horse', label: 'A cavalo', icon: '🐎', baseSpeedKmh: 10, offRoadMultiplier: 0.68 }),
         carriage: Object.freeze({ id: 'carriage', label: 'Carruagem', icon: '🛒', baseSpeedKmh: 8, offRoadMultiplier: 0 }),
         portal: Object.freeze({ id: 'portal', label: 'Portal Vertical', icon: '🌀', baseSpeedKmh: 0, offRoadMultiplier: 0 })
@@ -63,7 +63,11 @@
         const terrainMultiplier = roadType
             ? (ROAD_SPEED_MULTIPLIERS[roadType] || 1)
             : mode.offRoadMultiplier;
-        return Math.max(0.1, mode.baseSpeedKmh * movementFactor(movement) * terrainMultiplier);
+        const calculatedSpeed = mode.baseSpeedKmh * movementFactor(movement) * terrainMultiplier;
+        const limitedSpeed = Number.isFinite(mode.maximumSpeedKmh)
+            ? Math.min(mode.maximumSpeedKmh, calculatedSpeed)
+            : calculatedSpeed;
+        return Math.max(0.1, limitedSpeed);
     }
 
     function getNearestNodes(point, nodes, limit = 4) {

@@ -157,6 +157,10 @@ function filterPresetMonsters() {
                 <img
     
                     src="${getMonsterImage(monster)}"
+
+                    loading="lazy"
+
+                    onerror="this.onerror=null; this.src='image.png';"
     
                     class="w-20
                            h-20
@@ -304,6 +308,8 @@ function showMonsterDetails(monsterId, fromCombat = false) {
 <img
 
     src="${getMonsterImage(monster)}"
+
+    onerror="this.onerror=null; this.src='image.png';"
 
     class="w-full
            h-72

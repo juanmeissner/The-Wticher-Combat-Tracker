@@ -771,6 +771,10 @@ O bestiário oferece busca, ficha detalhada e adição rápida de monstros prede
 
 Os painéis de **Habilidades** e **Perícias** começam recolhidos para não poluir a tela e podem ser abertos separadamente quando a informação for necessária. Seus dados são copiados para o participante e preservados em encontros e backups. Os ataques continuam usando a mesma preferência de rolagem das armas e permanecem exclusivos dos monstros.
 
+O catálogo possui **85 presets** no formato nativo do aplicativo. A expansão dos lotes A, B, D e E acrescenta criaturas, inimigos humanos, facções, o Ulfhedinn e dezesseis fichas adaptadas da lore com HP, ST, armadura regional, movimento, vulnerabilidades, ataques, habilidades, saque e perícias. **Lâmia** e **Alpor** são fichas distintas, sendo o Alpor uma variedade superior; nomes como **Kikimora**, **Nevoloso**, **Rotífero**, **Tourovor**, **Fetulho**, **Chort**, **Ozzrel**, **Sepulcro**, **Cemetaur**, **Centopeia Gigante**, **Mutante Superior** e **Pacificadores Gemmerianos** seguem a normalização aprovada. Os atributos-base do material de origem não foram introduzidos, preservando o esquema atual do bestiário.
+
+Os valores do **Lote E** são bases de balanceamento editáveis, pois as fontes de lore não oferecem fichas compatíveis com este sistema. As características canônicas orientam os encontros: Dagon depende de adoradores, Kayran e Zeugl possuem fases de tentáculos, Frightener reage a ruídos intensos, Echinops permanece enraizado e a Centopeia Gigante é contida por Yrden.
+
 #### 🎁 Saque e recompensas
 
 Quando um monstro predefinido é derrotado, o card eliminado recebe a ação contextual **Coletar saque**. O controle não aparece durante o combate normal e não ocupa espaço nos participantes vivos.
@@ -1155,6 +1159,8 @@ Para manter o Combat Tracker responsivo mesmo com campanhas grandes, os recursos
 │   ├── critical-wounds.js        # Críticos, vacilos, ferimentos e tratamento médico
 │   ├── toxicity.js               # Poções, limiares, Tolerância, overdose e Mel Branco
 │   ├── loot-rewards.js            # Rolagem, distribuição, persistência e relatório de saque
+│   ├── bestiary.js               # Catálogo histórico de monstros e inimigos
+│   ├── bestiary-expansion.js     # Lotes A, B, D e E normalizados no esquema atual
 │   ├── equipment.js             # Equipamentos, defesas, rolagens e ataques de monstros
 │   ├── mounts.js                # Montarias, acessórios, carga, veículos, movimento e dano
 │   ├── zoom-lock.js             # Bloqueio global de zoom por gestos e atalhos

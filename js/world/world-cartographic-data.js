@@ -16,7 +16,7 @@
 })(typeof globalThis !== 'undefined' ? globalThis : this, function (model, atlas, locations, importedMarkers) {
     'use strict';
 
-    const CARTOGRAPHIC_CATALOG_VERSION = 6;
+    const CARTOGRAPHIC_CATALOG_VERSION = 7;
     const MAP_ID = 'nolan-kotulan-the-continent';
     const MAP_REFERENCE = Object.freeze({
         id: MAP_ID,
@@ -117,12 +117,25 @@
         entry('montecalvo', 'Montecalvo', P.REDANIA, 1802, 570),
         entry('luton', 'Luton', P.REDANIA, 1285, 460),
         entry('mint', 'Mint', P.REDANIA, 1675, 544),
+        entry('yamurlak', 'Yamurlak', P.REDANIA, 1536, 514, { aliases: ['Jamurlak'] }),
         entry('yspaden', 'Yspaden', P.HENGFORS, 1173, 367, { confidence: CONFIDENCE.MEDIUM }),
 
         entry('daevon', 'Daevon', P.KAEDWEN, 2220, 410),
         entry('est-haemlet', 'Est Haemlet', P.KAEDWEN, 2720, 620),
+        entry('vattweir', 'Vattweir', P.KAEDWEN, 2083.8, 373),
+        entry('leyda', 'Leyda', P.KAEDWEN, 2182.4, 544.6),
+        entry('beeches', 'Beeches', P.KAEDWEN, 1961, 599),
+        entry('tiel', 'Tiel', P.KAEDWEN, 2454.5, 801.2),
+        entry('kalkar', 'Kalkar', P.KAEDWEN, 2545.7, 792.1),
+        entry('berg-aen-dal', 'Berg Aen Dal', P.KAEDWEN, 2650.7, 813.9),
+        entry('blue-mountain-a', 'Blue Mountain A', P.KAEDWEN, 2844.6, 184.7, { type: TYPES.SPECIAL_SITE }),
+        entry('blue-mountains-b', 'Blue Mountains B', P.KAEDWEN, 2845.2, 821.5, { type: TYPES.SPECIAL_SITE }),
+        entry('dragon-mountains-a', 'Dragon Mountains A', P.KAEDWEN, 2388.1, 42.4, { type: TYPES.SPECIAL_SITE }),
         entry('ashberg', 'Ashberg', P.AEDIRN, 2115, 925),
+        entry('hoshberg', 'Hoshberg', P.AEDIRN, 2559.3, 1091.9),
+        entry('gwendeith', 'Gwendeith', P.AEDIRN, 2785.9, 1051.3),
         entry('luria', 'Luria', P.LYRIA_RIVIA, 2570, 1305),
+        entry('dillmor', 'Dillmor', P.LYRIA_RIVIA, 2329.3, 1454),
 
         entry('flotsam', 'Flotsam', P.TEMERIA, 1920, 830, { type: TYPES.FORTIFIED_SETTLEMENT }),
         entry('white-bridge', 'White Bridge', P.TEMERIA, 1840, 850, { aliases: ['Ponte Branca'] }),
@@ -164,13 +177,27 @@
         entry('caed-dhu', 'Caed Dhu', P.TEMERIA, 2139, 1527, { type: TYPES.SPECIAL_SITE }),
         entry('red-port', 'Red Port', P.TEMERIA, 1920, 1625, { type: TYPES.FORTIFIED_SETTLEMENT }),
         entry('groundcherry-forest', 'Groundcherry Forest', P.TEMERIA, 1874, 1535, { type: TYPES.SPECIAL_SITE }),
+        entry('tukaj-hills', 'Tukaj Hills', P.TEMERIA, 1447.3, 1425.6, { type: TYPES.SPECIAL_SITE }),
 
+        entry('cidaris-roggeveen', 'Roggeveen', 'world-political-cidaris', 985.2, 1307.8),
+        entry('little-marsh', 'Little Marsh', 'world-political-cidaris', 1189, 1303, { type: TYPES.SPECIAL_SITE }),
+        entry('caelf', 'Caelf', 'world-political-cidaris', 1125, 1273),
+        entry('vole', 'Vole', 'world-political-cidaris', 1007.5, 1362.7),
+        entry('ravelin', 'Ravelin', 'world-political-cidaris', 1072, 1365),
+        entry('vartburg', 'Vartburg', 'world-political-cidaris', 1174, 1350, { type: TYPES.FORTIFIED_SETTLEMENT }),
+        entry('cizmar', 'Cizmar', 'world-political-kerack', 1259.3, 1388.1),
         entry('tiberghien', 'Tiberghien', 'world-political-kerack', 1090, 1460, { confidence: CONFIDENCE.MEDIUM }),
         entry('ansegis', 'Ansegis', 'world-political-kerack', 1210, 1460, { confidence: CONFIDENCE.MEDIUM }),
         entry('hamm', 'Hamm', 'world-political-verden', 1135, 1610),
         entry('nastrog', 'Nastrog', 'world-political-verden', 1235, 1710),
         entry('bodrog', 'Bodrog', 'world-political-verden', 1330, 1695),
         entry('rozrog', 'Rozrog', 'world-political-verden', 1280, 1720, { confidence: CONFIDENCE.MEDIUM }),
+
+        entry('elven-ruin', 'Ruína Élfica', P.BROKILON, 1381.4, 1464.6, { type: TYPES.SPECIAL_SITE }),
+        entry('craag-an', 'Craag An', P.BROKILON, 1309.6, 1464.2, { type: TYPES.SPECIAL_SITE }),
+        entry('col-serrai', 'Col Serrai', P.BROKILON, 1495.3, 1518.6, { type: TYPES.SPECIAL_SITE }),
+
+        entry('ban-blathanna', 'Ban Blathanna', P.DOL_BLATHANNA, 2609.2, 951.5, { type: TYPES.FORTIFIED_SETTLEMENT }),
 
         entry('coldwater', 'Coldwater', P.CINTRA, 1510, 1805, { aliases: ['Água Fria'] }),
         entry('smallton', 'Smallton', P.CINTRA, 1690, 1805),

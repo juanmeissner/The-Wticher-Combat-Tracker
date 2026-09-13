@@ -14,17 +14,22 @@ const SNAP_TOLERANCE_PX = 5;
 const LOCATION_TOLERANCE_PX = 24;
 const VALID_TYPES = new Set(['main', 'regional', 'mountain']);
 const LOCATION_ALIASES = Object.freeze({
+    'asheberg': 'world-cartographic-ashberg',
     'baldhorn': 'world-cartographic-baldfhorn',
     'denesle': 'world-cartographic-demelse',
     'dilingen': 'world-cartographic-dillingen',
     'egremont': 'world-cartographic-eregmont',
     'esteken manor': 'world-cartographic-esteken',
+    'flotsan': 'world-cartographic-flotsam',
     'guamez': 'world-cartographic-guamet',
+    'jamurlak': 'world-cartographic-yamurlak',
     'mt carbon': 'world-canonical-mount-carbon',
     'pindal': 'world-cartographic-findal',
+    'ratsburg': 'world-canonical-rastburg-castle',
     'roggeven': 'world-cartographic-roggeveen',
     'temple of melitele': 'world-canonical-temple-melitele',
     'thanedd island': 'world-canonical-thanedd',
+    'upper lower posada': 'world-canonical-lower-posada',
     'zgraggen': 'world-cartographic-laraggen'
 });
 
@@ -81,7 +86,9 @@ function parsePointList(value) {
 
 function parseRoadIdentity(encodedId, fallbackIndex) {
     const decoded = decodeCorelId(encodedId).replace(/_\d+$/, '');
-    const parts = decoded.split('|');
+    const roadPrefixIndex = decoded.indexOf('road|');
+    const normalizedId = roadPrefixIndex >= 0 ? decoded.slice(roadPrefixIndex) : decoded;
+    const parts = normalizedId.split('|');
     if (parts[0] !== 'road' || parts.length < 4) {
         return {
             type: 'regional',
@@ -96,7 +103,7 @@ function parseRoadIdentity(encodedId, fallbackIndex) {
         type,
         carriageAllowed,
         name: parts.slice(3).join('|').trim() || `Estrada importada ${fallbackIndex + 1}`,
-        warning: VALID_TYPES.has(parts[1]) ? null : `Tipo desconhecido em ${decoded}: ${parts[1]}`
+        warning: VALID_TYPES.has(parts[1]) ? null : `Tipo desconhecido em ${normalizedId}: ${parts[1]}`
     };
 }
 
@@ -206,20 +213,26 @@ function buildMarkerImport(parsed) {
         if (marker.warning) warnings.push(marker.warning);
         const normalizedLabel = normalizeLocationLabel(marker.label);
         const explicitId = marker.label.startsWith('world-') ? marker.label : LOCATION_ALIASES[normalizedLabel];
-        const exactMatches = explicitId
+        const exactMatches = [...new Map((explicitId
             ? [locationsById.get(explicitId)].filter(Boolean)
-            : (locationsByLabel.get(normalizedLabel) || []);
-        if (exactMatches.length > 1) {
-            ambiguousMarkers.push({ ...marker, candidates: exactMatches.map(location => location.id) });
-            return;
-        }
-        const location = exactMatches[0];
+            : (locationsByLabel.get(normalizedLabel) || []))
+            .map(location => [location.id, location])).values()];
+        const availableMatches = exactMatches.filter(location => !usedLocationIds.has(location.id));
+        const rankedMatches = availableMatches
+            .map(location => ({
+                location,
+                distance: location.point
+                    ? Math.hypot(location.point.x - marker.point.x, location.point.y - marker.point.y)
+                    : Number.POSITIVE_INFINITY
+            }))
+            .sort((left, right) => left.distance - right.distance);
+        const location = rankedMatches[0]?.location || null;
         if (!location) {
+            if (exactMatches.length) {
+                ambiguousMarkers.push({ ...marker, candidates: exactMatches.map(candidate => candidate.id), reason: 'duplicate-target' });
+                return;
+            }
             unmatchedMarkers.push(marker);
-            return;
-        }
-        if (usedLocationIds.has(location.id)) {
-            ambiguousMarkers.push({ ...marker, candidates: [location.id], reason: 'duplicate-target' });
             return;
         }
         usedLocationIds.add(location.id);

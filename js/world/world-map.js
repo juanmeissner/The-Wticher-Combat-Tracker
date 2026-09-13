@@ -1305,6 +1305,9 @@
         activeMap.getPane('worldRoadEditorPane').style.zIndex = '460';
         activeMap.createPane('worldRoutePane');
         activeMap.getPane('worldRoutePane').style.zIndex = '455';
+        // A rota e seus pontos são apenas uma prévia visual. O canvas deste pane
+        // fica acima dos marcadores e, mesmo vazio, interceptaria seus cliques.
+        activeMap.getPane('worldRoutePane').style.pointerEvents = 'none';
         activeRoadLayer = L.layerGroup().addTo(activeMap);
         activeJunctionLayer = L.layerGroup().addTo(activeMap);
         activeMarkerLayer = L.layerGroup().addTo(activeMap);

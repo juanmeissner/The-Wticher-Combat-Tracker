@@ -1,4 +1,4 @@
-const CACHE_NAME = 'witcher-combat-tracker-v153';
+const CACHE_NAME = 'witcher-combat-tracker-v158';
 
 const APP_SHELL = [
     './',
@@ -85,6 +85,7 @@ const APP_SHELL = [
     './js/items.js',
     './js/inventory-filters.js',
     './js/bestiary.js',
+    './js/bestiary-expansion.js',
     './js/monsters.js',
     './js/inventory.js',
     './js/navigation.js',

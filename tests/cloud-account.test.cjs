@@ -192,7 +192,7 @@ test('PWA carrega a conta opcional sem incluir o token em backups', () => {
     const styles = fs.readFileSync(path.join(projectRoot, 'collaboration.css'), 'utf8');
     assert.match(indexSource, /cloud-account\.js[\s\S]+collaboration-session\.js/);
     assert.match(workerSource, /cloud-account\.js/);
-assert.match(workerSource, /witcher-combat-tracker-v153/);
+assert.match(workerSource, /witcher-combat-tracker-v158/);
     assert.match(appInit, /APP_SENSITIVE_STORAGE_KEYS/);
     assert.match(appInit, /dnd_cloud_account_session_v1/);
     assert.match(sessionSource, /cloudAccount.*getPanelMarkup/);

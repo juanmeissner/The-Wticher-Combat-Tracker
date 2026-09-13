@@ -67,7 +67,7 @@ test('catálogo cartográfico posiciona locais canônicos preservando coordenada
     const vizima = seeded.locations.find(location => location.id === 'world-canonical-vizima');
     const kaerMorhen = seeded.locations.find(location => location.id === 'world-canonical-kaer-morhen');
 
-    assert.equal(worldCartographicData.CARTOGRAPHIC_CATALOG_VERSION, 6);
+    assert.equal(worldCartographicData.CARTOGRAPHIC_CATALOG_VERSION, 7);
     assert.equal(Object.keys(worldCartographicData.CANONICAL_COORDINATES).length, 59);
     const vizimaMapCoordinate = worldMap.percentToMapCoordinate(vizima.coordinates);
     const importedVizima = worldLocationImportedData.markers.find(marker => marker.locationId === vizima.id);
@@ -75,8 +75,8 @@ test('catálogo cartográfico posiciona locais canônicos preservando coordenada
     assert.ok(Math.abs(vizimaMapCoordinate.lat - (4096 - importedVizima.point.y)) < 0.000001);
     assert.equal(vizima.coordinateConfidence, 'precise');
     assert.ok(kaerMorhen.coordinates);
-    assert.equal(seeded.locations.filter(location => location.coordinates).length, 186);
-    assert.equal(worldLocationImportedData.markers.length, 74);
+    assert.equal(seeded.locations.filter(location => location.coordinates).length, 212);
+    assert.equal(worldLocationImportedData.markers.length, 132);
     assert.equal(worldLocationImportedData.unmatchedMarkers.length, 0);
     assert.equal(worldLocationImportedData.ambiguousMarkers.length, 0);
 
@@ -135,7 +135,7 @@ test('círculos verdes do SVG atualizam todos os marcadores reconhecidos sem cri
         now: '2026-09-10T00:00:00.000Z'
     });
     const importedIds = new Set(worldLocationImportedData.markers.map(marker => marker.locationId));
-    assert.equal(importedIds.size, 74);
+    assert.equal(importedIds.size, 132);
     for (const marker of worldLocationImportedData.markers) {
         const location = seeded.locations.find(entry => entry.id === marker.locationId);
         assert.ok(location, `local importado ausente: ${marker.label}`);
@@ -248,10 +248,10 @@ test('rede viária preserva trechos, entroncamentos e escala cartográfica centr
     assert.equal(worldRoadData.ROAD_NETWORK_VERSION, 2);
     assert.equal(worldRoadData.MAP_REFERENCE.kilometersPerGrid, 100);
     assert.equal(worldRoadData.MAP_REFERENCE.pixelsPerGrid, 576);
-    assert.equal(summary.nodeCount, 129);
-    assert.equal(summary.segmentCount, 152);
-    assert.equal(summary.junctionCount, 61);
-    assert.ok(summary.distanceKm > 2000);
+    assert.equal(summary.nodeCount, 202);
+    assert.equal(summary.segmentCount, 246);
+    assert.equal(summary.junctionCount, 102);
+    assert.ok(summary.distanceKm > 4000);
     assert.equal(worldRoadData.ROAD_SOURCE.kind, 'svg');
     assert.equal(worldRoadData.ROAD_SOURCE.file, 'img/maps/continent/continent-roads.svg');
 
@@ -294,10 +294,16 @@ test('popup calcula a menor distância viária e rejeita locais sem estrada cont
     assert.ok(route.distanceKm > 0);
     assert.ok(route.segmentIds.length > 0);
 
+    const disconnectedNetwork = {
+        nodes: network.nodes.map(node => node.id === 'road-node-svg-174'
+            ? { ...node, locationId: 'world-test-disconnected' }
+            : node),
+        segments: network.segments
+    };
     const disconnected = worldMap.calculateRoadDistance(
         'world-canonical-novigrad',
-        'world-canonical-mount-carbon',
-        network,
+        'world-test-disconnected',
+        disconnectedNetwork,
         worldRoadData.MAP_REFERENCE
     );
     assert.deepEqual(disconnected, { ok: false, reason: 'disconnected' });
@@ -334,7 +340,7 @@ test('mapa usa Leaflet local, tela cheia e integração offline versionada', () 
     assert.match(styles, /height:\s*100dvh/);
     assert.match(styles, /\.world-interactive-map/);
     assert.match(zoomLock, /data-allow-map-zoom/);
-    assert.match(worker, /witcher-combat-tracker-v153/);
+    assert.match(worker, /witcher-combat-tracker-v158/);
     assert.match(worker, /js\/world\/world-road-imported-data\.js/);
     assert.match(worker, /vendor\/leaflet\/leaflet\.js/);
     assert.match(worker, /js\/world\/world-map\.js/);

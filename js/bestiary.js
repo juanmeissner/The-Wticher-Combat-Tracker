@@ -568,7 +568,7 @@ Muito parecido com outros necrófagos, pessoas comuns acham que carniçais são 
     {
         id: 'lamia',
     
-        name: 'Alpor / Lâmia',
+        name: 'Lâmia',
     
         image: '',
     
@@ -1532,7 +1532,7 @@ Não se amarre ao mastro. Você vai ter uma morte horrível. Ao contrário da cr
     {
         id: 'kikimore',
     
-        name: 'Kikimore',
+        name: 'Kikimora',
     
         image: 'https://static.wikia.nocookie.net/witcher/images/3/36/Gwent_cardart_monsters_kikimore_stalker.png/revision/latest?cb=20230413150507',
     
@@ -1563,7 +1563,7 @@ Não se amarre ao mastro. Você vai ter uma morte horrível. Ao contrário da cr
             'Escalada Aracnídea (D) — Pode mover-se por paredes, tetos e superfícies íngremes sem testes.',
             'Salto Predatório (D) — Pode saltar até 15m e realizar imediatamente um ataque de garras.',
             'Veneno Paralisante (D) — Alvos atingidos por mordida devem realizar teste de Resistência. Em falha recebem Veneno e Atordoado até superar o teste de Resistência.',
-            'Instinto de Enxame — Quando houver outras Kikimores em combate, recebe +2 em ataques para cada aliada adjacente ao alvo (máximo +6).',
+            'Instinto de Enxame — Quando houver outras Kikimoras em combate, recebe +2 em ataques para cada aliada adjacente ao alvo (máximo +6).',
             'Exoesqueleto Quitinoso — Sua carapaça reduz parcialmente dano cortante e perfurante.',
             'Sentidos Vibracionais — Detecta criaturas através de vibrações do solo, ignorando escuridão e camuflagem comum.',
             'Postura Insetoide — Não pode ser derrubada facilmente. Recebe vantagem contra efeitos de empurrão e queda.'
@@ -1577,7 +1577,7 @@ Não se amarre ao mastro. Você vai ter uma morte horrível. Ao contrário da cr
         ],
     
         loot: [
-            'Quitina de Kikimore (1d6)',
+            'Quitina de Kikimora (1d6)',
             'Olhos de Monstro (1d4)',
             'Veneno de Insetoide (1d4)',
             'Essência de Monstro (1d2)'
@@ -1618,7 +1618,7 @@ Não se amarre ao mastro. Você vai ter uma morte horrível. Ao contrário da cr
     
         witcherKnowledge: `
     
-        Kikimores são insetoides agressivos que vivem em colônias organizadas. Embora indivíduos isolados representem ameaça moderada, tornam-se extremamente perigosos quando combatem em grupo.
+        Kikimoras são insetoides agressivos que vivem em colônias organizadas. Embora indivíduos isolados representem ameaça moderada, tornam-se extremamente perigosas quando combatem em grupo.
     
         Sua anatomia lembra uma mistura de aranha e formiga, protegida por uma resistente carapaça quitinosa. Movem-se com rapidez surpreendente e são capazes de escalar praticamente qualquer superfície.
     

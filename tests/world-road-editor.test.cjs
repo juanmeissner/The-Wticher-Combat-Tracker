@@ -154,7 +154,7 @@ test('interface expõe edição somente ao mestre e entra no cache offline', () 
     assert.match(indexSource, /js\/world\/world-feature-loader\.js/);
     assert.match(featureLoader, /js\/world\/world-road-editor\.js/);
     assert.match(workerSource, /js\/world\/world-road-editor\.js/);
-    assert.match(workerSource, /witcher-combat-tracker-v153/);
+    assert.match(workerSource, /witcher-combat-tracker-v158/);
     assert.match(indexSource, /js\/world\/world-location-imported-data\.js/);
     assert.match(workerSource, /js\/world\/world-location-imported-data\.js/);
     assert.match(featureLoader, /js\/world\/world-road-imported-data\.js/);

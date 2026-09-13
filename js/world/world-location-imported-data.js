@@ -6,7 +6,7 @@
     'use strict';
     return Object.freeze({
     "source": "img/maps/continent/continent-roads.svg",
-    "importedAt": "2026-09-11T01:51:07.934Z",
+    "importedAt": "2026-09-13T01:35:17.467Z",
     "mapWidth": 2880,
     "mapHeight": 4096,
     "markers": [
@@ -217,6 +217,17 @@
             "point": {
                 "x": 1305.5,
                 "y": 526.5
+            }
+        },
+        {
+            "sourceId": "location|Jamurlak",
+            "label": "Jamurlak",
+            "locationId": "world-cartographic-yamurlak",
+            "locationName": "Yamurlak",
+            "matchType": "alias",
+            "point": {
+                "x": 1536,
+                "y": 514
             }
         },
         {
@@ -822,6 +833,633 @@
             "point": {
                 "x": 2027,
                 "y": 1337.5
+            }
+        },
+        {
+            "sourceId": "location|Rivia",
+            "label": "Rivia",
+            "locationId": "world-canonical-rivia-city",
+            "locationName": "Rívia",
+            "matchType": "exact",
+            "point": {
+                "x": 2271.8,
+                "y": 1425.7
+            }
+        },
+        {
+            "sourceId": "location|Ratsburg",
+            "label": "Ratsburg",
+            "locationId": "world-canonical-rastburg-castle",
+            "locationName": "Castelo de Rastburg",
+            "matchType": "alias",
+            "point": {
+                "x": 2347.7,
+                "y": 1395.9
+            }
+        },
+        {
+            "sourceId": "location|Dillmor",
+            "label": "Dillmor",
+            "locationId": "world-cartographic-dillmor",
+            "locationName": "Dillmor",
+            "matchType": "exact",
+            "point": {
+                "x": 2329.3,
+                "y": 1454
+            }
+        },
+        {
+            "sourceId": "location|Scala",
+            "label": "Scala",
+            "locationId": "world-canonical-scala",
+            "locationName": "Scala",
+            "matchType": "exact",
+            "point": {
+                "x": 2465.8,
+                "y": 1429.9
+            }
+        },
+        {
+            "sourceId": "location|Spalla",
+            "label": "Spalla",
+            "locationId": "world-canonical-spalla",
+            "locationName": "Spalla",
+            "matchType": "exact",
+            "point": {
+                "x": 2583.2,
+                "y": 1408.9
+            }
+        },
+        {
+            "sourceId": "location|Lyria",
+            "label": "Lyria",
+            "locationId": "world-canonical-lyria-city",
+            "locationName": "Líria",
+            "matchType": "exact",
+            "point": {
+                "x": 2556.6,
+                "y": 1314.4
+            }
+        },
+        {
+            "sourceId": "location|Aldersberg",
+            "label": "Aldersberg",
+            "locationId": "world-canonical-aldersberg",
+            "locationName": "Aldersberg",
+            "matchType": "exact",
+            "point": {
+                "x": 2401.2,
+                "y": 1281.4
+            }
+        },
+        {
+            "sourceId": "location|Vengerberg",
+            "label": "Vengerberg",
+            "locationId": "world-canonical-vengerberg",
+            "locationName": "Vengerberg",
+            "matchType": "exact",
+            "point": {
+                "x": 2336.5,
+                "y": 1184.9
+            }
+        },
+        {
+            "sourceId": "location|Eysenlaan",
+            "label": "Eysenlaan",
+            "locationId": "world-canonical-eyn-lan",
+            "locationName": "Eysenlaan",
+            "matchType": "exact",
+            "point": {
+                "x": 2130,
+                "y": 1143
+            }
+        },
+        {
+            "sourceId": "location|Gulet",
+            "label": "Gulet",
+            "locationId": "world-canonical-gulet",
+            "locationName": "Gulet",
+            "matchType": "exact",
+            "point": {
+                "x": 2391.1,
+                "y": 1048.2
+            }
+        },
+        {
+            "sourceId": "location|Hoshberg",
+            "label": "Hoshberg",
+            "locationId": "world-cartographic-hoshberg",
+            "locationName": "Hoshberg",
+            "matchType": "exact",
+            "point": {
+                "x": 2559.3,
+                "y": 1091.9
+            }
+        },
+        {
+            "sourceId": "location|Gwendeith",
+            "label": "Gwendeith",
+            "locationId": "world-cartographic-gwendeith",
+            "locationName": "Gwendeith",
+            "matchType": "exact",
+            "point": {
+                "x": 2785.9,
+                "y": 1051.3
+            }
+        },
+        {
+            "sourceId": "location|Asheberg",
+            "label": "Asheberg",
+            "locationId": "world-cartographic-ashberg",
+            "locationName": "Ashberg",
+            "matchType": "alias",
+            "point": {
+                "x": 2119.5,
+                "y": 933.7
+            }
+        },
+        {
+            "sourceId": "location|Flotsan",
+            "label": "Flotsan",
+            "locationId": "world-cartographic-flotsam",
+            "locationName": "Flotsam",
+            "matchType": "alias",
+            "point": {
+                "x": 1923,
+                "y": 830
+            }
+        },
+        {
+            "sourceId": "location|Hagge",
+            "label": "Hagge",
+            "locationId": "world-cartographic-hagge",
+            "locationName": "Hagge",
+            "matchType": "exact",
+            "point": {
+                "x": 2040,
+                "y": 830.3
+            }
+        },
+        {
+            "sourceId": "location|Vergen",
+            "label": "Vergen",
+            "locationId": "world-canonical-vergen",
+            "locationName": "Vergen",
+            "matchType": "exact",
+            "point": {
+                "x": 2161.7,
+                "y": 843.8
+            }
+        },
+        {
+            "sourceId": "location|Kalkar",
+            "label": "Kalkar",
+            "locationId": "world-cartographic-kalkar",
+            "locationName": "Kalkar",
+            "matchType": "exact",
+            "point": {
+                "x": 2545.7,
+                "y": 792.1
+            }
+        },
+        {
+            "sourceId": "location|Berg Aen Dal",
+            "label": "Berg Aen Dal",
+            "locationId": "world-cartographic-berg-aen-dal",
+            "locationName": "Berg Aen Dal",
+            "matchType": "exact",
+            "point": {
+                "x": 2650.7,
+                "y": 813.9
+            }
+        },
+        {
+            "sourceId": "location|Tiel",
+            "label": "Tiel",
+            "locationId": "world-cartographic-tiel",
+            "locationName": "Tiel",
+            "matchType": "exact",
+            "point": {
+                "x": 2454.5,
+                "y": 801.2
+            }
+        },
+        {
+            "sourceId": "location|Upper Posada",
+            "label": "Upper Posada",
+            "locationId": "world-canonical-upper-posada",
+            "locationName": "Alta Posada",
+            "matchType": "exact",
+            "point": {
+                "x": 2589.5,
+                "y": 885.7
+            }
+        },
+        {
+            "sourceId": "location|Upper Lower Posada",
+            "label": "Upper Lower Posada",
+            "locationId": "world-canonical-lower-posada",
+            "locationName": "Baixa Posada",
+            "matchType": "alias",
+            "point": {
+                "x": 2671.3,
+                "y": 917
+            }
+        },
+        {
+            "sourceId": "location|Ban Blathanna",
+            "label": "Ban Blathanna",
+            "locationId": "world-cartographic-ban-blathanna",
+            "locationName": "Ban Blathanna",
+            "matchType": "exact",
+            "point": {
+                "x": 2609.2,
+                "y": 951.5
+            }
+        },
+        {
+            "sourceId": "location|Blue Mountains B",
+            "label": "Blue Mountains B",
+            "locationId": "world-cartographic-blue-mountains-b",
+            "locationName": "Blue Mountains B",
+            "matchType": "exact",
+            "point": {
+                "x": 2845.2,
+                "y": 821.5
+            }
+        },
+        {
+            "sourceId": "location|Little Marsh",
+            "label": "Little Marsh",
+            "locationId": "world-cartographic-little-marsh",
+            "locationName": "Little Marsh",
+            "matchType": "exact",
+            "point": {
+                "x": 1189,
+                "y": 1303
+            }
+        },
+        {
+            "sourceId": "location|Caelf",
+            "label": "Caelf",
+            "locationId": "world-cartographic-caelf",
+            "locationName": "Caelf",
+            "matchType": "exact",
+            "point": {
+                "x": 1125,
+                "y": 1273
+            }
+        },
+        {
+            "sourceId": "location|Cidaris",
+            "label": "Cidaris",
+            "locationId": "world-canonical-cidaris-city",
+            "locationName": "Cidaris",
+            "matchType": "exact",
+            "point": {
+                "x": 1021,
+                "y": 1242
+            }
+        },
+        {
+            "sourceId": "location|Roggeveen",
+            "label": "Roggeveen",
+            "locationId": "world-cartographic-cidaris-roggeveen",
+            "locationName": "Roggeveen",
+            "matchType": "exact",
+            "point": {
+                "x": 985.2,
+                "y": 1307.8
+            }
+        },
+        {
+            "sourceId": "location|Bremervoord",
+            "label": "Bremervoord",
+            "locationId": "world-canonical-bremervoord",
+            "locationName": "Bremervoord",
+            "matchType": "exact",
+            "point": {
+                "x": 835.5,
+                "y": 1355.6
+            }
+        },
+        {
+            "sourceId": "location|Vole",
+            "label": "Vole",
+            "locationId": "world-cartographic-vole",
+            "locationName": "Vole",
+            "matchType": "exact",
+            "point": {
+                "x": 1007.5,
+                "y": 1362.7
+            }
+        },
+        {
+            "sourceId": "location|Ravelin",
+            "label": "Ravelin",
+            "locationId": "world-cartographic-ravelin",
+            "locationName": "Ravelin",
+            "matchType": "exact",
+            "point": {
+                "x": 1072,
+                "y": 1365
+            }
+        },
+        {
+            "sourceId": "location|Vartburg",
+            "label": "Vartburg",
+            "locationId": "world-cartographic-vartburg",
+            "locationName": "Vartburg",
+            "matchType": "exact",
+            "point": {
+                "x": 1174,
+                "y": 1350
+            }
+        },
+        {
+            "sourceId": "location|Kerack",
+            "label": "Kerack",
+            "locationId": "world-canonical-kerack-city",
+            "locationName": "Kerack",
+            "matchType": "exact",
+            "point": {
+                "x": 1129,
+                "y": 1395
+            }
+        },
+        {
+            "sourceId": "location|Cizmar",
+            "label": "Cizmar",
+            "locationId": "world-cartographic-cizmar",
+            "locationName": "Cizmar",
+            "matchType": "exact",
+            "point": {
+                "x": 1259.3,
+                "y": 1388.1
+            }
+        },
+        {
+            "sourceId": "location|Ansegis",
+            "label": "Ansegis",
+            "locationId": "world-cartographic-ansegis",
+            "locationName": "Ansegis",
+            "matchType": "exact",
+            "point": {
+                "x": 1188.8,
+                "y": 1474.7
+            }
+        },
+        {
+            "sourceId": "location|Tiberghien",
+            "label": "Tiberghien",
+            "locationId": "world-cartographic-tiberghien",
+            "locationName": "Tiberghien",
+            "matchType": "exact",
+            "point": {
+                "x": 1087.7,
+                "y": 1477.2
+            }
+        },
+        {
+            "sourceId": "location|Hamm",
+            "label": "Hamm",
+            "locationId": "world-cartographic-hamm",
+            "locationName": "Hamm",
+            "matchType": "exact",
+            "point": {
+                "x": 1147,
+                "y": 1632.5
+            }
+        },
+        {
+            "sourceId": "location|Nastrog",
+            "label": "Nastrog",
+            "locationId": "world-cartographic-nastrog",
+            "locationName": "Nastrog",
+            "matchType": "exact",
+            "point": {
+                "x": 1235.3,
+                "y": 1745.6
+            }
+        },
+        {
+            "sourceId": "location|Rozrog",
+            "label": "Rozrog",
+            "locationId": "world-cartographic-rozrog",
+            "locationName": "Rozrog",
+            "matchType": "exact",
+            "point": {
+                "x": 1281.3,
+                "y": 1737.9
+            }
+        },
+        {
+            "sourceId": "location|Bodrog",
+            "label": "Bodrog",
+            "locationId": "world-cartographic-bodrog",
+            "locationName": "Bodrog",
+            "matchType": "exact",
+            "point": {
+                "x": 1335.5,
+                "y": 1736.3
+            }
+        },
+        {
+            "sourceId": "location|Tukaj Hills",
+            "label": "Tukaj Hills",
+            "locationId": "world-cartographic-tukaj-hills",
+            "locationName": "Tukaj Hills",
+            "matchType": "exact",
+            "point": {
+                "x": 1447.3,
+                "y": 1425.6
+            }
+        },
+        {
+            "sourceId": "location|Ruína Élfica",
+            "label": "Ruína Élfica",
+            "locationId": "world-cartographic-elven-ruin",
+            "locationName": "Ruína Élfica",
+            "matchType": "exact",
+            "point": {
+                "x": 1381.4,
+                "y": 1464.6
+            }
+        },
+        {
+            "sourceId": "location|Craag An",
+            "label": "Craag An",
+            "locationId": "world-cartographic-craag-an",
+            "locationName": "Craag An",
+            "matchType": "exact",
+            "point": {
+                "x": 1309.6,
+                "y": 1464.2
+            }
+        },
+        {
+            "sourceId": "location|Col Serrai",
+            "label": "Col Serrai",
+            "locationId": "world-cartographic-col-serrai",
+            "locationName": "Col Serrai",
+            "matchType": "exact",
+            "point": {
+                "x": 1495.3,
+                "y": 1518.6
+            }
+        },
+        {
+            "sourceId": "location|Duen Canell",
+            "label": "Duen Canell",
+            "locationId": "world-canonical-duen-canell",
+            "locationName": "Duén Canell",
+            "matchType": "exact",
+            "point": {
+                "x": 1342.2,
+                "y": 1570
+            }
+        },
+        {
+            "sourceId": "location|Ban Glean",
+            "label": "Ban Glean",
+            "locationId": "world-canonical-ban-glean",
+            "locationName": "Ban Gleán",
+            "matchType": "exact",
+            "point": {
+                "x": 2345,
+                "y": 757.3
+            }
+        },
+        {
+            "sourceId": "location|Shaerrawedd",
+            "label": "Shaerrawedd",
+            "locationId": "world-canonical-shaerrawedd",
+            "locationName": "Shaerrawedd",
+            "matchType": "exact",
+            "point": {
+                "x": 2221.2,
+                "y": 642.4
+            }
+        },
+        {
+            "sourceId": "location|Beeches",
+            "label": "Beeches",
+            "locationId": "world-cartographic-beeches",
+            "locationName": "Beeches",
+            "matchType": "exact",
+            "point": {
+                "x": 1961,
+                "y": 599
+            }
+        },
+        {
+            "sourceId": "location|Leyda",
+            "label": "Leyda",
+            "locationId": "world-cartographic-leyda",
+            "locationName": "Leyda",
+            "matchType": "exact",
+            "point": {
+                "x": 2182.4,
+                "y": 544.6
+            }
+        },
+        {
+            "sourceId": "location|Loc Muinne",
+            "label": "Loc Muinne",
+            "locationId": "world-canonical-loc-muinne",
+            "locationName": "Loc Muinne",
+            "matchType": "exact",
+            "point": {
+                "x": 2646.5,
+                "y": 702.9
+            }
+        },
+        {
+            "sourceId": "location|Ban Ard",
+            "label": "Ban Ard",
+            "locationId": "world-canonical-ban-ard",
+            "locationName": "Ban Ard",
+            "matchType": "exact",
+            "point": {
+                "x": 2572.3,
+                "y": 613.6
+            }
+        },
+        {
+            "sourceId": "location|Est Haemlet",
+            "label": "Est Haemlet",
+            "locationId": "world-cartographic-est-haemlet",
+            "locationName": "Est Haemlet",
+            "matchType": "exact",
+            "point": {
+                "x": 2716.9,
+                "y": 628.8
+            }
+        },
+        {
+            "sourceId": "location|Daevon",
+            "label": "Daevon",
+            "locationId": "world-cartographic-daevon",
+            "locationName": "Daevon",
+            "matchType": "exact",
+            "point": {
+                "x": 2221.2,
+                "y": 414.3
+            }
+        },
+        {
+            "sourceId": "location|Ard Carraigh",
+            "label": "Ard Carraigh",
+            "locationId": "world-canonical-ard-carraigh",
+            "locationName": "Ard Carraigh",
+            "matchType": "exact",
+            "point": {
+                "x": 2315.7,
+                "y": 365.3
+            }
+        },
+        {
+            "sourceId": "location|Vattweir",
+            "label": "Vattweir",
+            "locationId": "world-cartographic-vattweir",
+            "locationName": "Vattweir",
+            "matchType": "exact",
+            "point": {
+                "x": 2083.8,
+                "y": 373
+            }
+        },
+        {
+            "sourceId": "location|Kaer Morhen",
+            "label": "Kaer Morhen",
+            "locationId": "world-canonical-kaer-morhen",
+            "locationName": "Kaer Morhen",
+            "matchType": "exact",
+            "point": {
+                "x": 2596.9,
+                "y": 251.9
+            }
+        },
+        {
+            "sourceId": "location|Blue Mountain A",
+            "label": "Blue Mountain A",
+            "locationId": "world-cartographic-blue-mountain-a",
+            "locationName": "Blue Mountain A",
+            "matchType": "exact",
+            "point": {
+                "x": 2844.6,
+                "y": 184.7
+            }
+        },
+        {
+            "sourceId": "location|Dragon Mountains A",
+            "label": "Dragon Mountains A",
+            "locationId": "world-cartographic-dragon-mountains-a",
+            "locationName": "Dragon Mountains A",
+            "matchType": "exact",
+            "point": {
+                "x": 2388.1,
+                "y": 42.4
             }
         }
     ],

@@ -27,7 +27,7 @@ assert.match(zoomLockSource, /\['\+', '-', '=', '0'\]/);
 assert.match(zoomLockSource, /passive:\s*false/);
 assert.match(zoomLockSource, /data-allow-map-zoom/);
 
-assert.match(workerSource, /witcher-combat-tracker-v153/);
+assert.match(workerSource, /witcher-combat-tracker-v158/);
 assert.match(workerSource, /zoom-lock\.css/);
 assert.match(workerSource, /js\/zoom-lock\.js/);
 

@@ -46,6 +46,7 @@ html, body {
     overflow-y: auto;
     scroll-behavior: smooth;
     overscroll-behavior-y: contain;
+    overflow-anchor: none;
 }
 
 .card-selected {
