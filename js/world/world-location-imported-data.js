@@ -6,7 +6,7 @@
     'use strict';
     return Object.freeze({
     "source": "img/maps/continent/continent-roads.svg",
-    "importedAt": "2026-09-13T01:35:17.467Z",
+    "importedAt": "2026-09-14T23:17:37.042Z",
     "mapWidth": 2880,
     "mapHeight": 4096,
     "markers": [
@@ -272,6 +272,17 @@
             "point": {
                 "x": 1173,
                 "y": 367
+            }
+        },
+        {
+            "sourceId": "location|Talgar",
+            "label": "Talgar",
+            "locationId": "world-political-talgar",
+            "locationName": "Talgar",
+            "matchType": "exact",
+            "point": {
+                "x": 1094.7,
+                "y": 355.5
             }
         },
         {
@@ -1460,6 +1471,127 @@
             "point": {
                 "x": 2388.1,
                 "y": 42.4
+            }
+        },
+        {
+            "sourceId": "location|Hengfors",
+            "label": "Hengfors",
+            "locationId": "world-canonical-hengfors-city",
+            "locationName": "Hengfors",
+            "matchType": "exact",
+            "point": {
+                "x": 1544.7,
+                "y": 399.7
+            }
+        },
+        {
+            "sourceId": "location|Crinfrid",
+            "label": "Crinfrid",
+            "locationId": "world-political-hengfors-crinfrid",
+            "locationName": "Crinfrid",
+            "matchType": "exact",
+            "point": {
+                "x": 1644.8,
+                "y": 361.2
+            }
+        },
+        {
+            "sourceId": "location|Creyden",
+            "label": "Creyden",
+            "locationId": "world-canonical-creyden",
+            "locationName": "Creyden",
+            "matchType": "exact",
+            "point": {
+                "x": 1455.9,
+                "y": 317.7
+            }
+        },
+        {
+            "sourceId": "location|Barefild",
+            "label": "Barefild",
+            "locationId": "world-canonical-barefield",
+            "locationName": "Barefield",
+            "matchType": "alias",
+            "point": {
+                "x": 1858,
+                "y": 282.3
+            }
+        },
+        {
+            "sourceId": "location|Maleore",
+            "label": "Maleore",
+            "locationId": "world-political-hengfors-malleore",
+            "locationName": "Malleore",
+            "matchType": "alias",
+            "point": {
+                "x": 1677.5,
+                "y": 229.5
+            }
+        },
+        {
+            "sourceId": "location|Creigiau",
+            "label": "Creigiau",
+            "locationId": "world-cartographic-creigiau",
+            "locationName": "Creigiau",
+            "matchType": "exact",
+            "point": {
+                "x": 1694.1,
+                "y": 154.7
+            }
+        },
+        {
+            "sourceId": "location|Pont Vanis",
+            "label": "Pont Vanis",
+            "locationId": "world-canonical-pont-vanis",
+            "locationName": "Pont Vanis",
+            "matchType": "exact",
+            "point": {
+                "x": 838.8,
+                "y": 515.4
+            }
+        },
+        {
+            "sourceId": "location|Lan Exeter",
+            "label": "Lan Exeter",
+            "locationId": "world-canonical-lan-exeter",
+            "locationName": "Lan Exeter",
+            "matchType": "exact",
+            "point": {
+                "x": 790.1,
+                "y": 314.9
+            }
+        },
+        {
+            "sourceId": "location|Tridam",
+            "label": "Tridam",
+            "locationId": "world-cartographic-tridam",
+            "locationName": "Tridam",
+            "matchType": "exact",
+            "point": {
+                "x": 535.6,
+                "y": 407.8
+            }
+        },
+        {
+            "sourceId": "location|Rakverelin",
+            "label": "Rakverelin",
+            "locationId": "world-cartographic-rakverelin",
+            "locationName": "Rakverelin",
+            "matchType": "exact",
+            "point": {
+                "x": 449.7,
+                "y": 231.6
+            }
+        },
+        {
+            "sourceId": "location|Aedd Gynvael",
+            "label": "Aedd Gynvael",
+            "locationId": "world-cartographic-aed-gynvael",
+            "locationName": "Aed Gynvael",
+            "matchType": "alias",
+            "point": {
+                "x": 488.6,
+                "y": 144.1
             }
         }
     ],

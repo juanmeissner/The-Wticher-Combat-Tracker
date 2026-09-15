@@ -8,12 +8,12 @@
 })(typeof globalThis !== 'undefined' ? globalThis : this, function (roads) {
     'use strict';
 
-    const ROUTE_ENGINE_VERSION = 1;
+    const ROUTE_ENGINE_VERSION = 2;
     const DEFAULT_MAP_SETTINGS = Object.freeze({ pixelsPerGrid: 576, kilometersPerGrid: 100 });
     const TRAVEL_MODES = Object.freeze({
         foot: Object.freeze({ id: 'foot', label: 'A pé', icon: '🥾', baseSpeedKmh: 4, maximumSpeedKmh: 4, offRoadMultiplier: 0.65 }),
-        horse: Object.freeze({ id: 'horse', label: 'A cavalo', icon: '🐎', baseSpeedKmh: 10, offRoadMultiplier: 0.68 }),
-        carriage: Object.freeze({ id: 'carriage', label: 'Carruagem', icon: '🛒', baseSpeedKmh: 8, offRoadMultiplier: 0 }),
+        horse: Object.freeze({ id: 'horse', label: 'A cavalo', icon: '🐎', baseSpeedKmh: 8, maximumSpeedKmh: 8, offRoadMultiplier: 0.68 }),
+        carriage: Object.freeze({ id: 'carriage', label: 'Carruagem', icon: '🛒', baseSpeedKmh: 6, maximumSpeedKmh: 6, offRoadMultiplier: 0 }),
         portal: Object.freeze({ id: 'portal', label: 'Portal Vertical', icon: '🌀', baseSpeedKmh: 0, offRoadMultiplier: 0 })
     });
     const ROAD_SPEED_MULTIPLIERS = Object.freeze({ main: 1.15, regional: 1, mountain: 0.62 });

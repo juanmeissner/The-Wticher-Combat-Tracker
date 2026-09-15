@@ -384,22 +384,16 @@
         if (mapFilters.type !== 'all' && !types.includes(mapFilters.type)) mapFilters.type = 'all';
         return `
             <section class="world-map-panel" aria-label="Mapa visual do Continente">
-                <div class="world-map-toolbar">
-                    <div>
-                        <small>MAPA VISUAL INTERATIVO</small>
-                        <strong>${escapeHtml(reference.title)}</strong>
-                        <span>${mappableCount} locais · ${roadSummary.segmentCount} trechos · ${roadSummary.distanceKm.toLocaleString('pt-BR')} km vetorizados.</span>
-                    </div>
-                    <div class="world-map-controls" aria-label="Controles do mapa">
+                <div class="world-map-stage">
+                    <div class="world-map-controls world-map-controls-floating" aria-label="Controles do mapa">
                         <button id="worldMapFilterToggle" type="button" onclick="worldMap.toggleFilters()" aria-label="Abrir filtros do mapa" aria-expanded="false" title="Filtros do mapa">⌕</button>
                         <button id="worldMapRoadToggle" class="world-map-road-toggle${roadsVisible ? ' active' : ''}" type="button" onclick="worldMap.toggleRoads()" aria-label="${roadsVisible ? 'Ocultar' : 'Exibir'} rede de estradas" aria-pressed="${roadsVisible}" title="${roadsVisible ? 'Ocultar' : 'Exibir'} estradas">⌁</button>
                         ${options.playerMode === true ? '' : '<button id="worldMapRoadEditorToggle" type="button" onclick="worldMap.toggleRoadEditor()" aria-label="Editar rede de estradas" aria-expanded="false" title="Editor de estradas">✎</button>'}
                         <button type="button" onclick="worldMap.zoomOut()" aria-label="Diminuir zoom" title="Diminuir zoom">−</button>
                         <button type="button" onclick="worldMap.resetView()" aria-label="Mostrar mapa completo" title="Mostrar mapa completo">⌂</button>
+                        <button type="button" onclick="worldMap.focusCurrentLocation()" aria-label="Ir ao local atual" title="Ir ao local atual">◎</button>
                         <button type="button" onclick="worldMap.zoomIn()" aria-label="Aumentar zoom" title="Aumentar zoom">+</button>
                     </div>
-                </div>
-                <div class="world-map-stage">
                     <div id="worldInteractiveMap" class="world-interactive-map" data-allow-map-zoom role="application" aria-label="Mapa navegável do Continente"></div>
                     <aside id="worldMapFilters" class="world-map-filter-panel" hidden aria-label="Filtros dos marcadores">
                         <div class="world-map-filter-heading">
@@ -434,8 +428,9 @@
             cartographic: { color: '#fbbf24', fillColor: '#d97706' },
             custom: { color: '#c084fc', fillColor: '#7e22ce' }
         }[layer] || { color: '#cbd5e1', fillColor: '#475569' };
+        const colors = isCurrent ? { color: '#bbf7d0', fillColor: '#16a34a' } : palette;
         return {
-            ...palette,
+            ...colors,
             radius: isCurrent ? 9 : 6,
             weight: isCurrent ? 4 : 2,
             opacity: 1,
@@ -1189,16 +1184,24 @@
         }).addTo(activeRouteLayer);
         const endpointStyle = {
             pane: 'worldRoutePane',
-            radius: 7,
-            color: '#e0f2fe',
-            weight: 3,
-            fillColor: isPortal ? '#a855f7' : '#0284c7',
+            radius: 8,
+            weight: 4,
             fillOpacity: 1,
             interactive: false,
             className: 'world-route-preview-endpoint'
         };
-        root.L.circleMarker(latLngs[0], endpointStyle).addTo(activeRouteLayer);
-        root.L.circleMarker(latLngs[latLngs.length - 1], endpointStyle).addTo(activeRouteLayer);
+        root.L.circleMarker(latLngs[0], {
+            ...endpointStyle,
+            color: '#dcfce7',
+            fillColor: '#16a34a',
+            className: 'world-route-preview-endpoint world-route-preview-origin'
+        }).addTo(activeRouteLayer);
+        root.L.circleMarker(latLngs[latLngs.length - 1], {
+            ...endpointStyle,
+            color: '#f3e8ff',
+            fillColor: '#9333ea',
+            className: 'world-route-preview-endpoint world-route-preview-destination'
+        }).addTo(activeRouteLayer);
         activeRoutePreviewPointCount = coordinates.length;
         const viewportWidth = Number(root.document?.documentElement?.clientWidth) || 0;
         const plannerBesideMap = viewportWidth >= 900
@@ -1373,6 +1376,23 @@
         rememberedView = { center: [...initialView.center], zoom: initialView.zoom };
     }
 
+    function focusCurrentLocation() {
+        if (!activeMap || !activeWorld?.currentLocationId) {
+            root.showToast?.('Defina primeiro o local atual da campanha.');
+            return false;
+        }
+        const current = activeWorld.locations?.find(location => location.id === activeWorld.currentLocationId);
+        const coordinate = percentToMapCoordinate(current?.coordinates);
+        if (!current || !coordinate) {
+            root.showToast?.('O local atual ainda não possui coordenadas no mapa.');
+            return false;
+        }
+        const targetZoom = Math.max(0, Number(activeMap.getZoom()) || 0);
+        activeMap.setView([coordinate.lat, coordinate.lng], targetZoom, { animate: true });
+        activeMarkers.get(current.id)?.openTooltip?.();
+        return true;
+    }
+
     function getDebugState() {
         return {
             initialized: Boolean(activeMap),
@@ -1451,6 +1471,7 @@
         zoomIn,
         zoomOut,
         resetView,
+        focusCurrentLocation,
         getDebugState
     });
 });

@@ -6,7 +6,7 @@
     'use strict';
     return Object.freeze({
     "source": "img/maps/continent/continent-roads.svg",
-    "importedAt": "2026-09-13T01:35:17.464Z",
+    "importedAt": "2026-09-14T23:17:37.038Z",
     "mapWidth": 2880,
     "mapHeight": 4096,
     "snapTolerancePx": 5,
@@ -22,6 +22,26 @@
             "locationId": "world-cartographic-dragon-mountains-a"
         },
         {
+            "id": "road-node-aed-gynvael",
+            "name": "Aed Gynvael",
+            "point": {
+                "x": 488.6,
+                "y": 144.1
+            },
+            "type": "location",
+            "locationId": "world-cartographic-aed-gynvael"
+        },
+        {
+            "id": "road-node-creigiau",
+            "name": "Creigiau",
+            "point": {
+                "x": 1689.6,
+                "y": 154.7
+            },
+            "type": "location",
+            "locationId": "world-cartographic-creigiau"
+        },
+        {
             "id": "road-node-blue-mountain-a",
             "name": "Blue Mountain A",
             "point": {
@@ -32,14 +52,34 @@
             "locationId": "world-cartographic-blue-mountain-a"
         },
         {
-            "id": "road-node-svg-003",
-            "name": "Ponto viário 3",
+            "id": "road-node-svg-005",
+            "name": "Entroncamento 5",
             "point": {
-                "x": 2167.3,
-                "y": 233
+                "x": 505.4,
+                "y": 216.5
             },
-            "type": "waypoint",
+            "type": "junction",
             "locationId": null
+        },
+        {
+            "id": "road-node-malleore",
+            "name": "Malleore",
+            "point": {
+                "x": 1677.5,
+                "y": 229.5
+            },
+            "type": "location",
+            "locationId": "world-political-hengfors-malleore"
+        },
+        {
+            "id": "road-node-rakverelin",
+            "name": "Rakverelin",
+            "point": {
+                "x": 449.7,
+                "y": 231.6
+            },
+            "type": "location",
+            "locationId": "world-cartographic-rakverelin"
         },
         {
             "id": "road-node-kaer-morhen",
@@ -50,6 +90,116 @@
             },
             "type": "location",
             "locationId": "world-canonical-kaer-morhen"
+        },
+        {
+            "id": "road-node-barefield",
+            "name": "Barefield",
+            "point": {
+                "x": 1858,
+                "y": 282.3
+            },
+            "type": "location",
+            "locationId": "world-canonical-barefield"
+        },
+        {
+            "id": "road-node-svg-010",
+            "name": "Entroncamento 10",
+            "point": {
+                "x": 1678.6,
+                "y": 292.4
+            },
+            "type": "junction",
+            "locationId": null
+        },
+        {
+            "id": "road-node-lan-exeter",
+            "name": "Lan Exeter",
+            "point": {
+                "x": 790.1,
+                "y": 314.9
+            },
+            "type": "junction",
+            "locationId": "world-canonical-lan-exeter"
+        },
+        {
+            "id": "road-node-creyden",
+            "name": "Creyden",
+            "point": {
+                "x": 1455.9,
+                "y": 317.7
+            },
+            "type": "junction",
+            "locationId": "world-canonical-creyden"
+        },
+        {
+            "id": "road-node-svg-013",
+            "name": "Entroncamento 13",
+            "point": {
+                "x": 846.2,
+                "y": 318.2
+            },
+            "type": "junction",
+            "locationId": null
+        },
+        {
+            "id": "road-node-tancarville",
+            "name": "Tancarville",
+            "point": {
+                "x": 1257.5,
+                "y": 319.4
+            },
+            "type": "location",
+            "locationId": "world-cartographic-tancarville"
+        },
+        {
+            "id": "road-node-svg-015",
+            "name": "Entroncamento 15",
+            "point": {
+                "x": 1852.6,
+                "y": 325.9
+            },
+            "type": "junction",
+            "locationId": null
+        },
+        {
+            "id": "road-node-svg-016",
+            "name": "Entroncamento 16",
+            "point": {
+                "x": 1712.7,
+                "y": 342.6
+            },
+            "type": "junction",
+            "locationId": null
+        },
+        {
+            "id": "road-node-talgar",
+            "name": "Talgar",
+            "point": {
+                "x": 1094.7,
+                "y": 355.5
+            },
+            "type": "junction",
+            "locationId": "world-political-talgar"
+        },
+        {
+            "id": "road-node-svg-018",
+            "name": "Entroncamento 18",
+            "point": {
+                "x": 1140,
+                "y": 356.8
+            },
+            "type": "junction",
+            "locationId": null
+        },
+        {
+            "id": "road-node-crinfrid",
+            "name": "Crinfrid",
+            "point": {
+                "x": 1649.3,
+                "y": 361.2
+            },
+            "type": "location",
+            "locationId": "world-political-hengfors-crinfrid"
         },
         {
             "id": "road-node-ard-carraigh",
@@ -68,7 +218,7 @@
                 "x": 1173,
                 "y": 367
             },
-            "type": "location",
+            "type": "junction",
             "locationId": "world-cartographic-yspaden"
         },
         {
@@ -82,14 +232,44 @@
             "locationId": "world-cartographic-vattweir"
         },
         {
-            "id": "road-node-svg-008",
-            "name": "Ponto viário 8",
+            "id": "road-node-svg-023",
+            "name": "Entroncamento 23",
+            "point": {
+                "x": 1775.9,
+                "y": 384.1
+            },
+            "type": "junction",
+            "locationId": null
+        },
+        {
+            "id": "road-node-hengfors",
+            "name": "Hengfors",
+            "point": {
+                "x": 1544.7,
+                "y": 399.7
+            },
+            "type": "junction",
+            "locationId": "world-canonical-hengfors-city"
+        },
+        {
+            "id": "road-node-svg-025",
+            "name": "Entroncamento 25",
             "point": {
                 "x": 1373,
                 "y": 403
             },
-            "type": "waypoint",
+            "type": "junction",
             "locationId": null
+        },
+        {
+            "id": "road-node-tridam",
+            "name": "Tridam",
+            "point": {
+                "x": 535.6,
+                "y": 407.8
+            },
+            "type": "location",
+            "locationId": "world-cartographic-tridam"
         },
         {
             "id": "road-node-daevon",
@@ -102,8 +282,8 @@
             "locationId": "world-cartographic-daevon"
         },
         {
-            "id": "road-node-svg-010",
-            "name": "Entroncamento 10",
+            "id": "road-node-svg-028",
+            "name": "Entroncamento 28",
             "point": {
                 "x": 2326.8,
                 "y": 423.2
@@ -142,6 +322,16 @@
             "locationId": "world-cartographic-yamurlak"
         },
         {
+            "id": "road-node-pont-vanis",
+            "name": "Pont Vanis",
+            "point": {
+                "x": 843.3,
+                "y": 515.4
+            },
+            "type": "location",
+            "locationId": "world-canonical-pont-vanis"
+        },
+        {
             "id": "road-node-blaviken",
             "name": "Blaviken",
             "point": {
@@ -172,8 +362,8 @@
             "locationId": "world-cartographic-leyda"
         },
         {
-            "id": "road-node-svg-017",
-            "name": "Entroncamento 17",
+            "id": "road-node-svg-036",
+            "name": "Entroncamento 36",
             "point": {
                 "x": 1326,
                 "y": 556
@@ -193,7 +383,7 @@
         },
         {
             "id": "road-node-gelibol",
-            "name": "Ponto viário 19",
+            "name": "Ponto viário 38",
             "point": {
                 "x": 1718,
                 "y": 577
@@ -205,8 +395,8 @@
             "id": "road-node-gelibol-2",
             "name": "Gelibol",
             "point": {
-                "x": 1734.5,
-                "y": 585.8
+                "x": 1734.3,
+                "y": 586.2
             },
             "type": "junction",
             "locationId": "world-cartographic-gelibol"
@@ -242,8 +432,8 @@
             "locationId": "world-canonical-ban-ard"
         },
         {
-            "id": "road-node-svg-024",
-            "name": "Entroncamento 24",
+            "id": "road-node-svg-043",
+            "name": "Entroncamento 43",
             "point": {
                 "x": 1624,
                 "y": 628
@@ -262,8 +452,8 @@
             "locationId": "world-cartographic-est-haemlet"
         },
         {
-            "id": "road-node-svg-026",
-            "name": "Entroncamento 26",
+            "id": "road-node-svg-045",
+            "name": "Entroncamento 45",
             "point": {
                 "x": 2254.8,
                 "y": 635.4
@@ -282,8 +472,8 @@
             "locationId": "world-canonical-shaerrawedd"
         },
         {
-            "id": "road-node-svg-028",
-            "name": "Entroncamento 28",
+            "id": "road-node-svg-047",
+            "name": "Entroncamento 47",
             "point": {
                 "x": 1378,
                 "y": 649
@@ -302,8 +492,8 @@
             "locationId": "world-cartographic-baldfhorn"
         },
         {
-            "id": "road-node-svg-030",
-            "name": "Ponto viário 30",
+            "id": "road-node-svg-049",
+            "name": "Ponto viário 49",
             "point": {
                 "x": 1832,
                 "y": 689
@@ -312,8 +502,8 @@
             "locationId": null
         },
         {
-            "id": "road-node-svg-031",
-            "name": "Entroncamento 31",
+            "id": "road-node-svg-050",
+            "name": "Entroncamento 50",
             "point": {
                 "x": 2321.3,
                 "y": 694.6
@@ -342,8 +532,8 @@
             "locationId": "world-cartographic-knotgrass-meadow"
         },
         {
-            "id": "road-node-svg-034",
-            "name": "Entroncamento 34",
+            "id": "road-node-svg-053",
+            "name": "Entroncamento 53",
             "point": {
                 "x": 1663,
                 "y": 702
@@ -362,8 +552,8 @@
             "locationId": "world-canonical-loc-muinne"
         },
         {
-            "id": "road-node-svg-036",
-            "name": "Entroncamento 36",
+            "id": "road-node-svg-055",
+            "name": "Entroncamento 55",
             "point": {
                 "x": 2345.1,
                 "y": 722.9
@@ -372,8 +562,8 @@
             "locationId": null
         },
         {
-            "id": "road-node-svg-037",
-            "name": "Entroncamento 37",
+            "id": "road-node-svg-056",
+            "name": "Entroncamento 56",
             "point": {
                 "x": 1682,
                 "y": 726
@@ -382,8 +572,8 @@
             "locationId": null
         },
         {
-            "id": "road-node-svg-038",
-            "name": "Entroncamento 38",
+            "id": "road-node-svg-057",
+            "name": "Entroncamento 57",
             "point": {
                 "x": 2514.6,
                 "y": 732.7
@@ -392,8 +582,8 @@
             "locationId": null
         },
         {
-            "id": "road-node-svg-039",
-            "name": "Entroncamento 39",
+            "id": "road-node-svg-058",
+            "name": "Entroncamento 58",
             "point": {
                 "x": 2279.3,
                 "y": 748
@@ -412,8 +602,8 @@
             "locationId": "world-canonical-ban-glean"
         },
         {
-            "id": "road-node-svg-041",
-            "name": "Entroncamento 41",
+            "id": "road-node-svg-060",
+            "name": "Entroncamento 60",
             "point": {
                 "x": 2413.8,
                 "y": 766.7
@@ -432,8 +622,8 @@
             "locationId": "world-cartographic-coppertown"
         },
         {
-            "id": "road-node-svg-043",
-            "name": "Entroncamento 43",
+            "id": "road-node-svg-062",
+            "name": "Entroncamento 62",
             "point": {
                 "x": 1465,
                 "y": 778
@@ -442,8 +632,8 @@
             "locationId": null
         },
         {
-            "id": "road-node-svg-044",
-            "name": "Entroncamento 44",
+            "id": "road-node-svg-063",
+            "name": "Entroncamento 63",
             "point": {
                 "x": 1515.1,
                 "y": 780.6
@@ -472,8 +662,8 @@
             "locationId": "world-cartographic-kalkar"
         },
         {
-            "id": "road-node-svg-047",
-            "name": "Entroncamento 47",
+            "id": "road-node-svg-066",
+            "name": "Entroncamento 66",
             "point": {
                 "x": 2168.8,
                 "y": 798.6
@@ -522,8 +712,8 @@
             "locationId": "world-cartographic-berg-aen-dal"
         },
         {
-            "id": "road-node-svg-052",
-            "name": "Entroncamento 52",
+            "id": "road-node-svg-071",
+            "name": "Entroncamento 71",
             "point": {
                 "x": 1471,
                 "y": 820
@@ -533,7 +723,7 @@
         },
         {
             "id": "road-node-tiel-2",
-            "name": "Entroncamento 53",
+            "name": "Entroncamento 72",
             "point": {
                 "x": 2454.5,
                 "y": 820.6
@@ -562,8 +752,8 @@
             "locationId": "world-cartographic-blue-mountains-b"
         },
         {
-            "id": "road-node-svg-056",
-            "name": "Entroncamento 56",
+            "id": "road-node-svg-075",
+            "name": "Entroncamento 75",
             "point": {
                 "x": 2524.5,
                 "y": 826
@@ -592,8 +782,8 @@
             "locationId": "world-cartographic-hagge"
         },
         {
-            "id": "road-node-svg-059",
-            "name": "Entroncamento 59",
+            "id": "road-node-svg-078",
+            "name": "Entroncamento 78",
             "point": {
                 "x": 2107.9,
                 "y": 842.5
@@ -612,8 +802,8 @@
             "locationId": "world-canonical-vergen"
         },
         {
-            "id": "road-node-svg-061",
-            "name": "Entroncamento 61",
+            "id": "road-node-svg-080",
+            "name": "Entroncamento 80",
             "point": {
                 "x": 2193.6,
                 "y": 853.4
@@ -682,8 +872,8 @@
             "locationId": "world-canonical-temple-melitele"
         },
         {
-            "id": "road-node-svg-068",
-            "name": "Entroncamento 68",
+            "id": "road-node-svg-087",
+            "name": "Entroncamento 87",
             "point": {
                 "x": 1737,
                 "y": 900
@@ -702,8 +892,8 @@
             "locationId": "world-cartographic-demelse"
         },
         {
-            "id": "road-node-svg-070",
-            "name": "Entroncamento 70",
+            "id": "road-node-svg-089",
+            "name": "Entroncamento 89",
             "point": {
                 "x": 1714,
                 "y": 912
@@ -712,8 +902,8 @@
             "locationId": null
         },
         {
-            "id": "road-node-svg-071",
-            "name": "Entroncamento 71",
+            "id": "road-node-svg-090",
+            "name": "Entroncamento 90",
             "point": {
                 "x": 2338.7,
                 "y": 912.6
@@ -742,8 +932,8 @@
             "locationId": "world-canonical-lower-posada"
         },
         {
-            "id": "road-node-svg-074",
-            "name": "Entroncamento 74",
+            "id": "road-node-svg-093",
+            "name": "Entroncamento 93",
             "point": {
                 "x": 2502.2,
                 "y": 918.6
@@ -812,8 +1002,8 @@
             "locationId": "world-cartographic-devils-ford"
         },
         {
-            "id": "road-node-svg-081",
-            "name": "Entroncamento 81",
+            "id": "road-node-svg-100",
+            "name": "Entroncamento 100",
             "point": {
                 "x": 1857,
                 "y": 964
@@ -832,8 +1022,8 @@
             "locationId": "world-cartographic-houtborg"
         },
         {
-            "id": "road-node-svg-083",
-            "name": "Entroncamento 83",
+            "id": "road-node-svg-102",
+            "name": "Entroncamento 102",
             "point": {
                 "x": 2348.2,
                 "y": 977.8
@@ -842,8 +1032,8 @@
             "locationId": null
         },
         {
-            "id": "road-node-svg-084",
-            "name": "Entroncamento 84",
+            "id": "road-node-svg-103",
+            "name": "Entroncamento 103",
             "point": {
                 "x": 1269,
                 "y": 988
@@ -852,8 +1042,8 @@
             "locationId": null
         },
         {
-            "id": "road-node-svg-085",
-            "name": "Entroncamento 85",
+            "id": "road-node-svg-104",
+            "name": "Entroncamento 104",
             "point": {
                 "x": 1211,
                 "y": 995
@@ -862,8 +1052,8 @@
             "locationId": null
         },
         {
-            "id": "road-node-svg-086",
-            "name": "Entroncamento 86",
+            "id": "road-node-svg-105",
+            "name": "Entroncamento 105",
             "point": {
                 "x": 1836,
                 "y": 999
@@ -872,8 +1062,8 @@
             "locationId": null
         },
         {
-            "id": "road-node-svg-087",
-            "name": "Entroncamento 87",
+            "id": "road-node-svg-106",
+            "name": "Entroncamento 106",
             "point": {
                 "x": 2163.3,
                 "y": 1013.6
@@ -932,8 +1122,8 @@
             "locationId": "world-cartographic-windley"
         },
         {
-            "id": "road-node-svg-093",
-            "name": "Entroncamento 93",
+            "id": "road-node-svg-112",
+            "name": "Entroncamento 112",
             "point": {
                 "x": 1815,
                 "y": 1044
@@ -972,8 +1162,8 @@
             "locationId": "world-cartographic-findetann"
         },
         {
-            "id": "road-node-svg-097",
-            "name": "Entroncamento 97",
+            "id": "road-node-svg-116",
+            "name": "Entroncamento 116",
             "point": {
                 "x": 1367,
                 "y": 1078
@@ -982,8 +1172,8 @@
             "locationId": null
         },
         {
-            "id": "road-node-svg-098",
-            "name": "Entroncamento 98",
+            "id": "road-node-svg-117",
+            "name": "Entroncamento 117",
             "point": {
                 "x": 1584,
                 "y": 1084
@@ -1003,7 +1193,7 @@
         },
         {
             "id": "road-node-chippira",
-            "name": "Entroncamento 100",
+            "name": "Entroncamento 119",
             "point": {
                 "x": 1409,
                 "y": 1094
@@ -1012,8 +1202,8 @@
             "locationId": null
         },
         {
-            "id": "road-node-svg-101",
-            "name": "Ponto viário 101",
+            "id": "road-node-svg-120",
+            "name": "Ponto viário 120",
             "point": {
                 "x": 1283,
                 "y": 1096
@@ -1042,8 +1232,8 @@
             "locationId": "world-cartographic-acorn-bay"
         },
         {
-            "id": "road-node-svg-104",
-            "name": "Entroncamento 104",
+            "id": "road-node-svg-123",
+            "name": "Entroncamento 123",
             "point": {
                 "x": 1218,
                 "y": 1102
@@ -1052,8 +1242,8 @@
             "locationId": null
         },
         {
-            "id": "road-node-svg-105",
-            "name": "Entroncamento 105",
+            "id": "road-node-svg-124",
+            "name": "Entroncamento 124",
             "point": {
                 "x": 1364,
                 "y": 1110
@@ -1092,8 +1282,8 @@
             "locationId": "world-canonical-crows-perch"
         },
         {
-            "id": "road-node-svg-109",
-            "name": "Entroncamento 109",
+            "id": "road-node-svg-128",
+            "name": "Entroncamento 128",
             "point": {
                 "x": 1495,
                 "y": 1141
@@ -1112,8 +1302,8 @@
             "locationId": "world-canonical-eyn-lan"
         },
         {
-            "id": "road-node-svg-111",
-            "name": "Entroncamento 111",
+            "id": "road-node-svg-130",
+            "name": "Entroncamento 130",
             "point": {
                 "x": 1213,
                 "y": 1148
@@ -1173,7 +1363,7 @@
         },
         {
             "id": "road-node-anchor",
-            "name": "Entroncamento 117",
+            "name": "Entroncamento 136",
             "point": {
                 "x": 1271,
                 "y": 1196
@@ -1192,8 +1382,8 @@
             "locationId": "world-cartographic-anchor"
         },
         {
-            "id": "road-node-svg-119",
-            "name": "Entroncamento 119",
+            "id": "road-node-svg-138",
+            "name": "Entroncamento 138",
             "point": {
                 "x": 1936,
                 "y": 1198
@@ -1202,8 +1392,8 @@
             "locationId": null
         },
         {
-            "id": "road-node-svg-120",
-            "name": "Entroncamento 120",
+            "id": "road-node-svg-139",
+            "name": "Entroncamento 139",
             "point": {
                 "x": 1612,
                 "y": 1202
@@ -1252,8 +1442,8 @@
             "locationId": "world-canonical-gors-velen"
         },
         {
-            "id": "road-node-svg-125",
-            "name": "Entroncamento 125",
+            "id": "road-node-svg-144",
+            "name": "Entroncamento 144",
             "point": {
                 "x": 1600.3,
                 "y": 1250.9
@@ -1262,8 +1452,8 @@
             "locationId": null
         },
         {
-            "id": "road-node-svg-126",
-            "name": "Entroncamento 126",
+            "id": "road-node-svg-145",
+            "name": "Entroncamento 145",
             "point": {
                 "x": 1489,
                 "y": 1255
@@ -1273,7 +1463,7 @@
         },
         {
             "id": "road-node-gors-velen-2",
-            "name": "Ponto viário 127",
+            "name": "Ponto viário 146",
             "point": {
                 "x": 1244,
                 "y": 1260
@@ -1282,8 +1472,8 @@
             "locationId": null
         },
         {
-            "id": "road-node-svg-128",
-            "name": "Entroncamento 128",
+            "id": "road-node-svg-147",
+            "name": "Entroncamento 147",
             "point": {
                 "x": 1021,
                 "y": 1270.2
@@ -1303,7 +1493,7 @@
         },
         {
             "id": "road-node-gors-velen-3",
-            "name": "Entroncamento 130",
+            "name": "Entroncamento 149",
             "point": {
                 "x": 1245,
                 "y": 1274
@@ -1412,8 +1602,8 @@
             "locationId": "world-canonical-rissberg"
         },
         {
-            "id": "road-node-svg-141",
-            "name": "Entroncamento 141",
+            "id": "road-node-svg-160",
+            "name": "Entroncamento 160",
             "point": {
                 "x": 2448.7,
                 "y": 1353
@@ -1432,8 +1622,8 @@
             "locationId": "world-canonical-bremervoord"
         },
         {
-            "id": "road-node-svg-143",
-            "name": "Entroncamento 143",
+            "id": "road-node-svg-162",
+            "name": "Entroncamento 162",
             "point": {
                 "x": 914.6,
                 "y": 1358.7
@@ -1462,8 +1652,8 @@
             "locationId": "world-cartographic-vole"
         },
         {
-            "id": "road-node-svg-146",
-            "name": "Entroncamento 146",
+            "id": "road-node-svg-165",
+            "name": "Entroncamento 165",
             "point": {
                 "x": 1046.5,
                 "y": 1362.9
@@ -1503,7 +1693,7 @@
         },
         {
             "id": "road-node-vorune-2",
-            "name": "Ponto viário 150",
+            "name": "Ponto viário 169",
             "point": {
                 "x": 1505,
                 "y": 1388
@@ -1542,16 +1732,6 @@
             "locationId": "world-canonical-kerack-city"
         },
         {
-            "id": "road-node-maribor-2",
-            "name": "Ponto viário 154",
-            "point": {
-                "x": 1742,
-                "y": 1395
-            },
-            "type": "waypoint",
-            "locationId": null
-        },
-        {
             "id": "road-node-castelo-de-rastburg",
             "name": "Castelo de Rastburg",
             "point": {
@@ -1560,16 +1740,6 @@
             },
             "type": "junction",
             "locationId": "world-canonical-rastburg-castle"
-        },
-        {
-            "id": "road-node-maribor-3",
-            "name": "Ponto viário 156",
-            "point": {
-                "x": 1733,
-                "y": 1401
-            },
-            "type": "waypoint",
-            "locationId": null
         },
         {
             "id": "road-node-spalla",
@@ -1622,8 +1792,8 @@
             "locationId": "world-canonical-scala"
         },
         {
-            "id": "road-node-svg-162",
-            "name": "Entroncamento 162",
+            "id": "road-node-svg-179",
+            "name": "Entroncamento 179",
             "point": {
                 "x": 1137.7,
                 "y": 1436.8
@@ -1632,8 +1802,8 @@
             "locationId": null
         },
         {
-            "id": "road-node-svg-163",
-            "name": "Entroncamento 163",
+            "id": "road-node-svg-180",
+            "name": "Entroncamento 180",
             "point": {
                 "x": 1614,
                 "y": 1437
@@ -1682,8 +1852,8 @@
             "locationId": "world-cartographic-elven-ruin"
         },
         {
-            "id": "road-node-svg-168",
-            "name": "Entroncamento 168",
+            "id": "road-node-svg-185",
+            "name": "Entroncamento 185",
             "point": {
                 "x": 1148.8,
                 "y": 1464.8
@@ -1733,7 +1903,7 @@
         },
         {
             "id": "road-node-taverna-3-florins-2",
-            "name": "Entroncamento 173",
+            "name": "Entroncamento 190",
             "point": {
                 "x": 1594,
                 "y": 1483
@@ -1742,31 +1912,11 @@
             "locationId": null
         },
         {
-            "id": "road-node-svg-174",
-            "name": "Ponto viário 174",
-            "point": {
-                "x": 1752,
-                "y": 1494
-            },
-            "type": "waypoint",
-            "locationId": null
-        },
-        {
-            "id": "road-node-svg-175",
-            "name": "Ponto viário 175",
-            "point": {
-                "x": 1675,
-                "y": 1498
-            },
-            "type": "waypoint",
-            "locationId": null
-        },
-        {
             "id": "road-node-razwan",
             "name": "Razwan",
             "point": {
-                "x": 1772,
-                "y": 1509
+                "x": 1772.4,
+                "y": 1508.7
             },
             "type": "location",
             "locationId": "world-cartographic-razwan"
@@ -1775,15 +1925,15 @@
             "id": "road-node-mayena",
             "name": "Mayena",
             "point": {
-                "x": 1695,
-                "y": 1513
+                "x": 1695.3,
+                "y": 1512.8
             },
-            "type": "location",
+            "type": "junction",
             "locationId": "world-cartographic-mayena"
         },
         {
-            "id": "road-node-svg-178",
-            "name": "Entroncamento 178",
+            "id": "road-node-svg-193",
+            "name": "Entroncamento 193",
             "point": {
                 "x": 1929,
                 "y": 1517
@@ -1822,8 +1972,8 @@
             "locationId": "world-cartographic-dregsdon"
         },
         {
-            "id": "road-node-svg-182",
-            "name": "Ponto viário 182",
+            "id": "road-node-svg-197",
+            "name": "Ponto viário 197",
             "point": {
                 "x": 1580.4,
                 "y": 1529.3
@@ -1832,8 +1982,8 @@
             "locationId": null
         },
         {
-            "id": "road-node-svg-183",
-            "name": "Ponto viário 183",
+            "id": "road-node-svg-198",
+            "name": "Ponto viário 198",
             "point": {
                 "x": 1539.3,
                 "y": 1545.6
@@ -1872,8 +2022,8 @@
             "locationId": "world-canonical-duen-canell"
         },
         {
-            "id": "road-node-svg-187",
-            "name": "Entroncamento 187",
+            "id": "road-node-svg-202",
+            "name": "Entroncamento 202",
             "point": {
                 "x": 1705,
                 "y": 1600
@@ -1923,7 +2073,7 @@
         },
         {
             "id": "road-node-burnt-stump",
-            "name": "Ponto viário 192",
+            "name": "Ponto viário 207",
             "point": {
                 "x": 1476,
                 "y": 1635
@@ -1942,8 +2092,8 @@
             "locationId": "world-cartographic-vidort"
         },
         {
-            "id": "road-node-svg-194",
-            "name": "Ponto viário 194",
+            "id": "road-node-svg-209",
+            "name": "Ponto viário 209",
             "point": {
                 "x": 1944,
                 "y": 1638
@@ -1962,8 +2112,8 @@
             "locationId": "world-cartographic-burnt-stump"
         },
         {
-            "id": "road-node-svg-196",
-            "name": "Entroncamento 196",
+            "id": "road-node-svg-211",
+            "name": "Entroncamento 211",
             "point": {
                 "x": 1463.5,
                 "y": 1672
@@ -2079,7 +2229,7 @@
         {
             "id": "road-segment-entroncamento-luton-caminho-01",
             "name": "Entroncamento Luton - Caminho 01",
-            "fromNodeId": "road-node-svg-008",
+            "fromNodeId": "road-node-svg-025",
             "toNodeId": "road-node-luton",
             "type": "main",
             "carriageAllowed": true,
@@ -2115,7 +2265,7 @@
             "id": "road-segment-entroncamento-yspaden-caminho-01",
             "name": "Entroncamento Yspaden - Caminho 01",
             "fromNodeId": "road-node-yspaden",
-            "toNodeId": "road-node-svg-008",
+            "toNodeId": "road-node-svg-025",
             "type": "main",
             "carriageAllowed": true,
             "confidence": "master-traced",
@@ -2196,7 +2346,7 @@
         {
             "id": "road-segment-entroncamento-blaviken-caminho-ao-sul",
             "name": "Entroncamento Blaviken - Caminho ao Sul",
-            "fromNodeId": "road-node-svg-017",
+            "fromNodeId": "road-node-svg-036",
             "toNodeId": "road-node-blaviken",
             "type": "main",
             "carriageAllowed": true,
@@ -2220,7 +2370,7 @@
             "id": "road-segment-entroncamento-jamurlak-caminho-ao-leste",
             "name": "Entroncamento Jamurlak - Caminho ao Leste",
             "fromNodeId": "road-node-yamurlak",
-            "toNodeId": "road-node-svg-017",
+            "toNodeId": "road-node-svg-036",
             "type": "main",
             "carriageAllowed": true,
             "confidence": "master-traced",
@@ -2282,8 +2432,8 @@
         {
             "id": "road-segment-entroncamento-sul-blaviken-caminho-ao-sul-redania",
             "name": "Entroncamento Sul Blaviken - Caminho ao Sul Redania",
-            "fromNodeId": "road-node-svg-028",
-            "toNodeId": "road-node-svg-017",
+            "fromNodeId": "road-node-svg-047",
+            "toNodeId": "road-node-svg-036",
             "type": "main",
             "carriageAllowed": true,
             "confidence": "master-traced",
@@ -2314,7 +2464,7 @@
             "id": "road-segment-entroncamento-pindal-caminho-ao-leste",
             "name": "Entroncamento Pindal - Caminho ao Leste",
             "fromNodeId": "road-node-findal",
-            "toNodeId": "road-node-svg-028",
+            "toNodeId": "road-node-svg-047",
             "type": "regional",
             "carriageAllowed": true,
             "confidence": "master-traced",
@@ -2353,7 +2503,7 @@
             "id": "road-segment-entroncamento-baldhorn-caminho-ao-oeste",
             "name": "Entroncamento Baldhorn - Caminho ao Oeste",
             "fromNodeId": "road-node-baldfhorn",
-            "toNodeId": "road-node-svg-028",
+            "toNodeId": "road-node-svg-047",
             "type": "regional",
             "carriageAllowed": true,
             "confidence": "master-traced",
@@ -2392,7 +2542,7 @@
             "id": "road-segment-entroncamento-knotgrass-meadow-caminho-ao-noroeste",
             "name": "Entroncamento Knotgrass Meadow - Caminho ao Noroeste",
             "fromNodeId": "road-node-knotgrass-meadow",
-            "toNodeId": "road-node-svg-028",
+            "toNodeId": "road-node-svg-047",
             "type": "main",
             "carriageAllowed": true,
             "confidence": "master-traced",
@@ -2434,7 +2584,7 @@
         {
             "id": "road-segment-entroncamento-pindal-caminho-ao-oeste",
             "name": "Entroncamento Pindal - Caminho ao Oeste",
-            "fromNodeId": "road-node-svg-024",
+            "fromNodeId": "road-node-svg-043",
             "toNodeId": "road-node-findal",
             "type": "regional",
             "carriageAllowed": true,
@@ -2470,14 +2620,14 @@
             "id": "road-segment-entroncamento-gelibol-caminho-ao-leste",
             "name": "Entroncamento Gelibol- Caminho ao Leste",
             "fromNodeId": "road-node-gelibol-2",
-            "toNodeId": "road-node-svg-024",
+            "toNodeId": "road-node-svg-043",
             "type": "regional",
             "carriageAllowed": true,
             "confidence": "master-traced",
             "points": [
                 {
-                    "x": 1734.5,
-                    "y": 585.8
+                    "x": 1734.3,
+                    "y": 586.2
                 },
                 {
                     "x": 1723,
@@ -2509,7 +2659,7 @@
             "id": "road-segment-entroncamento-drakenborg-caminho-ao-norte",
             "name": "Entroncamento Drakenborg - Caminho ao Norte",
             "fromNodeId": "road-node-drakenborg",
-            "toNodeId": "road-node-svg-024",
+            "toNodeId": "road-node-svg-043",
             "type": "regional",
             "carriageAllowed": true,
             "confidence": "master-traced",
@@ -2544,7 +2694,7 @@
             "id": "road-segment-entroncamento-knotgrass-meadow-caminho-ao-oeste",
             "name": "Entroncamento Knotgrass Meadow - Caminho ao Oeste",
             "fromNodeId": "road-node-knotgrass-meadow",
-            "toNodeId": "road-node-svg-034",
+            "toNodeId": "road-node-svg-053",
             "type": "regional",
             "carriageAllowed": true,
             "confidence": "master-traced",
@@ -2575,7 +2725,7 @@
             "id": "road-segment-entroncamento-drakenborg-caminho-ao-leste",
             "name": "Entroncamento Drakenborg - Caminho ao Leste",
             "fromNodeId": "road-node-drakenborg",
-            "toNodeId": "road-node-svg-034",
+            "toNodeId": "road-node-svg-053",
             "type": "regional",
             "carriageAllowed": true,
             "confidence": "master-traced",
@@ -2597,8 +2747,8 @@
         {
             "id": "road-segment-entroncamento-estrada-sul-drakenborg-caminho-ao-sul",
             "name": "Entroncamento Estrada Sul Drakenborg- Caminho ao Sul",
-            "fromNodeId": "road-node-svg-037",
-            "toNodeId": "road-node-svg-034",
+            "fromNodeId": "road-node-svg-056",
+            "toNodeId": "road-node-svg-053",
             "type": "regional",
             "carriageAllowed": true,
             "confidence": "master-traced",
@@ -2617,7 +2767,7 @@
             "id": "road-segment-drakenborg-floresta-oeste",
             "name": "Drakenborg - Floresta Oeste",
             "fromNodeId": "road-node-drakenborg",
-            "toNodeId": "road-node-svg-030",
+            "toNodeId": "road-node-svg-049",
             "type": "regional",
             "carriageAllowed": true,
             "confidence": "master-traced",
@@ -2651,7 +2801,7 @@
         {
             "id": "road-segment-entroncamento-murivel-caminho-ao-norte",
             "name": "Entroncamento Murivel - Caminho ao Norte",
-            "fromNodeId": "road-node-svg-037",
+            "fromNodeId": "road-node-svg-056",
             "toNodeId": "road-node-murivel",
             "type": "regional",
             "carriageAllowed": true,
@@ -2690,7 +2840,7 @@
         {
             "id": "road-segment-entroncamento-knotgrass-caminho-ao-sul-para-tretogor",
             "name": "Entroncamento Knotgrass - Caminho ao Sul para Tretogor",
-            "fromNodeId": "road-node-svg-044",
+            "fromNodeId": "road-node-svg-063",
             "toNodeId": "road-node-knotgrass-meadow",
             "type": "main",
             "carriageAllowed": true,
@@ -2721,8 +2871,8 @@
         {
             "id": "road-segment-entroncamento-estrada-drakenborg-caminho-para-tretogor",
             "name": "Entroncamento Estrada Drakenborg - Caminho para Tretogor",
-            "fromNodeId": "road-node-svg-037",
-            "toNodeId": "road-node-svg-044",
+            "fromNodeId": "road-node-svg-056",
+            "toNodeId": "road-node-svg-063",
             "type": "regional",
             "carriageAllowed": true,
             "confidence": "master-traced",
@@ -2772,8 +2922,8 @@
         {
             "id": "road-segment-entroncamento-bifurcacao-coppertown-caminho-de-tretogor",
             "name": "Entroncamento Bifurcação Coppertown - Caminho de Tretogor",
-            "fromNodeId": "road-node-svg-043",
-            "toNodeId": "road-node-svg-044",
+            "fromNodeId": "road-node-svg-062",
+            "toNodeId": "road-node-svg-063",
             "type": "main",
             "carriageAllowed": true,
             "confidence": "master-traced",
@@ -2792,7 +2942,7 @@
             "id": "road-segment-yspaden-luton-2",
             "name": "Yspaden - Luton",
             "fromNodeId": "road-node-coppertown",
-            "toNodeId": "road-node-svg-043",
+            "toNodeId": "road-node-svg-062",
             "type": "main",
             "carriageAllowed": true,
             "confidence": "master-traced",
@@ -3048,7 +3198,7 @@
         {
             "id": "road-segment-entroncamento-zgraggen-caminho-ao-leste",
             "name": "Entroncamento Zgraggen - Caminho ao Leste",
-            "fromNodeId": "road-node-svg-084",
+            "fromNodeId": "road-node-svg-103",
             "toNodeId": "road-node-laraggen",
             "type": "main",
             "carriageAllowed": true,
@@ -3083,8 +3233,8 @@
         {
             "id": "road-segment-entroncamento-caminho-de-oxenfurt-caminho-para-novigrad",
             "name": "Entroncamento Caminho de Oxenfurt - Caminho para Novigrad",
-            "fromNodeId": "road-node-svg-085",
-            "toNodeId": "road-node-svg-084",
+            "fromNodeId": "road-node-svg-104",
+            "toNodeId": "road-node-svg-103",
             "type": "main",
             "carriageAllowed": true,
             "confidence": "master-traced",
@@ -3111,7 +3261,7 @@
             "id": "road-segment-entroncamento-novigrad-rota-de-saida",
             "name": "Entroncamento Novigrad - Rota de Saida",
             "fromNodeId": "road-node-novigrad",
-            "toNodeId": "road-node-svg-085",
+            "toNodeId": "road-node-svg-104",
             "type": "main",
             "carriageAllowed": true,
             "confidence": "master-traced",
@@ -3142,7 +3292,7 @@
             "id": "road-segment-entroncamento-deneslel-caminho-ao-sul",
             "name": "Entroncamento Deneslel - Caminho ao Sul",
             "fromNodeId": "road-node-demelse",
-            "toNodeId": "road-node-svg-085",
+            "toNodeId": "road-node-svg-104",
             "type": "main",
             "carriageAllowed": true,
             "confidence": "master-traced",
@@ -3176,7 +3326,7 @@
         {
             "id": "road-segment-entroncamento-oxenfurt-caminho-ao-norte",
             "name": "Entroncamento Oxenfurt - Caminho ao Norte",
-            "fromNodeId": "road-node-svg-084",
+            "fromNodeId": "road-node-svg-103",
             "toNodeId": "road-node-oxenfurt",
             "type": "main",
             "carriageAllowed": true,
@@ -3273,8 +3423,8 @@
         {
             "id": "road-segment-entroncamento-coppertown-tretogor",
             "name": "Entroncamento Coppertown - Tretogor",
-            "fromNodeId": "road-node-svg-052",
-            "toNodeId": "road-node-svg-043",
+            "fromNodeId": "road-node-svg-071",
+            "toNodeId": "road-node-svg-062",
             "type": "main",
             "carriageAllowed": true,
             "confidence": "master-traced",
@@ -3301,7 +3451,7 @@
             "id": "road-segment-entroncamento-guamez-estrada-para-tretogor",
             "name": "Entroncamento Guamez - Estrada para Tretogor",
             "fromNodeId": "road-node-guamet",
-            "toNodeId": "road-node-svg-052",
+            "toNodeId": "road-node-svg-071",
             "type": "main",
             "carriageAllowed": true,
             "confidence": "master-traced",
@@ -3344,7 +3494,7 @@
             "id": "road-segment-entroncamento-tretogor-bifurcacao-leste",
             "name": "Entroncamento Tretogor - Bifurcação Leste",
             "fromNodeId": "road-node-tretogor",
-            "toNodeId": "road-node-svg-052",
+            "toNodeId": "road-node-svg-071",
             "type": "main",
             "carriageAllowed": true,
             "confidence": "master-traced",
@@ -3443,8 +3593,8 @@
             "confidence": "master-traced",
             "points": [
                 {
-                    "x": 1734.5,
-                    "y": 585.8
+                    "x": 1734.3,
+                    "y": 586.2
                 },
                 {
                     "x": 1750,
@@ -3478,8 +3628,8 @@
                     "y": 577
                 },
                 {
-                    "x": 1734.5,
-                    "y": 585.8
+                    "x": 1734.3,
+                    "y": 586.2
                 }
             ]
         },
@@ -3698,7 +3848,7 @@
             "id": "road-segment-entroncamento-findetann-bifurcacao-oeste",
             "name": "Entroncamento Findetann - Bifurcação Oeste",
             "fromNodeId": "road-node-findetann",
-            "toNodeId": "road-node-svg-097",
+            "toNodeId": "road-node-svg-116",
             "type": "regional",
             "carriageAllowed": true,
             "confidence": "master-traced",
@@ -3736,7 +3886,7 @@
             "id": "road-segment-entroncamento-findetann-e-chippira-bifurcacao-para-o-sul",
             "name": "Entroncamento Findetann e Chippira- Bifurcação para o Sul",
             "fromNodeId": "road-node-chippira",
-            "toNodeId": "road-node-svg-097",
+            "toNodeId": "road-node-svg-116",
             "type": "regional",
             "carriageAllowed": true,
             "confidence": "master-traced",
@@ -3762,8 +3912,8 @@
         {
             "id": "road-segment-entroncamento-temeria-bifurcacao-sul-de-findetann",
             "name": "Entroncamento Temeria - Bifurcação Sul de Findetann",
-            "fromNodeId": "road-node-svg-105",
-            "toNodeId": "road-node-svg-097",
+            "fromNodeId": "road-node-svg-124",
+            "toNodeId": "road-node-svg-116",
             "type": "regional",
             "carriageAllowed": true,
             "confidence": "master-traced",
@@ -3786,7 +3936,7 @@
             "id": "road-segment-entroncamento-chippira-bifurcacao-sudoeste",
             "name": "Entroncamento Chippira- Bifurcação Sudoeste",
             "fromNodeId": "road-node-chippira",
-            "toNodeId": "road-node-svg-105",
+            "toNodeId": "road-node-svg-124",
             "type": "main",
             "carriageAllowed": true,
             "confidence": "master-traced",
@@ -3813,7 +3963,7 @@
             "id": "road-segment-entroncamento-tegmond-bifurcacao-oeste",
             "name": "Entroncamento Tegmond - Bifurcação Oeste",
             "fromNodeId": "road-node-tegmond",
-            "toNodeId": "road-node-svg-105",
+            "toNodeId": "road-node-svg-124",
             "type": "main",
             "carriageAllowed": true,
             "confidence": "master-traced",
@@ -3839,7 +3989,7 @@
         {
             "id": "road-segment-entroncamento-findetann-bifurcacao-acorn-bay",
             "name": "Entroncamento Findetann - Bifurcação Acorn Bay",
-            "fromNodeId": "road-node-svg-101",
+            "fromNodeId": "road-node-svg-120",
             "toNodeId": "road-node-findetann",
             "type": "regional",
             "carriageAllowed": true,
@@ -3871,7 +4021,7 @@
             "id": "road-segment-entroncamento-acorn-bay-bifurcacao-oeste",
             "name": "Entroncamento Acorn Bay - Bifurcação Oeste",
             "fromNodeId": "road-node-acorn-bay",
-            "toNodeId": "road-node-svg-101",
+            "toNodeId": "road-node-svg-120",
             "type": "regional",
             "carriageAllowed": true,
             "confidence": "master-traced",
@@ -3898,7 +4048,7 @@
             "id": "road-segment-entroncamento-oxenfurt-bifurcacao-temeria",
             "name": "Entroncamento Oxenfurt - Bifurcação Temeria",
             "fromNodeId": "road-node-oxenfurt",
-            "toNodeId": "road-node-svg-104",
+            "toNodeId": "road-node-svg-123",
             "type": "main",
             "carriageAllowed": true,
             "confidence": "master-traced",
@@ -3941,7 +4091,7 @@
             "id": "road-segment-entroncamento-acorn-bay-bifurcacao-leste",
             "name": "Entroncamento Acorn Bay - Bifurcação Leste",
             "fromNodeId": "road-node-acorn-bay",
-            "toNodeId": "road-node-svg-104",
+            "toNodeId": "road-node-svg-123",
             "type": "regional",
             "carriageAllowed": true,
             "confidence": "master-traced",
@@ -3968,7 +4118,7 @@
             "id": "road-segment-entroncamento-crow-s-perch-bifurcacao-divisa-temeria-redania",
             "name": "Entroncamento Crow's Perch - Bifurcação Divisa Teméria Redania",
             "fromNodeId": "road-node-poleiro-do-corvo",
-            "toNodeId": "road-node-svg-104",
+            "toNodeId": "road-node-svg-123",
             "type": "main",
             "carriageAllowed": true,
             "confidence": "master-traced",
@@ -3999,7 +4149,7 @@
             "id": "road-segment-entroncamento-tegmond-bifurcacao-leste-pone",
             "name": "Entroncamento Tegmond - Bifurcação Leste Pone",
             "fromNodeId": "road-node-tegmond",
-            "toNodeId": "road-node-svg-111",
+            "toNodeId": "road-node-svg-130",
             "type": "main",
             "carriageAllowed": true,
             "confidence": "master-traced",
@@ -4038,7 +4188,7 @@
             "id": "road-segment-entroncamento-crow-s-perch-bifurcacao-sul-ponte",
             "name": "Entroncamento Crow's Perch - Bifurcação Sul Ponte",
             "fromNodeId": "road-node-poleiro-do-corvo",
-            "toNodeId": "road-node-svg-111",
+            "toNodeId": "road-node-svg-130",
             "type": "main",
             "carriageAllowed": true,
             "confidence": "master-traced",
@@ -4065,7 +4215,7 @@
             "id": "road-segment-entroncamento-crow-s-perch-sul-bifurcacao-sul-anchor",
             "name": "Entroncamento Crow's Perch Sul - Bifurcação Sul Anchor",
             "fromNodeId": "road-node-anchor",
-            "toNodeId": "road-node-svg-111",
+            "toNodeId": "road-node-svg-130",
             "type": "main",
             "carriageAllowed": true,
             "confidence": "master-traced",
@@ -4235,7 +4385,7 @@
         {
             "id": "road-segment-entroncamento-findetann-bifurcacao-sul-para-dorian",
             "name": "Entroncamento Findetann - Bifurcação Sul para dorian",
-            "fromNodeId": "road-node-svg-105",
+            "fromNodeId": "road-node-svg-124",
             "toNodeId": "road-node-dorian",
             "type": "main",
             "carriageAllowed": true,
@@ -4266,7 +4416,7 @@
         {
             "id": "road-segment-entroncamento-dorian-bifurcacao-oeste-para-murki-waters",
             "name": "Entroncamento Dorian- Bifurcação Oeste para Murki Waters",
-            "fromNodeId": "road-node-svg-109",
+            "fromNodeId": "road-node-svg-128",
             "toNodeId": "road-node-dorian",
             "type": "main",
             "carriageAllowed": true,
@@ -4301,7 +4451,7 @@
         {
             "id": "road-segment-entroncamento-dorian-sul-bifurcacao-sul",
             "name": "Entroncamento Dorian Sul - Bifurcação Sul",
-            "fromNodeId": "road-node-svg-126",
+            "fromNodeId": "road-node-svg-145",
             "toNodeId": "road-node-dorian",
             "type": "regional",
             "carriageAllowed": true,
@@ -4344,8 +4494,8 @@
         {
             "id": "road-segment-entroncamento-vizima-bifurcacao-leste",
             "name": "Entroncamento Vizima- Bifurcação Leste",
-            "fromNodeId": "road-node-svg-098",
-            "toNodeId": "road-node-svg-109",
+            "fromNodeId": "road-node-svg-117",
+            "toNodeId": "road-node-svg-128",
             "type": "main",
             "carriageAllowed": true,
             "confidence": "master-traced",
@@ -4380,7 +4530,7 @@
             "id": "road-segment-entroncamento-murky-waters-bifurcacao-norte",
             "name": "Entroncamento Murky Waters - Bifurcação Norte",
             "fromNodeId": "road-node-murky-waters",
-            "toNodeId": "road-node-svg-109",
+            "toNodeId": "road-node-svg-128",
             "type": "regional",
             "carriageAllowed": true,
             "confidence": "master-traced",
@@ -4407,7 +4557,7 @@
             "id": "road-segment-entroncamento-vizima-entrada-bifurcacao-norte-de-vizima",
             "name": "Entroncamento Vizima Entrada - Bifurcação Norte de Vizima",
             "fromNodeId": "road-node-vizima",
-            "toNodeId": "road-node-svg-098",
+            "toNodeId": "road-node-svg-117",
             "type": "main",
             "carriageAllowed": true,
             "confidence": "master-traced",
@@ -4456,7 +4606,7 @@
         {
             "id": "road-segment-entroncamento-rinde-bifurcacao-sul-travessia",
             "name": "Entroncamento Rinde - Bifurcação Sul Travessia",
-            "fromNodeId": "road-node-svg-070",
+            "fromNodeId": "road-node-svg-089",
             "toNodeId": "road-node-rinde",
             "type": "main",
             "carriageAllowed": true,
@@ -4483,7 +4633,7 @@
         {
             "id": "road-segment-drakenborg-road-beeches",
             "name": "Drakenborg Road - Beeches",
-            "fromNodeId": "road-node-svg-030",
+            "fromNodeId": "road-node-svg-049",
             "toNodeId": "road-node-beeches",
             "type": "mountain",
             "carriageAllowed": false,
@@ -4619,7 +4769,7 @@
         {
             "id": "road-segment-entroncamento-bondar-bifurcacao-central",
             "name": "Entroncamento Bondar - Bifurcação Central",
-            "fromNodeId": "road-node-svg-068",
+            "fromNodeId": "road-node-svg-087",
             "toNodeId": "road-node-bondar",
             "type": "main",
             "carriageAllowed": true,
@@ -4642,8 +4792,8 @@
         {
             "id": "road-segment-entroncamento-rinde-bifurcacao-caminho-bondar",
             "name": "Entroncamento Rinde - Bifurcação Caminho Bondar",
-            "fromNodeId": "road-node-svg-070",
-            "toNodeId": "road-node-svg-068",
+            "fromNodeId": "road-node-svg-089",
+            "toNodeId": "road-node-svg-087",
             "type": "main",
             "carriageAllowed": true,
             "confidence": "master-traced",
@@ -4727,7 +4877,7 @@
         {
             "id": "road-segment-entroncamento-ellander-conexao-a-houtborg",
             "name": "Entroncamento Ellander - Conexão á Houtborg",
-            "fromNodeId": "road-node-svg-081",
+            "fromNodeId": "road-node-svg-100",
             "toNodeId": "road-node-ellander",
             "type": "regional",
             "carriageAllowed": true,
@@ -4755,7 +4905,7 @@
             "id": "road-segment-entroncamento-houtborg-conexao-estrada-leste",
             "name": "Entroncamento Houtborg- Conexão estrada Leste",
             "fromNodeId": "road-node-houtborg",
-            "toNodeId": "road-node-svg-081",
+            "toNodeId": "road-node-svg-100",
             "type": "regional",
             "carriageAllowed": true,
             "confidence": "master-traced",
@@ -4781,8 +4931,8 @@
         {
             "id": "road-segment-entroncamento-vizima-estrada-divisa-reino",
             "name": "Entroncamento Vizima - Estrada Divisa Reino",
-            "fromNodeId": "road-node-svg-098",
-            "toNodeId": "road-node-svg-070",
+            "fromNodeId": "road-node-svg-117",
+            "toNodeId": "road-node-svg-089",
             "type": "main",
             "carriageAllowed": true,
             "confidence": "master-traced",
@@ -4837,7 +4987,7 @@
             "id": "road-segment-entroncamento-bondar-moen",
             "name": "Entroncamento Bondar - Moen",
             "fromNodeId": "road-node-moen",
-            "toNodeId": "road-node-svg-068",
+            "toNodeId": "road-node-svg-087",
             "type": "regional",
             "carriageAllowed": true,
             "confidence": "master-traced",
@@ -4894,8 +5044,8 @@
         {
             "id": "road-segment-entroncamento-houtbord-estrada-sul",
             "name": "Entroncamento Houtbord - Estrada Sul",
-            "fromNodeId": "road-node-svg-081",
-            "toNodeId": "road-node-svg-086",
+            "fromNodeId": "road-node-svg-100",
+            "toNodeId": "road-node-svg-105",
             "type": "regional",
             "carriageAllowed": true,
             "confidence": "master-traced",
@@ -5151,7 +5301,7 @@
             "id": "road-segment-entroncamento-murku-waters-estrada-sul",
             "name": "Entroncamento Murku Waters - Estrada Sul",
             "fromNodeId": "road-node-murky-waters",
-            "toNodeId": "road-node-svg-120",
+            "toNodeId": "road-node-svg-139",
             "type": "regional",
             "carriageAllowed": true,
             "confidence": "master-traced",
@@ -5182,7 +5332,7 @@
             "id": "road-segment-entroncamento-white-orchard-estrada-leste",
             "name": "Entroncamento White Orchard - Estrada Leste",
             "fromNodeId": "road-node-pomar-branco",
-            "toNodeId": "road-node-svg-120",
+            "toNodeId": "road-node-svg-139",
             "type": "regional",
             "carriageAllowed": true,
             "confidence": "master-traced",
@@ -5216,8 +5366,8 @@
         {
             "id": "road-segment-entroncamento-murky-estrada-extremo-sul",
             "name": "Entroncamento Murky - Estrada Extremo Sul",
-            "fromNodeId": "road-node-svg-125",
-            "toNodeId": "road-node-svg-120",
+            "fromNodeId": "road-node-svg-144",
+            "toNodeId": "road-node-svg-139",
             "type": "regional",
             "carriageAllowed": true,
             "confidence": "master-traced",
@@ -5247,8 +5397,8 @@
         {
             "id": "road-segment-jay-forest-r2-estrada-cleves",
             "name": "Jay Forest R2- Estrada Cleves",
-            "fromNodeId": "road-node-svg-126",
-            "toNodeId": "road-node-svg-125",
+            "fromNodeId": "road-node-svg-145",
+            "toNodeId": "road-node-svg-144",
             "type": "regional",
             "carriageAllowed": true,
             "confidence": "master-traced",
@@ -5291,7 +5441,7 @@
             "id": "road-segment-petrelsteyn-r1-jay-forest",
             "name": "Petrelsteyn - R1 Jay Forest",
             "fromNodeId": "road-node-petrelsteyn",
-            "toNodeId": "road-node-svg-126",
+            "toNodeId": "road-node-svg-145",
             "type": "regional",
             "carriageAllowed": true,
             "confidence": "master-traced",
@@ -5634,7 +5784,7 @@
         {
             "id": "road-segment-entroncamento-murky-waters-cleves-ao-sul",
             "name": "Entroncamento Murky Waters - Cleves ao Sul",
-            "fromNodeId": "road-node-svg-125",
+            "fromNodeId": "road-node-svg-144",
             "toNodeId": "road-node-cleves",
             "type": "regional",
             "carriageAllowed": true,
@@ -5795,7 +5945,7 @@
             "id": "road-segment-entroncamento-dorndal-estrada-sul",
             "name": "Entroncamento Dorndal - Estrada Sul",
             "fromNodeId": "road-node-dorndal",
-            "toNodeId": "road-node-svg-093",
+            "toNodeId": "road-node-svg-112",
             "type": "regional",
             "carriageAllowed": true,
             "confidence": "master-traced",
@@ -5817,8 +5967,8 @@
         {
             "id": "road-segment-entroncamento-houtborg-estrada-sul",
             "name": "Entroncamento Houtborg - Estrada Sul",
-            "fromNodeId": "road-node-svg-086",
-            "toNodeId": "road-node-svg-093",
+            "fromNodeId": "road-node-svg-105",
+            "toNodeId": "road-node-svg-112",
             "type": "regional",
             "carriageAllowed": true,
             "confidence": "master-traced",
@@ -5837,7 +5987,7 @@
             "id": "road-segment-entroncamento-carreras-estrada-ao-norte",
             "name": "Entroncamento Carreras - Estrada ao Norte",
             "fromNodeId": "road-node-carreras",
-            "toNodeId": "road-node-svg-086",
+            "toNodeId": "road-node-svg-105",
             "type": "regional",
             "carriageAllowed": true,
             "confidence": "master-traced",
@@ -5900,7 +6050,7 @@
             "id": "road-segment-entroncamento-burdorff-estrada-norte",
             "name": "Entroncamento Burdorff- Estrada Norte",
             "fromNodeId": "road-node-burdorff",
-            "toNodeId": "road-node-svg-093",
+            "toNodeId": "road-node-svg-112",
             "type": "regional",
             "carriageAllowed": true,
             "confidence": "master-traced",
@@ -5985,7 +6135,7 @@
         {
             "id": "road-segment-entroncamento-carreras-estrada-oeste",
             "name": "Entroncamento Carreras- Estrada Oeste",
-            "fromNodeId": "road-node-svg-119",
+            "fromNodeId": "road-node-svg-138",
             "toNodeId": "road-node-carreras",
             "type": "regional",
             "carriageAllowed": true,
@@ -6017,7 +6167,7 @@
             "id": "road-segment-carreras-eysenlaan",
             "name": "Carreras - Eysenlaan",
             "fromNodeId": "road-node-eysenlaan",
-            "toNodeId": "road-node-svg-119",
+            "toNodeId": "road-node-svg-138",
             "type": "mountain",
             "carriageAllowed": false,
             "confidence": "master-traced",
@@ -6096,7 +6246,7 @@
             "id": "road-segment-entroncamento-zavada-estrada-norte",
             "name": "Entroncamento Zavada - Estrada Norte",
             "fromNodeId": "road-node-zavada",
-            "toNodeId": "road-node-svg-119",
+            "toNodeId": "road-node-svg-138",
             "type": "regional",
             "carriageAllowed": true,
             "confidence": "master-traced",
@@ -6197,7 +6347,7 @@
         {
             "id": "road-segment-entroncamento-mortara-estrada-ponte-do-sul",
             "name": "Entroncamento Mortara - Estrada Ponte do Sul",
-            "fromNodeId": "road-node-svg-163",
+            "fromNodeId": "road-node-svg-180",
             "toNodeId": "road-node-mortara",
             "type": "main",
             "carriageAllowed": true,
@@ -6225,7 +6375,7 @@
             "id": "road-segment-entroncamento-brenna-estrada-ponte-do-norte",
             "name": "Entroncamento Brenna - Estrada Ponte do Norte",
             "fromNodeId": "road-node-brenna",
-            "toNodeId": "road-node-svg-163",
+            "toNodeId": "road-node-svg-180",
             "type": "main",
             "carriageAllowed": true,
             "confidence": "master-traced",
@@ -6280,33 +6430,10 @@
             ]
         },
         {
-            "id": "road-segment-entroncamento-maribor-estrada-sul-de-maribor",
-            "name": "Entroncamento Maribor - Estrada Sul de Maribor",
-            "fromNodeId": "road-node-maribor-3",
-            "toNodeId": "road-node-maribor",
-            "type": "main",
-            "carriageAllowed": true,
-            "confidence": "master-traced",
-            "points": [
-                {
-                    "x": 1733,
-                    "y": 1401
-                },
-                {
-                    "x": 1742,
-                    "y": 1395
-                },
-                {
-                    "x": 1742,
-                    "y": 1381
-                }
-            ]
-        },
-        {
             "id": "road-segment-entroncamento-old-bottoms-estrada-norte-de-old-bottoms",
             "name": "Entroncamento Old Bottoms - Estrada Norte de Old Bottoms",
             "fromNodeId": "road-node-old-bottoms",
-            "toNodeId": "road-node-maribor-3",
+            "toNodeId": "road-node-maribor",
             "type": "main",
             "carriageAllowed": true,
             "confidence": "master-traced",
@@ -6316,24 +6443,24 @@
                     "y": 1417
                 },
                 {
-                    "x": 1714,
-                    "y": 1414
+                    "x": 1716.8,
+                    "y": 1413.1
                 },
                 {
-                    "x": 1722,
-                    "y": 1406
+                    "x": 1727.1,
+                    "y": 1402.9
                 },
                 {
-                    "x": 1733,
-                    "y": 1401
+                    "x": 1742,
+                    "y": 1381
                 }
             ]
         },
         {
             "id": "road-segment-entroncamento-sul-maribor-estrada-sul-dregsdon",
             "name": "Entroncamento Sul Maribor - Estrada Sul Dregsdon",
-            "fromNodeId": "road-node-svg-178",
-            "toNodeId": "road-node-maribor-2",
+            "fromNodeId": "road-node-svg-193",
+            "toNodeId": "road-node-maribor",
             "type": "main",
             "carriageAllowed": true,
             "confidence": "master-traced",
@@ -6400,14 +6527,14 @@
                 },
                 {
                     "x": 1742,
-                    "y": 1395
+                    "y": 1381
                 }
             ]
         },
         {
             "id": "road-segment-entroncamento-estrada-chotla-estrada-da-taverna",
             "name": "Entroncamento Estrada Chotla - Estrada da Taverna",
-            "fromNodeId": "road-node-svg-163",
+            "fromNodeId": "road-node-svg-180",
             "toNodeId": "road-node-taverna-3-florins-2",
             "type": "main",
             "carriageAllowed": true,
@@ -6538,8 +6665,8 @@
             "confidence": "master-traced",
             "points": [
                 {
-                    "x": 1695,
-                    "y": 1513
+                    "x": 1695.3,
+                    "y": 1512.8
                 },
                 {
                     "x": 1684,
@@ -6578,43 +6705,43 @@
         {
             "id": "road-segment-mayena-razwan",
             "name": "Mayena -Razwan",
-            "fromNodeId": "road-node-svg-174",
-            "toNodeId": "road-node-svg-175",
+            "fromNodeId": "road-node-razwan",
+            "toNodeId": "road-node-mayena",
             "type": "regional",
             "carriageAllowed": true,
             "confidence": "master-traced",
             "points": [
                 {
-                    "x": 1752,
-                    "y": 1494
+                    "x": 1772.4,
+                    "y": 1508.7
                 },
                 {
-                    "x": 1738,
-                    "y": 1500
+                    "x": 1758.8,
+                    "y": 1514.4
                 },
                 {
-                    "x": 1724,
-                    "y": 1510
+                    "x": 1744.8,
+                    "y": 1524.4
                 },
                 {
-                    "x": 1711,
-                    "y": 1519
+                    "x": 1731.8,
+                    "y": 1533.4
                 },
                 {
-                    "x": 1700,
-                    "y": 1523
+                    "x": 1720.8,
+                    "y": 1537.4
                 },
                 {
-                    "x": 1689,
-                    "y": 1522
+                    "x": 1709.8,
+                    "y": 1536.4
                 },
                 {
-                    "x": 1683,
-                    "y": 1513
+                    "x": 1703.8,
+                    "y": 1527.4
                 },
                 {
-                    "x": 1675,
-                    "y": 1498
+                    "x": 1695.3,
+                    "y": 1512.8
                 }
             ]
         },
@@ -6652,8 +6779,8 @@
                     "y": 1520
                 },
                 {
-                    "x": 1695,
-                    "y": 1513
+                    "x": 1695.3,
+                    "y": 1512.8
                 }
             ]
         },
@@ -6667,8 +6794,8 @@
             "confidence": "master-traced",
             "points": [
                 {
-                    "x": 1772,
-                    "y": 1509
+                    "x": 1772.4,
+                    "y": 1508.7
                 },
                 {
                     "x": 1791,
@@ -6793,7 +6920,7 @@
         {
             "id": "road-segment-entroncamento-burnt-stump-sul-estrada-owl-hills",
             "name": "Entroncamento Burnt Stump Sul - Estrada Owl Hills",
-            "fromNodeId": "road-node-svg-196",
+            "fromNodeId": "road-node-svg-211",
             "toNodeId": "road-node-burnt-stump-2",
             "type": "main",
             "carriageAllowed": true,
@@ -6821,7 +6948,7 @@
             "id": "road-segment-estrada-owl-hills-dillingen",
             "name": "Estrada Owl Hills - Dillingen",
             "fromNodeId": "road-node-dillingen",
-            "toNodeId": "road-node-svg-196",
+            "toNodeId": "road-node-svg-211",
             "type": "regional",
             "carriageAllowed": true,
             "confidence": "master-traced",
@@ -6864,7 +6991,7 @@
             "id": "road-segment-owl-hills-kernow",
             "name": "Owl Hills - Kernow",
             "fromNodeId": "road-node-kernow",
-            "toNodeId": "road-node-svg-196",
+            "toNodeId": "road-node-svg-211",
             "type": "mountain",
             "carriageAllowed": false,
             "confidence": "master-traced",
@@ -6945,7 +7072,7 @@
         {
             "id": "road-segment-entroncamento-vidort-estrada-armeria",
             "name": "Entroncamento Vidort - Estrada Armeria",
-            "fromNodeId": "road-node-svg-187",
+            "fromNodeId": "road-node-svg-202",
             "toNodeId": "road-node-vidort",
             "type": "regional",
             "carriageAllowed": true,
@@ -6973,7 +7100,7 @@
             "id": "road-segment-entroncamento-armeria-estrada-sul",
             "name": "Entroncamento Armeria- Estrada Sul",
             "fromNodeId": "road-node-armeria",
-            "toNodeId": "road-node-svg-187",
+            "toNodeId": "road-node-svg-202",
             "type": "regional",
             "carriageAllowed": true,
             "confidence": "master-traced",
@@ -6996,7 +7123,7 @@
             "id": "road-segment-entroncamento-carcano-estrada-norte",
             "name": "Entroncamento Carcano - Estrada Norte",
             "fromNodeId": "road-node-carcano",
-            "toNodeId": "road-node-svg-187",
+            "toNodeId": "road-node-svg-202",
             "type": "regional",
             "carriageAllowed": true,
             "confidence": "master-traced",
@@ -7080,7 +7207,7 @@
         {
             "id": "road-segment-entroncamento-red-port-sul-estrada-divisa-sul",
             "name": "Entroncamento Red Port Sul - Estrada Divisa Sul",
-            "fromNodeId": "road-node-svg-178",
+            "fromNodeId": "road-node-svg-193",
             "toNodeId": "road-node-red-port",
             "type": "main",
             "carriageAllowed": true,
@@ -7112,7 +7239,7 @@
             "id": "road-segment-entroncamento-dregsdon-estrada-leste",
             "name": "Entroncamento Dregsdon - Estrada Leste",
             "fromNodeId": "road-node-dregsdon",
-            "toNodeId": "road-node-svg-178",
+            "toNodeId": "road-node-svg-193",
             "type": "regional",
             "carriageAllowed": true,
             "confidence": "master-traced",
@@ -7134,7 +7261,7 @@
         {
             "id": "road-segment-entroncamento-red-port-estrada-red-port",
             "name": "Entroncamento Red Port Estrada - Red Port",
-            "fromNodeId": "road-node-svg-194",
+            "fromNodeId": "road-node-svg-209",
             "toNodeId": "road-node-red-port",
             "type": "main",
             "carriageAllowed": true,
@@ -7153,7 +7280,7 @@
         {
             "id": "road-segment-entroncamento-burnt-stump-bodrog",
             "name": "Entroncamento Burnt Stump - Bodrog",
-            "fromNodeId": "road-node-svg-196",
+            "fromNodeId": "road-node-svg-211",
             "toNodeId": "road-node-bodrog",
             "type": "regional",
             "carriageAllowed": true,
@@ -7201,7 +7328,7 @@
             "id": "road-segment-red-port-kagen",
             "name": "Red Port - Kagen",
             "fromNodeId": "road-node-kagen",
-            "toNodeId": "road-node-svg-194",
+            "toNodeId": "road-node-svg-209",
             "type": "main",
             "carriageAllowed": true,
             "confidence": "master-traced",
@@ -7368,7 +7495,7 @@
         {
             "id": "road-segment-entroncamento-eysenlaan-estrada-norte",
             "name": "Entroncamento Eysenlaan - Estrada Norte",
-            "fromNodeId": "road-node-svg-087",
+            "fromNodeId": "road-node-svg-106",
             "toNodeId": "road-node-eysenlaan",
             "type": "main",
             "carriageAllowed": true,
@@ -7462,7 +7589,7 @@
         {
             "id": "road-segment-entroncamento-gulet-estrada-norte",
             "name": "Entroncamento Gulet - Estrada Norte",
-            "fromNodeId": "road-node-svg-083",
+            "fromNodeId": "road-node-svg-102",
             "toNodeId": "road-node-gulet",
             "type": "main",
             "carriageAllowed": true,
@@ -7497,7 +7624,7 @@
         {
             "id": "road-segment-entroncamento-gulet-estrada-leste",
             "name": "Entroncamento Gulet - Estrada Leste",
-            "fromNodeId": "road-node-svg-087",
+            "fromNodeId": "road-node-svg-106",
             "toNodeId": "road-node-gulet",
             "type": "regional",
             "carriageAllowed": true,
@@ -7557,7 +7684,7 @@
             "id": "road-segment-entroncamento-asheberg-estrada-sul",
             "name": "Entroncamento Asheberg - Estrada Sul",
             "fromNodeId": "road-node-ashberg",
-            "toNodeId": "road-node-svg-087",
+            "toNodeId": "road-node-svg-106",
             "type": "main",
             "carriageAllowed": true,
             "confidence": "master-traced",
@@ -7591,7 +7718,7 @@
         {
             "id": "road-segment-entroncamento-asheberg-estrada-oeste",
             "name": "Entroncamento Asheberg - Estrada Oeste",
-            "fromNodeId": "road-node-svg-083",
+            "fromNodeId": "road-node-svg-102",
             "toNodeId": "road-node-ashberg",
             "type": "regional",
             "carriageAllowed": true,
@@ -7654,8 +7781,8 @@
         {
             "id": "road-segment-entroncamento-aedirn-dol-blathanna",
             "name": "Entroncamento Aedirn - Dol Blathanna",
-            "fromNodeId": "road-node-svg-074",
-            "toNodeId": "road-node-svg-083",
+            "fromNodeId": "road-node-svg-093",
+            "toNodeId": "road-node-svg-102",
             "type": "regional",
             "carriageAllowed": true,
             "confidence": "master-traced",
@@ -7702,7 +7829,7 @@
             "id": "road-segment-entroncamento-upper-posada-estrada-leste",
             "name": "Entroncamento Upper Posada - Estrada Leste",
             "fromNodeId": "road-node-alta-posada",
-            "toNodeId": "road-node-svg-074",
+            "toNodeId": "road-node-svg-093",
             "type": "regional",
             "carriageAllowed": true,
             "confidence": "master-traced",
@@ -7847,7 +7974,7 @@
             "id": "road-segment-entroncamento-ban-blathanna-estrada-leste",
             "name": "Entroncamento Ban Blathanna - Estrada Leste",
             "fromNodeId": "road-node-ban-blathanna",
-            "toNodeId": "road-node-svg-074",
+            "toNodeId": "road-node-svg-093",
             "type": "regional",
             "carriageAllowed": true,
             "confidence": "master-traced",
@@ -7928,7 +8055,7 @@
         {
             "id": "road-segment-entroncamento-hagge-estrada-oeste",
             "name": "Entroncamento Hagge - Estrada Oeste",
-            "fromNodeId": "road-node-svg-059",
+            "fromNodeId": "road-node-svg-078",
             "toNodeId": "road-node-hagge",
             "type": "main",
             "carriageAllowed": true,
@@ -7960,7 +8087,7 @@
             "id": "road-segment-entroncamento-asheberg-estrada-norte",
             "name": "Entroncamento Asheberg - Estrada Norte",
             "fromNodeId": "road-node-ashberg",
-            "toNodeId": "road-node-svg-059",
+            "toNodeId": "road-node-svg-078",
             "type": "main",
             "carriageAllowed": true,
             "confidence": "master-traced",
@@ -7995,7 +8122,7 @@
             "id": "road-segment-entroncamento-vergen-estrada-leste",
             "name": "Entroncamento Vergen - Estrada Leste",
             "fromNodeId": "road-node-vergen",
-            "toNodeId": "road-node-svg-059",
+            "toNodeId": "road-node-svg-078",
             "type": "main",
             "carriageAllowed": true,
             "confidence": "master-traced",
@@ -8021,7 +8148,7 @@
         {
             "id": "road-segment-entroncamento-vergen-estrada-norte",
             "name": "Entroncamento Vergen - Estrada Norte",
-            "fromNodeId": "road-node-svg-047",
+            "fromNodeId": "road-node-svg-066",
             "toNodeId": "road-node-vergen",
             "type": "main",
             "carriageAllowed": true,
@@ -8049,7 +8176,7 @@
             "id": "road-segment-entroncamento-egremont-estrada-oeste",
             "name": "Entroncamento Egremont - Estrada Oeste",
             "fromNodeId": "road-node-eregmont",
-            "toNodeId": "road-node-svg-047",
+            "toNodeId": "road-node-svg-066",
             "type": "main",
             "carriageAllowed": true,
             "confidence": "master-traced",
@@ -8107,8 +8234,8 @@
         {
             "id": "road-segment-entroncamento-norte-vergen-estrada-oeste",
             "name": "Entroncamento Norte Vergen- Estrada Oeste",
-            "fromNodeId": "road-node-svg-039",
-            "toNodeId": "road-node-svg-047",
+            "fromNodeId": "road-node-svg-058",
+            "toNodeId": "road-node-svg-066",
             "type": "main",
             "carriageAllowed": true,
             "confidence": "master-traced",
@@ -8146,8 +8273,8 @@
         {
             "id": "road-segment-entroncamento-leste-ban-glean-noroeste",
             "name": "Entroncamento Leste Ban Glean - Noroeste",
-            "fromNodeId": "road-node-svg-031",
-            "toNodeId": "road-node-svg-039",
+            "fromNodeId": "road-node-svg-050",
+            "toNodeId": "road-node-svg-058",
             "type": "main",
             "carriageAllowed": true,
             "confidence": "master-traced",
@@ -8380,7 +8507,7 @@
         {
             "id": "road-segment-entroncamento-lyria-estrada-leste",
             "name": "Entroncamento Lyria - Estrada Leste",
-            "fromNodeId": "road-node-svg-141",
+            "fromNodeId": "road-node-svg-160",
             "toNodeId": "road-node-liria",
             "type": "main",
             "carriageAllowed": true,
@@ -8416,7 +8543,7 @@
             "id": "road-segment-entroncamento-ratsburg-estrada-oeste",
             "name": "Entroncamento Ratsburg - Estrada Oeste",
             "fromNodeId": "road-node-castelo-de-rastburg",
-            "toNodeId": "road-node-svg-141",
+            "toNodeId": "road-node-svg-160",
             "type": "main",
             "carriageAllowed": true,
             "confidence": "master-traced",
@@ -8447,7 +8574,7 @@
             "id": "road-segment-entroncamento-scala-estrada-norte",
             "name": "Entroncamento Scala - Estrada Norte",
             "fromNodeId": "road-node-scala",
-            "toNodeId": "road-node-svg-141",
+            "toNodeId": "road-node-svg-160",
             "type": "main",
             "carriageAllowed": true,
             "confidence": "master-traced",
@@ -8594,8 +8721,8 @@
         {
             "id": "road-segment-entroncamento-upper-aedirn-estrada-norte",
             "name": "Entroncamento Upper Aedirn - Estrada Norte",
-            "fromNodeId": "road-node-svg-071",
-            "toNodeId": "road-node-svg-083",
+            "fromNodeId": "road-node-svg-090",
+            "toNodeId": "road-node-svg-102",
             "type": "main",
             "carriageAllowed": true,
             "confidence": "master-traced",
@@ -8625,8 +8752,8 @@
         {
             "id": "road-segment-entroncamento-upper-aedirn-oeste-estrada-kalkar",
             "name": "Entroncamento Upper Aedirn Oeste - Estrada Kalkar",
-            "fromNodeId": "road-node-svg-056",
-            "toNodeId": "road-node-svg-071",
+            "fromNodeId": "road-node-svg-075",
+            "toNodeId": "road-node-svg-090",
             "type": "main",
             "carriageAllowed": true,
             "confidence": "master-traced",
@@ -8672,8 +8799,8 @@
         {
             "id": "road-segment-entroncamento-upper-aedirn-leste-estrada-vergen",
             "name": "Entroncamento Upper Aedirn Leste - Estrada Vergen",
-            "fromNodeId": "road-node-svg-061",
-            "toNodeId": "road-node-svg-071",
+            "fromNodeId": "road-node-svg-080",
+            "toNodeId": "road-node-svg-090",
             "type": "main",
             "carriageAllowed": true,
             "confidence": "master-traced",
@@ -8716,7 +8843,7 @@
             "id": "road-segment-entroncamento-vergen-oeste-estrada-lormark",
             "name": "Entroncamento Vergen Oeste - Estrada Lormark",
             "fromNodeId": "road-node-vergen",
-            "toNodeId": "road-node-svg-061",
+            "toNodeId": "road-node-svg-080",
             "type": "main",
             "carriageAllowed": true,
             "confidence": "master-traced",
@@ -8739,7 +8866,7 @@
             "id": "road-segment-entroncamento-upper-aedirn-principal-estrada-tiel",
             "name": "Entroncamento Upper Aedirn Principal - Estrada Tiel",
             "fromNodeId": "road-node-tiel-2",
-            "toNodeId": "road-node-svg-061",
+            "toNodeId": "road-node-svg-080",
             "type": "main",
             "carriageAllowed": true,
             "confidence": "master-traced",
@@ -8851,7 +8978,7 @@
         {
             "id": "road-segment-entroncamento-kalkar-estrada-sul",
             "name": "Entroncamento Kalkar - Estrada Sul",
-            "fromNodeId": "road-node-svg-056",
+            "fromNodeId": "road-node-svg-075",
             "toNodeId": "road-node-kalkar",
             "type": "main",
             "carriageAllowed": true,
@@ -8875,7 +9002,7 @@
             "id": "road-segment-entroncamento-berg-aen-dal-estrada-leste",
             "name": "Entroncamento Berg Aen Dal - Estrada Leste",
             "fromNodeId": "road-node-berg-aen-dal",
-            "toNodeId": "road-node-svg-056",
+            "toNodeId": "road-node-svg-075",
             "type": "regional",
             "carriageAllowed": true,
             "confidence": "master-traced",
@@ -8956,7 +9083,7 @@
         {
             "id": "road-segment-entroncamento-cidaris-estrada-sul",
             "name": "Entroncamento Cidaris - Estrada Sul",
-            "fromNodeId": "road-node-svg-128",
+            "fromNodeId": "road-node-svg-147",
             "toNodeId": "road-node-cidaris",
             "type": "main",
             "carriageAllowed": true,
@@ -8979,8 +9106,8 @@
         {
             "id": "road-segment-entroncamento-sul-de-cidaris-estrada-sul-b",
             "name": "Entroncamento Sul de Cidaris - Estrada Sul B",
-            "fromNodeId": "road-node-svg-146",
-            "toNodeId": "road-node-svg-128",
+            "fromNodeId": "road-node-svg-165",
+            "toNodeId": "road-node-svg-147",
             "type": "main",
             "carriageAllowed": true,
             "confidence": "master-traced",
@@ -9015,7 +9142,7 @@
             "id": "road-segment-entroncamento-extremo-sul-cidaris-ravelin",
             "name": "Entroncamento Extremo Sul Cidaris - Ravelin",
             "fromNodeId": "road-node-ravelin",
-            "toNodeId": "road-node-svg-146",
+            "toNodeId": "road-node-svg-165",
             "type": "main",
             "carriageAllowed": true,
             "confidence": "master-traced",
@@ -9038,7 +9165,7 @@
             "id": "road-segment-entroncamento-roggeveen-estrada-oeste",
             "name": "Entroncamento Roggeveen - Estrada Oeste",
             "fromNodeId": "road-node-roggeveen-2",
-            "toNodeId": "road-node-svg-128",
+            "toNodeId": "road-node-svg-147",
             "type": "regional",
             "carriageAllowed": true,
             "confidence": "master-traced",
@@ -9068,7 +9195,7 @@
         {
             "id": "road-segment-entroncamento-roggeveen-estrada-sul",
             "name": "Entroncamento Roggeveen - Estrada Sul",
-            "fromNodeId": "road-node-svg-143",
+            "fromNodeId": "road-node-svg-162",
             "toNodeId": "road-node-roggeveen-2",
             "type": "regional",
             "carriageAllowed": true,
@@ -9116,7 +9243,7 @@
             "id": "road-segment-entroncamento-bremervoord-estrada-oeste",
             "name": "Entroncamento Bremervoord - Estrada Oeste",
             "fromNodeId": "road-node-bremervoord",
-            "toNodeId": "road-node-svg-143",
+            "toNodeId": "road-node-svg-162",
             "type": "regional",
             "carriageAllowed": true,
             "confidence": "master-traced",
@@ -9151,7 +9278,7 @@
             "id": "road-segment-entroncamento-vole-estrada-leste",
             "name": "Entroncamento Vole - Estrada Leste",
             "fromNodeId": "road-node-vole",
-            "toNodeId": "road-node-svg-143",
+            "toNodeId": "road-node-svg-162",
             "type": "regional",
             "carriageAllowed": true,
             "confidence": "master-traced",
@@ -9189,7 +9316,7 @@
         {
             "id": "road-segment-entroncamento-vole-estrada-oeste",
             "name": "Entroncamento Vole - Estrada Oeste",
-            "fromNodeId": "road-node-svg-146",
+            "fromNodeId": "road-node-svg-165",
             "toNodeId": "road-node-vole",
             "type": "regional",
             "carriageAllowed": true,
@@ -9217,7 +9344,7 @@
             "id": "road-segment-entroncamento-fazenda-pilhada-estrada-brugge",
             "name": "Entroncamento Fazenda Pilhada - Estrada Brugge",
             "fromNodeId": "road-node-brugge",
-            "toNodeId": "road-node-svg-182",
+            "toNodeId": "road-node-svg-197",
             "type": "regional",
             "carriageAllowed": true,
             "confidence": "master-traced",
@@ -9239,8 +9366,8 @@
         {
             "id": "road-segment-fazenda-fazenda-pilhada",
             "name": "Fazenda - Fazenda Pilhada",
-            "fromNodeId": "road-node-svg-183",
-            "toNodeId": "road-node-svg-182",
+            "fromNodeId": "road-node-svg-198",
+            "toNodeId": "road-node-svg-197",
             "type": "regional",
             "carriageAllowed": true,
             "confidence": "master-traced",
@@ -9267,7 +9394,7 @@
             "id": "road-segment-col-serrai-fazenda",
             "name": "Col Serrai - Fazenda",
             "fromNodeId": "road-node-col-serrai",
-            "toNodeId": "road-node-svg-183",
+            "toNodeId": "road-node-svg-198",
             "type": "regional",
             "carriageAllowed": true,
             "confidence": "master-traced",
@@ -9589,7 +9716,7 @@
         {
             "id": "road-segment-entroncamento-kerack-estrada-sul",
             "name": "Entroncamento Kerack - Estrada Sul",
-            "fromNodeId": "road-node-svg-162",
+            "fromNodeId": "road-node-svg-179",
             "toNodeId": "road-node-kerack",
             "type": "regional",
             "carriageAllowed": true,
@@ -9613,7 +9740,7 @@
             "id": "road-segment-entroncamento-cizmar-leste",
             "name": "Entroncamento Cizmar - Leste",
             "fromNodeId": "road-node-cizmar",
-            "toNodeId": "road-node-svg-162",
+            "toNodeId": "road-node-svg-179",
             "type": "regional",
             "carriageAllowed": true,
             "confidence": "master-traced",
@@ -9664,7 +9791,7 @@
             "id": "road-segment-entroncamento-tiberghien-estrada-oeste",
             "name": "Entroncamento Tiberghien - Estrada Oeste",
             "fromNodeId": "road-node-tiberghien",
-            "toNodeId": "road-node-svg-162",
+            "toNodeId": "road-node-svg-179",
             "type": "regional",
             "carriageAllowed": true,
             "confidence": "master-traced",
@@ -9698,8 +9825,8 @@
         {
             "id": "road-segment-entroncamento-estrada-kerack-estrada-sul",
             "name": "Entroncamento Estrada Kerack - Estrada Sul",
-            "fromNodeId": "road-node-svg-168",
-            "toNodeId": "road-node-svg-162",
+            "fromNodeId": "road-node-svg-185",
+            "toNodeId": "road-node-svg-179",
             "type": "regional",
             "carriageAllowed": true,
             "confidence": "master-traced",
@@ -9722,7 +9849,7 @@
             "id": "road-segment-entroncamento-ansegis-estrada-leste",
             "name": "Entroncamento Ansegis - Estrada Leste",
             "fromNodeId": "road-node-ansegis",
-            "toNodeId": "road-node-svg-168",
+            "toNodeId": "road-node-svg-185",
             "type": "regional",
             "carriageAllowed": true,
             "confidence": "master-traced",
@@ -9749,7 +9876,7 @@
             "id": "road-segment-entroncamento-estrada-hamm-estrada-norte",
             "name": "Entroncamento Estrada Hamm - Estrada Norte",
             "fromNodeId": "road-node-hamm",
-            "toNodeId": "road-node-svg-168",
+            "toNodeId": "road-node-svg-185",
             "type": "regional",
             "carriageAllowed": true,
             "confidence": "master-traced",
@@ -10099,73 +10226,10 @@
             ]
         },
         {
-            "id": "road-segment-vattweir-daevon",
-            "name": "Vattweir - Daevon",
-            "fromNodeId": "road-node-daevon",
-            "toNodeId": "road-node-svg-003",
-            "type": "regional",
-            "carriageAllowed": true,
-            "confidence": "master-traced",
-            "points": [
-                {
-                    "x": 2221.2,
-                    "y": 414.3
-                },
-                {
-                    "x": 2189.5,
-                    "y": 413.2
-                },
-                {
-                    "x": 2175.3,
-                    "y": 417.7
-                },
-                {
-                    "x": 2157.8,
-                    "y": 411.7
-                },
-                {
-                    "x": 2136.4,
-                    "y": 398.4
-                },
-                {
-                    "x": 2124.6,
-                    "y": 386.9
-                },
-                {
-                    "x": 2110.1,
-                    "y": 378.4
-                },
-                {
-                    "x": 2097.4,
-                    "y": 375.1
-                },
-                {
-                    "x": 2083.8,
-                    "y": 373
-                },
-                {
-                    "x": 2095.3,
-                    "y": 319.7
-                },
-                {
-                    "x": 2119.8,
-                    "y": 296.8
-                },
-                {
-                    "x": 2150.1,
-                    "y": 269.8
-                },
-                {
-                    "x": 2167.3,
-                    "y": 233
-                }
-            ]
-        },
-        {
             "id": "road-segment-entroncamento-ban-glean-estrada-leste",
             "name": "Entroncamento Ban Glean - Estrada Leste",
             "fromNodeId": "road-node-ban-glean",
-            "toNodeId": "road-node-svg-039",
+            "toNodeId": "road-node-svg-058",
             "type": "main",
             "carriageAllowed": true,
             "confidence": "master-traced",
@@ -10191,7 +10255,7 @@
         {
             "id": "road-segment-entroncamento-ban-glean-estrada-oeste",
             "name": "Entroncamento Ban Glean - Estrada Oeste",
-            "fromNodeId": "road-node-svg-041",
+            "fromNodeId": "road-node-svg-060",
             "toNodeId": "road-node-ban-glean",
             "type": "main",
             "carriageAllowed": true,
@@ -10215,7 +10279,7 @@
             "id": "road-segment-entroncamento-tiel-estrada-norte",
             "name": "Entroncamento Tiel - Estrada Norte",
             "fromNodeId": "road-node-tiel",
-            "toNodeId": "road-node-svg-041",
+            "toNodeId": "road-node-svg-060",
             "type": "main",
             "carriageAllowed": true,
             "confidence": "master-traced",
@@ -10242,7 +10306,7 @@
             "id": "road-segment-entroncamento-ban-ard-estrada-sul",
             "name": "Entroncamento Ban Ard - Estrada Sul",
             "fromNodeId": "road-node-ban-ard",
-            "toNodeId": "road-node-svg-038",
+            "toNodeId": "road-node-svg-057",
             "type": "regional",
             "carriageAllowed": true,
             "confidence": "master-traced",
@@ -10276,8 +10340,8 @@
         {
             "id": "road-segment-entroncamento-oeste-de-ban-glean-estrada-oeste",
             "name": "Entroncamento Oeste de Ban Glean - Estrada Oeste",
-            "fromNodeId": "road-node-svg-041",
-            "toNodeId": "road-node-svg-038",
+            "fromNodeId": "road-node-svg-060",
+            "toNodeId": "road-node-svg-057",
             "type": "regional",
             "carriageAllowed": true,
             "confidence": "master-traced",
@@ -10308,7 +10372,7 @@
             "id": "road-segment-entroncamento-loc-muinne-estrada-leste",
             "name": "Entroncamento Loc Muinne - Estrada Leste",
             "fromNodeId": "road-node-loc-muinne",
-            "toNodeId": "road-node-svg-038",
+            "toNodeId": "road-node-svg-057",
             "type": "regional",
             "carriageAllowed": true,
             "confidence": "master-traced",
@@ -10377,7 +10441,7 @@
         {
             "id": "road-segment-entroncamento-ban-glean-estrada-norterva",
             "name": "Entroncamento Ban Glean - Estrada Norterva",
-            "fromNodeId": "road-node-svg-036",
+            "fromNodeId": "road-node-svg-055",
             "toNodeId": "road-node-ban-glean",
             "type": "main",
             "carriageAllowed": true,
@@ -10397,7 +10461,7 @@
             "id": "road-segment-entroncamento-ban-ard-estrada-leste",
             "name": "Entroncamento Ban Ard - Estrada Leste",
             "fromNodeId": "road-node-ban-ard",
-            "toNodeId": "road-node-svg-036",
+            "toNodeId": "road-node-svg-055",
             "type": "regional",
             "carriageAllowed": true,
             "confidence": "master-traced",
@@ -10467,8 +10531,8 @@
         {
             "id": "road-segment-entroncamento-norte-ban-glean-estrada-norte",
             "name": "Entroncamento Norte Ban Glean- Estrada Norte",
-            "fromNodeId": "road-node-svg-031",
-            "toNodeId": "road-node-svg-036",
+            "fromNodeId": "road-node-svg-050",
+            "toNodeId": "road-node-svg-055",
             "type": "main",
             "carriageAllowed": true,
             "confidence": "master-traced",
@@ -10495,7 +10559,7 @@
             "id": "road-segment-entroncamento-leyda-estrada-shaerrawedd",
             "name": "Entroncamento Leyda- Estrada Shaerrawedd",
             "fromNodeId": "road-node-leyda",
-            "toNodeId": "road-node-svg-026",
+            "toNodeId": "road-node-svg-045",
             "type": "main",
             "carriageAllowed": true,
             "confidence": "master-traced",
@@ -10538,7 +10602,7 @@
             "id": "road-segment-entroncamento-sherrawedd-estrada-oeste",
             "name": "Entroncamento Sherrawedd - Estrada Oeste",
             "fromNodeId": "road-node-shaerrawedd",
-            "toNodeId": "road-node-svg-026",
+            "toNodeId": "road-node-svg-045",
             "type": "regional",
             "carriageAllowed": true,
             "confidence": "master-traced",
@@ -10560,8 +10624,8 @@
         {
             "id": "road-segment-entroncamento-sul-sherrawedd-estrada-sul",
             "name": "Entroncamento Sul Sherrawedd - Estrada Sul",
-            "fromNodeId": "road-node-svg-031",
-            "toNodeId": "road-node-svg-026",
+            "fromNodeId": "road-node-svg-050",
+            "toNodeId": "road-node-svg-045",
             "type": "main",
             "carriageAllowed": true,
             "confidence": "master-traced",
@@ -10600,7 +10664,7 @@
             "id": "road-segment-entroncamento-leyda-estrada-leste",
             "name": "Entroncamento Leyda- Estrada Leste",
             "fromNodeId": "road-node-leyda",
-            "toNodeId": "road-node-svg-010",
+            "toNodeId": "road-node-svg-028",
             "type": "main",
             "carriageAllowed": true,
             "confidence": "master-traced",
@@ -10655,7 +10719,7 @@
             "id": "road-segment-entroncamento-daevon-estrada-oeste",
             "name": "Entroncamento Daevon - Estrada Oeste",
             "fromNodeId": "road-node-daevon",
-            "toNodeId": "road-node-svg-010",
+            "toNodeId": "road-node-svg-028",
             "type": "regional",
             "carriageAllowed": true,
             "confidence": "master-traced",
@@ -10690,7 +10754,7 @@
             "id": "road-segment-entroncamento-ard-carraigh-estrada-sul",
             "name": "Entroncamento Ard Carraigh - Estrada Sul",
             "fromNodeId": "road-node-ard-carraigh",
-            "toNodeId": "road-node-svg-010",
+            "toNodeId": "road-node-svg-028",
             "type": "main",
             "carriageAllowed": true,
             "confidence": "master-traced",
@@ -10755,7 +10819,7 @@
         {
             "id": "road-segment-entroncamento-kaer-morhen-estrada-leste",
             "name": "Entroncamento Kaer Morhen - Estrada Leste",
-            "fromNodeId": "road-node-svg-026",
+            "fromNodeId": "road-node-svg-045",
             "toNodeId": "road-node-kaer-morhen",
             "type": "regional",
             "carriageAllowed": true,
@@ -11017,49 +11081,1182 @@
             ]
         },
         {
-            "id": "road-segment-blue-mountains-c-blue-mountains-d",
-            "name": "Blue Mountains C - Blue Mountains D",
-            "fromNodeId": "road-node-dragon-mountains-a",
-            "toNodeId": "road-node-svg-003",
-            "type": "mountain",
-            "carriageAllowed": false,
+            "id": "road-segment-entroncamento-vattweir-daevon",
+            "name": "Entroncamento Vattweir - Daevon",
+            "fromNodeId": "road-node-daevon",
+            "toNodeId": "road-node-vattweir",
+            "type": "regional",
+            "carriageAllowed": true,
             "confidence": "master-traced",
             "points": [
                 {
-                    "x": 2388.1,
-                    "y": 42.4
+                    "x": 2221.2,
+                    "y": 414.3
                 },
                 {
-                    "x": 2351.3,
-                    "y": 35.8
+                    "x": 2204.9,
+                    "y": 414.2
                 },
                 {
-                    "x": 2309.6,
-                    "y": 45.6
+                    "x": 2189.5,
+                    "y": 413.8
                 },
                 {
-                    "x": 2274.4,
-                    "y": 67.7
+                    "x": 2178.2,
+                    "y": 416.4
                 },
                 {
-                    "x": 2219.6,
-                    "y": 116.8
+                    "x": 2166.6,
+                    "y": 415.1
                 },
                 {
-                    "x": 2195.9,
-                    "y": 145.4
+                    "x": 2149.5,
+                    "y": 408
                 },
                 {
-                    "x": 2177.9,
-                    "y": 184.7
+                    "x": 2136.3,
+                    "y": 398.7
                 },
                 {
-                    "x": 2167.3,
-                    "y": 233
+                    "x": 2126,
+                    "y": 387.1
+                },
+                {
+                    "x": 2112.5,
+                    "y": 379.4
+                },
+                {
+                    "x": 2099.9,
+                    "y": 375.5
+                },
+                {
+                    "x": 2083.8,
+                    "y": 373
+                }
+            ]
+        },
+        {
+            "id": "road-segment-estrada-principal-importada-245",
+            "name": "Estrada principal importada 245",
+            "fromNodeId": "road-node-hengfors",
+            "toNodeId": "road-node-yamurlak",
+            "type": "main",
+            "carriageAllowed": true,
+            "confidence": "master-traced",
+            "points": [
+                {
+                    "x": 1544.7,
+                    "y": 399.7
+                },
+                {
+                    "x": 1547.5,
+                    "y": 416.3
+                },
+                {
+                    "x": 1557.6,
+                    "y": 438.3
+                },
+                {
+                    "x": 1566.3,
+                    "y": 456.7
+                },
+                {
+                    "x": 1566.8,
+                    "y": 473.8
+                },
+                {
+                    "x": 1555.3,
+                    "y": 495.4
+                },
+                {
+                    "x": 1536,
+                    "y": 514
+                }
+            ]
+        },
+        {
+            "id": "road-segment-estrada-principal-importada-246",
+            "name": "Estrada principal importada 246",
+            "fromNodeId": "road-node-svg-025",
+            "toNodeId": "road-node-hengfors",
+            "type": "main",
+            "carriageAllowed": true,
+            "confidence": "master-traced",
+            "points": [
+                {
+                    "x": 1373,
+                    "y": 403
+                },
+                {
+                    "x": 1391.7,
+                    "y": 406.4
+                },
+                {
+                    "x": 1406.5,
+                    "y": 412.7
+                },
+                {
+                    "x": 1448.3,
+                    "y": 406.9
+                },
+                {
+                    "x": 1476.9,
+                    "y": 402.7
+                },
+                {
+                    "x": 1495.9,
+                    "y": 395.3
+                },
+                {
+                    "x": 1515.5,
+                    "y": 395.3
+                },
+                {
+                    "x": 1544.7,
+                    "y": 399.7
+                }
+            ]
+        },
+        {
+            "id": "road-segment-estrada-regional-importada-247",
+            "name": "Estrada regional importada 247",
+            "fromNodeId": "road-node-crinfrid",
+            "toNodeId": "road-node-hengfors",
+            "type": "regional",
+            "carriageAllowed": true,
+            "confidence": "master-traced",
+            "points": [
+                {
+                    "x": 1649.3,
+                    "y": 361.2
+                },
+                {
+                    "x": 1626,
+                    "y": 366.6
+                },
+                {
+                    "x": 1603.9,
+                    "y": 380.3
+                },
+                {
+                    "x": 1577.6,
+                    "y": 393.5
+                },
+                {
+                    "x": 1544.7,
+                    "y": 399.7
+                }
+            ]
+        },
+        {
+            "id": "road-segment-estrada-regional-importada-248",
+            "name": "Estrada regional importada 248",
+            "fromNodeId": "road-node-svg-016",
+            "toNodeId": "road-node-crinfrid",
+            "type": "regional",
+            "carriageAllowed": true,
+            "confidence": "master-traced",
+            "points": [
+                {
+                    "x": 1712.7,
+                    "y": 342.6
+                },
+                {
+                    "x": 1688.2,
+                    "y": 350.4
+                },
+                {
+                    "x": 1649.3,
+                    "y": 361.2
+                }
+            ]
+        },
+        {
+            "id": "road-segment-estrada-regional-importada-249",
+            "name": "Estrada regional importada 249",
+            "fromNodeId": "road-node-svg-015",
+            "toNodeId": "road-node-barefield",
+            "type": "regional",
+            "carriageAllowed": true,
+            "confidence": "master-traced",
+            "points": [
+                {
+                    "x": 1852.6,
+                    "y": 325.9
+                },
+                {
+                    "x": 1852,
+                    "y": 299.6
+                },
+                {
+                    "x": 1858,
+                    "y": 282.3
+                }
+            ]
+        },
+        {
+            "id": "road-segment-estrada-regional-importada-250",
+            "name": "Estrada regional importada 250",
+            "fromNodeId": "road-node-svg-016",
+            "toNodeId": "road-node-svg-015",
+            "type": "regional",
+            "carriageAllowed": true,
+            "confidence": "master-traced",
+            "points": [
+                {
+                    "x": 1712.7,
+                    "y": 342.6
+                },
+                {
+                    "x": 1739.6,
+                    "y": 334.3
+                },
+                {
+                    "x": 1765.9,
+                    "y": 318.7
+                },
+                {
+                    "x": 1788.6,
+                    "y": 313.3
+                },
+                {
+                    "x": 1809.6,
+                    "y": 313.9
+                },
+                {
+                    "x": 1829.3,
+                    "y": 315.7
+                },
+                {
+                    "x": 1852.6,
+                    "y": 325.9
+                }
+            ]
+        },
+        {
+            "id": "road-segment-estrada-regional-importada-251",
+            "name": "Estrada regional importada 251",
+            "fromNodeId": "road-node-svg-010",
+            "toNodeId": "road-node-svg-016",
+            "type": "regional",
+            "carriageAllowed": true,
+            "confidence": "master-traced",
+            "points": [
+                {
+                    "x": 1678.6,
+                    "y": 292.4
+                },
+                {
+                    "x": 1680.4,
+                    "y": 313.3
+                },
+                {
+                    "x": 1688.8,
+                    "y": 331.3
+                },
+                {
+                    "x": 1701.9,
+                    "y": 337.9
+                },
+                {
+                    "x": 1712.7,
+                    "y": 342.6
+                }
+            ]
+        },
+        {
+            "id": "road-segment-estrada-regional-importada-252",
+            "name": "Estrada regional importada 252",
+            "fromNodeId": "road-node-svg-015",
+            "toNodeId": "road-node-svg-023",
+            "type": "regional",
+            "carriageAllowed": true,
+            "confidence": "master-traced",
+            "points": [
+                {
+                    "x": 1852.6,
+                    "y": 325.9
+                },
+                {
+                    "x": 1847.2,
+                    "y": 340
+                },
+                {
+                    "x": 1837.4,
+                    "y": 355.3
+                },
+                {
+                    "x": 1820.7,
+                    "y": 367.4
+                },
+                {
+                    "x": 1803.7,
+                    "y": 372.7
+                },
+                {
+                    "x": 1791.5,
+                    "y": 376.1
+                },
+                {
+                    "x": 1775.9,
+                    "y": 384.1
+                }
+            ]
+        },
+        {
+            "id": "road-segment-estrada-regional-importada-253",
+            "name": "Estrada regional importada 253",
+            "fromNodeId": "road-node-svg-016",
+            "toNodeId": "road-node-svg-023",
+            "type": "regional",
+            "carriageAllowed": true,
+            "confidence": "master-traced",
+            "points": [
+                {
+                    "x": 1712.7,
+                    "y": 342.6
+                },
+                {
+                    "x": 1723,
+                    "y": 346.9
+                },
+                {
+                    "x": 1730.7,
+                    "y": 353.5
+                },
+                {
+                    "x": 1739.4,
+                    "y": 355.6
+                },
+                {
+                    "x": 1754.7,
+                    "y": 352.1
+                },
+                {
+                    "x": 1766.1,
+                    "y": 352.5
+                },
+                {
+                    "x": 1775.2,
+                    "y": 364.7
+                },
+                {
+                    "x": 1775.9,
+                    "y": 384.1
+                }
+            ]
+        },
+        {
+            "id": "road-segment-estrada-regional-importada-254",
+            "name": "Estrada regional importada 254",
+            "fromNodeId": "road-node-gelibol-2",
+            "toNodeId": "road-node-svg-023",
+            "type": "regional",
+            "carriageAllowed": true,
+            "confidence": "master-traced",
+            "points": [
+                {
+                    "x": 1734.3,
+                    "y": 586.2
+                },
+                {
+                    "x": 1740.4,
+                    "y": 563.7
+                },
+                {
+                    "x": 1751.6,
+                    "y": 551.6
+                },
+                {
+                    "x": 1760.7,
+                    "y": 515.9
+                },
+                {
+                    "x": 1774.7,
+                    "y": 500.1
+                },
+                {
+                    "x": 1776.5,
+                    "y": 478.8
+                },
+                {
+                    "x": 1790.5,
+                    "y": 463
+                },
+                {
+                    "x": 1793.5,
+                    "y": 446.5
+                },
+                {
+                    "x": 1785.6,
+                    "y": 426.9
+                },
+                {
+                    "x": 1778.7,
+                    "y": 405.4
+                },
+                {
+                    "x": 1775.9,
+                    "y": 384.1
+                }
+            ]
+        },
+        {
+            "id": "road-segment-estrada-regional-importada-255",
+            "name": "Estrada regional importada 255",
+            "fromNodeId": "road-node-malleore",
+            "toNodeId": "road-node-svg-010",
+            "type": "regional",
+            "carriageAllowed": true,
+            "confidence": "master-traced",
+            "points": [
+                {
+                    "x": 1677.5,
+                    "y": 229.5
+                },
+                {
+                    "x": 1678,
+                    "y": 248.8
+                },
+                {
+                    "x": 1682.3,
+                    "y": 262.3
+                },
+                {
+                    "x": 1682.3,
+                    "y": 279.7
+                },
+                {
+                    "x": 1678.6,
+                    "y": 292.4
+                }
+            ]
+        },
+        {
+            "id": "road-segment-estrada-regional-importada-256",
+            "name": "Estrada regional importada 256",
+            "fromNodeId": "road-node-creigiau",
+            "toNodeId": "road-node-malleore",
+            "type": "regional",
+            "carriageAllowed": true,
+            "confidence": "master-traced",
+            "points": [
+                {
+                    "x": 1689.6,
+                    "y": 154.7
+                },
+                {
+                    "x": 1692.5,
+                    "y": 166.3
+                },
+                {
+                    "x": 1700.7,
+                    "y": 179.8
+                },
+                {
+                    "x": 1705,
+                    "y": 196.2
+                },
+                {
+                    "x": 1702.1,
+                    "y": 210.2
+                },
+                {
+                    "x": 1693.9,
+                    "y": 220.3
+                },
+                {
+                    "x": 1677.5,
+                    "y": 229.5
+                }
+            ]
+        },
+        {
+            "id": "road-segment-estrada-regional-importada-257",
+            "name": "Estrada regional importada 257",
+            "fromNodeId": "road-node-creyden",
+            "toNodeId": "road-node-svg-025",
+            "type": "regional",
+            "carriageAllowed": true,
+            "confidence": "master-traced",
+            "points": [
+                {
+                    "x": 1455.9,
+                    "y": 317.7
+                },
+                {
+                    "x": 1435.8,
+                    "y": 332.9
+                },
+                {
+                    "x": 1421.1,
+                    "y": 344.2
+                },
+                {
+                    "x": 1409.4,
+                    "y": 360.1
+                },
+                {
+                    "x": 1394.3,
+                    "y": 381.5
+                },
+                {
+                    "x": 1373,
+                    "y": 403
+                }
+            ]
+        },
+        {
+            "id": "road-segment-estrada-regional-importada-258",
+            "name": "Estrada regional importada 258",
+            "fromNodeId": "road-node-svg-010",
+            "toNodeId": "road-node-creyden",
+            "type": "regional",
+            "carriageAllowed": true,
+            "confidence": "master-traced",
+            "points": [
+                {
+                    "x": 1678.6,
+                    "y": 292.4
+                },
+                {
+                    "x": 1652.2,
+                    "y": 294.7
+                },
+                {
+                    "x": 1631.3,
+                    "y": 289.2
+                },
+                {
+                    "x": 1615.8,
+                    "y": 285.4
+                },
+                {
+                    "x": 1575.1,
+                    "y": 285.9
+                },
+                {
+                    "x": 1545.3,
+                    "y": 299.7
+                },
+                {
+                    "x": 1520.5,
+                    "y": 303.1
+                },
+                {
+                    "x": 1489.9,
+                    "y": 301.8
+                },
+                {
+                    "x": 1473.5,
+                    "y": 305.2
+                },
+                {
+                    "x": 1455.9,
+                    "y": 317.7
+                }
+            ]
+        },
+        {
+            "id": "road-segment-estrada-regional-importada-259",
+            "name": "Estrada regional importada 259",
+            "fromNodeId": "road-node-tancarville",
+            "toNodeId": "road-node-creyden",
+            "type": "regional",
+            "carriageAllowed": true,
+            "confidence": "master-traced",
+            "points": [
+                {
+                    "x": 1257.5,
+                    "y": 319.4
+                },
+                {
+                    "x": 1281,
+                    "y": 314.4
+                },
+                {
+                    "x": 1301.5,
+                    "y": 314.4
+                },
+                {
+                    "x": 1327.5,
+                    "y": 317.3
+                },
+                {
+                    "x": 1362.8,
+                    "y": 319.8
+                },
+                {
+                    "x": 1390.9,
+                    "y": 319.4
+                },
+                {
+                    "x": 1416.1,
+                    "y": 318.2
+                },
+                {
+                    "x": 1455.9,
+                    "y": 317.7
+                }
+            ]
+        },
+        {
+            "id": "road-segment-estrada-principal-importada-260",
+            "name": "Estrada principal importada 260",
+            "fromNodeId": "road-node-svg-018",
+            "toNodeId": "road-node-yspaden",
+            "type": "main",
+            "carriageAllowed": true,
+            "confidence": "master-traced",
+            "points": [
+                {
+                    "x": 1140,
+                    "y": 356.8
+                },
+                {
+                    "x": 1173,
+                    "y": 367
+                }
+            ]
+        },
+        {
+            "id": "road-segment-estrada-regional-importada-261",
+            "name": "Estrada regional importada 261",
+            "fromNodeId": "road-node-tancarville",
+            "toNodeId": "road-node-svg-018",
+            "type": "regional",
+            "carriageAllowed": true,
+            "confidence": "master-traced",
+            "points": [
+                {
+                    "x": 1257.5,
+                    "y": 319.4
+                },
+                {
+                    "x": 1234.8,
+                    "y": 317.7
+                },
+                {
+                    "x": 1215.1,
+                    "y": 319
+                },
+                {
+                    "x": 1188.7,
+                    "y": 325.3
+                },
+                {
+                    "x": 1168.1,
+                    "y": 336.6
+                },
+                {
+                    "x": 1149.7,
+                    "y": 347.1
+                },
+                {
+                    "x": 1140,
+                    "y": 356.8
+                }
+            ]
+        },
+        {
+            "id": "road-segment-estrada-principal-importada-262",
+            "name": "Estrada principal importada 262",
+            "fromNodeId": "road-node-talgar",
+            "toNodeId": "road-node-svg-018",
+            "type": "main",
+            "carriageAllowed": true,
+            "confidence": "master-traced",
+            "points": [
+                {
+                    "x": 1094.7,
+                    "y": 355.5
+                },
+                {
+                    "x": 1109.8,
+                    "y": 359.3
+                },
+                {
+                    "x": 1128.3,
+                    "y": 356.8
+                },
+                {
+                    "x": 1140,
+                    "y": 356.8
+                }
+            ]
+        },
+        {
+            "id": "road-segment-estrada-principal-importada-263",
+            "name": "Estrada principal importada 263",
+            "fromNodeId": "road-node-svg-013",
+            "toNodeId": "road-node-talgar",
+            "type": "main",
+            "carriageAllowed": true,
+            "confidence": "master-traced",
+            "points": [
+                {
+                    "x": 846.2,
+                    "y": 318.2
+                },
+                {
+                    "x": 859,
+                    "y": 319.8
+                },
+                {
+                    "x": 874.1,
+                    "y": 329
+                },
+                {
+                    "x": 885.5,
+                    "y": 334.2
+                },
+                {
+                    "x": 900.9,
+                    "y": 332.6
+                },
+                {
+                    "x": 913.3,
+                    "y": 328.3
+                },
+                {
+                    "x": 937.2,
+                    "y": 330.6
+                },
+                {
+                    "x": 958.4,
+                    "y": 341.1
+                },
+                {
+                    "x": 968.6,
+                    "y": 349.6
+                },
+                {
+                    "x": 982.6,
+                    "y": 350.5
+                },
+                {
+                    "x": 998,
+                    "y": 349.9
+                },
+                {
+                    "x": 1007.8,
+                    "y": 345.3
+                },
+                {
+                    "x": 1026.5,
+                    "y": 347.9
+                },
+                {
+                    "x": 1045.1,
+                    "y": 349.2
+                },
+                {
+                    "x": 1054.9,
+                    "y": 345.3
+                },
+                {
+                    "x": 1073.6,
+                    "y": 350.2
+                },
+                {
+                    "x": 1094.7,
+                    "y": 355.5
+                }
+            ]
+        },
+        {
+            "id": "road-segment-estrada-principal-importada-264",
+            "name": "Estrada principal importada 264",
+            "fromNodeId": "road-node-pont-vanis",
+            "toNodeId": "road-node-talgar",
+            "type": "main",
+            "carriageAllowed": true,
+            "confidence": "master-traced",
+            "points": [
+                {
+                    "x": 843.3,
+                    "y": 515.4
+                },
+                {
+                    "x": 864.9,
+                    "y": 510.2
+                },
+                {
+                    "x": 875,
+                    "y": 500.7
+                },
+                {
+                    "x": 886.8,
+                    "y": 486.9
+                },
+                {
+                    "x": 902.8,
+                    "y": 479.4
+                },
+                {
+                    "x": 921.1,
+                    "y": 477.1
+                },
+                {
+                    "x": 939.8,
+                    "y": 476.8
+                },
+                {
+                    "x": 952.5,
+                    "y": 474.2
+                },
+                {
+                    "x": 963.7,
+                    "y": 466
+                },
+                {
+                    "x": 976.8,
+                    "y": 444.1
+                },
+                {
+                    "x": 990.8,
+                    "y": 420.5
+                },
+                {
+                    "x": 1002.9,
+                    "y": 404.2
+                },
+                {
+                    "x": 1018.9,
+                    "y": 397.6
+                },
+                {
+                    "x": 1035,
+                    "y": 391.8
+                },
+                {
+                    "x": 1050,
+                    "y": 375.7
+                },
+                {
+                    "x": 1062.4,
+                    "y": 363.6
+                },
+                {
+                    "x": 1078.5,
+                    "y": 357.4
+                },
+                {
+                    "x": 1094.7,
+                    "y": 355.5
+                }
+            ]
+        },
+        {
+            "id": "road-segment-estrada-principal-importada-265",
+            "name": "Estrada principal importada 265",
+            "fromNodeId": "road-node-svg-013",
+            "toNodeId": "road-node-pont-vanis",
+            "type": "main",
+            "carriageAllowed": true,
+            "confidence": "master-traced",
+            "points": [
+                {
+                    "x": 846.2,
+                    "y": 318.2
+                },
+                {
+                    "x": 852.8,
+                    "y": 335.5
+                },
+                {
+                    "x": 860.6,
+                    "y": 355.5
+                },
+                {
+                    "x": 865.5,
+                    "y": 400.6
+                },
+                {
+                    "x": 859,
+                    "y": 425.8
+                },
+                {
+                    "x": 858,
+                    "y": 446.1
+                },
+                {
+                    "x": 861,
+                    "y": 470.3
+                },
+                {
+                    "x": 854.8,
+                    "y": 486.9
+                },
+                {
+                    "x": 843.3,
+                    "y": 515.4
+                }
+            ]
+        },
+        {
+            "id": "road-segment-estrada-principal-importada-266",
+            "name": "Estrada principal importada 266",
+            "fromNodeId": "road-node-lan-exeter",
+            "toNodeId": "road-node-svg-013",
+            "type": "main",
+            "carriageAllowed": true,
+            "confidence": "master-traced",
+            "points": [
+                {
+                    "x": 790.1,
+                    "y": 314.9
+                },
+                {
+                    "x": 803.9,
+                    "y": 319
+                },
+                {
+                    "x": 824.2,
+                    "y": 318.1
+                },
+                {
+                    "x": 846.2,
+                    "y": 318.2
+                }
+            ]
+        },
+        {
+            "id": "road-segment-estrada-regional-importada-267",
+            "name": "Estrada regional importada 267",
+            "fromNodeId": "road-node-tridam",
+            "toNodeId": "road-node-lan-exeter",
+            "type": "regional",
+            "carriageAllowed": true,
+            "confidence": "master-traced",
+            "points": [
+                {
+                    "x": 535.6,
+                    "y": 407.8
+                },
+                {
+                    "x": 556.2,
+                    "y": 395.4
+                },
+                {
+                    "x": 575.6,
+                    "y": 375.9
+                },
+                {
+                    "x": 604.8,
+                    "y": 362.4
+                },
+                {
+                    "x": 630.7,
+                    "y": 359.1
+                },
+                {
+                    "x": 655.6,
+                    "y": 347.3
+                },
+                {
+                    "x": 697.8,
+                    "y": 323.5
+                },
+                {
+                    "x": 725.9,
+                    "y": 310.5
+                },
+                {
+                    "x": 745.3,
+                    "y": 305.6
+                },
+                {
+                    "x": 756.7,
+                    "y": 308.9
+                },
+                {
+                    "x": 769.6,
+                    "y": 308.9
+                },
+                {
+                    "x": 790.1,
+                    "y": 314.9
+                }
+            ]
+        },
+        {
+            "id": "road-segment-estrada-regional-importada-268",
+            "name": "Estrada regional importada 268",
+            "fromNodeId": "road-node-svg-005",
+            "toNodeId": "road-node-rakverelin",
+            "type": "regional",
+            "carriageAllowed": true,
+            "confidence": "master-traced",
+            "points": [
+                {
+                    "x": 505.4,
+                    "y": 216.5
+                },
+                {
+                    "x": 484.8,
+                    "y": 227.3
+                },
+                {
+                    "x": 469.2,
+                    "y": 231.1
+                },
+                {
+                    "x": 449.7,
+                    "y": 231.6
+                }
+            ]
+        },
+        {
+            "id": "road-segment-estrada-regional-importada-269",
+            "name": "Estrada regional importada 269",
+            "fromNodeId": "road-node-aed-gynvael",
+            "toNodeId": "road-node-svg-005",
+            "type": "regional",
+            "carriageAllowed": true,
+            "confidence": "master-traced",
+            "points": [
+                {
+                    "x": 488.6,
+                    "y": 144.1
+                },
+                {
+                    "x": 486.5,
+                    "y": 161.9
+                },
+                {
+                    "x": 488.6,
+                    "y": 181.9
+                },
+                {
+                    "x": 498.9,
+                    "y": 205.7
+                },
+                {
+                    "x": 505.4,
+                    "y": 216.5
+                }
+            ]
+        },
+        {
+            "id": "road-segment-estrada-regional-importada-270",
+            "name": "Estrada regional importada 270",
+            "fromNodeId": "road-node-lan-exeter",
+            "toNodeId": "road-node-svg-005",
+            "type": "regional",
+            "carriageAllowed": true,
+            "confidence": "master-traced",
+            "points": [
+                {
+                    "x": 790.1,
+                    "y": 314.9
+                },
+                {
+                    "x": 773.4,
+                    "y": 300.8
+                },
+                {
+                    "x": 757.2,
+                    "y": 290.5
+                },
+                {
+                    "x": 742.6,
+                    "y": 279.2
+                },
+                {
+                    "x": 729.1,
+                    "y": 257.6
+                },
+                {
+                    "x": 716.7,
+                    "y": 240.8
+                },
+                {
+                    "x": 699.9,
+                    "y": 235.9
+                },
+                {
+                    "x": 681,
+                    "y": 238.6
+                },
+                {
+                    "x": 666.4,
+                    "y": 244.6
+                },
+                {
+                    "x": 649.7,
+                    "y": 242.4
+                },
+                {
+                    "x": 637.2,
+                    "y": 228.9
+                },
+                {
+                    "x": 627,
+                    "y": 212.2
+                },
+                {
+                    "x": 612.4,
+                    "y": 206.8
+                },
+                {
+                    "x": 594,
+                    "y": 206.2
+                },
+                {
+                    "x": 572.9,
+                    "y": 209.5
+                },
+                {
+                    "x": 565.9,
+                    "y": 211.6
+                },
+                {
+                    "x": 552.9,
+                    "y": 208.4
+                },
+                {
+                    "x": 538.3,
+                    "y": 205.7
+                },
+                {
+                    "x": 524.8,
+                    "y": 209.5
+                },
+                {
+                    "x": 505.4,
+                    "y": 216.5
                 }
             ]
         }
     ],
-    "warnings": []
+    "warnings": [
+        "Identificador fora do padrão: (vazio); categoria main inferida pela classe fil0 str3",
+        "Identificador fora do padrão: (vazio); categoria main inferida pela classe fil0 str3",
+        "Identificador fora do padrão: (vazio); categoria regional inferida pela classe fil0 str4",
+        "Identificador fora do padrão: (vazio); categoria regional inferida pela classe fil0 str4",
+        "Identificador fora do padrão: (vazio); categoria regional inferida pela classe fil0 str4",
+        "Identificador fora do padrão: (vazio); categoria regional inferida pela classe fil0 str4",
+        "Identificador fora do padrão: (vazio); categoria regional inferida pela classe fil0 str4",
+        "Identificador fora do padrão: (vazio); categoria regional inferida pela classe fil0 str4",
+        "Identificador fora do padrão: (vazio); categoria regional inferida pela classe fil0 str4",
+        "Identificador fora do padrão: (vazio); categoria regional inferida pela classe fil0 str4",
+        "Identificador fora do padrão: (vazio); categoria regional inferida pela classe fil0 str4",
+        "Identificador fora do padrão: (vazio); categoria regional inferida pela classe fil0 str4",
+        "Identificador fora do padrão: (vazio); categoria regional inferida pela classe fil0 str4",
+        "Identificador fora do padrão: (vazio); categoria regional inferida pela classe fil0 str4",
+        "Identificador fora do padrão: (vazio); categoria regional inferida pela classe fil0 str4",
+        "Identificador fora do padrão: (vazio); categoria main inferida pela classe fil0 str3",
+        "Identificador fora do padrão: (vazio); categoria regional inferida pela classe fil0 str4",
+        "Identificador fora do padrão: (vazio); categoria main inferida pela classe fil0 str3",
+        "Identificador fora do padrão: (vazio); categoria main inferida pela classe fil0 str3",
+        "Identificador fora do padrão: (vazio); categoria main inferida pela classe fil0 str3",
+        "Identificador fora do padrão: (vazio); categoria main inferida pela classe fil0 str3",
+        "Identificador fora do padrão: (vazio); categoria main inferida pela classe fil0 str3",
+        "Identificador fora do padrão: (vazio); categoria regional inferida pela classe fil0 str4",
+        "Identificador fora do padrão: (vazio); categoria regional inferida pela classe fil0 str4",
+        "Identificador fora do padrão: (vazio); categoria regional inferida pela classe fil0 str4",
+        "Identificador fora do padrão: (vazio); categoria regional inferida pela classe fil0 str4"
+    ]
 });
 });

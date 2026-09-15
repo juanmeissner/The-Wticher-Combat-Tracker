@@ -67,7 +67,7 @@ test('catálogo cartográfico posiciona locais canônicos preservando coordenada
     const vizima = seeded.locations.find(location => location.id === 'world-canonical-vizima');
     const kaerMorhen = seeded.locations.find(location => location.id === 'world-canonical-kaer-morhen');
 
-    assert.equal(worldCartographicData.CARTOGRAPHIC_CATALOG_VERSION, 7);
+    assert.equal(worldCartographicData.CARTOGRAPHIC_CATALOG_VERSION, 8);
     assert.equal(Object.keys(worldCartographicData.CANONICAL_COORDINATES).length, 59);
     const vizimaMapCoordinate = worldMap.percentToMapCoordinate(vizima.coordinates);
     const importedVizima = worldLocationImportedData.markers.find(marker => marker.locationId === vizima.id);
@@ -75,8 +75,8 @@ test('catálogo cartográfico posiciona locais canônicos preservando coordenada
     assert.ok(Math.abs(vizimaMapCoordinate.lat - (4096 - importedVizima.point.y)) < 0.000001);
     assert.equal(vizima.coordinateConfidence, 'precise');
     assert.ok(kaerMorhen.coordinates);
-    assert.equal(seeded.locations.filter(location => location.coordinates).length, 212);
-    assert.equal(worldLocationImportedData.markers.length, 132);
+    assert.equal(seeded.locations.filter(location => location.coordinates).length, 215);
+    assert.equal(worldLocationImportedData.markers.length, 144);
     assert.equal(worldLocationImportedData.unmatchedMarkers.length, 0);
     assert.equal(worldLocationImportedData.ambiguousMarkers.length, 0);
 
@@ -135,7 +135,7 @@ test('círculos verdes do SVG atualizam todos os marcadores reconhecidos sem cri
         now: '2026-09-10T00:00:00.000Z'
     });
     const importedIds = new Set(worldLocationImportedData.markers.map(marker => marker.locationId));
-    assert.equal(importedIds.size, 132);
+    assert.equal(importedIds.size, 144);
     for (const marker of worldLocationImportedData.markers) {
         const location = seeded.locations.find(entry => entry.id === marker.locationId);
         assert.ok(location, `local importado ausente: ${marker.label}`);
@@ -245,12 +245,12 @@ test('manifesto dos blocos é reutilizado durante a sessão', async () => {
 
 test('rede viária preserva trechos, entroncamentos e escala cartográfica centralizada', () => {
     const summary = worldRoadData.getNetworkSummary();
-    assert.equal(worldRoadData.ROAD_NETWORK_VERSION, 2);
+    assert.equal(worldRoadData.ROAD_NETWORK_VERSION, 3);
     assert.equal(worldRoadData.MAP_REFERENCE.kilometersPerGrid, 100);
     assert.equal(worldRoadData.MAP_REFERENCE.pixelsPerGrid, 576);
-    assert.equal(summary.nodeCount, 202);
-    assert.equal(summary.segmentCount, 246);
-    assert.equal(summary.junctionCount, 102);
+    assert.equal(summary.nodeCount, 217);
+    assert.equal(summary.segmentCount, 270);
+    assert.equal(summary.junctionCount, 116);
     assert.ok(summary.distanceKm > 4000);
     assert.equal(worldRoadData.ROAD_SOURCE.kind, 'svg');
     assert.equal(worldRoadData.ROAD_SOURCE.file, 'img/maps/continent/continent-roads.svg');
@@ -295,9 +295,13 @@ test('popup calcula a menor distância viária e rejeita locais sem estrada cont
     assert.ok(route.segmentIds.length > 0);
 
     const disconnectedNetwork = {
-        nodes: network.nodes.map(node => node.id === 'road-node-svg-174'
-            ? { ...node, locationId: 'world-test-disconnected' }
-            : node),
+        nodes: [...network.nodes, {
+            id: 'road-node-test-disconnected',
+            name: 'Local isolado para teste',
+            point: { x: 0, y: 0 },
+            type: 'location',
+            locationId: 'world-test-disconnected'
+        }],
         segments: network.segments
     };
     const disconnected = worldMap.calculateRoadDistance(
@@ -321,6 +325,7 @@ test('mapa usa Leaflet local, tela cheia e integração offline versionada', () 
     const indexSource = read('index.html');
     const featureLoader = read(path.join('js', 'world', 'world-feature-loader.js'));
     const sessionSource = read(path.join('js', 'session-features.js'));
+    const mapSource = read(path.join('js', 'world', 'world-map.js'));
     const styles = read('world-map.css');
     const zoomLock = read(path.join('js', 'zoom-lock.js'));
     const worker = read(path.join('js', 'service-worker.js'));
@@ -335,12 +340,18 @@ test('mapa usa Leaflet local, tela cheia e integração offline versionada', () 
     assert.match(sessionSource, /openWorldHub\('map'\)/);
     assert.match(sessionSource, /worldMap\?\.renderView/);
     assert.match(sessionSource, /worldMap\?\.initialize/);
+    assert.match(sessionSource, /world-map-navigation-header/);
+    assert.match(sessionSource, /aria-label="Mundo da campanha — mapa"/);
     assert.match(sessionSource, /view === 'history' \? `/);
+    assert.doesNotMatch(mapSource, /MAPA VISUAL INTERATIVO/);
+    assert.match(mapSource, /world-map-controls-floating/);
     assert.match(styles, /\.world-map-mode/);
+    assert.match(styles, /\.world-map-navigation-header/);
+    assert.match(styles, /\.world-map-controls-floating/);
     assert.match(styles, /height:\s*100dvh/);
     assert.match(styles, /\.world-interactive-map/);
     assert.match(zoomLock, /data-allow-map-zoom/);
-    assert.match(worker, /witcher-combat-tracker-v158/);
+    assert.match(worker, /witcher-combat-tracker-v165/);
     assert.match(worker, /js\/world\/world-road-imported-data\.js/);
     assert.match(worker, /vendor\/leaflet\/leaflet\.js/);
     assert.match(worker, /js\/world\/world-map\.js/);
@@ -357,14 +368,17 @@ test('mapa usa Leaflet local, tela cheia e integração offline versionada', () 
     assert.match(styles, /\.world-map-popup-context/);
     assert.match(styles, /\.world-map-popup-distance/);
     assert.match(styles, /\.world-route-preview-casing/);
-    const mapSource = read(path.join('js', 'world', 'world-map.js'));
     assert.doesNotMatch(mapSource, /worldMapLoading|Carregando os blocos do mapa|Preparando o mapa/);
     assert.match(mapSource, /preferCanvas:\s*true/);
     assert.match(mapSource, /updateWhenIdle:\s*true/);
     assert.match(mapSource, /keepBuffer:\s*1/);
     assert.match(styles, /\.world-route-preview-line/);
     assert.match(styles, /\.world-route-preview-endpoint/);
+    assert.match(styles, /\.world-route-preview-origin/);
+    assert.match(styles, /\.world-route-preview-destination/);
     assert.match(styles, /\.world-travel-map-preview-overlay/);
+    assert.match(mapSource, /focusCurrentLocation/);
+    assert.match(mapSource, /Ir ao local atual/);
     assert.match(styles, /\.world-map-legend-dot\.canonical/);
     assert.match(sessionSource, /data-npc-location-path/);
     assert.match(sessionSource, /FILTRO ABERTO PELO MAPA/);
@@ -387,7 +401,8 @@ test('Mestre controla escala e viagens enquanto Jogador recebe somente o mapa co
     assert.match(masterView, /Calibração de distância/);
     assert.match(masterView, /saveMapScale/);
     assert.match(masterView, /worldMapRoadEditor/);
-    assert.match(playerView, /Mapa visual interativo/i);
+    assert.match(playerView, /Mapa navegável do Continente/i);
+    assert.match(playerView, /world-map-controls-floating/);
     assert.match(playerView, /225 km por quadrícula/);
     assert.doesNotMatch(playerView, /Calibração de distância/);
     assert.doesNotMatch(playerView, /saveMapScale/);

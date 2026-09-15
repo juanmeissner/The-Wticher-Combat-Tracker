@@ -151,8 +151,89 @@
             && location.id !== excludeId
             && (options.coordinatesOnly !== true || (Number.isFinite(Number(location.coordinates?.x)) && Number.isFinite(Number(location.coordinates?.y)))))
             .sort((left, right) => left.name.localeCompare(right.name, 'pt-BR'))
-            .map(location => `<option value="${escapeHtml(location.id)}"${String(selectedId) === String(location.id) ? ' selected' : ''}>${escapeHtml((root.worldModel?.getLocationPath?.(world, location.id) || [location]).map(entry => entry.name).join(' › '))}</option>`)
+            .map(location => `<option value="${escapeHtml(location.id)}"${String(selectedId) === String(location.id) ? ' selected' : ''}>${escapeHtml(options.compact === true ? formatTravelLocationLabel(world, location) : (root.worldModel?.getLocationPath?.(world, location.id) || [location]).map(entry => entry.name).join(' › '))}</option>`)
             .join('');
+    }
+
+    function formatTravelLocationLabel(world, location) {
+        if (!location) return 'Local não definido';
+        const path = root.worldModel?.getLocationPath?.(world, location.id) || [location];
+        const politicalParent = [...path].reverse().find(entry => entry?.id !== location.id
+            && String(entry?.id || '').startsWith('world-political-')
+            && String(entry?.name || '').trim().toLocaleLowerCase('pt-BR') !== String(location.name || '').trim().toLocaleLowerCase('pt-BR'));
+        return politicalParent?.name ? `${location.name} (${politicalParent.name})` : location.name;
+    }
+
+    function normalizeTravelSearch(value) {
+        return String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('pt-BR').trim();
+    }
+
+    function getTravelDestinationMatches(world, query, excludeId = '', limit = 8) {
+        const term = normalizeTravelSearch(query);
+        return (world?.locations || [])
+            .filter(location => location.id !== root.worldModel?.ROOT_CONTINENT_ID
+                && location.id !== excludeId
+                && Number.isFinite(Number(location.coordinates?.x))
+                && Number.isFinite(Number(location.coordinates?.y)))
+            .map(location => {
+                const label = formatTravelLocationLabel(world, location);
+                const path = (root.worldModel?.getLocationPath?.(world, location.id) || [location]).map(entry => entry.name).join(' › ');
+                const search = normalizeTravelSearch([label, path, location.description, ...(location.aliases || [])].join(' '));
+                const position = term ? search.indexOf(term) : 0;
+                return { location, label, path, position };
+            })
+            .filter(entry => entry.position >= 0)
+            .sort((left, right) => left.position - right.position || left.label.localeCompare(right.label, 'pt-BR'))
+            .slice(0, limit);
+    }
+
+    function updateWorldTravelDestinationSearch(input, preserveSelection = false) {
+        const modal = root.document?.getElementById?.('worldTravelModal');
+        const form = input?.form;
+        const results = modal?.querySelector?.('#worldTravelDestinationResults');
+        const destinationField = form?.elements?.destinationId;
+        if (!modal || !form || !results || !destinationField) return [];
+        if (!preserveSelection && input.value !== input.dataset.selectedLabel) {
+            destinationField.value = '';
+            updateWorldTravelPreview();
+        }
+        const world = root.worldStore?.getWorld?.();
+        const current = root.worldStore?.getCurrentLocation?.();
+        const matches = getTravelDestinationMatches(world, input.value, current?.id);
+        results.innerHTML = matches.length ? matches.map(entry => `<button type="button" role="option" onclick="selectWorldTravelDestination(${escapeHtml(JSON.stringify(entry.location.id))})"><span aria-hidden="true">📍</span><span><b>${escapeHtml(entry.label)}</b><small>${escapeHtml(entry.path)}</small></span></button>`).join('') : '<p>Nenhum local encontrado.</p>';
+        results.hidden = false;
+        return matches;
+    }
+
+    function selectWorldTravelDestination(locationId) {
+        const modal = root.document?.getElementById?.('worldTravelModal');
+        const form = modal?.querySelector?.('form');
+        const input = modal?.querySelector?.('#worldTravelDestinationSearch');
+        const results = modal?.querySelector?.('#worldTravelDestinationResults');
+        const world = root.worldStore?.getWorld?.();
+        const location = root.worldModel?.getLocation?.(world, locationId);
+        if (!form || !input || !results || !location) return null;
+        const label = formatTravelLocationLabel(world, location);
+        form.elements.destinationId.value = location.id;
+        input.value = label;
+        input.dataset.selectedLabel = label;
+        results.hidden = true;
+        return updateWorldTravelPreview();
+    }
+
+    function handleWorldTravelDestinationKey(event) {
+        if (!['ArrowDown', 'Enter', 'Escape'].includes(event?.key)) return;
+        const results = root.document?.getElementById?.('worldTravelDestinationResults');
+        if (!results) return;
+        if (event.key === 'Escape') {
+            results.hidden = true;
+            return;
+        }
+        const first = results.querySelector?.('button');
+        if (!first) return;
+        event.preventDefault?.();
+        if (event.key === 'Enter') first.click();
+        else first.focus?.({ preventScroll: true });
     }
 
     function getTravelOwners() {
@@ -252,15 +333,72 @@
             || options[0];
     }
 
+    function getTravelHorseSeatReference(value) {
+        const [role, mode, encodedOwnerKey, encodedAssetId] = String(value || '').split('|');
+        if (role !== 'passenger' || mode !== 'horse' || !encodedOwnerKey || !encodedAssetId) return '';
+        try {
+            return `${decodeURIComponent(encodedOwnerKey)}|horse|${decodeURIComponent(encodedAssetId)}`;
+        } catch {
+            return '';
+        }
+    }
+
+    function refreshWorldTravelHorseSeats() {
+        const modal = root.document?.getElementById?.('worldTravelModal');
+        if (!modal) return new Map();
+        const owners = getTravelOwners();
+        const ownerByKey = new Map(owners.map(entry => [entry.key, entry]));
+        const rows = Array.from(modal.querySelectorAll?.('[data-travel-participant]') || []);
+        const seatClaims = new Map();
+
+        rows.forEach(row => {
+            const checkbox = row.querySelector?.('input[name="participantKeys"]');
+            const select = row.querySelector?.('[data-travel-assignment]');
+            const seat = checkbox?.checked ? getTravelHorseSeatReference(select?.value) : '';
+            if (seat && !seatClaims.has(seat)) seatClaims.set(seat, String(row.dataset?.ownerKey || ''));
+        });
+
+        rows.forEach(row => {
+            const ownerKey = String(row.dataset?.ownerKey || '');
+            const ownerEntry = ownerByKey.get(ownerKey);
+            const select = row.querySelector?.('[data-travel-assignment]');
+            if (!ownerEntry || !select) return;
+            const previousValue = String(select.value || '');
+            const options = getParticipantTransportOptions(ownerEntry, owners).filter(option => {
+                const seat = getTravelHorseSeatReference(option.value);
+                return !seat || !seatClaims.has(seat) || seatClaims.get(seat) === ownerKey;
+            });
+            const selected = options.find(option => option.value === previousValue) || getDefaultParticipantTransport(ownerEntry, options);
+            select.innerHTML = options.map(option => `<option value="${escapeHtml(option.value)}"${option.value === selected?.value ? ' selected' : ''}>${escapeHtml(option.label)}</option>`).join('');
+        });
+        return seatClaims;
+    }
+
     function renderTravelPartyPlanner(owners) {
         if (!owners.length) {
             return '<section class="world-travel-party-planner is-empty"><p>Nenhum personagem jogador está disponível. O deslocamento geral será calculado a pé.</p></section>';
         }
-        return `<section class="world-travel-party-planner" aria-label="Organização dos participantes"><div class="world-travel-party-heading"><div><small>COMPOSIÇÃO DO GRUPO</small><strong>Como cada personagem viajará?</strong></div><span>${owners.length} selecionado${owners.length === 1 ? '' : 's'}</span></div><p>Todos começam marcados. Escolha cavalo próprio, carona, carruagem ou caminhada para cada participante.</p><div class="world-travel-participant-list">${owners.map(entry => {
+        return `<section class="world-travel-party-planner" aria-label="Organização dos participantes"><div class="world-travel-party-heading"><div><small>COMPOSIÇÃO DO GRUPO</small><strong>Participantes e transportes</strong></div><span>${owners.length} selecionado${owners.length === 1 ? '' : 's'}</span></div><div class="world-travel-participant-list">${owners.map(entry => {
             const options = getParticipantTransportOptions(entry, owners);
             const selected = getDefaultParticipantTransport(entry, options);
-            return `<article class="world-travel-participant is-selected" data-travel-participant data-owner-key="${escapeHtml(entry.key)}"><label class="world-travel-participant-toggle"><input type="checkbox" name="participantKeys" value="${escapeHtml(entry.key)}" checked onchange="updateWorldTravelParticipant(this)"><span><b>${escapeHtml(entry.owner?.name || 'Personagem')}</b><small>Participará da viagem</small></span></label><label class="world-travel-participant-mode"><span>Forma de viagem</span><select data-travel-assignment onchange="updateWorldTravelPartyAssignment(this)">${options.map(option => `<option value="${escapeHtml(option.value)}"${option.value === selected?.value ? ' selected' : ''}>${escapeHtml(option.label)}</option>`).join('')}</select></label></article>`;
+            return `<article class="world-travel-participant is-selected" data-travel-participant data-owner-key="${escapeHtml(entry.key)}"><label class="world-travel-participant-toggle"><input type="checkbox" name="participantKeys" value="${escapeHtml(entry.key)}" checked onchange="updateWorldTravelParticipant(this)"><span><b>${escapeHtml(entry.owner?.name || 'Personagem')}</b><small>Incluído no grupo</small></span></label><label class="world-travel-participant-mode"><span class="sr-only">Forma de viagem de ${escapeHtml(entry.owner?.name || 'Personagem')}</span><select data-travel-assignment onchange="updateWorldTravelPartyAssignment(this)">${options.map(option => `<option value="${escapeHtml(option.value)}"${option.value === selected?.value ? ' selected' : ''}>${escapeHtml(option.label)}</option>`).join('')}</select></label></article>`;
         }).join('')}</div></section>`;
+    }
+
+    function toggleWorldTravelPanel(panelName = '') {
+        const modal = root.document?.getElementById?.('worldTravelModal');
+        if (!modal) return;
+        const requested = String(panelName || '');
+        modal.querySelectorAll?.('[data-world-travel-panel]')?.forEach(panel => {
+            const shouldOpen = panel.dataset.worldTravelPanel === requested && panel.hidden;
+            panel.hidden = !shouldOpen;
+        });
+        modal.querySelectorAll?.('[data-world-travel-toggle]')?.forEach(button => {
+            const expanded = button.dataset.worldTravelToggle === requested
+                && !modal.querySelector?.(`[data-world-travel-panel="${requested}"]`)?.hidden;
+            button.classList.toggle('is-active', expanded);
+            button.setAttribute('aria-expanded', String(expanded));
+        });
     }
 
     function getTravelPlannerSelection() {
@@ -394,10 +532,12 @@
         const selected = root.document?.querySelectorAll?.('#worldTravelModal input[name="participantKeys"]:checked')?.length || 0;
         const badge = root.document?.querySelector?.('#worldTravelModal .world-travel-party-heading > span');
         if (badge) badge.textContent = `${selected} selecionado${selected === 1 ? '' : 's'}`;
+        refreshWorldTravelHorseSeats();
         return updateWorldTravelPreview();
     }
 
     function updateWorldTravelPartyAssignment() {
+        refreshWorldTravelHorseSeats();
         return updateWorldTravelPreview();
     }
 
@@ -469,9 +609,10 @@
         const isPortal = plan.mode === 'portal';
         const routeLabel = isPortal ? 'Sem uso de estradas' : 'Somente pelas estradas';
         const durationLabel = isPortal ? '1 turno · 1 min' : (root.campaignClock?.formatDuration?.(plan.durationMinutes) || `${plan.durationMinutes} min`);
-        const assignments = party.travelers.map(entry => `${entry.name} — ${entry.transportLabel}`).join('; ');
         const paceLabel = isPortal ? 'Instantâneo' : (party.units.length > 1 ? (plan.limitingUnit?.label || 'Integrante mais lento') : transportLabel);
-        preview.innerHTML = `<div class="world-travel-route-heading"><div><small>${isPortal ? 'DESLOCAMENTO INSTANTÂNEO' : 'ROTA DO GRUPO CALCULADA POR A*'}</small><strong>${escapeHtml(origin.name)} → ${escapeHtml(destination.name)}</strong></div><b>${escapeHtml(durationLabel)}</b></div><div class="world-travel-route-stats"><span><b>${plan.distanceKm.toLocaleString('pt-BR')} km</b>Distância pela rota</span><span><b>${isPortal ? 'Portal' : `${plan.speedKmh.toLocaleString('pt-BR')} km/h`}</b>${isPortal ? 'Viagem mágica' : 'Velocidade do grupo'}</span><span><b>${escapeHtml(routeLabel)}</b>${isPortal ? 'Destino direto' : `${plan.roadDistanceKm.toLocaleString('pt-BR')} km em estrada`}</span></div><p class="world-travel-party-summary"><b>Ritmo do grupo:</b> ${escapeHtml(paceLabel)}</p>${assignments ? `<p class="world-travel-assignment-summary"><b>Participantes:</b> ${escapeHtml(assignments)}</p>` : ''}<p>Escala usada: <b>${plan.scale.kilometersPerGrid.toLocaleString('pt-BR')} km por quadrícula</b>. Alterar a calibração do mapa recalculará esta viagem.</p>`;
+        const paceMode = isPortal ? 'portal' : String(plan.limitingUnit?.mode || party.units[0]?.mode || 'foot');
+        const paceIcon = paceMode === 'portal' ? '🌀' : paceMode === 'carriage' ? '🛒' : paceMode === 'horse' ? '🐎' : '🥾';
+        preview.innerHTML = `<div class="world-travel-summary-icon" aria-hidden="true">${paceIcon}</div><div class="world-travel-summary-main"><small>${isPortal ? 'CHEGADA INSTANTÂNEA' : 'TEMPO ESTIMADO'}</small><strong>${escapeHtml(durationLabel)}</strong><span>${plan.distanceKm.toLocaleString('pt-BR')} km · ${isPortal ? 'Portal' : `${plan.speedKmh.toLocaleString('pt-BR')} km/h`}</span></div><div class="world-travel-summary-pace"><small>Ritmo</small><b>${escapeHtml(paceLabel)}</b><span>${escapeHtml(routeLabel)}</span></div><span class="sr-only">${escapeHtml(origin.name)} até ${escapeHtml(destination.name)}. ${plan.roadDistanceKm.toLocaleString('pt-BR')} quilômetros em estrada. Escala de ${plan.scale.kilometersPerGrid.toLocaleString('pt-BR')} quilômetros por quadrícula.</span>`;
         if (submit) submit.disabled = false;
         return pendingTravelPlan;
     }
@@ -494,9 +635,40 @@
         const mapIsOpen = root.worldMap?.getDebugState?.().initialized === true;
         if (mapIsOpen) root.worldMap?.toggleFilters?.(false);
         modal.className = `session-overlay world-time-overlay${mapIsOpen ? ' world-travel-map-preview-overlay' : ''}`;
-        modal.innerHTML = `<section class="session-dialog world-time-dialog world-travel-dialog" role="dialog" aria-modal="true"><div class="session-dialog-header"><div><small class="world-hub-kicker">DESLOCAMENTO</small><h2>Planejar viagem do grupo</h2></div><button type="button" class="session-close" onclick="closeWorldTravelPlanner()">×</button></div><p>Defina todos os participantes e como cada um viajará. O grupo inteiro chega junto no ritmo do transporte mais lento. Viagens físicas exigem uma rota contínua de estradas; Portal Vertical permanece instantâneo.</p><form onsubmit="confirmWorldTravel(event)"><label><span>Origem</span><input value="${escapeHtml(current?.name || 'Local não definido')}" disabled></label><label><span>Destino *</span><select name="destinationId" required onchange="updateWorldTravelPreview()"><option value="">Selecione o destino</option>${renderLocationOptions(world, destinationId, current?.id, { coordinatesOnly: true })}</select></label>${renderTravelPartyPlanner(owners)}<section id="worldTravelRoutePreview" class="world-travel-route-preview" aria-live="polite"><p>Selecione o destino para calcular a rota.</p></section><label><span>Observação</span><textarea name="note" rows="3" maxlength="2000" placeholder="Acontecimentos ou detalhes da viagem"></textarea></label><label><span>Visibilidade</span><select name="visibility"><option value="public">Visível aos jogadores</option><option value="private">Somente mestre</option></select></label>${npcs.length ? `<fieldset class="world-time-checklist"><legend>NPCs que viajam com o grupo</legend>${npcs.map(npc => `<label><input type="checkbox" name="movedNpcIds" value="${escapeHtml(npc.id)}"><span>${escapeHtml(npc.name)}</span></label>`).join('')}</fieldset>` : ''}<label class="world-travel-confirm"><input name="confirmRoute" type="checkbox" required><span>Confirmo esta rota e o avanço automático do relógio da campanha.</span></label><div class="session-dialog-actions"><button type="button" class="session-secondary" onclick="closeWorldTravelPlanner()">Cancelar</button><button id="worldTravelConfirmButton" type="submit" class="session-primary" disabled>Concluir viagem</button></div></form></section>`;
-        modal.addEventListener('click', event => { if (event.target === modal) closeWorldTimeModal('worldTravelModal'); });
+        const originLabel = formatTravelLocationLabel(world, current);
+        const selectedDestination = root.worldModel?.getLocation?.(world, destinationId);
+        const destinationLabel = selectedDestination ? formatTravelLocationLabel(world, selectedDestination) : '';
+        modal.innerHTML = `<section class="session-dialog world-time-dialog world-travel-dialog" role="dialog" aria-modal="true" aria-label="Planejar viagem do grupo">
+            <form onsubmit="confirmWorldTravel(event)">
+                <header class="world-travel-top-card">
+                    <div class="world-travel-top-actions">
+                        <button type="button" class="world-travel-icon-button" data-world-travel-toggle="help" aria-controls="worldTravelHelpPanel" aria-expanded="false" title="Como funciona" onclick="toggleWorldTravelPanel('help')">?</button>
+                        <button type="button" class="world-travel-icon-button" title="Fechar" aria-label="Fechar planejador" onclick="closeWorldTravelPlanner()">×</button>
+                    </div>
+                    <div class="world-travel-route-points">
+                        <div class="world-travel-route-point is-origin"><span aria-hidden="true"></span><div><small>ORIGEM</small><strong>${escapeHtml(originLabel)}</strong></div></div>
+                        <label class="world-travel-route-point is-destination"><span aria-hidden="true"></span><div><small>DESTINO</small><div class="world-travel-destination-search"><input id="worldTravelDestinationSearch" type="search" autocomplete="off" spellcheck="false" aria-label="Buscar destino" aria-controls="worldTravelDestinationResults" aria-autocomplete="list" placeholder="Digite uma cidade ou local" value="${escapeHtml(destinationLabel)}" data-selected-label="${escapeHtml(destinationLabel)}" onfocus="updateWorldTravelDestinationSearch(this, true)" oninput="updateWorldTravelDestinationSearch(this)" onkeydown="handleWorldTravelDestinationKey(event)"><input name="destinationId" type="hidden" value="${escapeHtml(selectedDestination?.id || '')}"><div id="worldTravelDestinationResults" class="world-travel-destination-results" role="listbox" hidden></div></div></div></label>
+                    </div>
+                    <section id="worldTravelHelpPanel" class="world-travel-drawer world-travel-help" data-world-travel-panel="help" hidden><p>O grupo chega junto no ritmo mais lento. Viagens físicas seguem estradas conectadas; Portal Vertical leva os participantes em 1 turno.</p></section>
+                </header>
+                <div class="world-travel-map-window"><button type="button" class="world-travel-current-button" onclick="worldMap.focusCurrentLocation()" title="Voltar ao local atual"><span aria-hidden="true">◎</span><b>Local atual</b></button></div>
+                <section id="worldTravelRoutePreview" class="world-travel-route-preview" aria-live="polite"><p>Digite e selecione um destino para calcular a rota.</p></section>
+                <section class="world-travel-bottom-sheet">
+                    <div id="worldTravelPartyPanel" class="world-travel-drawer" data-world-travel-panel="party" hidden>${renderTravelPartyPlanner(owners)}</div>
+                    <div id="worldTravelSettingsPanel" class="world-travel-drawer world-travel-settings" data-world-travel-panel="settings" hidden><div class="world-travel-settings-heading"><small>OPÇÕES DA VIAGEM</small><strong>Registro e passagem do tempo</strong></div><label><span>Observação</span><textarea name="note" rows="2" maxlength="2000" placeholder="Acontecimentos ou detalhes da viagem"></textarea></label><label><span>Visibilidade</span><select name="visibility"><option value="public">Visível aos jogadores</option><option value="private">Somente mestre</option></select></label><label class="world-travel-advance-clock"><input name="advanceClock" type="checkbox" checked><span>Avançar o relógio automaticamente</span></label>${npcs.length ? `<fieldset class="world-time-checklist"><legend>NPCs que viajam com o grupo</legend>${npcs.map(npc => `<label><input type="checkbox" name="movedNpcIds" value="${escapeHtml(npc.id)}"><span>${escapeHtml(npc.name)}</span></label>`).join('')}</fieldset>` : ''}</div>
+                    <nav class="world-travel-command-bar" aria-label="Ações da viagem"><button type="button" class="world-travel-command" data-world-travel-toggle="party" aria-controls="worldTravelPartyPanel" aria-expanded="false" onclick="toggleWorldTravelPanel('party')"><span aria-hidden="true">👥</span><small>Grupo</small></button><button id="worldTravelConfirmButton" type="submit" class="world-travel-confirm-button" disabled><span aria-hidden="true">➤</span><b>Confirmar viagem</b></button><button type="button" class="world-travel-command" data-world-travel-toggle="settings" aria-controls="worldTravelSettingsPanel" aria-expanded="false" onclick="toggleWorldTravelPanel('settings')"><span aria-hidden="true">⚙</span><small>Opções</small></button></nav>
+                </section>
+            </form>
+        </section>`;
+        modal.addEventListener('click', event => {
+            if (event.target === modal) return closeWorldTimeModal('worldTravelModal');
+            if (!event.target.closest?.('.world-travel-destination-search')) {
+                const results = modal.querySelector('#worldTravelDestinationResults');
+                if (results) results.hidden = true;
+            }
+        });
         root.document.body.appendChild(modal);
+        refreshWorldTravelHorseSeats();
         if (destinationId) updateWorldTravelPreview();
     }
 
@@ -505,7 +677,6 @@
         const data = new FormData(event.currentTarget);
         const destinationId = String(data.get('destinationId') || '');
         const plan = updateWorldTravelPreview();
-        if (!data.get('confirmRoute')) return root.showToast?.('Confirme a rota antes de avançar o relógio.');
         if (!plan || plan.destinationId !== destinationId) return root.showToast?.('Calcule uma rota válida antes de concluir a viagem.');
         const minutes = plan.durationMinutes;
         const world = root.worldStore?.getWorld?.();
@@ -517,8 +688,9 @@
         const snapshot = root.campaignClock?.getSnapshot?.();
         const departureMinute = Number(snapshot?.currentMinute) || 0;
         try {
-            const advance = root.campaignClock?.advanceByMinutes?.(minutes, { source: 'world-travel' });
-            const arrivalMinute = Number(advance?.context?.afterMinute ?? departureMinute + minutes);
+            const shouldAdvanceClock = data.get('advanceClock') === 'on';
+            const advance = shouldAdvanceClock ? root.campaignClock?.advanceByMinutes?.(minutes, { source: 'world-travel' }) : null;
+            const arrivalMinute = Number(advance?.context?.afterMinute ?? (shouldAdvanceClock ? departureMinute + minutes : departureMinute));
             const travel = root.worldStore?.travelToLocation?.(destinationId, {
                 departureMinute, arrivalMinute, durationMinutes: minutes,
                 transportMode: plan.mode,
@@ -539,7 +711,7 @@
                 visibility: data.get('visibility') === 'private' ? 'private' : 'public'
             });
             const travelerAssignments = (travel.travelers || []).map(entry => `${entry.name} — ${entry.transportLabel || 'A pé'}`).filter(Boolean).join('; ');
-            root.addCombatHistoryEntry?.(`Viagem concluída: ${travel.fromLocationName} → ${travel.toLocationName}`, `${travel.transportLabel} · ${travel.distanceKm.toLocaleString('pt-BR')} km\nDuração: ${plan.mode === 'portal' ? '1 turno (1 min)' : (root.campaignClock?.formatDuration?.(minutes) || `${minutes} min`)}${travelerAssignments ? `\nParticipantes: ${travelerAssignments}` : ''}\nChegada: ${formatCampaignMinute(arrivalMinute)}${travel.note ? `\n${travel.note}` : ''}`, { type: 'turn' });
+            root.addCombatHistoryEntry?.(`Viagem concluída: ${travel.fromLocationName} → ${travel.toLocationName}`, `${travel.transportLabel} · ${travel.distanceKm.toLocaleString('pt-BR')} km\nDuração: ${plan.mode === 'portal' ? '1 turno (1 min)' : (root.campaignClock?.formatDuration?.(minutes) || `${minutes} min`)}${travelerAssignments ? `\nParticipantes: ${travelerAssignments}` : ''}\n${shouldAdvanceClock ? `Chegada: ${formatCampaignMinute(arrivalMinute)}` : 'Relógio da campanha mantido'}${travel.note ? `\n${travel.note}` : ''}`, { type: 'turn' });
             closeWorldTimeModal('worldTravelModal');
             root.showToast?.(`🧭 O grupo chegou a ${travel.toLocationName}.`);
             root.openWorldHub?.('overview');
@@ -632,7 +804,7 @@
         apply: context => collectTemporalChanges(context, false)
     });
 
-    const api = Object.freeze({ DAY_LABELS, RECURRENCE_LABELS, timeToMinute, isScheduleActive, isMerchantOpen, getNpcActiveSchedule, locationContains, getEventOccurrenceMinutes, getRelevantRegionalEvents, collectTemporalChanges, formatCampaignMinute, hasTravelAbility, getTravelCapacity, getTransportOptions, getParticipantTransportOptions, resolveTravelParty });
+    const api = Object.freeze({ DAY_LABELS, RECURRENCE_LABELS, timeToMinute, isScheduleActive, isMerchantOpen, getNpcActiveSchedule, locationContains, getEventOccurrenceMinutes, getRelevantRegionalEvents, collectTemporalChanges, formatCampaignMinute, hasTravelAbility, getTravelCapacity, getTransportOptions, getParticipantTransportOptions, getTravelHorseSeatReference, resolveTravelParty });
     root.worldTime = api;
     root.openWorldTravelPlanner = openWorldTravelPlanner;
     root.closeWorldTravelPlanner = () => closeWorldTimeModal('worldTravelModal');
@@ -643,6 +815,10 @@
     root.updateWorldTravelParticipant = updateWorldTravelParticipant;
     root.updateWorldTravelPartyAssignment = updateWorldTravelPartyAssignment;
     root.updateWorldTravelPreview = updateWorldTravelPreview;
+    root.toggleWorldTravelPanel = toggleWorldTravelPanel;
+    root.updateWorldTravelDestinationSearch = updateWorldTravelDestinationSearch;
+    root.selectWorldTravelDestination = selectWorldTravelDestination;
+    root.handleWorldTravelDestinationKey = handleWorldTravelDestinationKey;
     root.openWorldRegionalEventEditor = openWorldRegionalEventEditor;
     root.closeWorldRegionalEventEditor = () => closeWorldTimeModal('worldRegionalEventModal');
     root.saveWorldRegionalEvent = saveWorldRegionalEvent;

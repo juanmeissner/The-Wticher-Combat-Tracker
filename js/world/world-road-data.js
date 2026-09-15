@@ -8,7 +8,7 @@
 })(typeof globalThis !== 'undefined' ? globalThis : this, function (imported) {
     'use strict';
 
-    const ROAD_NETWORK_VERSION = 2;
+    const ROAD_NETWORK_VERSION = 3;
     const MAP_ID = 'nolan-kotulan-the-continent';
     const MAP_REFERENCE = Object.freeze({
         originalWidth: 2880,

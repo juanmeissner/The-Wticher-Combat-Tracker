@@ -1986,16 +1986,7 @@ async function openWorldHub(view = 'overview', context = {}) {
     modal.addEventListener('click', event => {
         if (event.target === modal) closeWorldHub();
     });
-    modal.innerHTML = `
-        <section class="session-dialog world-hub-dialog${view === 'map' ? ' world-map-mode' : ''}" role="dialog" aria-modal="true" aria-labelledby="worldHubTitle">
-            <div class="session-dialog-header">
-                <div>
-                    <small class="world-hub-kicker">MUNDO DA CAMPANHA</small>
-                    <h2 id="worldHubTitle">${view === 'map' ? 'Mapa do Continente' : 'Atlas, NPCs e comércio'}</h2>
-                </div>
-                <button type="button" class="session-close" onclick="closeWorldHub()" aria-label="Fechar">×</button>
-            </div>
-            ${view === 'map' ? '' : '<p class="world-hub-intro">O Mundo combina territórios, locais, NPCs, lojas e a situação histórica resolvida pela data atual da campanha.</p>'}
+    const worldHubTabs = `
             <nav class="world-hub-tabs" aria-label="Seções do Mundo">
                 <button type="button" class="${view === 'map' ? 'active' : ''}" onclick="openWorldHub('map')">Mapa</button>
                 <button type="button" class="${view === 'overview' ? 'active' : ''}" onclick="openWorldHub('overview')">Visão geral</button>
@@ -2005,7 +1996,25 @@ async function openWorldHub(view = 'overview', context = {}) {
                 <button type="button" class="${view === 'merchants' ? 'active' : ''}" onclick="openWorldHub('merchants')">Lojas</button>
                 <button type="button" class="${view === 'events' ? 'active' : ''}" onclick="openWorldHub('events')">Agenda</button>
                 <button type="button" class="${view === 'history' ? 'active' : ''}" onclick="openWorldHub('history')">História</button>
-            </nav>
+            </nav>`;
+    modal.innerHTML = `
+        <section class="session-dialog world-hub-dialog${view === 'map' ? ' world-map-mode' : ''}" role="dialog" aria-modal="true" ${view === 'map' ? 'aria-label="Mundo da campanha — mapa"' : 'aria-labelledby="worldHubTitle"'}>
+            ${view === 'map' ? `
+                <div class="world-map-navigation-header">
+                    ${worldHubTabs}
+                    <button type="button" class="session-close" onclick="closeWorldHub()" aria-label="Fechar">×</button>
+                </div>
+            ` : `
+                <div class="session-dialog-header">
+                    <div>
+                        <small class="world-hub-kicker">MUNDO DA CAMPANHA</small>
+                        <h2 id="worldHubTitle">Atlas, NPCs e comércio</h2>
+                    </div>
+                    <button type="button" class="session-close" onclick="closeWorldHub()" aria-label="Fechar">×</button>
+                </div>
+                <p class="world-hub-intro">O Mundo combina territórios, locais, NPCs, lojas e a situação histórica resolvida pela data atual da campanha.</p>
+                ${worldHubTabs}
+            `}
             ${view === 'map' ? (window.worldMap?.renderView?.(world, { playerMode }) || '<p class="world-atlas-empty">O mapa visual não pôde ser carregado.</p>') : ''}
             ${view === 'overview' ? `
             <section class="world-current-location" aria-label="Local atual da campanha">

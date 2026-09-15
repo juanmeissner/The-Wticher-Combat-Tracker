@@ -14,8 +14,10 @@ const SNAP_TOLERANCE_PX = 5;
 const LOCATION_TOLERANCE_PX = 24;
 const VALID_TYPES = new Set(['main', 'regional', 'mountain']);
 const LOCATION_ALIASES = Object.freeze({
+    'aedd gynvael': 'world-cartographic-aed-gynvael',
     'asheberg': 'world-cartographic-ashberg',
     'baldhorn': 'world-cartographic-baldfhorn',
+    'barefild': 'world-canonical-barefield',
     'denesle': 'world-cartographic-demelse',
     'dilingen': 'world-cartographic-dillingen',
     'egremont': 'world-cartographic-eregmont',
@@ -23,6 +25,7 @@ const LOCATION_ALIASES = Object.freeze({
     'flotsan': 'world-cartographic-flotsam',
     'guamez': 'world-cartographic-guamet',
     'jamurlak': 'world-cartographic-yamurlak',
+    'maleore': 'world-political-hengfors-malleore',
     'mt carbon': 'world-canonical-mount-carbon',
     'pindal': 'world-cartographic-findal',
     'ratsburg': 'world-canonical-rastburg-castle',
@@ -84,17 +87,22 @@ function parsePointList(value) {
     return result;
 }
 
-function parseRoadIdentity(encodedId, fallbackIndex) {
+function parseRoadIdentity(encodedId, fallbackIndex, className = '') {
     const decoded = decodeCorelId(encodedId).replace(/_\d+$/, '');
     const roadPrefixIndex = decoded.indexOf('road|');
     const normalizedId = roadPrefixIndex >= 0 ? decoded.slice(roadPrefixIndex) : decoded;
     const parts = normalizedId.split('|');
     if (parts[0] !== 'road' || parts.length < 4) {
+        const inferredType = /(?:^|\s)str(?:0|3)(?:\s|$)/.test(className)
+            ? 'main'
+            : /(?:^|\s)str(?:2|5)(?:\s|$)/.test(className)
+                ? 'mountain'
+                : 'regional';
         return {
-            type: 'regional',
-            carriageAllowed: true,
-            name: `Estrada importada ${fallbackIndex + 1}`,
-            warning: `Identificador fora do padrão: ${decoded || '(vazio)'}`
+            type: inferredType,
+            carriageAllowed: inferredType !== 'mountain',
+            name: `${inferredType === 'main' ? 'Estrada principal' : inferredType === 'mountain' ? 'Passagem de montanha' : 'Estrada regional'} importada ${fallbackIndex + 1}`,
+            warning: `Identificador fora do padrão: ${decoded || '(vazio)'}; categoria ${inferredType} inferida pela classe ${className || '(ausente)'}`
         };
     }
     const type = VALID_TYPES.has(parts[1]) ? parts[1] : 'regional';
@@ -147,7 +155,7 @@ function parseSvg(svgSource) {
             y: Math.round(point.y * scaleY * 10) / 10
         }));
         elements.push({
-            ...parseRoadIdentity(attributes.id, elements.length),
+            ...parseRoadIdentity(attributes.id, elements.length, attributes.class),
             sourceId: decodeCorelId(attributes.id),
             points
         });
@@ -177,7 +185,7 @@ function getOfficialLocations(markerOverrides = []) {
     const cartography = require(path.join(PROJECT_ROOT, 'js', 'world', 'world-cartographic-data.js'));
     const overrideByLocationId = new Map(markerOverrides.map(marker => [marker.locationId, marker.point]));
     return cartography.seedCartographicLocations(model.createEmptyWorld()).locations
-        .filter(location => location.type === model.LOCATION_TYPES.LOCATION)
+        .filter(location => location.id !== model.ROOT_CONTINENT_ID)
         .map(location => ({
             id: location.id,
             name: location.name,

@@ -92,12 +92,24 @@ test('pé, cavalo, carruagem e Portal Vertical respeitam suas regras de deslocam
     assert.match(blocked.error, /carruagem/i);
 });
 
-test('viagem a pé nunca ultrapassa 4 km por hora', () => {
+test('caminhada, carroça e cavalo respeitam seus limites e ordem de velocidade', () => {
     assert.equal(routeEngine.getTravelSpeedKmh('foot', 10, 'regional'), 4);
     assert.equal(routeEngine.getTravelSpeedKmh('foot', 15, 'main'), 4);
     assert.ok(routeEngine.getTravelSpeedKmh('foot', 5, 'mountain') < 4);
-    assert.ok(routeEngine.getTravelSpeedKmh('horse', 15, 'main') > 4);
-    assert.ok(routeEngine.getTravelSpeedKmh('carriage', 15, 'main') > 4);
+    assert.equal(routeEngine.getTravelSpeedKmh('horse', 15, 'main'), 8);
+    assert.equal(routeEngine.getTravelSpeedKmh('horse', 15, 'regional'), 8);
+    assert.equal(routeEngine.getTravelSpeedKmh('carriage', 15, 'main'), 6);
+    assert.equal(routeEngine.getTravelSpeedKmh('carriage', 15, 'regional'), 6);
+
+    for (const movement of [5, 10, 15]) {
+        for (const roadType of ['main', 'regional', 'mountain']) {
+            const foot = routeEngine.getTravelSpeedKmh('foot', movement, roadType);
+            const carriage = routeEngine.getTravelSpeedKmh('carriage', movement, roadType);
+            const horse = routeEngine.getTravelSpeedKmh('horse', movement, roadType);
+            assert.ok(foot < carriage, `carroça deve superar caminhada em ${roadType} com MOV ${movement}`);
+            assert.ok(carriage < horse, `cavalo deve superar carroça em ${roadType} com MOV ${movement}`);
+        }
+    }
 });
 
 test('viagens físicas são bloqueadas quando os locais não possuem uma estrada contínua', () => {
@@ -168,6 +180,8 @@ test('presença de carruagem impede o grupo de usar atalhos incompatíveis', () 
 });
 
 test('composição do grupo valida carona no cavalo e preserva uma única unidade de ritmo', () => {
+    assert.equal(worldTime.getTravelHorseSeatReference('passenger|horse|combat%3Ahero-1|roach'), 'combat:hero-1|horse|roach');
+    assert.equal(worldTime.getTravelHorseSeatReference('passenger|carriage|combat%3Ahero-1|wagon'), '');
     const geralt = { id: 'hero-1', name: 'Geralt' };
     const ciri = { id: 'hero-2', name: 'Ciri' };
     const selection = {
@@ -247,19 +261,25 @@ test('interface e pacote offline incluem planejamento, confirmação e calibraç
     const featureLoader = fs.readFileSync(path.join(projectRoot, 'js', 'world', 'world-feature-loader.js'), 'utf8');
     const worker = fs.readFileSync(path.join(projectRoot, 'js', 'service-worker.js'), 'utf8');
     const index = fs.readFileSync(path.join(projectRoot, 'index.html'), 'utf8');
-    assert.match(timeSource, /ROTA DO GRUPO CALCULADA POR A\*/);
-    assert.match(timeSource, /confirmRoute/);
+    assert.match(timeSource, /TEMPO ESTIMADO/);
+    assert.match(timeSource, /name="advanceClock" type="checkbox" checked/);
     assert.match(timeSource, /advanceByMinutes/);
     assert.match(timeSource, /getMountMovement/);
     assert.match(timeSource, /getVehicleMovement/);
     assert.match(timeSource, /Portal Vertical/);
-    assert.match(timeSource, /Viagens físicas exigem uma rota contínua de estradas/);
+    assert.match(timeSource, /Viagens físicas seguem estradas conectadas/);
     assert.match(timeSource, /showRoutePreview\?\.\(plan\)/);
     assert.match(timeSource, /world-travel-map-preview-overlay/);
     assert.match(timeSource, /COMPOSIÇÃO DO GRUPO/);
     assert.match(timeSource, /updateWorldTravelParticipant/);
     assert.match(timeSource, /planGroupRoute/);
-    assert.match(timeSource, /Ritmo do grupo/);
+    assert.match(timeSource, /toggleWorldTravelPanel/);
+    assert.match(timeSource, /world-travel-command-bar/);
+    assert.match(timeSource, /worldTravelDestinationSearch/);
+    assert.match(timeSource, /updateWorldTravelDestinationSearch/);
+    assert.match(timeSource, /worldMap\.focusCurrentLocation/);
+    assert.match(timeSource, /refreshWorldTravelHorseSeats/);
+    assert.match(timeSource, /seatClaims/);
     assert.match(mapSource, /Calibração de distância/);
     assert.match(mapSource, /saveMapScale/);
     assert.match(mapSource, /world-route-preview-casing/);
@@ -268,5 +288,5 @@ test('interface e pacote offline incluem planejamento, confirmação e calibraç
     assert.match(index, /world-feature-loader\.js/);
     assert.match(featureLoader, /world-route-engine\.js/);
     assert.match(worker, /world-route-engine\.js/);
-    assert.match(worker, /witcher-combat-tracker-v158/);
+    assert.match(worker, /witcher-combat-tracker-v165/);
 });

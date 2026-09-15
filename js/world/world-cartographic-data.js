@@ -16,7 +16,7 @@
 })(typeof globalThis !== 'undefined' ? globalThis : this, function (model, atlas, locations, importedMarkers) {
     'use strict';
 
-    const CARTOGRAPHIC_CATALOG_VERSION = 7;
+    const CARTOGRAPHIC_CATALOG_VERSION = 8;
     const MAP_ID = 'nolan-kotulan-the-continent';
     const MAP_REFERENCE = Object.freeze({
         id: MAP_ID,

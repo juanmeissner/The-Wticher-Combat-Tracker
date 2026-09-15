@@ -21,7 +21,7 @@ test('editor carrega o catálogo sem alterar os dados originais', () => {
     const network = editor.catalogNetwork();
     assert.deepEqual(editor.validateNetwork(network), []);
     assert.equal(editor.CATALOG_VERSION, roads.ROAD_NETWORK_VERSION);
-    assert.equal(editor.STORAGE_KEY, 'witcher-road-network-overrides-v2');
+    assert.equal(editor.STORAGE_KEY, 'witcher-road-network-overrides-v3');
     assert.equal(network.catalogVersion, roads.ROAD_NETWORK_VERSION);
     assert.equal(network.source, 'catalog');
     assert.equal(network.nodes.length, roads.ROAD_NODES.length);
@@ -46,6 +46,19 @@ test('importador interpreta nomes do Corel e conecta bifurcações coincidentes'
     assert.equal(network.nodes.filter(node => node.type === 'junction').length, 1);
     const junction = network.nodes.find(node => node.type === 'junction');
     assert.equal(network.segments.filter(segment => segment.fromNodeId === junction.id || segment.toNodeId === junction.id).length, 3);
+});
+
+test('importador infere a categoria pela classe visual quando um trecho novo ainda não tem nome', () => {
+    const importer = require(path.join(projectRoot, 'scripts', 'import-map-roads.js'));
+    const parsed = importer.parseSvg(`
+        <svg viewBox="0 0 2880 4096">
+            <polyline class="fil0 str3" points="10,10 100,100" />
+            <polyline class="fil0 str4" points="100,100 200,150" />
+            <polyline class="fil0 str5" points="200,150 260,230" />
+        </svg>
+    `);
+    assert.deepEqual(parsed.elements.map(segment => segment.type), ['main', 'regional', 'mountain']);
+    assert.deepEqual(parsed.elements.map(segment => segment.carriageAllowed), [true, true, false]);
 });
 
 test('importador converte círculos verdes do Corel em marcadores catalogados', () => {
@@ -154,7 +167,7 @@ test('interface expõe edição somente ao mestre e entra no cache offline', () 
     assert.match(indexSource, /js\/world\/world-feature-loader\.js/);
     assert.match(featureLoader, /js\/world\/world-road-editor\.js/);
     assert.match(workerSource, /js\/world\/world-road-editor\.js/);
-    assert.match(workerSource, /witcher-combat-tracker-v158/);
+    assert.match(workerSource, /witcher-combat-tracker-v165/);
     assert.match(indexSource, /js\/world\/world-location-imported-data\.js/);
     assert.match(workerSource, /js\/world\/world-location-imported-data\.js/);
     assert.match(featureLoader, /js\/world\/world-road-imported-data\.js/);
