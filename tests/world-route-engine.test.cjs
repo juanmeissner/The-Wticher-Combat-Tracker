@@ -258,6 +258,7 @@ test('Mundo migra a escala padrão e preserva os detalhes calculados da viagem',
 test('interface e pacote offline incluem planejamento, confirmação e calibração da rota', () => {
     const timeSource = fs.readFileSync(path.join(projectRoot, 'js', 'world', 'world-time.js'), 'utf8');
     const mapSource = fs.readFileSync(path.join(projectRoot, 'js', 'world', 'world-map.js'), 'utf8');
+    const mapStyles = fs.readFileSync(path.join(projectRoot, 'world-map.css'), 'utf8');
     const featureLoader = fs.readFileSync(path.join(projectRoot, 'js', 'world', 'world-feature-loader.js'), 'utf8');
     const worker = fs.readFileSync(path.join(projectRoot, 'js', 'service-worker.js'), 'utf8');
     const index = fs.readFileSync(path.join(projectRoot, 'index.html'), 'utf8');
@@ -275,6 +276,17 @@ test('interface e pacote offline incluem planejamento, confirmação e calibraç
     assert.match(timeSource, /planGroupRoute/);
     assert.match(timeSource, /toggleWorldTravelPanel/);
     assert.match(timeSource, /world-travel-command-bar/);
+    assert.match(timeSource, /world-travel-close-command/);
+    assert.match(timeSource, /Fechar planejador e voltar ao mapa/);
+    assert.match(timeSource, /<b>Viajar<\/b>/);
+    assert.match(timeSource, /world-travel-map-zoom/);
+    assert.match(timeSource, /worldMap\.zoomOut\(\)/);
+    assert.match(timeSource, /worldMap\.zoomIn\(\)/);
+    assert.match(mapStyles, /\.world-travel-close-command/);
+    assert.match(mapStyles, /linear-gradient\(145deg, #b91c1c, #7f1d1d\)/);
+    assert.match(mapStyles, /\.world-travel-map-preview-overlay[\s\S]*?pointer-events:\s*none/);
+    assert.match(mapStyles, /\.world-travel-map-preview-overlay \.world-travel-map-zoom[\s\S]*?pointer-events:\s*auto/);
+    assert.match(mapStyles, /border-color:\s*#c084fc/);
     assert.match(timeSource, /worldTravelDestinationSearch/);
     assert.match(timeSource, /updateWorldTravelDestinationSearch/);
     assert.match(timeSource, /worldMap\.focusCurrentLocation/);
@@ -288,5 +300,5 @@ test('interface e pacote offline incluem planejamento, confirmação e calibraç
     assert.match(index, /world-feature-loader\.js/);
     assert.match(featureLoader, /world-route-engine\.js/);
     assert.match(worker, /world-route-engine\.js/);
-    assert.match(worker, /witcher-combat-tracker-v165/);
+    assert.match(worker, /witcher-combat-tracker-v167/);
 });
