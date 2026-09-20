@@ -804,34 +804,37 @@
         `;
     }
 
-    function rerenderCombat() {
-        if (typeof renderList === 'function') renderList(false);
+    function rerenderCombat(combatantId) {
+        if (!global.refreshCombatantPanel?.(combatantId, 'spells')) {
+            global.invalidateCombatantRender?.(combatantId);
+            if (typeof renderList === 'function') renderList(false);
+        }
     }
 
     function toggleCharacterSpellsPanel(encodedCombatantId) {
         const key = decodeURIComponent(String(encodedCombatantId));
         if (expandedPanels.has(key)) expandedPanels.delete(key);
         else expandedPanels.add(key);
-        rerenderCombat();
+        rerenderCombat(key);
     }
 
     function toggleCharacterSpellCard(encodedCombatantId, encodedAbilityId) {
         const key = `${decodeURIComponent(String(encodedCombatantId))}:${decodeURIComponent(String(encodedAbilityId))}`;
         if (expandedSpellCards.has(key)) expandedSpellCards.delete(key);
         else expandedSpellCards.add(key);
-        rerenderCombat();
+        rerenderCombat(decodeURIComponent(String(encodedCombatantId)));
     }
 
     function setCharacterSpellFilter(encodedCombatantId, filterId) {
         const key = decodeURIComponent(String(encodedCombatantId));
         panelFilters.set(key, SPELL_FILTERS.some(entry => entry.id === filterId) ? filterId : 'all');
-        rerenderCombat();
+        rerenderCombat(key);
     }
 
     function filterCharacterSpells(encodedCombatantId, value) {
         const key = decodeURIComponent(String(encodedCombatantId));
         panelSearches.set(key, normalizeSpellSearch(value));
-        rerenderCombat();
+        rerenderCombat(key);
     }
 
     function getSkillRollMode() {

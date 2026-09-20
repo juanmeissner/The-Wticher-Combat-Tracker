@@ -286,6 +286,7 @@ test('interface e pacote offline incluem planejamento, confirmação e calibraç
     assert.match(mapStyles, /linear-gradient\(145deg, #b91c1c, #7f1d1d\)/);
     assert.match(mapStyles, /\.world-travel-map-preview-overlay[\s\S]*?pointer-events:\s*none/);
     assert.match(mapStyles, /\.world-travel-map-preview-overlay \.world-travel-map-zoom[\s\S]*?pointer-events:\s*auto/);
+    assert.match(mapStyles, /\.world-travel-map-zoom\s*\{[\s\S]*?top:\s*56px;[\s\S]*?right:\s*12px;/);
     assert.match(mapStyles, /border-color:\s*#c084fc/);
     assert.match(timeSource, /worldTravelDestinationSearch/);
     assert.match(timeSource, /updateWorldTravelDestinationSearch/);
@@ -300,5 +301,5 @@ test('interface e pacote offline incluem planejamento, confirmação e calibraç
     assert.match(index, /world-feature-loader\.js/);
     assert.match(featureLoader, /world-route-engine\.js/);
     assert.match(worker, /world-route-engine\.js/);
-    assert.match(worker, /witcher-combat-tracker-v167/);
+    assert.match(worker, /witcher-combat-tracker-v177/);
 });

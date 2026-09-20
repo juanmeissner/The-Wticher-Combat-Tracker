@@ -74,6 +74,7 @@
 .combat-subpanels {
     position: relative;
     z-index: 1;
+    overflow-anchor: none;
 }
 
 .monster-actions-panel {

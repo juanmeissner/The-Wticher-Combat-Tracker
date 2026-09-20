@@ -56,9 +56,13 @@
     }
 
     function isTransportImageIcon(icon) {
+        if (typeof global.isAppImageReference === 'function') {
+            return global.isAppImageReference(icon);
+        }
+
         const value = String(icon || '').trim();
-        return /^(https?:\/\/|\.\.?\/|assets\/)/i.test(value)
-            || /\.(png|jpe?g|webp|svg|gif)(?:[?#].*)?$/i.test(value);
+        return /^(https?:\/\/|\.\.?\/|assets\/|img\/)/i.test(value)
+            || /\.(png|jpe?g|webp|svg|gif|avif)(?:[?#].*)?$/i.test(value);
     }
 
     function getTransportItemFallbackIcon(item, fallback = '📦') {
@@ -91,7 +95,15 @@
         const icon = String(source.icon || '').trim();
 
         if (icon && isTransportImageIcon(icon)) {
-            return `<img src="${escapeHtml(icon)}" class="transport-item-icon" alt="" draggable="false">`;
+            if (typeof global.renderAppImage === 'function') {
+                return global.renderAppImage(icon, {
+                    className: 'transport-item-icon',
+                    alt: '',
+                    fallback: 'image.png'
+                }) || `<span class="transport-item-icon transport-item-icon--emoji" aria-hidden="true">${escapeHtml(fallback)}</span>`;
+            }
+
+            return '<img src="' + escapeHtml(icon) + '" class="transport-item-icon" alt="" loading="lazy" decoding="async" draggable="false">';
         }
 
         return `<span class="transport-item-icon transport-item-icon--emoji" aria-hidden="true">${escapeHtml(getTransportItemTextIcon(source, fallback))}</span>`;
@@ -1190,7 +1202,10 @@
         const key = String(combatantId);
         if (expandedMountPanels.has(key)) expandedMountPanels.delete(key);
         else expandedMountPanels.add(key);
-        if (typeof renderList === 'function') renderList(false);
+        if (!global.refreshCombatantPanel?.(key, 'mount')) {
+            global.invalidateCombatantRender?.(key);
+            if (typeof renderList === 'function') renderList(false);
+        }
     }
 
     function renderCombatantMountPanel(combatant) {

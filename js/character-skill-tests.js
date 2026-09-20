@@ -173,21 +173,30 @@
         const key = decodeURIComponent(String(encodedCombatantId));
         if (expandedSkillPanels.has(key)) expandedSkillPanels.delete(key);
         else expandedSkillPanels.add(key);
-        global.renderList?.(false);
+        if (!global.refreshCombatantPanel?.(key, 'skills')) {
+            global.invalidateCombatantRender?.(key);
+            global.renderList?.(false);
+        }
     }
 
     function toggleCharacterProfessionalSkillsPanel(encodedCombatantId) {
         const key = decodeURIComponent(String(encodedCombatantId));
         if (expandedProfessionalPanels.has(key)) expandedProfessionalPanels.delete(key);
         else expandedProfessionalPanels.add(key);
-        global.renderList?.(false);
+        if (!global.refreshCombatantPanel?.(key, 'professional-skills')) {
+            global.invalidateCombatantRender?.(key);
+            global.renderList?.(false);
+        }
     }
 
     function toggleCharacterResourcesPanel(encodedCombatantId) {
         const key = decodeURIComponent(String(encodedCombatantId));
         if (expandedResourcePanels.has(key)) expandedResourcePanels.delete(key);
         else expandedResourcePanels.add(key);
-        global.renderList?.(false);
+        if (!global.refreshCombatantPanel?.(key, 'resources')) {
+            global.invalidateCombatantRender?.(key);
+            global.renderList?.(false);
+        }
     }
 
     function renderCharacterResourcesPanel(combatant) {

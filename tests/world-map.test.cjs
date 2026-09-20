@@ -330,11 +330,12 @@ test('mapa usa Leaflet local, tela cheia e integração offline versionada', () 
     const zoomLock = read(path.join('js', 'zoom-lock.js'));
     const worker = read(path.join('js', 'service-worker.js'));
 
-    assert.match(indexSource, /vendor\/leaflet\/leaflet\.css/);
+    assert.doesNotMatch(indexSource, /<link[^>]+vendor\/leaflet\/leaflet\.css/);
     assert.match(indexSource, /js\/world\/world-feature-loader\.js/);
     assert.doesNotMatch(indexSource, /<script src="vendor\/leaflet\/leaflet\.js"/);
     assert.doesNotMatch(indexSource, /<script src="js\/world\/world-map\.js"/);
     assert.match(featureLoader, /vendor\/leaflet\/leaflet\.js/);
+    assert.match(featureLoader, /loadStylesheet\('vendor\/leaflet\/leaflet\.css'\)/);
     assert.match(featureLoader, /js\/world\/world-map\.js/);
     assert.equal(worldMap.BASE_LAYER.type, 'tiles');
     assert.match(sessionSource, /openWorldHub\('map'\)/);
@@ -351,7 +352,7 @@ test('mapa usa Leaflet local, tela cheia e integração offline versionada', () 
     assert.match(styles, /height:\s*100dvh/);
     assert.match(styles, /\.world-interactive-map/);
     assert.match(zoomLock, /data-allow-map-zoom/);
-    assert.match(worker, /witcher-combat-tracker-v167/);
+    assert.match(worker, /witcher-combat-tracker-v177/);
     assert.match(worker, /js\/world\/world-road-imported-data\.js/);
     assert.match(worker, /vendor\/leaflet\/leaflet\.js/);
     assert.match(worker, /js\/world\/world-map\.js/);
@@ -359,7 +360,8 @@ test('mapa usa Leaflet local, tela cheia e integração offline versionada', () 
     assert.match(worker, /js\/world\/world-road-editor\.js/);
     assert.match(worker, /world-map\.css/);
     assert.match(worker, /img\/maps\/continent\/manifest\.json/);
-    assert.match(worker, /img\/maps\/continent\/tiles\/m4\/0\/0\.webp/);
+    assert.doesNotMatch(worker, /img\/maps\/continent\/tiles\/m4\/0\/0\.webp/);
+    assert.match(worker, /url\.origin === self\.location\.origin/);
     assert.match(sessionSource, /renderView\?\.\(world, \{ playerMode \}\)/);
     assert.match(sessionSource, /initialize\?\.\(\{ world, playerMode \}\)/);
     assert.match(read(path.join('js', 'world', 'world-map.js')), /Marcadores e regiões/);

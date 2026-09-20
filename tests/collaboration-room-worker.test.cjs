@@ -385,6 +385,43 @@ test('snapshot do mestre é enviado somente aos outros dispositivos', async () =
     assert.equal(playerMessages.find(message => message.type === 'room.snapshot').campaign.state.combat.round, 3);
 });
 
+test('patch do mestre altera somente entidades modificadas e é projetado aos jogadores', async () => {
+    const moduleUrl = pathToFileURL(path.resolve(__dirname, '..', 'cloudflare', 'src', 'worker.mjs')).href;
+    const worker = await import(moduleUrl);
+    const ctx = new FakeContext();
+    const room = new worker.CampaignRoom(ctx, { PBKDF2_ITERATIONS: '1000' });
+    await room.ready;
+    const campaign = campaignFixture();
+    campaign.state.combat.combatants[0].hpCurrent = 30;
+    const nextCampaign = structuredClone(campaign);
+    nextCampaign.revision = Number(campaign.revision || 0) + 1;
+    nextCampaign.updatedAt = '2026-09-19T12:00:00.000Z';
+    nextCampaign.state.combat.combatants[0].hpCurrent -= 4;
+    const patch = worker.buildCampaignPatch(campaign, nextCampaign);
+    assert.equal(patch.state.combat.combatants.upsert.length, 1);
+    assert.deepEqual(worker.applyCampaignPatch(campaign, patch), nextCampaign);
+
+    const masterMessages = [];
+    const playerMessages = [];
+    const master = { id: 'member-master', actorId: 'actor-master', name: 'Mestre', role: 'master' };
+    const player = { id: 'member-geralt', actorId: 'actor-geralt', name: 'Geralt', role: 'player', participantId: 'geralt', sheetId: 'sheet-geralt' };
+    const masterSocket = { deserializeAttachment: () => master, send: value => masterMessages.push(JSON.parse(value)) };
+    const playerSocket = { deserializeAttachment: () => player, send: value => playerMessages.push(JSON.parse(value)) };
+    ctx.sockets = [masterSocket, playerSocket];
+    room.room = {
+        campaign, sequence: 7, updatedAt: '', seenCommandIds: [],
+        members: { [master.id]: master, [player.id]: player }, tickets: {},
+        proposals: {}, proposalOrder: [], decisions: [], conflicts: {}, conflictOrder: [], activity: []
+    };
+
+    await room.webSocketMessage(masterSocket, JSON.stringify({ type: 'campaign.patch.publish', patch }));
+    assert.ok(masterMessages.some(message => message.type === 'campaign.patch.accepted'));
+    const delivered = playerMessages.find(message => message.type === 'campaign.patch');
+    assert.ok(delivered);
+    assert.equal(delivered.patch.state.combat.combatants.upsert.length, 1);
+    assert.equal(room.room.campaign.state.combat.combatants[0].hpCurrent, nextCampaign.state.combat.combatants[0].hpCurrent);
+});
+
 test('diretório lista somente metadados de salas públicas abertas', async () => {
     const moduleUrl = pathToFileURL(path.resolve(__dirname, '..', 'cloudflare', 'src', 'worker.mjs')).href;
     const worker = await import(moduleUrl);

@@ -322,6 +322,150 @@ function clone(value) {
     return value === undefined ? undefined : JSON.parse(JSON.stringify(value));
 }
 
+function valuesDiffer(left, right) {
+    return JSON.stringify(left) !== JSON.stringify(right);
+}
+
+function buildObjectPatch(previous = {}, next = {}) {
+    const set = {};
+    const remove = [];
+    const before = previous && typeof previous === 'object' && !Array.isArray(previous) ? previous : {};
+    const after = next && typeof next === 'object' && !Array.isArray(next) ? next : {};
+    Object.keys(after).forEach(key => {
+        if (valuesDiffer(before[key], after[key])) set[key] = clone(after[key]);
+    });
+    Object.keys(before).forEach(key => {
+        if (!Object.prototype.hasOwnProperty.call(after, key)) remove.push(key);
+    });
+    return { set, remove };
+}
+
+function buildEntityArrayPatch(previous = [], next = []) {
+    const before = new Map((Array.isArray(previous) ? previous : [])
+        .filter(entry => entry?.id !== undefined)
+        .map(entry => [String(entry.id), entry]));
+    const after = new Map((Array.isArray(next) ? next : [])
+        .filter(entry => entry?.id !== undefined)
+        .map(entry => [String(entry.id), entry]));
+    const upsert = [];
+    after.forEach((entry, id) => {
+        if (valuesDiffer(before.get(id), entry)) upsert.push(clone(entry));
+    });
+    return {
+        upsert,
+        remove: [...before.keys()].filter(id => !after.has(id)),
+        order: [...after.keys()]
+    };
+}
+
+export function buildCampaignPatch(previousCampaign, nextCampaign) {
+    if (!previousCampaign || !nextCampaign || String(previousCampaign.id) !== String(nextCampaign.id)) return null;
+    const patch = {
+        campaignId: String(nextCampaign.id),
+        baseRevision: Number(previousCampaign.revision) || 0,
+        revision: Number(nextCampaign.revision) || 0,
+        updatedAt: nextCampaign.updatedAt || new Date().toISOString(),
+        state: {}
+    };
+    ['metadata', 'sync', 'entityVersions'].forEach(key => {
+        if (valuesDiffer(previousCampaign[key], nextCampaign[key])) patch[key] = clone(nextCampaign[key]);
+    });
+    const previousState = previousCampaign.state || {};
+    const nextState = nextCampaign.state || {};
+    const stateKeys = new Set([...Object.keys(previousState), ...Object.keys(nextState)]);
+    stateKeys.forEach(key => {
+        if (!Object.prototype.hasOwnProperty.call(nextState, key)) {
+            patch.state[key] = { mode: 'remove' };
+            return;
+        }
+        if (!valuesDiffer(previousState[key], nextState[key])) return;
+        if (key === 'compatibility') {
+            patch.state[key] = { mode: 'object', ...buildObjectPatch(previousState[key], nextState[key]) };
+            return;
+        }
+        if (key === 'combat') {
+            const previousCombat = previousState[key] || {};
+            const nextCombat = nextState[key] || {};
+            const fields = buildObjectPatch(
+                Object.fromEntries(Object.entries(previousCombat).filter(([field]) => field !== 'combatants')),
+                Object.fromEntries(Object.entries(nextCombat).filter(([field]) => field !== 'combatants'))
+            );
+            patch.state[key] = {
+                mode: 'combat',
+                ...fields,
+                combatants: buildEntityArrayPatch(previousCombat.combatants, nextCombat.combatants)
+            };
+            return;
+        }
+        if (key === 'characterSheets' && Array.isArray(nextState[key])) {
+            patch.state[key] = { mode: 'entities', ...buildEntityArrayPatch(previousState[key], nextState[key]) };
+            return;
+        }
+        patch.state[key] = { mode: 'replace', value: clone(nextState[key]) };
+    });
+    return patch;
+}
+
+function applyEntityArrayPatch(current, operation = {}) {
+    const entities = new Map((Array.isArray(current) ? current : [])
+        .filter(entry => entry?.id !== undefined)
+        .map(entry => [String(entry.id), clone(entry)]));
+    (operation.remove || []).forEach(id => entities.delete(String(id)));
+    (operation.upsert || []).forEach(entry => {
+        if (entry?.id !== undefined) entities.set(String(entry.id), clone(entry));
+    });
+    const ordered = [];
+    (operation.order || []).forEach(id => {
+        const entry = entities.get(String(id));
+        if (entry) {
+            ordered.push(entry);
+            entities.delete(String(id));
+        }
+    });
+    return [...ordered, ...entities.values()];
+}
+
+export function applyCampaignPatch(campaign, patch) {
+    if (!campaign || !patch || String(campaign.id) !== String(patch.campaignId)) return null;
+    if ((Number(campaign.revision) || 0) !== (Number(patch.baseRevision) || 0)) return null;
+    const next = clone(campaign);
+    ['metadata', 'sync', 'entityVersions'].forEach(key => {
+        if (Object.prototype.hasOwnProperty.call(patch, key)) next[key] = clone(patch[key]);
+    });
+    next.state = next.state || {};
+    Object.entries(patch.state || {}).forEach(([key, operation]) => {
+        if (operation?.mode === 'remove') {
+            delete next.state[key];
+            return;
+        }
+        if (operation?.mode === 'replace') {
+            next.state[key] = clone(operation.value);
+            return;
+        }
+        if (operation?.mode === 'object') {
+            const value = { ...(next.state[key] || {}) };
+            (operation.remove || []).forEach(field => delete value[field]);
+            Object.assign(value, clone(operation.set || {}));
+            next.state[key] = value;
+            return;
+        }
+        if (operation?.mode === 'entities') {
+            next.state[key] = applyEntityArrayPatch(next.state[key], operation);
+            return;
+        }
+        if (operation?.mode === 'combat') {
+            const value = { ...(next.state[key] || {}) };
+            (operation.remove || []).forEach(field => delete value[field]);
+            Object.assign(value, clone(operation.set || {}));
+            value.combatants = applyEntityArrayPatch(value.combatants, operation.combatants);
+            next.state[key] = value;
+        }
+    });
+    next.revision = Number(patch.revision) || next.revision;
+    next.updatedAt = patch.updatedAt || next.updatedAt;
+    return next;
+}
+
 function normalizeImportedCharacterSheet(value) {
     if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
     const sheet = clone(value);
@@ -1083,6 +1227,7 @@ export class CampaignRoom {
     snapshotEvent(member) {
         return {
             type: 'room.snapshot',
+            features: { campaignPatches: true },
             sequence: this.room.sequence,
             room: { code: this.room.code, name: this.room.name },
             member: publicMember(member),
@@ -1186,6 +1331,40 @@ export class CampaignRoom {
             await this.syncDirectory();
             this.send(socket, { type: 'snapshot.accepted', sequence: this.room.sequence });
             this.broadcast(target => this.snapshotEvent(target), socket);
+            return;
+        }
+        if (message.type === 'campaign.patch.publish') {
+            if (member.role !== 'master') {
+                this.send(socket, { type: 'command.rejected', reason: 'Somente o mestre publica a campanha.' });
+                return;
+            }
+            const previousCampaign = clone(this.room.campaign);
+            const patchedCampaign = applyCampaignPatch(previousCampaign, message.patch);
+            const campaign = sanitizeCampaign(patchedCampaign);
+            if (!campaign || String(campaign.id) !== String(this.room.campaign.id)) {
+                this.send(socket, {
+                    type: 'campaign.patch.rejected',
+                    reason: 'A campanha mudou antes deste pacote. Uma cópia atualizada será enviada.',
+                    sequence: this.room.sequence
+                });
+                this.send(socket, this.snapshotEvent(member));
+                return;
+            }
+            this.room.campaign = campaign;
+            this.room.sequence += 1;
+            this.room.updatedAt = new Date().toISOString();
+            await this.persist();
+            await this.syncDirectory();
+            this.send(socket, { type: 'campaign.patch.accepted', sequence: this.room.sequence });
+            this.broadcast(target => ({
+                type: 'campaign.patch',
+                sequence: this.room.sequence,
+                member: publicMember(target),
+                patch: buildCampaignPatch(
+                    projectCampaignForMember(previousCampaign, target),
+                    projectCampaignForMember(this.room.campaign, target)
+                )
+            }), socket);
             return;
         }
         if (message.type === 'command.submit') {

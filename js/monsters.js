@@ -12,23 +12,15 @@ function openMonsterChoiceModal() {
 
 // Renderiza emoji OU imagem automaticamente
 function renderIcon(icon) {
-
-    if (
-        icon.startsWith('http://') ||
-        icon.startsWith('https://') ||
-        icon.startsWith('./') ||
-        icon.startsWith('../')
-    ) {
-
-        return `
-            <img
-                src="${icon}"
-                class="w-5 h-5 inline-block object-contain"
-            >
-        `;
+    if (window.isAppImageReference?.(icon)) {
+        return window.renderAppImage?.(icon, {
+            className: 'w-5 h-5 inline-block object-contain',
+            alt: '',
+            fallback: 'image.png'
+        }) || '<span aria-hidden="true">📦</span>';
     }
 
-    return `<span>${icon}</span>`;
+    return `<span>${window.escapeAppMediaHtml?.(icon) || ''}</span>`;
 }
 
 function getMonsterImage(monster) {
@@ -41,6 +33,14 @@ function getMonsterImage(monster) {
     }
 
     return `img/monsters/${monster.id}.png`;
+}
+
+function renderMonsterImage(monster, className) {
+    return window.renderAppImage?.(getMonsterImage(monster), {
+        className,
+        alt: monster?.name || 'Imagem do monstro',
+        fallback: 'image.png'
+    }) || '';
 }
 
 
@@ -135,7 +135,7 @@ function filterPresetMonsters() {
                 .includes(search)
         );
 
-    container.innerHTML = filtered.map(monster => {
+    const renderMonsterCard = monster => {
 
         return `
 
@@ -154,20 +154,7 @@ function filterPresetMonsters() {
     
             <div class="flex items-center gap-4">
     
-                <img
-    
-                    src="${getMonsterImage(monster)}"
-
-                    loading="lazy"
-
-                    onerror="this.onerror=null; this.src='image.png';"
-    
-                    class="w-20
-                           h-20
-                           rounded-xl
-                           object-cover
-                           border
-                           border-red-700/40">
+                ${renderMonsterImage(monster, 'w-20 h-20 rounded-xl object-cover border border-red-700/40')}
     
                 <div class="flex-1">
     
@@ -197,7 +184,17 @@ function filterPresetMonsters() {
     
         </button>
     `;
-    }).join('');
+    };
+
+    if (window.renderProgressiveList) {
+        window.renderProgressiveList(container, filtered, renderMonsterCard, {
+            initialBatchSize: 18,
+            batchSize: 18,
+            metricName: 'render:monster-catalog'
+        });
+    } else {
+        container.innerHTML = filtered.map(renderMonsterCard).join('');
+    }
 }
 
 function toggleMonsterLore(type) {
@@ -305,21 +302,7 @@ function showMonsterDetails(monsterId, fromCombat = false) {
         ` : ''}
 
 
-<img
-
-    src="${getMonsterImage(monster)}"
-
-    onerror="this.onerror=null; this.src='image.png';"
-
-    class="w-full
-           h-72
-           object-contain
-           object-top
-           rounded-2xl
-           border
-           border-red-800/40
-           mb-4
-           bg-black/30">
+${renderMonsterImage(monster, 'w-full h-72 object-contain object-top rounded-2xl border border-red-800/40 mb-4 bg-black/30')}
 
         <div class="text-3xl font-bold text-white mb-2">
 

@@ -1,11 +1,13 @@
 (function (root, factory) {
     const migrations = root?.campaignMigrations
         || (typeof require === 'function' ? require('./campaign-migrations.js') : null);
-    const api = factory(root, migrations);
+    const durable = root?.campaignDatabase
+        || (typeof require === 'function' ? require('./campaign-database.js') : null);
+    const api = factory(root, migrations, durable);
 
     if (typeof module !== 'undefined' && module.exports) module.exports = api;
     if (root) root.campaignStore = api;
-})(typeof globalThis !== 'undefined' ? globalThis : this, function (root, migrations) {
+})(typeof globalThis !== 'undefined' ? globalThis : this, function (root, migrations, durable) {
     'use strict';
 
     const REGISTRY_KEY = 'dnd_campaign_registry_v1';
@@ -24,8 +26,22 @@
     let rawSetItem = null;
     let rawRemoveItem = null;
     let transientRemoteActive = false;
+    let durableVirtualActive = false;
+    let durableHydrated = false;
+    let durableBootstrapPlaceholder = false;
+    let durableReadyPromise = Promise.resolve(null);
+    const durableCampaignCache = new Map();
     let persistentCampaignBeforeTransient = null;
     let transientStorageValues = new Map();
+
+    durable?.subscribe?.(event => {
+        if (!root?.document?.documentElement) return;
+        root.document.documentElement.dataset.campaignStorageEvent = String(event.reason || 'unknown');
+        root.document.documentElement.dataset.campaignStoragePending = String(event.status?.pending || 0);
+        root.document.documentElement.dataset.campaignStorageSavedAt = String(event.status?.lastSavedAt || '');
+        root.document.documentElement.dataset.campaignStorageSavedRevision = String(event.revision ?? '');
+        root.document.documentElement.dataset.campaignStorageError = String(event.status?.lastError || '');
+    });
 
     function campaignStorageKey(id) {
         return `${CAMPAIGN_KEY_PREFIX}${id}`;
@@ -37,6 +53,11 @@
         } catch {
             return fallback;
         }
+    }
+
+    function readDirect(key) {
+        if (!storage) return null;
+        return rawGetItem ? rawGetItem.call(storage, key) : storage.getItem(key);
     }
 
     function getRegistry() {
@@ -94,12 +115,20 @@
 
     function persistCampaign(campaign) {
         if (transientRemoteActive && campaign?.id === activeCampaign?.id) return;
-        writeDirect(campaignStorageKey(campaign.id), JSON.stringify(campaign));
+        if (durableBootstrapPlaceholder && !durableHydrated && campaign?.id === activeCampaign?.id) {
+            return;
+        }
+        durableCampaignCache.set(String(campaign.id), migrations.clone(campaign));
+        if (durableHydrated && durable?.getStatus?.().ready) {
+            durable.scheduleSave?.(campaign);
+        } else {
+            writeDirect(campaignStorageKey(campaign.id), JSON.stringify(campaign));
+        }
         updateRegistryEntry(campaign);
     }
 
     function snapshotRuntimeStorage() {
-        if (!transientRemoteActive) return migrations.snapshotLegacyStorage(storage);
+        if (!transientRemoteActive && !durableVirtualActive) return migrations.snapshotLegacyStorage(storage);
         return Object.fromEntries(transientStorageValues.entries());
     }
 
@@ -113,6 +142,116 @@
         });
     }
 
+    function removePhysicalCampaignData() {
+        const registry = getRegistry();
+        const campaignIds = new Set([
+            ...(registry.campaigns || []).map(entry => entry.id),
+            ...durableCampaignCache.keys()
+        ]);
+        campaignIds.forEach(id => removeDirect(campaignStorageKey(id)));
+        migrations.LEGACY_CAMPAIGN_STORAGE_KEYS.forEach(key => removeDirect(key));
+    }
+
+    function listLocalCampaigns(registry = getRegistry()) {
+        const campaigns = [];
+        const ids = new Set([
+            ...(registry.campaigns || []).map(entry => entry.id),
+            registry.activeCampaignId,
+            activeCampaign?.id
+        ].filter(Boolean));
+        ids.forEach(id => {
+            const campaign = parse(readDirect(campaignStorageKey(id)), null);
+            if (campaign?.id) campaigns.push(migrations.normalizeCampaign(campaign));
+        });
+        return campaigns;
+    }
+
+    function replaceRegistryFromDurable(campaigns, activeId) {
+        const registry = {
+            version: REGISTRY_VERSION,
+            activeCampaignId: activeId || campaigns[0]?.id || null,
+            campaigns: campaigns.map(campaign => ({
+                id: campaign.id,
+                name: campaign.metadata?.name || 'Campanha principal',
+                createdAt: campaign.createdAt,
+                updatedAt: campaign.updatedAt,
+                revision: campaign.revision
+            }))
+        };
+        persistRegistry(registry);
+        return registry;
+    }
+
+    function applyHydratedCampaignToRuntime(campaign) {
+        const apply = () => root?.applyRemoteCampaignView?.(migrations.clone(campaign));
+        if (!root?.document) return;
+        if (root.document.readyState === 'complete') root.setTimeout?.(apply, 0);
+        else root.addEventListener?.('load', apply, { once: true });
+    }
+
+    async function hydrateDurableStorage(requestedId) {
+        if (!durable?.initialize || !durable?.getStatus?.().supported) return getActiveCampaign();
+        const status = await durable.initialize();
+        if (!status?.ready) return getActiveCampaign();
+
+        const registry = getRegistry();
+        const localCampaigns = listLocalCampaigns(registry);
+        const databaseCampaigns = await durable.getAllCampaigns();
+        if (root?.document?.documentElement) {
+            const databaseActive = databaseCampaigns.find(campaign => campaign.id === requestedId)
+                || databaseCampaigns[0];
+            root.document.documentElement.dataset.campaignDatabaseRevision = String(
+                databaseActive?.revision ?? ''
+            );
+        }
+        const merged = new Map();
+
+        databaseCampaigns.forEach(campaign => {
+            const normalized = migrations.normalizeCampaign(campaign);
+            merged.set(normalized.id, normalized);
+        });
+        localCampaigns.forEach(campaign => {
+            const current = merged.get(campaign.id);
+            if (!current || Number(campaign.revision) >= Number(current.revision)) {
+                merged.set(campaign.id, campaign);
+            }
+        });
+        if (activeCampaign && !durableBootstrapPlaceholder && !merged.has(activeCampaign.id)) {
+            merged.set(activeCampaign.id, migrations.normalizeCampaign(activeCampaign));
+        }
+
+        for (const campaign of merged.values()) {
+            durableCampaignCache.set(campaign.id, migrations.clone(campaign));
+            const stored = databaseCampaigns.find(entry => entry.id === campaign.id);
+            if (!stored || Number(campaign.revision) >= Number(stored.revision)) {
+                durable.scheduleSave(campaign);
+            }
+        }
+        await durable.flush();
+
+        const preferredId = requestedId
+            || readDirect(ACTIVE_CAMPAIGN_KEY)
+            || registry.activeCampaignId
+            || activeCampaign?.id;
+        const selected = durableCampaignCache.get(String(preferredId || ''))
+            || durableCampaignCache.values().next().value
+            || activeCampaign;
+
+        if (selected) activeCampaign = migrations.normalizeCampaign(selected);
+        durableBootstrapPlaceholder = false;
+        durableHydrated = true;
+        durableVirtualActive = true;
+        seedTransientStorage(activeCampaign);
+        replaceRegistryFromDurable([...durableCampaignCache.values()], activeCampaign?.id);
+        removePhysicalCampaignData();
+        emit('durable-hydrated', {
+            campaignCount: durableCampaignCache.size,
+            recoveredCampaignIds: durable.getStatus().recoveredCampaignIds || []
+        });
+        applyHydratedCampaignToRuntime(activeCampaign);
+        return getActiveCampaign();
+    }
+
     function emit(reason, detail = {}) {
         const event = {
             reason,
@@ -120,6 +259,14 @@
             revision: activeCampaign?.revision || 0,
             ...detail
         };
+        if (root?.document?.documentElement) {
+            root.document.documentElement.dataset.campaignStorage = durableHydrated ? 'indexeddb' : 'local';
+            root.document.documentElement.dataset.campaignStoragePending = String(
+                durable?.getStatus?.().pending || 0
+            );
+            root.document.documentElement.dataset.campaignId = String(activeCampaign?.id || '');
+            root.document.documentElement.dataset.campaignRevision = String(activeCampaign?.revision || 0);
+        }
         listeners.forEach(listener => listener(event));
         root?.dispatchEvent?.(new CustomEvent('campaign:changed', { detail: event }));
         return event;
@@ -138,19 +285,55 @@
         const stored = requestedId
             ? parse(storage.getItem(campaignStorageKey(requestedId)), null)
             : null;
+        const registryEntry = registry.campaigns.find(entry => entry.id === requestedId);
+        durableBootstrapPlaceholder = Boolean(
+            !stored
+            && registryEntry
+            && durable?.getStatus?.().supported
+        );
 
         activeCampaign = stored
             ? migrations.normalizeCampaign(stored)
             : migrations.createCampaignFromLegacy(storage, {
-                name: options.name,
+                id: durableBootstrapPlaceholder ? requestedId : undefined,
+                name: durableBootstrapPlaceholder ? registryEntry.name : options.name,
                 createdBy: options.createdBy,
                 now: options.now
             });
 
-        persistCampaign(activeCampaign);
+        if (!durableBootstrapPlaceholder) persistCampaign(activeCampaign);
         initialized = true;
         if (options.installBridge !== false) installLegacyStorageBridge();
+        if (root?.document?.documentElement) {
+            root.document.documentElement.dataset.campaignStorage = durable?.getStatus?.().supported
+                ? 'migrating'
+                : 'local';
+            root.document.documentElement.dataset.campaignStoragePending = '0';
+        }
+        durableReadyPromise = hydrateDurableStorage(requestedId).catch(error => {
+            emit('durable-error', { error: String(error?.message || error) });
+            return getActiveCampaign();
+        });
         return getActiveCampaign();
+    }
+
+    function whenDurableReady() {
+        return durableReadyPromise;
+    }
+
+    async function flushDurableStorage() {
+        checkpoint({ reason: 'durable-flush' });
+        await durableReadyPromise;
+        await durable?.flush?.();
+        return getStorageStatus();
+    }
+
+    function getStorageStatus() {
+        return {
+            durableHydrated,
+            compatibilityBridge: durableVirtualActive,
+            ...(durable?.getStatus?.() || { supported: false, ready: false })
+        };
     }
 
     function getActiveCampaign() {
@@ -210,7 +393,7 @@
 
         prototype.getItem = function (key) {
             const normalizedKey = String(key || '');
-            if (this === storage && transientRemoteActive && migrations.isCampaignStorageKey(normalizedKey)) {
+            if (this === storage && (transientRemoteActive || durableVirtualActive) && migrations.isCampaignStorageKey(normalizedKey)) {
                 return transientStorageValues.has(normalizedKey)
                     ? transientStorageValues.get(normalizedKey)
                     : null;
@@ -220,7 +403,7 @@
 
         prototype.setItem = function (key, value) {
             const normalizedKey = String(key || '');
-            if (this === storage && transientRemoteActive && migrations.isCampaignStorageKey(normalizedKey)) {
+            if (this === storage && (transientRemoteActive || durableVirtualActive) && migrations.isCampaignStorageKey(normalizedKey)) {
                 transientStorageValues.set(normalizedKey, String(value));
                 if (!bridgeSuspended) scheduleCheckpoint(`transient:set:${normalizedKey}`);
                 return;
@@ -232,7 +415,7 @@
         };
         prototype.removeItem = function (key) {
             const normalizedKey = String(key || '');
-            if (this === storage && transientRemoteActive && migrations.isCampaignStorageKey(normalizedKey)) {
+            if (this === storage && (transientRemoteActive || durableVirtualActive) && migrations.isCampaignStorageKey(normalizedKey)) {
                 transientStorageValues.delete(normalizedKey);
                 if (!bridgeSuspended) scheduleCheckpoint(`transient:remove:${normalizedKey}`);
                 return;
@@ -272,7 +455,8 @@
     function activateCampaign(id, options = {}) {
         if (!initialized) initialize({ installBridge: false });
         checkpoint({ reason: 'campaign-switch' });
-        const stored = parse(storage.getItem(campaignStorageKey(id)), null);
+        const stored = durableCampaignCache.get(String(id))
+            || parse(readDirect(campaignStorageKey(id)), null);
         if (!stored) return null;
 
         activeCampaign = migrations.normalizeCampaign(stored);
@@ -280,11 +464,14 @@
         registry.activeCampaignId = activeCampaign.id;
         persistRegistry(registry);
 
-        bridgeSuspended++;
-        try {
-            migrations.restoreLegacyStorage(storage, activeCampaign, { removeMissing: true });
-        } finally {
-            bridgeSuspended--;
+        if (durableVirtualActive) seedTransientStorage(activeCampaign);
+        else {
+            bridgeSuspended++;
+            try {
+                migrations.restoreLegacyStorage(storage, activeCampaign, { removeMissing: true });
+            } finally {
+                bridgeSuspended--;
+            }
         }
         emit('campaign-activated');
         if (options.reload !== false) root?.location?.reload?.();
@@ -373,11 +560,14 @@
         activeCampaign = incoming;
         persistCampaign(activeCampaign);
 
-        bridgeSuspended++;
-        try {
-            migrations.restoreLegacyStorage(storage, activeCampaign, { removeMissing: true });
-        } finally {
-            bridgeSuspended--;
+        if (durableVirtualActive) seedTransientStorage(activeCampaign);
+        else {
+            bridgeSuspended++;
+            try {
+                migrations.restoreLegacyStorage(storage, activeCampaign, { removeMissing: true });
+            } finally {
+                bridgeSuspended--;
+            }
         }
         emit('remote-applied', { sequence: incoming.sync.lastServerSequence });
         return getActiveCampaign();
@@ -395,7 +585,8 @@
             || storage?.getItem?.(ACTIVE_CAMPAIGN_KEY)
             || registry.activeCampaignId;
         const stored = persistentId
-            ? parse(storage?.getItem?.(campaignStorageKey(persistentId)), null)
+            ? (durableCampaignCache.get(String(persistentId))
+                || parse(readDirect(campaignStorageKey(persistentId)), null))
             : null;
 
         transientRemoteActive = false;
@@ -406,6 +597,7 @@
                 ? migrations.normalizeCampaign(persistentCampaignBeforeTransient)
                 : null);
         persistentCampaignBeforeTransient = null;
+        if (durableVirtualActive && activeCampaign) seedTransientStorage(activeCampaign);
         emit('transient-remote-ended');
         return getActiveCampaign();
     }
@@ -431,6 +623,11 @@
         rawSetItem = null;
         rawRemoveItem = null;
         transientRemoteActive = false;
+        durableVirtualActive = false;
+        durableHydrated = false;
+        durableBootstrapPlaceholder = false;
+        durableReadyPromise = Promise.resolve(null);
+        durableCampaignCache.clear();
         persistentCampaignBeforeTransient = null;
         transientStorageValues.clear();
         storage = null;
@@ -455,15 +652,24 @@
         applyRemoteCampaign,
         isTransientRemoteCampaign,
         endTransientRemoteCampaign,
+        whenDurableReady,
+        flushDurableStorage,
+        getStorageStatus,
         subscribe,
         resetForTests
     });
 
     if (root?.document && root?.localStorage) {
         initialize();
-        root.addEventListener?.('pagehide', () => checkpoint({ reason: 'pagehide' }));
+        root.addEventListener?.('pagehide', () => {
+            checkpoint({ reason: 'pagehide' });
+            void durable?.flush?.();
+        });
         root.document.addEventListener?.('visibilitychange', () => {
-            if (root.document.visibilityState === 'hidden') checkpoint({ reason: 'visibility-hidden' });
+            if (root.document.visibilityState === 'hidden') {
+                checkpoint({ reason: 'visibility-hidden' });
+                void durable?.flush?.();
+            }
         });
     }
 

@@ -21,6 +21,8 @@
     let snapshotFrame = null;
     let lastAppliedSequence = 0;
     let lastCampaignFingerprint = '';
+    let lastPublishedCampaign = null;
+    let supportsCampaignPatches = false;
     let workflow = { proposals: [], conflicts: [], decisions: [], activity: [], accessLog: [], members: [] };
     let queueFlushPromise = null;
     const sentCommandIds = new Set();
@@ -185,6 +187,7 @@
         let message;
         try { message = JSON.parse(event.data); } catch { return; }
         if (message.type === 'room.snapshot') {
+            supportsCampaignPatches = message.features?.campaignPatches === true;
             presence = Array.isArray(message.presence) ? message.presence : presence;
             mergeWorkflow(message.workflow, { replace: true });
             root?.collaborationSession?.updateOnlineIdentity?.(message);
@@ -192,9 +195,25 @@
             refreshRoomView();
             return;
         }
-        if (message.type === 'snapshot.accepted') {
+        if (message.type === 'snapshot.accepted' || message.type === 'campaign.patch.accepted') {
             root?.collaborationSession?.setLastServerSequence?.(message.sequence);
             root?.collaborationSession?.setConnectionState?.('synced');
+            return;
+        }
+        if (message.type === 'campaign.patch') {
+            const current = root?.campaignStore?.getActiveCampaign?.();
+            const merged = applyCampaignPatch(current, message.patch);
+            if (!merged) {
+                socket?.send?.(JSON.stringify({ type: 'resync.request', since: lastAppliedSequence }));
+                return;
+            }
+            applySnapshot(merged, message.sequence, message.member);
+            void flushOfflineQueue();
+            return;
+        }
+        if (message.type === 'campaign.patch.rejected') {
+            lastPublishedCampaign = null;
+            socket?.send?.(JSON.stringify({ type: 'resync.request', since: lastAppliedSequence }));
             return;
         }
         if (message.type === 'room.presence') {
@@ -276,6 +295,154 @@
         try { return JSON.stringify(campaign); } catch { return String(campaign?.revision || ''); }
     }
 
+    function cloneJson(value) {
+        return value === undefined ? undefined : JSON.parse(JSON.stringify(value));
+    }
+
+    function valuesDiffer(left, right) {
+        return JSON.stringify(left) !== JSON.stringify(right);
+    }
+
+    function buildObjectPatch(previous = {}, next = {}) {
+        const set = {};
+        const remove = [];
+        const before = previous && typeof previous === 'object' && !Array.isArray(previous) ? previous : {};
+        const after = next && typeof next === 'object' && !Array.isArray(next) ? next : {};
+        Object.keys(after).forEach(key => {
+            if (valuesDiffer(before[key], after[key])) set[key] = cloneJson(after[key]);
+        });
+        Object.keys(before).forEach(key => {
+            if (!Object.prototype.hasOwnProperty.call(after, key)) remove.push(key);
+        });
+        return { set, remove };
+    }
+
+    function buildEntityArrayPatch(previous = [], next = []) {
+        const before = new Map((Array.isArray(previous) ? previous : [])
+            .filter(entry => entry?.id !== undefined)
+            .map(entry => [String(entry.id), entry]));
+        const after = new Map((Array.isArray(next) ? next : [])
+            .filter(entry => entry?.id !== undefined)
+            .map(entry => [String(entry.id), entry]));
+        const upsert = [];
+        after.forEach((entry, id) => {
+            if (valuesDiffer(before.get(id), entry)) upsert.push(cloneJson(entry));
+        });
+        const remove = [...before.keys()].filter(id => !after.has(id));
+        return { upsert, remove, order: [...after.keys()] };
+    }
+
+    function buildCampaignPatch(previousCampaign, nextCampaign) {
+        if (!previousCampaign || !nextCampaign || String(previousCampaign.id) !== String(nextCampaign.id)) return null;
+        const patch = {
+            campaignId: String(nextCampaign.id),
+            baseRevision: Number(previousCampaign.revision) || 0,
+            revision: Number(nextCampaign.revision) || 0,
+            updatedAt: nextCampaign.updatedAt || new Date().toISOString(),
+            state: {}
+        };
+
+        ['metadata', 'sync', 'entityVersions'].forEach(key => {
+            if (valuesDiffer(previousCampaign[key], nextCampaign[key])) patch[key] = cloneJson(nextCampaign[key]);
+        });
+
+        const previousState = previousCampaign.state || {};
+        const nextState = nextCampaign.state || {};
+        const stateKeys = new Set([...Object.keys(previousState), ...Object.keys(nextState)]);
+        stateKeys.forEach(key => {
+            if (!Object.prototype.hasOwnProperty.call(nextState, key)) {
+                patch.state[key] = { mode: 'remove' };
+                return;
+            }
+            if (!valuesDiffer(previousState[key], nextState[key])) return;
+
+            if (key === 'compatibility') {
+                patch.state[key] = { mode: 'object', ...buildObjectPatch(previousState[key], nextState[key]) };
+                return;
+            }
+            if (key === 'combat') {
+                const previousCombat = previousState[key] || {};
+                const nextCombat = nextState[key] || {};
+                const fields = buildObjectPatch(
+                    Object.fromEntries(Object.entries(previousCombat).filter(([field]) => field !== 'combatants')),
+                    Object.fromEntries(Object.entries(nextCombat).filter(([field]) => field !== 'combatants'))
+                );
+                patch.state[key] = {
+                    mode: 'combat',
+                    ...fields,
+                    combatants: buildEntityArrayPatch(previousCombat.combatants, nextCombat.combatants)
+                };
+                return;
+            }
+            if (key === 'characterSheets' && Array.isArray(nextState[key])) {
+                patch.state[key] = { mode: 'entities', ...buildEntityArrayPatch(previousState[key], nextState[key]) };
+                return;
+            }
+            patch.state[key] = { mode: 'replace', value: cloneJson(nextState[key]) };
+        });
+        return patch;
+    }
+
+    function applyEntityArrayPatch(current, operation) {
+        const entities = new Map((Array.isArray(current) ? current : [])
+            .filter(entry => entry?.id !== undefined)
+            .map(entry => [String(entry.id), cloneJson(entry)]));
+        (operation.remove || []).forEach(id => entities.delete(String(id)));
+        (operation.upsert || []).forEach(entry => {
+            if (entry?.id !== undefined) entities.set(String(entry.id), cloneJson(entry));
+        });
+        const ordered = [];
+        (operation.order || []).forEach(id => {
+            const entry = entities.get(String(id));
+            if (entry) {
+                ordered.push(entry);
+                entities.delete(String(id));
+            }
+        });
+        return [...ordered, ...entities.values()];
+    }
+
+    function applyCampaignPatch(campaign, patch) {
+        if (!campaign || !patch || String(campaign.id) !== String(patch.campaignId)) return null;
+        if ((Number(campaign.revision) || 0) !== (Number(patch.baseRevision) || 0)) return null;
+        const next = cloneJson(campaign);
+        ['metadata', 'sync', 'entityVersions'].forEach(key => {
+            if (Object.prototype.hasOwnProperty.call(patch, key)) next[key] = cloneJson(patch[key]);
+        });
+        next.state = next.state || {};
+        Object.entries(patch.state || {}).forEach(([key, operation]) => {
+            if (operation?.mode === 'remove') {
+                delete next.state[key];
+                return;
+            }
+            if (operation?.mode === 'replace') {
+                next.state[key] = cloneJson(operation.value);
+                return;
+            }
+            if (operation?.mode === 'object') {
+                const value = { ...(next.state[key] || {}) };
+                (operation.remove || []).forEach(field => delete value[field]);
+                Object.assign(value, cloneJson(operation.set || {}));
+                next.state[key] = value;
+                return;
+            }
+            if (operation?.mode === 'entities') {
+                next.state[key] = applyEntityArrayPatch(next.state[key], operation);
+                return;
+            }
+            if (operation?.mode === 'combat') {
+                const value = { ...(next.state[key] || {}) };
+                (operation.remove || []).forEach(field => delete value[field]);
+                Object.assign(value, cloneJson(operation.set || {}));
+                value.combatants = applyEntityArrayPatch(value.combatants, operation.combatants || {});
+                next.state[key] = value;
+            }
+        });
+        next.revision = Number(patch.revision) || next.revision;
+        next.updatedAt = patch.updatedAt || next.updatedAt;
+        return next;
+    }
+
     function mergeUnique(current, incoming, limit = 100) {
         const values = new Map((current || []).map(entry => [String(entry?.id || ''), entry]));
         (incoming || []).forEach(entry => {
@@ -328,6 +495,9 @@
             lastAppliedSequence = Math.max(lastAppliedSequence, numericSequence);
             lastCampaignFingerprint = fingerprint;
             root?.applyRemoteCampaignView?.(applied);
+            if (member?.role === protocol.ROLES.MASTER || root?.collaborationSession?.isMaster?.()) {
+                lastPublishedCampaign = cloneJson(applied);
+            }
         }
         root?.collaborationSession?.setLastServerSequence?.(numericSequence);
     }
@@ -409,7 +579,18 @@
         if (!root?.collaborationSession?.isMaster?.()) return false;
         const campaign = root?.campaignStore?.getActiveCampaign?.();
         if (!campaign) return false;
+        if (supportsCampaignPatches && lastPublishedCampaign) {
+            const patch = buildCampaignPatch(lastPublishedCampaign, campaign);
+            const serializedPatch = JSON.stringify(patch);
+            const serializedCampaign = JSON.stringify(campaign);
+            if (patch && serializedPatch.length < serializedCampaign.length * 0.9) {
+                socket.send(JSON.stringify({ type: 'campaign.patch.publish', patch }));
+                lastPublishedCampaign = cloneJson(campaign);
+                return true;
+            }
+        }
         socket.send(JSON.stringify({ type: 'snapshot.publish', campaign }));
+        lastPublishedCampaign = cloneJson(campaign);
         return true;
     }
 
@@ -483,6 +664,8 @@
         pendingSnapshot = null;
         lastAppliedSequence = 0;
         lastCampaignFingerprint = '';
+        lastPublishedCampaign = null;
+        supportsCampaignPatches = false;
         if (snapshotFrame !== null) {
             const cancel = root?.cancelAnimationFrame || root?.clearTimeout;
             cancel?.(snapshotFrame);
@@ -590,6 +773,8 @@
         disconnect,
         reconnectIfNeeded,
         publishActiveCampaign,
+        buildCampaignPatch,
+        applyCampaignPatch,
         submitCommand,
         flushOfflineQueue,
         updatePendingCount,

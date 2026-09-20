@@ -44,7 +44,7 @@ function renderAbilities() {
         return;
     }
 
-    container.innerHTML = abilitiesInventory.map(ability => {
+    const renderAbilityCard = ability => {
 
         return `
 
@@ -100,7 +100,17 @@ function renderAbilities() {
 
 </div>
         `;
-    }).join('');
+    };
+
+    if (window.renderProgressiveList) {
+        window.renderProgressiveList(container, abilitiesInventory, renderAbilityCard, {
+            initialBatchSize: 24,
+            batchSize: 24,
+            metricName: 'render:ability-inventory'
+        });
+    } else {
+        container.innerHTML = abilitiesInventory.map(renderAbilityCard).join('');
+    }
 }
 
 function addAbility(abilityId) {

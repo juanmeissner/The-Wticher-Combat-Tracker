@@ -12,6 +12,27 @@ assert.equal(realtime.isLocalDevelopmentEndpoint('https://outro-worker.example.c
 assert.equal(realtime.saveEndpoint('https://outro-worker.example.com'), realtime.DEFAULT_ENDPOINT);
 assert.equal(realtime.getServiceEndpoint(), realtime.DEFAULT_ENDPOINT);
 
+const previousCampaign = {
+    id: 'campaign-test', revision: 4, updatedAt: 'before',
+    metadata: { name: 'Teste' }, entityVersions: {}, sync: {},
+    state: {
+        combat: { round: 1, combatants: [{ id: 'geralt', hpCurrent: 30 }, { id: 'ciri', hpCurrent: 24 }] },
+        compatibility: { dnd_players: 'before', unchanged: 'same' },
+        characterSheets: [{ id: 'sheet-geralt', level: 1 }]
+    }
+};
+const nextCampaign = structuredClone(previousCampaign);
+nextCampaign.revision = 5;
+nextCampaign.updatedAt = 'after';
+nextCampaign.state.combat.combatants[0].hpCurrent = 19;
+nextCampaign.state.compatibility.dnd_players = 'after';
+nextCampaign.state.characterSheets[0].level = 2;
+const campaignPatch = realtime.buildCampaignPatch(previousCampaign, nextCampaign);
+assert.equal(campaignPatch.state.combat.combatants.upsert.length, 1);
+assert.equal(campaignPatch.state.combat.combatants.upsert[0].id, 'geralt');
+assert.deepEqual(realtime.applyCampaignPatch(previousCampaign, campaignPatch), nextCampaign);
+assert.equal(realtime.applyCampaignPatch({ ...previousCampaign, revision: 3 }, campaignPatch), null);
+
 const projectRoot = path.resolve(__dirname, '..');
 const indexSource = fs.readFileSync(path.join(projectRoot, 'index.html'), 'utf8');
 const serviceWorker = fs.readFileSync(path.join(projectRoot, 'js', 'service-worker.js'), 'utf8');
@@ -21,9 +42,10 @@ const wrangler = fs.readFileSync(path.join(projectRoot, 'cloudflare', 'wrangler.
 
 assert.match(indexSource, /collaboration\/realtime-client\.js/);
 assert.match(indexSource, /collaboration\/offline-queue\.js/);
-assert.match(serviceWorker, /witcher-combat-tracker-v167/);
+assert.match(serviceWorker, /witcher-combat-tracker-v177/);
 assert.match(serviceWorker, /collaboration\/realtime-client\.js/);
 assert.match(serviceWorker, /collaboration\/offline-queue\.js/);
+assert.match(serviceWorker, /core\/performance\.js/);
 assert.match(sessionSource, /createCollaborationRoomFromView/);
 assert.match(sessionSource, /id="collaborationCreateName"[^>]+required/);
 assert.match(sessionSource, /id="collaborationRoomName"[^>]+required/);

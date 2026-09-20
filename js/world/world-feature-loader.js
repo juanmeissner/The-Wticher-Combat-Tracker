@@ -2,6 +2,7 @@
     'use strict';
 
     const loadedScripts = new Map();
+    const loadedStylesheets = new Map();
     let routeFeaturesPromise = null;
     let mapFeaturesPromise = null;
 
@@ -39,6 +40,34 @@
         return promise;
     }
 
+    function loadStylesheet(source) {
+        if (root.document?.querySelector?.(`link[data-lazy-source="${source}"]`)) {
+            return Promise.resolve(true);
+        }
+        if (loadedStylesheets.has(source)) return loadedStylesheets.get(source);
+
+        const promise = new Promise((resolve, reject) => {
+            const stylesheet = root.document?.createElement?.('link');
+            if (!stylesheet) {
+                reject(new Error(`Não foi possível preparar ${source}.`));
+                return;
+            }
+
+            stylesheet.rel = 'stylesheet';
+            stylesheet.href = source;
+            stylesheet.dataset.lazySource = source;
+            stylesheet.addEventListener('load', () => resolve(true), { once: true });
+            stylesheet.addEventListener('error', () => reject(new Error(`Não foi possível carregar ${source}.`)), { once: true });
+            root.document.head.appendChild(stylesheet);
+        }).catch(error => {
+            loadedStylesheets.delete(source);
+            throw error;
+        });
+
+        loadedStylesheets.set(source, promise);
+        return promise;
+    }
+
     async function ensureRouteFeatures() {
         if (root.worldRoadData && root.worldRouteEngine) return true;
         if (!routeFeaturesPromise) {
@@ -60,6 +89,7 @@
         if (!mapFeaturesPromise) {
             mapFeaturesPromise = (async () => {
                 await ensureRouteFeatures();
+                await loadStylesheet('vendor/leaflet/leaflet.css');
                 await loadScript('vendor/leaflet/leaflet.js', () => Boolean(root.L));
                 await loadScript('js/world/world-road-editor.js', () => Boolean(root.worldRoadEditor));
                 await loadScript('js/world/world-map.js', () => Boolean(root.worldMap));

@@ -76,7 +76,7 @@ function renderAbilitiesModal() {
         return;
     }
 
-    container.innerHTML = filteredAbilities.map(ability => {
+    const renderAbilityCatalogCard = ability => {
 
         return `
 
@@ -128,7 +128,17 @@ function renderAbilitiesModal() {
     
         </button>
     `;
-    }).join('');
+    };
+
+    if (window.renderProgressiveList) {
+        window.renderProgressiveList(container, filteredAbilities, renderAbilityCatalogCard, {
+            initialBatchSize: 28,
+            batchSize: 28,
+            metricName: 'render:ability-catalog'
+        });
+    } else {
+        container.innerHTML = filteredAbilities.map(renderAbilityCatalogCard).join('');
+    }
 }
 
 function openAbilityDetails(id) {

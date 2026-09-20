@@ -1013,8 +1013,8 @@
 .world-travel-map-zoom {
     position: absolute;
     z-index: 5;
-    top: 12px;
-    left: 12px;
+    top: 56px;
+    right: 12px;
     display: flex;
     overflow: hidden;
     border: 1px solid #334155;

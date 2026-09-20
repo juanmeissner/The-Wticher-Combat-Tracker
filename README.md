@@ -1058,7 +1058,8 @@ da campanha é mantido temporariamente no Durable Object da sala. No dispositivo
 do Jogador, esse snapshot remoto fica isolado da campanha local e é descartado ao
 sair, ser removido ou quando a sala termina; em seguida, a campanha offline é
 restaurada automaticamente. Ao escolher **Salvar campanha atual** em uma conta,
-uma cópia permanente e privada é enviada ao D1. O `localStorage` preserva:
+uma cópia permanente e privada é enviada ao D1. No modo local, o IndexedDB é o
+armazenamento principal das campanhas e preserva:
 
 - combate atual;
 - fichas e recursos atuais;
@@ -1067,9 +1068,27 @@ uma cópia permanente e privada é enviada ao D1. O `localStorage` preserva:
 - biblioteca personalizada;
 - preferências e modos de rolagem.
 
+O `localStorage` fica restrito ao identificador da campanha ativa, ao registro
+compacto das campanhas e às preferências pequenas. Os módulos antigos continuam
+enxergando suas chaves por uma ponte em memória, sem manter uma segunda cópia
+física de toda a campanha. As gravações são agrupadas em uma fila curta para que
+alterações sucessivas de HP, EST, inventário ou efeitos não bloqueiem a interface.
+
+Cada registro persistente possui versão, revisão e checksum. Antes de substituir
+uma campanha, o aplicativo conserva a última versão válida como recuperação; se
+detectar corrupção, restaura essa versão automaticamente. O painel **Cache e
+dados** informa se o armazenamento robusto está ativo e mostra o espaço utilizado.
+O aplicativo também avisa quando a cota do navegador está próxima do limite ou
+quando uma gravação não pode ser concluída por falta de espaço.
+
 Na primeira consolidação da Etapa 10, o aplicativo cria uma cópia local única das fichas existentes antes de normalizá-las para as regras atuais. Essa cópia também participa do backup completo do aplicativo e não é sobrescrita em recarregamentos posteriores.
 
-O **backup JSON completo** reúne toda a campanha. Para compartilhar somente um personagem, use **⋯ → Fichas → ⇩ Exportar**; o destinatário pode recebê-lo por mensagem, e-mail ou armazenamento em nuvem e importá-lo por **Nova ficha → Importar ficha** sem afetar os demais dados do aplicativo.
+O **backup JSON completo** reúne o registro compacto, as campanhas do IndexedDB
+e os dados necessários para restaurar a ponte de compatibilidade. Backups antigos
+continuam aceitos. Para compartilhar somente um personagem, use **⋯ → Fichas →
+⇩ Exportar**; o destinatário pode recebê-lo por mensagem, e-mail ou armazenamento
+em nuvem e importá-lo por **Nova ficha → Importar ficha** sem afetar os demais
+dados do aplicativo.
 
 > [!IMPORTANT]
 > Limpar os dados do site ou remover o armazenamento do navegador pode apagar a campanha local. Exporte periodicamente um **backup JSON completo**, principalmente antes de trocar de dispositivo.
@@ -1100,11 +1119,16 @@ Para manter o Combat Tracker responsivo mesmo com campanhas grandes, os recursos
 - a biblioteca de planilhas é carregada somente ao exportar habilidades para Excel;
 - o Tailwind é pré-compilado em um CSS estático pequeno, eliminando a compilação de estilos e a dependência do CDN durante a abertura;
 - a interface usa fontes do próprio sistema operacional, evitando uma requisição externa de fonte no carregamento inicial;
-- os cards do combate são preparados fora da tela e reconciliados individualmente, preservando os participantes que não mudaram e reduzindo recálculos visuais e tremores;
-- listas extensas de inventário, habilidades, catálogo de itens e bestiário são compostas em memória e inseridas no DOM uma única vez;
-- snapshots online com alterações somente em combate, inventário ou habilidades atualizam apenas a área correspondente;
+- cada card do combate possui uma assinatura de renderização; participantes inalterados preservam o mesmo nó, seus eventos e o estado visual, enquanto somente os cards modificados são reconstruídos;
+- listas extensas de inventário, habilidades, catálogo de itens e bestiário exibem um primeiro lote imediatamente e completam os demais durante períodos ociosos do navegador;
+- a colaboração negocia suporte a pacotes diferenciais: combate envia somente os participantes alterados, coleções enviam inclusões e remoções por ID e a compatibilidade envia somente as chaves modificadas;
+- snapshots completos continuam disponíveis como recuperação automática após divergência de revisão, reconexão ou servidor ainda sem suporte ao protocolo incremental;
+- métricas internas registram duração, quantidade, média, pico e tarefas longas das principais renderizações; o relatório pode ser consultado pelo console com `getAppPerformanceReport()`;
 - fichas sem alterações não são serializadas novamente no armazenamento nem geram checkpoints desnecessários;
 - os recursos carregados sob demanda continuam incluídos no cache da PWA, preservando o uso offline após a instalação.
+- campanhas completas são persistidas de forma assíncrona no IndexedDB, enquanto alterações sucessivas são consolidadas por campanha antes da gravação;
+- a migração remove os blobs completos e as chaves legadas físicas do `localStorage` somente após confirmar a cópia íntegra no IndexedDB;
+- revisões, checksum e uma cópia de recuperação protegem a campanha contra registros incompletos ou corrompidos.
 
 ## 🗂️ Organização do código
 
@@ -1137,8 +1161,9 @@ Para manter o Combat Tracker responsivo mesmo com campanhas grandes, os recursos
 ├── js/
 │   ├── abilities/               # Catálogo, inventário e exportação de habilidades
 │   ├── combat/                  # Turnos, dano, renderização, efeitos e persistência
+│   ├── core/performance.js      # Renderização progressiva e métricas internas de travamento
 │   ├── core/                    # Utilitários e notificações
-│   ├── campaign/                # Contêiner, migração e checkpoints da campanha
+│   ├── campaign/                # Contêiner, migração, IndexedDB, fila e recuperação da campanha
 │   ├── collaboration/           # Protocolo, permissões, fila offline, sessão e cliente WebSocket
 │   ├── world/                   # Mundo, Atlas, locais canônicos/cartográficos/personalizados e História
 │   │   ├── world-feature-loader.js # Carregamento sob demanda do mapa, rotas, Leaflet e editor
@@ -1216,6 +1241,7 @@ node tests/item-use-automation.test.cjs
 node tests/spell-damage-automation.test.cjs
 node tests/collaboration-protocol.test.cjs
 node tests/campaign-store.test.cjs
+node tests/campaign-database.test.cjs
 node tests/collaboration-session.test.cjs
 node tests/collaboration-realtime-client.test.cjs
 node tests/collaboration-offline-queue.test.cjs
@@ -1264,6 +1290,7 @@ Os testes verificam o isolamento entre personagens, a migração e o backup do a
 - [x] Fichas persistentes e encontros salvos
 - [x] Exportação e importação individual de fichas entre dispositivos
 - [x] Contêiner local de campanha com ID, versão, revisões e migração compatível
+- [x] Campanhas no IndexedDB com fila de salvamento, checksum, recuperação e alerta de espaço
 - [x] Contrato colaborativo com comandos idempotentes, propostas e conflitos
 - [x] Prévia local dos modos Mestre e Jogador com permissões por ficha
 - [x] Sala experimental com código, senha, presença, reconexão e WebSockets via Cloudflare

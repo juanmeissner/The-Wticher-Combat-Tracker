@@ -117,29 +117,20 @@ function renderIcon(icon, className = 'item-icon') {
 
     if (!icon) return '';
 
-    const isImage =
-        icon.includes('.png') ||
-        icon.includes('.jpg') ||
-        icon.includes('.jpeg') ||
-        icon.includes('.webp') ||
-        icon.includes('.svg') ||
-        icon.startsWith('http') ||
-        icon.startsWith('assets/');
+    const isImage = window.isAppImageReference?.(icon) || false;
 
     if (isImage) {
 
-        return `
-            <img
-                src="${icon}"
-                class="${className}"
-                draggable="false"
-            >
-        `;
+        return window.renderAppImage?.(icon, {
+            className,
+            alt: '',
+            fallback: 'image.png'
+        }) || `<span class="${escapeInventoryHtml(className)}" aria-hidden="true">📦</span>`;
     }
 
     return `
         <span class="${className}">
-            ${icon}
+            ${escapeInventoryHtml(icon)}
         </span>
     `;
 }
@@ -948,7 +939,7 @@ function renderInventory() {
         return;
     }
 
-    container.innerHTML = filteredInventory.map(item => {
+    const renderInventoryCard = item => {
 
         const equipmentBadge = window.getInventoryEquipmentBadge?.(item.id)
             || window.getTransportInventoryBadge?.(item);
@@ -1050,7 +1041,17 @@ function renderInventory() {
     
             </div>
         `;
-    }).join('');
+    };
+
+    if (window.renderProgressiveList) {
+        window.renderProgressiveList(container, filteredInventory, renderInventoryCard, {
+            initialBatchSize: 24,
+            batchSize: 24,
+            metricName: 'render:inventory'
+        });
+    } else {
+        container.innerHTML = filteredInventory.map(renderInventoryCard).join('');
+    }
 
     window.updateInventoryEquipmentAction?.();
 }
@@ -1283,7 +1284,7 @@ function renderInventoryItemsModal() {
         return;
     }
 
-    container.innerHTML = filteredItems.map(item => {
+    const renderCatalogItem = item => {
 
         return `
 
@@ -1344,7 +1345,17 @@ function renderInventoryItemsModal() {
 
         </button>
         `;
-    }).join('');
+    };
+
+    if (window.renderProgressiveList) {
+        window.renderProgressiveList(container, filteredItems, renderCatalogItem, {
+            initialBatchSize: 28,
+            batchSize: 28,
+            metricName: 'render:item-catalog'
+        });
+    } else {
+        container.innerHTML = filteredItems.map(renderCatalogItem).join('');
+    }
 }
 
 function selectInventoryItem(itemId) {

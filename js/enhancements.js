@@ -510,6 +510,21 @@ function reloadCharacterSheetsFromStorage() {
     return cloneEnhancementData(characterSheets);
 }
 
+function reloadCampaignEnhancementData() {
+    reloadCharacterSheetsFromStorage();
+    customLibrary = readEnhancementData(CUSTOM_LIBRARY_KEY, {
+        items: [],
+        abilities: [],
+        monsters: []
+    });
+    return {
+        characterSheets: characterSheets.length,
+        customItems: customLibrary.items?.length || 0,
+        customAbilities: customLibrary.abilities?.length || 0,
+        customMonsters: customLibrary.monsters?.length || 0
+    };
+}
+
 function getSheetResourceCurrent(sheet, currentKey, maximum) {
     if (sheet.resourceStateSaved !== true) return maximum;
 
@@ -1626,12 +1641,22 @@ function saveCustomContent(type, id) {
         return;
     }
 
+    const iconInput = document.getElementById('contentIcon')?.value.trim()
+        || (type === 'item' ? '🎒' : '✨');
+    const hasUrlScheme = /^[a-z][a-z\d+.-]*:/i.test(iconInput);
+    const isImageReference = window.isAppImageReference?.(iconInput) || hasUrlScheme;
+
+    if (isImageReference && !window.getSafeAppImageUrl?.(iconInput)) {
+        showToast('Use uma imagem HTTPS válida ou um caminho local do aplicativo.');
+        return;
+    }
+
     const collection = getCustomCollection(type);
     const existingIndex = collection.findIndex(entry => entry.id === id);
     const common = {
         id: id || makeContentId(type, name),
         name,
-        icon: document.getElementById('contentIcon')?.value.trim() || (type === 'item' ? '🎒' : '✨'),
+        icon: iconInput,
         description: document.getElementById('contentDescription')?.value.trim() || ''
     };
     let content;
@@ -1996,6 +2021,32 @@ function requestCompleteApplicationReset() {
     });
 }
 
+function formatApplicationStorageSize(bytes) {
+    const value = Math.max(0, Number(bytes) || 0);
+    if (value < 1024) return `${value} B`;
+    if (value < 1024 * 1024) return `${(value / 1024).toFixed(1)} KB`;
+    return `${(value / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+async function refreshCampaignStorageStatus() {
+    const target = document.getElementById('campaignStorageStatus');
+    if (!target) return;
+    await window.campaignStore?.whenDurableReady?.();
+    const status = window.campaignStore?.getStorageStatus?.() || {};
+    const estimate = await window.campaignDatabase?.estimateStorage?.();
+    const storageLabel = status.ready && status.durableHydrated
+        ? 'Armazenamento robusto ativo'
+        : 'Armazenamento de compatibilidade ativo';
+    const usageLabel = estimate?.quota
+        ? `${formatApplicationStorageSize(estimate.usage)} de ${formatApplicationStorageSize(estimate.quota)} usados`
+        : 'Espaço disponível não informado pelo dispositivo';
+    const recoveryLabel = status.recoveredCampaignIds?.length
+        ? ` · ${status.recoveredCampaignIds.length} campanha(s) recuperada(s)`
+        : '';
+    target.textContent = `${storageLabel} · ${usageLabel}${recoveryLabel}`;
+    target.dataset.state = status.failed ? 'warning' : 'ready';
+}
+
 async function executeCompleteApplicationReset() {
     closeSessionTools();
     showToast('↻ Restaurando aplicativo...');
@@ -2024,6 +2075,7 @@ function renderAppMaintenanceView(dialog) {
         </section>
         <section class="app-maintenance-section">
             <h3>Dados e preferências</h3>
+            <p id="campaignStorageStatus" class="enhancement-note">Verificando armazenamento das campanhas...</p>
             <button type="button" class="session-secondary session-full" onclick="exportSessionBackup()">⇩ Baixar backup completo</button>
             <small>Inclui combate, histórico, fichas, biblioteca, encontros e preferências.</small>
             <button type="button" class="session-secondary session-full enhancement-top-gap" onclick="restoreDefaultAppPreferences()">Restaurar preferências</button>
@@ -2033,6 +2085,7 @@ function renderAppMaintenanceView(dialog) {
         </section>
         <button type="button" class="session-secondary session-full enhancement-top-gap" onclick="renderSessionToolsView('install')">Voltar</button>
     `;
+    void refreshCampaignStorageStatus();
 }
 
 function applyPreferences() {
@@ -2275,6 +2328,7 @@ window.undoLastCharacterLevelUp = undoLastCharacterLevelUp;
 window.addFullCharacterDraftToCombat = addFullCharacterDraftToCombat;
 window.getCharacterSheetForEditing = id => characterSheets.find(sheet => sheet.id === id) || null;
 window.reloadCharacterSheetsFromStorage = reloadCharacterSheetsFromStorage;
+window.reloadCampaignEnhancementData = reloadCampaignEnhancementData;
 window.openCharacterSheetEditor = openCharacterSheetEditor;
 window.saveCharacterSheet = saveCharacterSheet;
 window.activateCharacterSheet = activateCharacterSheet;

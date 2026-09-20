@@ -12,7 +12,6 @@
     <meta name="theme-color" content="#0f172a">
     <link rel="apple-touch-icon" href="image.png">
     <link rel="stylesheet" href="tailwind-static.css">
-    <link rel="stylesheet" href="vendor/leaflet/leaflet.css">
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="zoom-lock.css">
     <link rel="stylesheet" href="mobile.css">
@@ -29,6 +28,7 @@
     <link rel="stylesheet" href="campaign-clock.css">
     <link rel="stylesheet" href="collaboration.css">
     <link rel="stylesheet" href="world-map.css">
+    <link rel="stylesheet" href="app-shell.css">
 
 </head>
 
@@ -58,7 +58,7 @@
 
 <div id="appWrapper">
 
-    <section id="combatScreen">
+    <section id="combatScreen" aria-hidden="false">
 
     <div id="toast">🧠 Teste de Concentração!</div>
 
@@ -165,7 +165,7 @@
 
 </section>
 
-<section id="inventoryScreen">
+<section id="inventoryScreen" hidden inert aria-hidden="true">
 
     <div class="inventory-toolbar">
 
@@ -310,7 +310,7 @@
 
 </section>
 
-<section id="abilitiesScreen">
+<section id="abilitiesScreen" hidden inert aria-hidden="true">
 
     <!-- HEADER -->
     <div class="abilities-header">
@@ -445,6 +445,7 @@
     <script src="js/world/world-history-data.js"></script>
     <script src="js/world/world-feature-loader.js"></script>
     <script src="js/campaign/campaign-migrations.js"></script>
+    <script src="js/campaign/campaign-database.js"></script>
     <script src="js/campaign/campaign-store.js"></script>
     <script src="js/world/world-store.js"></script>
     <script src="js/collaboration/cloud-account.js"></script>
@@ -454,6 +455,7 @@
 
     <script src="js/core/toast.js"></script>
     <script src="js/core/helpers.js"></script>
+    <script src="js/core/performance.js"></script>
     <script src="professional-skills-descriptions.js"></script>
     <script src="js/professional-skills-data.js"></script>
     <script src="js/character-sheet-model.js"></script>

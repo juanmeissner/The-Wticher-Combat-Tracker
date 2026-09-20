@@ -205,8 +205,8 @@
 
     function renderItemIcon(item) {
         const icon = String(item?.icon || '📦');
-        return /^https?:\/\//i.test(icon)
-            ? `<img src="${escapeHtml(icon)}" alt="" loading="lazy">`
+        return root.isAppImageReference?.(icon)
+            ? (root.renderAppImage?.(icon, { alt: '', fallback: 'image.png' }) || '<span aria-hidden="true">📦</span>')
             : `<span aria-hidden="true">${escapeHtml(icon)}</span>`;
     }
 

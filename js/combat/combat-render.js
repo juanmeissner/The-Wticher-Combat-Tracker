@@ -1,5 +1,38 @@
     let expandedCombatantDetailsId = null;
     let combatViewportRestoreRevision = 0;
+    const combatantRenderRevisions = new Map();
+    let combatRenderRevision = 0;
+
+    function invalidateCombatantRender(combatantId) {
+        const key = String(combatantId ?? '');
+        if (!key) return false;
+        combatantRenderRevisions.set(key, (combatantRenderRevisions.get(key) || 0) + 1);
+        return true;
+    }
+
+    function invalidateAllCombatantRenders() {
+        combatRenderRevision += 1;
+        return combatRenderRevision;
+    }
+
+    function getCombatantRenderSignature(combatant, isEliminated) {
+        const id = String(combatant?.id ?? '');
+        try {
+            return JSON.stringify({
+                combatant,
+                selected: String(selectedId ?? '') === id,
+                active: String(activeTurnId ?? '') === id,
+                deleteVisible: String(deleteVisibleId ?? '') === id,
+                eliminated: Boolean(isEliminated),
+                panelMode: getCombatPanelsMode(),
+                detailsExpanded: isCombatantDetailsExpanded(id),
+                cardRevision: combatantRenderRevisions.get(id) || 0,
+                globalRevision: combatRenderRevision
+            });
+        } catch {
+            return `${id}:${Date.now()}:${combatRenderRevision}`;
+        }
+    }
 
     function getCombatPanelsMode() {
         if (typeof appPreferences !== 'undefined') {
@@ -130,21 +163,20 @@
         return node?.dataset?.combatListKey || '';
     }
 
-    function reconcileCombatList(container, fragment) {
-        const nextNodes = Array.from(fragment.children);
-
+    function reconcileCombatList(container, nextNodes) {
         nextNodes.forEach((nextNode, index) => {
             const key = getCombatListNodeKey(nextNode);
             const currentNode = container.children[index] || null;
 
+            if (currentNode === nextNode) return;
             if (currentNode && getCombatListNodeKey(currentNode) === key) {
-                if (!currentNode.isEqualNode(nextNode)) container.replaceChild(nextNode, currentNode);
+                container.replaceChild(nextNode, currentNode);
                 return;
             }
 
             const matchingNode = Array.from(container.children)
                 .slice(index + 1)
-                .find(node => getCombatListNodeKey(node) === key && node.isEqualNode(nextNode));
+                .find(node => node === nextNode);
 
             container.insertBefore(matchingNode || nextNode, currentNode);
         });
@@ -184,8 +216,146 @@
         if (activeElement.closest?.('.combat-subpanel-header')) activeElement.blur?.();
     }
 
+    const combatPanelDefinitions = [
+        { key: 'mount', selector: '.combat-mount-panel', render: combatant => window.renderCombatantMountPanel?.(combatant) || '' },
+        { key: 'equipment', selector: '.combat-equipment-panel', render: combatant => window.renderCombatantEquipmentPanel?.(combatant) || '' },
+        { key: 'resources', selector: '.character-resources-panel', render: combatant => window.renderCharacterResourcesPanel?.(combatant) || '' },
+        { key: 'effects', selector: '.combat-effects-panel', render: combatant => renderCombatantEffectsPanel(combatant) },
+        { key: 'monster-actions', selector: '.monster-actions-panel', render: combatant => window.renderMonsterActionsPanel?.(combatant) || '' },
+        { key: 'monster-abilities', selector: '.monster-abilities-panel', render: combatant => window.renderMonsterAbilitiesPanel?.(combatant) || '' },
+        { key: 'monster-skills', selector: '.monster-skills-panel', render: combatant => window.renderMonsterSkillsPanel?.(combatant) || '' },
+        { key: 'skills', selector: '.character-skills-panel', render: combatant => window.renderCharacterSkillsPanel?.(combatant) || '' },
+        { key: 'professional-skills', selector: '.character-professional-panel', render: combatant => window.renderCharacterProfessionalSkillsPanel?.(combatant) || '' },
+        { key: 'spells', selector: '.character-spells-panel', render: combatant => window.renderCharacterSpellsPanel?.(combatant) || '' },
+        { key: 'critical-wounds', selector: '.critical-wounds-panel', render: combatant => window.renderCombatantCriticalWoundsPanel?.(combatant) || '' },
+        { key: 'consequences', selector: '.combat-consequences-panel', render: combatant => window.renderCombatantCombatConsequencesPanel?.(combatant) || '' },
+        { key: 'loot', selector: '.monster-loot-panel', render: combatant => window.renderCombatantLootPanel?.(combatant) || '' }
+    ];
+
+    let combatPanelRefreshRevision = 0;
+
+    function getCombatPanelDefinition(panelKey) {
+        return combatPanelDefinitions.find(definition => definition.key === String(panelKey || '')) || null;
+    }
+
+    function renderCombatantSubpanelsHtml(combatant) {
+        if (!combatant || !isCombatantDetailsExpanded(combatant.id)) return '';
+        return combatPanelDefinitions.map(definition => definition.render(combatant)).join('');
+    }
+
+    function getCombatPanelScrollHost(element) {
+        let parent = element?.parentElement || null;
+        while (parent && parent !== document.body && parent !== document.documentElement) {
+            const style = typeof getComputedStyle === 'function' ? getComputedStyle(parent) : null;
+            const overflowY = style?.overflowY || '';
+            if (/(auto|scroll|overlay)/.test(overflowY) && parent.scrollHeight > parent.clientHeight) return parent;
+            parent = parent.parentElement;
+        }
+        return document.scrollingElement || document.documentElement;
+    }
+
+    function captureCombatPanelFocus(panel) {
+        const activeElement = document.activeElement;
+        if (!activeElement || !panel?.contains(activeElement)) return null;
+
+        if (activeElement.classList?.contains('combat-subpanel-header')) {
+            return { selector: '.combat-subpanel-header' };
+        }
+
+        if (activeElement.matches?.('input[type="search"]')) {
+            return {
+                selector: 'input[type="search"]',
+                selectionStart: activeElement.selectionStart,
+                selectionEnd: activeElement.selectionEnd
+            };
+        }
+
+        const ariaLabel = activeElement.getAttribute?.('aria-label');
+        if (!ariaLabel) return null;
+        const escapedLabel = String(ariaLabel).replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+        return { selector: `[aria-label="${escapedLabel}"]` };
+    }
+
+    function restoreCombatPanelFocus(panel, focusState) {
+        if (!panel || !focusState) return;
+        const target = panel.querySelector(focusState.selector);
+        if (!target) return;
+        try {
+            target.focus({ preventScroll: true });
+        } catch {
+            target.focus?.();
+        }
+        if (
+            Number.isInteger(focusState.selectionStart)
+            && Number.isInteger(focusState.selectionEnd)
+            && typeof target.setSelectionRange === 'function'
+        ) {
+            target.setSelectionRange(focusState.selectionStart, focusState.selectionEnd);
+        }
+    }
+
+    function refreshCombatantPanel(combatantId, panelKey) {
+        const refreshStartedAt = window.appPerformance ? performance.now() : 0;
+        const id = String(combatantId ?? '');
+        const definition = getCombatPanelDefinition(panelKey);
+        const combatant = combatants.find(entry => String(entry.id) === id);
+        const card = document.getElementById(`card-${id}`);
+        const wrapper = card?.closest?.('.combat-wrapper');
+        const currentPanel = wrapper?.querySelector?.(definition?.selector || '');
+
+        if (!definition || !combatant || !wrapper || !currentPanel || !isCombatantDetailsExpanded(id)) return false;
+
+        const nextMarkup = definition.render(combatant).trim();
+        if (!nextMarkup) return false;
+
+        const template = document.createElement('template');
+        template.innerHTML = nextMarkup;
+        const nextPanel = template.content.firstElementChild;
+        if (!nextPanel) return false;
+
+        const header = currentPanel.querySelector('.combat-subpanel-header') || currentPanel;
+        const focusState = captureCombatPanelFocus(currentPanel);
+        const scrollHost = getCombatPanelScrollHost(header);
+        const anchorTop = header.getBoundingClientRect().top;
+        const refreshRevision = ++combatPanelRefreshRevision;
+
+        currentPanel.replaceWith(nextPanel);
+
+        const nextHeader = nextPanel.querySelector('.combat-subpanel-header') || nextPanel;
+        const keepAnchorStable = () => {
+            if (!nextHeader.isConnected) return;
+            const delta = nextHeader.getBoundingClientRect().top - anchorTop;
+            if (Math.abs(delta) < 0.25) return;
+            if (scrollHost === document.scrollingElement || scrollHost === document.documentElement || scrollHost === document.body) {
+                window.scrollBy(0, delta);
+            } else {
+                scrollHost.scrollTop += delta;
+            }
+        };
+
+        keepAnchorStable();
+        restoreCombatPanelFocus(nextPanel, focusState);
+
+        if (typeof requestAnimationFrame === 'function') {
+            requestAnimationFrame(() => {
+                if (refreshRevision !== combatPanelRefreshRevision) return;
+                keepAnchorStable();
+            });
+        }
+
+        if (window.appPerformance) {
+            window.appPerformance.record('render:combat-panel', performance.now() - refreshStartedAt, {
+                combatantId: id,
+                panel: definition.key
+            });
+        }
+        return true;
+    }
+
     function renderList(shouldScroll = false) {
+        const renderStartedAt = window.appPerformance ? performance.now() : 0;
         const container = document.getElementById('combatList');
+        if (!container) return;
         const preservedViewport = captureCombatListViewport(container, shouldScroll);
         const viewportRestoreRevision = ++combatViewportRestoreRevision;
         releaseCombatPanelFocus(container, shouldScroll);
@@ -203,7 +373,10 @@
             return;
         }
 
-        const fragment = document.createDocumentFragment();
+        const nextNodes = [];
+        const existingNodes = new Map(Array.from(container.children)
+            .map(node => [getCombatListNodeKey(node), node])
+            .filter(([key]) => Boolean(key)));
         let printedDivider = false;
         const combatantsForDisplay = orderCombatantsForDisplay(combatants);
 
@@ -223,11 +396,19 @@
                     </span>
                     <div class="h-px bg-slate-700 flex-1"></div>
                 `;
-                fragment.appendChild(divider);
+                nextNodes.push(divider);
                 printedDivider = true;
             }
 
             if (isEliminated && !showEliminated) return; 
+
+            const combatListKey = `combatant-${c.id}`;
+            const renderSignature = getCombatantRenderSignature(c, isEliminated);
+            const existingWrapper = existingNodes.get(combatListKey);
+            if (existingWrapper?.dataset?.combatRenderSignature === renderSignature) {
+                nextNodes.push(existingWrapper);
+                return;
+            }
 
             const card = document.createElement('div');
             card.id = `card-${c.id}`;
@@ -478,43 +659,17 @@
             const wrapper = document.createElement('div');
 
             wrapper.className = "combat-wrapper";
-            wrapper.dataset.combatListKey = `combatant-${c.id}`;
+            wrapper.dataset.combatListKey = combatListKey;
+            wrapper.dataset.combatRenderSignature = renderSignature;
             
             wrapper.appendChild(card);
 
-            const showCombatantPanels = isCombatantDetailsExpanded(c.id);
-            const equipmentPanelHtml = showCombatantPanels ? window.renderCombatantEquipmentPanel?.(c) || '' : '';
-            const mountPanelHtml = showCombatantPanels ? window.renderCombatantMountPanel?.(c) || '' : '';
-            const characterResourcesPanelHtml = showCombatantPanels ? window.renderCharacterResourcesPanel?.(c) || '' : '';
-            const activeEffectsPanelHtml = showCombatantPanels ? renderCombatantEffectsPanel(c) : '';
-            const monsterActionsPanelHtml = showCombatantPanels ? window.renderMonsterActionsPanel?.(c) || '' : '';
-            const monsterAbilitiesPanelHtml = showCombatantPanels ? window.renderMonsterAbilitiesPanel?.(c) || '' : '';
-            const monsterSkillsPanelHtml = showCombatantPanels ? window.renderMonsterSkillsPanel?.(c) || '' : '';
-            const characterSkillsPanelHtml = showCombatantPanels ? window.renderCharacterSkillsPanel?.(c) || '' : '';
-            const characterProfessionalPanelHtml = showCombatantPanels ? window.renderCharacterProfessionalSkillsPanel?.(c) || '' : '';
-            const characterSpellsPanelHtml = showCombatantPanels ? window.renderCharacterSpellsPanel?.(c) || '' : '';
-            const criticalWoundsPanelHtml = showCombatantPanels ? window.renderCombatantCriticalWoundsPanel?.(c) || '' : '';
-            const combatConsequencesPanelHtml = showCombatantPanels ? window.renderCombatantCombatConsequencesPanel?.(c) || '' : '';
-            const monsterLootPanelHtml = showCombatantPanels ? window.renderCombatantLootPanel?.(c) || '' : '';
+            const combatantSubpanelsHtml = renderCombatantSubpanelsHtml(c);
 
-            if (
-                equipmentPanelHtml ||
-                mountPanelHtml ||
-                characterResourcesPanelHtml ||
-                activeEffectsPanelHtml ||
-                monsterActionsPanelHtml ||
-                monsterAbilitiesPanelHtml ||
-                monsterSkillsPanelHtml ||
-                characterSkillsPanelHtml ||
-                characterProfessionalPanelHtml ||
-                characterSpellsPanelHtml ||
-                criticalWoundsPanelHtml ||
-                combatConsequencesPanelHtml ||
-                monsterLootPanelHtml
-            ) {
+            if (combatantSubpanelsHtml) {
                 const subpanels = document.createElement('div');
                 subpanels.className = 'combat-subpanels';
-                subpanels.innerHTML = `${mountPanelHtml}${equipmentPanelHtml}${characterResourcesPanelHtml}${activeEffectsPanelHtml}${monsterActionsPanelHtml}${monsterAbilitiesPanelHtml}${monsterSkillsPanelHtml}${characterSkillsPanelHtml}${characterProfessionalPanelHtml}${characterSpellsPanelHtml}${criticalWoundsPanelHtml}${combatConsequencesPanelHtml}${monsterLootPanelHtml}`;
+                subpanels.innerHTML = combatantSubpanelsHtml;
                 wrapper.appendChild(subpanels);
             }
 
@@ -531,10 +686,10 @@
                 renderList(false);
             });
             
-            fragment.appendChild(wrapper);
+            nextNodes.push(wrapper);
         });
 
-        reconcileCombatList(container, fragment);
+        reconcileCombatList(container, nextNodes);
         restoreCombatListViewport(container, preservedViewport);
         if (preservedViewport && typeof requestAnimationFrame === 'function') {
             requestAnimationFrame(() => {
@@ -546,6 +701,12 @@
         if (shouldScroll) {
             const activeCard = container.querySelector('.active-turn');
             if (activeCard) activeCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+        if (window.appPerformance) {
+            window.appPerformance.record('render:combat-list', performance.now() - renderStartedAt, {
+                combatants: combatantsForDisplay.length,
+                reused: nextNodes.filter(node => existingNodes.get(getCombatListNodeKey(node)) === node).length
+            });
         }
     }
 
@@ -647,9 +808,13 @@
 
             ${
                 data.icon
-                    ? data.icon.startsWith('http')
-                        ? `<img src="${data.icon}" class="w-8 h-8 object-contain">`
-                        : data.icon
+                    ? window.isAppImageReference?.(data.icon)
+                        ? (window.renderAppImage?.(data.icon, {
+                            className: 'w-8 h-8 object-contain',
+                            alt: '',
+                            fallback: 'image.png'
+                        }) || '?')
+                        : (window.escapeAppMediaHtml?.(data.icon) || '?')
                     : '?'
             }
 
@@ -1092,7 +1257,10 @@
         const key = decodeURIComponent(String(encodedCombatantId));
         if (expandedEffectPanelIds.has(key)) expandedEffectPanelIds.delete(key);
         else expandedEffectPanelIds.add(key);
-        renderList(false);
+        if (!refreshCombatantPanel(key, 'effects')) {
+            invalidateCombatantRender(key);
+            renderList(false);
+        }
     }
     
     window.toggleEffects = toggleEffects;
@@ -1295,6 +1463,7 @@
         }
 
         window.renderList = renderList;
+        window.refreshCombatantPanel = refreshCombatantPanel;
         window.updateCardTargeted = updateCardTargeted;
         window.selectCombatant = selectCombatant;
         window.renderCombatantEffectsPanel = renderCombatantEffectsPanel;
@@ -1344,3 +1513,5 @@
         
         window.selectEffect = selectEffect;
         window.updateActiveTurnName = updateActiveTurnName;
+        window.invalidateCombatantRender = invalidateCombatantRender;
+        window.invalidateAllCombatantRenders = invalidateAllCombatantRenders;

@@ -1,0 +1,21 @@
+#appWrapper {
+    display: block;
+    width: 100%;
+    transform: none !important;
+    transition: none;
+}
+
+#combatScreen,
+#inventoryScreen,
+#abilitiesScreen {
+    width: 100%;
+}
+
+#appWrapper > [hidden] {
+    display: none !important;
+}
+
+.app-image-unavailable {
+    object-fit: contain;
+    opacity: .55;
+}

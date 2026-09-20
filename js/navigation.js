@@ -11,16 +11,25 @@ function updateNavigation() {
 
     if (!appWrapper) return;
 
-    appWrapper.style.transform =
-        `translateX(-${navigationScreenIndex * 100}vw)`;
-
     const activeScreen = NAVIGATION_SCREENS[navigationScreenIndex];
+    appWrapper.style.transform = 'none';
+    appWrapper.dataset.activeScreen = activeScreen;
+
+    NAVIGATION_SCREENS.forEach(screenId => {
+        const screen = document.getElementById(screenId);
+        if (!screen) return;
+
+        const isActive = screenId === activeScreen;
+        screen.hidden = !isActive;
+        screen.inert = !isActive;
+        screen.setAttribute('aria-hidden', String(!isActive));
+    });
 
     document.querySelectorAll('[data-screen]').forEach(button => {
-        button.classList.toggle(
-            'active',
-            button.dataset.screen === activeScreen
-        );
+        const isActive = button.dataset.screen === activeScreen;
+        button.classList.toggle('active', isActive);
+        if (isActive) button.setAttribute('aria-current', 'page');
+        else button.removeAttribute('aria-current');
     });
 }
 
@@ -38,3 +47,5 @@ function showSection(sectionId) {
 }
 
 window.showSection = showSection;
+
+updateNavigation();

@@ -492,7 +492,8 @@ function applyRemoteCampaignView(campaign) {
     if (typeof loadInventory === 'function') loadInventory();
     if (typeof loadAbilities === 'function') loadAbilities();
     expandedMagic = Math.max(0, Number(localStorage.getItem('expandedMagic')) || 0);
-    window.reloadCharacterSheetsFromStorage?.();
+    if (window.reloadCampaignEnhancementData) window.reloadCampaignEnhancementData();
+    else window.reloadCharacterSheetsFromStorage?.();
     window.initializeCharacterCollections?.({ inventory, abilities: abilitiesInventory, expandedMagic });
     if (campaign.state?.campaignClock) window.campaignClock?.restoreSnapshot?.(campaign.state.campaignClock);
 
@@ -2506,14 +2507,17 @@ function deleteSavedEncounter(id) {
     });
 }
 
-function exportSessionBackup() {
+async function exportSessionBackup() {
+    const appStorage = await window.getCompleteApplicationStorageSnapshot?.()
+        || window.getApplicationStorageSnapshot?.()
+        || {};
     const backup = {
-        version: 4,
+        version: 5,
         exportedAt: new Date().toISOString(),
         session: captureSessionState(),
         history: sessionHistory,
         encounters: loadSessionData(SAVED_ENCOUNTERS_KEY, []),
-        appStorage: window.getApplicationStorageSnapshot?.() || {}
+        appStorage
     };
     const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
@@ -2550,8 +2554,12 @@ async function importSessionBackup(event) {
                 : 'O combate, inventário e habilidades atuais serão substituídos. Você poderá desfazer esta restauração.',
             confirmLabel: 'Restaurar',
             danger: true,
-            onConfirm: () => {
-                if (hasCompleteAppBackup && window.restoreApplicationStorageSnapshot?.(backup.appStorage)) {
+            onConfirm: async () => {
+                const restoredCompleteBackup = hasCompleteAppBackup
+                    ? await (window.restoreCompleteApplicationStorageSnapshot?.(backup.appStorage)
+                        ?? window.restoreApplicationStorageSnapshot?.(backup.appStorage))
+                    : false;
+                if (restoredCompleteBackup) {
                     closeSessionTools();
                     showToast('⇧ Backup completo restaurado. Reabrindo aplicativo...');
                     window.setTimeout(() => window.location.reload(), 250);

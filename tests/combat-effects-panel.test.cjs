@@ -59,7 +59,12 @@ assert.match(selectedEffectPanel, /decreaseEffectTurn/);
 assert.match(selectedEffectPanel, /increaseEffectStack/);
 
 assert.equal(context.renderCombatantEffectsPanel({ ...combatant, effects: [] }), '');
-assert.match(renderSource, /activeEffectsPanelHtml/);
+assert.match(renderSource, /key: 'effects', selector: '\.combat-effects-panel'/);
+assert.match(renderSource, /function refreshCombatantPanel/);
+assert.match(renderSource, /currentPanel\.replaceWith\(nextPanel\)/);
+assert.match(renderSource, /restoreCombatPanelFocus\(nextPanel, focusState\)/);
+assert.match(renderSource, /keepAnchorStable\(\)/);
+assert.match(equipmentCss, /\.combat-subpanels\s*\{[\s\S]*?overflow-anchor:\s*none;/);
 assert.doesNotMatch(renderSource, /expandedEffectsCombatantId/);
 assert.match(equipmentCss, /combat-effects-panel/);
 assert.match(equipmentCss, /combat-effects-header/);

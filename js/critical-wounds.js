@@ -1797,7 +1797,10 @@ function toggleCriticalWoundsPanel(combatantId) {
     const key = String(combatantId);
     if (expandedCriticalWoundPanels.has(key)) expandedCriticalWoundPanels.delete(key);
     else expandedCriticalWoundPanels.add(key);
-    renderList(false);
+    if (!window.refreshCombatantPanel?.(key, 'critical-wounds')) {
+        window.invalidateCombatantRender?.(key);
+        renderList(false);
+    }
 }
 
 function applyCriticalWoundStateChange(target, instance, wound, nextState) {
@@ -2299,7 +2302,10 @@ function toggleCombatConsequencesPanel(combatantId) {
     const key = String(combatantId);
     if (expandedCombatConsequencePanels.has(key)) expandedCombatConsequencePanels.delete(key);
     else expandedCombatConsequencePanels.add(key);
-    renderList(false);
+    if (!window.refreshCombatantPanel?.(key, 'consequences')) {
+        window.invalidateCombatantRender?.(key);
+        renderList(false);
+    }
 }
 
 function resolveCombatConsequence(combatantId, consequenceId) {

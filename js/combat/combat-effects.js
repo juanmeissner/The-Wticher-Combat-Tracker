@@ -108,9 +108,13 @@ function showEffectList(type) {
 
                         ${
                             effect.icon
-                                ? effect.icon.startsWith('http')
-                                    ? `<img src="${effect.icon}" class="w-10 h-10 object-contain">`
-                                    : effect.icon
+                                ? window.isAppImageReference?.(effect.icon)
+                                    ? (window.renderAppImage?.(effect.icon, {
+                                        className: 'w-10 h-10 object-contain',
+                                        alt: '',
+                                        fallback: 'image.png'
+                                    }) || '✨')
+                                    : (window.escapeAppMediaHtml?.(effect.icon) || '✨')
                                 : '✨'
                         }
 

@@ -55,6 +55,15 @@ function getApplicationStorageSnapshot() {
     return snapshot;
 }
 
+async function getCompleteApplicationStorageSnapshot() {
+    await window.campaignStore?.flushDurableStorage?.();
+    return {
+        version: 2,
+        localStorage: getApplicationStorageSnapshot(),
+        campaignDatabase: await window.campaignDatabase?.exportSnapshot?.() || null
+    };
+}
+
 function clearApplicationStorage() {
     Object.keys(getApplicationStorageSnapshot()).forEach(key => localStorage.removeItem(key));
     APP_SENSITIVE_STORAGE_KEYS.forEach(key => localStorage.removeItem(key));
@@ -71,6 +80,20 @@ function restoreApplicationStorageSnapshot(snapshot) {
         }
     });
 
+    return true;
+}
+
+async function restoreCompleteApplicationStorageSnapshot(snapshot) {
+    if (!snapshot || typeof snapshot !== 'object' || Array.isArray(snapshot)) return false;
+    if (Number(snapshot.version) < 2 || !snapshot.localStorage) {
+        return restoreApplicationStorageSnapshot(snapshot);
+    }
+
+    const restored = restoreApplicationStorageSnapshot(snapshot.localStorage);
+    if (!restored) return false;
+    if (snapshot.campaignDatabase) {
+        await window.campaignDatabase?.importSnapshot?.(snapshot.campaignDatabase, { replace: true });
+    }
     return true;
 }
 
@@ -172,12 +195,15 @@ async function repairApplicationCache() {
 
 async function resetApplicationCompletely() {
     clearApplicationStorage();
+    await window.campaignDatabase?.clear?.();
     await clearApplicationCaches();
     await unregisterApplicationWorkers();
 }
 
 window.getApplicationStorageSnapshot = getApplicationStorageSnapshot;
+window.getCompleteApplicationStorageSnapshot = getCompleteApplicationStorageSnapshot;
 window.restoreApplicationStorageSnapshot = restoreApplicationStorageSnapshot;
+window.restoreCompleteApplicationStorageSnapshot = restoreCompleteApplicationStorageSnapshot;
 window.clearApplicationCaches = clearApplicationCaches;
 window.updateApplicationNow = updateApplicationNow;
 window.repairApplicationCache = repairApplicationCache;
@@ -196,4 +222,12 @@ window.addEventListener('load', () => {
     });
 
     void registerApplicationServiceWorker();
+});
+
+window.addEventListener('campaign-storage:warning', event => {
+    const reason = event.detail?.reason;
+    const message = reason === 'quota-exceeded'
+        ? 'O armazenamento deste dispositivo está cheio. Exporte um backup antes de continuar.'
+        : 'O armazenamento do dispositivo está quase cheio. Considere exportar um backup.';
+    window.showToast?.(`⚠️ ${message}`);
 });

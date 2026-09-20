@@ -1603,35 +1603,48 @@ function toggleEquipmentPanel(combatantId) {
     const key = String(combatantId);
     if (collapsedEquipmentPanels.has(key)) collapsedEquipmentPanels.delete(key);
     else collapsedEquipmentPanels.add(key);
-    renderList(false);
+    if (!window.refreshCombatantPanel?.(key, 'equipment')) {
+        window.invalidateCombatantRender?.(key);
+        renderList(false);
+    }
 }
 
 function toggleMonsterActionsPanel(combatantId) {
     const key = String(combatantId);
     if (collapsedMonsterActionPanels.has(key)) collapsedMonsterActionPanels.delete(key);
     else collapsedMonsterActionPanels.add(key);
-    renderList(false);
+    if (!window.refreshCombatantPanel?.(key, 'monster-actions')) {
+        window.invalidateCombatantRender?.(key);
+        renderList(false);
+    }
 }
 
 function toggleMonsterAbilitiesPanel(combatantId) {
     const key = String(combatantId);
     if (expandedMonsterAbilityPanels.has(key)) expandedMonsterAbilityPanels.delete(key);
     else expandedMonsterAbilityPanels.add(key);
-    renderList(false);
+    if (!window.refreshCombatantPanel?.(key, 'monster-abilities')) {
+        window.invalidateCombatantRender?.(key);
+        renderList(false);
+    }
 }
 
 function toggleMonsterSkillsPanel(combatantId) {
     const key = String(combatantId);
     if (expandedMonsterSkillPanels.has(key)) expandedMonsterSkillPanels.delete(key);
     else expandedMonsterSkillPanels.add(key);
-    renderList(false);
+    if (!window.refreshCombatantPanel?.(key, 'monster-skills')) {
+        window.invalidateCombatantRender?.(key);
+        renderList(false);
+    }
 }
 
 function renderEquipmentIcon(item, className = '') {
     const icon = String(item?.icon || '⚔️');
-    const isImage = icon.startsWith('http') || /\.(png|jpe?g|webp|svg)$/i.test(icon);
+    const isImage = window.isAppImageReference?.(icon) || false;
     return isImage
-        ? `<img src="${escapeEquipmentHtml(icon)}" alt="" class="${className}" draggable="false">`
+        ? (window.renderAppImage?.(icon, { className, alt: '', fallback: 'image.png' })
+            || `<span class="${escapeEquipmentHtml(className)}" aria-hidden="true">⚔️</span>`)
         : `<span class="${className}">${escapeEquipmentHtml(icon)}</span>`;
 }
 
