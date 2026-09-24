@@ -8,6 +8,8 @@
     const SESSION_KEY = 'dnd_cloud_account_session_v1';
     const REFRESH_INTERVAL_MS = 30_000;
     let accountSession = readSession();
+    let firebaseUser = null;
+    let remoteUser = null;
     let campaigns = [];
     let formMode = 'login';
     let loading = false;
@@ -40,20 +42,35 @@
             || 'https://witcher-combat-collaboration.juanmeissnerf.workers.dev';
     }
 
+    function isFirebaseAuthenticated() {
+        return Boolean(firebaseUser?.uid && firebaseUser?.emailVerified && root?.firebaseAuthClient?.getIdToken);
+    }
+
+    function isAuthenticated() {
+        return isFirebaseAuthenticated() || Boolean(accountSession?.token);
+    }
+
+    async function getBearerToken() {
+        if (isFirebaseAuthenticated()) return root.firebaseAuthClient.getIdToken();
+        return String(accountSession?.token || '');
+    }
+
     async function request(path, options = {}) {
+        const bearerToken = await getBearerToken();
         const response = await root.fetch(`${getEndpoint()}${path}`, {
             method: options.method || 'GET',
             headers: {
                 'content-type': 'application/json',
-                ...(accountSession?.token ? { authorization: `Bearer ${accountSession.token}` } : {})
+                ...(bearerToken ? { authorization: `Bearer ${bearerToken}` } : {})
             },
             body: options.body === undefined ? undefined : JSON.stringify(options.body)
         });
         let result = {};
         try { result = await response.json(); } catch { result = {}; }
         if (!response.ok) {
-            if (response.status === 401) {
+            if (response.status === 401 && !isFirebaseAuthenticated()) {
                 persistSession(null);
+                remoteUser = null;
                 campaigns = [];
             }
             const error = new Error(result.message || `Falha de conexão (${response.status}).`);
@@ -75,7 +92,8 @@
     }
 
     function getPanelMarkup() {
-        return '<section id="cloudAccountPanel" class="cloud-account-panel" aria-live="polite"></section>';
+        const open = isAuthenticated() ? ' open' : '';
+        return `<details class="cloud-account-legacy"${open}><summary>${isFirebaseAuthenticated() ? 'Campanhas permanentes da conta' : 'Acesso legado às campanhas Cloudflare'}</summary><section id="cloudAccountPanel" class="cloud-account-panel" aria-live="polite"></section></details>`;
     }
 
     function renderCampaigns() {
@@ -97,9 +115,10 @@
     }
 
     function renderAuthenticated() {
+        const connectedUser = remoteUser || firebaseUser || accountSession?.user || {};
         return `
             <div class="cloud-account-heading">
-                <div><span>☁️</span><strong>Campanhas na nuvem</strong><small>${escapeHtml(accountSession.user?.displayName || accountSession.user?.username || 'Conta conectada')}</small></div>
+                <div><span>☁️</span><strong>Campanhas na nuvem</strong><small>${escapeHtml(connectedUser.displayName || connectedUser.email || connectedUser.username || 'Conta conectada')}</small></div>
                 <button type="button" class="session-small-button" onclick="logoutCloudAccount()" ${loading ? 'disabled' : ''}>Sair</button>
             </div>
             <p class="cloud-account-copy">Salve cópias privadas das suas campanhas para acessá-las em outros dispositivos.</p>
@@ -116,9 +135,9 @@
         const register = formMode === 'register';
         return `
             <div class="cloud-account-heading">
-                <div><span>☁️</span><strong>Conta e campanhas permanentes</strong><small>Opcional · o modo offline continua disponível</small></div>
+                <div><span>☁️</span><strong>Conta Cloudflare legada</strong><small>Temporária durante a migração para o Firebase</small></div>
             </div>
-            <p class="cloud-account-copy">${register ? 'Crie uma conta privada para guardar campanhas no Cloudflare.' : 'Entre para acessar suas campanhas em outros dispositivos.'}</p>
+            <p class="cloud-account-copy">${register ? 'Crie uma conta legada somente se precisar acessar o sistema anterior.' : 'Use este acesso somente para campanhas salvas antes da migração para o Firebase.'}</p>
             ${errorMessage ? `<p class="cloud-account-error">${escapeHtml(errorMessage)}</p>` : ''}
             <div class="cloud-account-form">
                 ${register ? '<input id="cloudAccountDisplayName" class="session-input" maxlength="80" autocomplete="name" placeholder="Nome exibido">' : ''}
@@ -133,15 +152,36 @@
     function renderPanel() {
         const panel = root?.document?.getElementById('cloudAccountPanel');
         if (!panel) return false;
-        panel.innerHTML = accountSession?.token ? renderAuthenticated() : renderAnonymous();
+        panel.innerHTML = isAuthenticated() ? renderAuthenticated() : renderAnonymous();
         return true;
     }
 
     function mountPanel() {
         renderPanel();
-        if (accountSession?.token && (!accountSession.user || Date.now() - lastRefreshAt > REFRESH_INTERVAL_MS)) {
+        if (isAuthenticated() && (!remoteUser || Date.now() - lastRefreshAt > REFRESH_INTERVAL_MS)) {
             void refreshAccount();
         }
+    }
+
+    function useFirebaseUser(nextUser) {
+        const previousUid = firebaseUser?.uid || '';
+        firebaseUser = nextUser?.emailVerified ? { ...nextUser } : null;
+        if (previousUid !== (firebaseUser?.uid || '')) {
+            remoteUser = null;
+            campaigns = [];
+            lastRefreshAt = 0;
+        }
+        const details = root?.document?.querySelector?.('.cloud-account-legacy');
+        if (details) {
+            const summary = details.querySelector?.('summary');
+            if (summary) summary.textContent = firebaseUser
+                ? 'Campanhas permanentes da conta'
+                : 'Acesso legado às campanhas Cloudflare';
+            if (firebaseUser) details.open = true;
+        }
+        renderPanel();
+        if (firebaseUser && !loading) void refreshAccount();
+        return Boolean(firebaseUser);
     }
 
     function setFormMode(mode) {
@@ -210,7 +250,7 @@
     }
 
     async function refreshAccount() {
-        if (!accountSession?.token || loading) return false;
+        if (!isAuthenticated() || loading) return false;
         loading = true;
         errorMessage = '';
         renderPanel();
@@ -219,7 +259,8 @@
                 request('/api/account/me'),
                 request('/api/account/campaigns')
             ]);
-            persistSession({ ...accountSession, user: profile.user });
+            remoteUser = profile.user || null;
+            if (!isFirebaseAuthenticated()) persistSession({ ...accountSession, user: profile.user });
             campaigns = Array.isArray(cloudCampaigns.campaigns) ? cloudCampaigns.campaigns : [];
             lastRefreshAt = Date.now();
             return true;
@@ -236,8 +277,12 @@
         if (loading) return false;
         loading = true;
         renderPanel();
-        try { await request('/api/account/logout', { method: 'POST', body: {} }); } catch { /* sessão local também deve terminar */ }
-        persistSession(null);
+        const firebaseConnected = isFirebaseAuthenticated();
+        try { await request('/api/account/logout', { method: 'POST', body: {} }); } catch { /* a sessão local também deve terminar */ }
+        if (firebaseConnected) await root?.firebaseAuthUI?.logout?.();
+        else persistSession(null);
+        firebaseUser = null;
+        remoteUser = null;
         campaigns = [];
         errorMessage = '';
         loading = false;
@@ -251,7 +296,7 @@
     }
 
     function requestSaveActiveCampaign() {
-        if (!accountSession?.token || loading) return false;
+        if (!isAuthenticated() || loading) return false;
         const campaign = root?.campaignStore?.getActiveCampaign?.();
         if (!campaign?.id) return false;
         const known = campaigns.find(entry => String(entry.id) === String(campaign.id));
@@ -309,7 +354,7 @@
     }
 
     async function saveActiveCampaign(nameOverride = '') {
-        if (!accountSession?.token || loading) return false;
+        if (!isAuthenticated() || loading) return false;
         if (root?.collaborationSession?.isPlayer?.()) {
             errorMessage = 'Somente o Mestre pode salvar uma campanha na nuvem.';
             renderPanel();
@@ -354,7 +399,7 @@
     }
 
     async function deleteCampaign(campaignId) {
-        if (!accountSession?.token || loading) return false;
+        if (!isAuthenticated() || loading) return false;
         loading = true;
         errorMessage = '';
         renderPanel();
@@ -390,7 +435,7 @@
     }
 
     async function loadCampaign(campaignId) {
-        if (!accountSession?.token || loading) return false;
+        if (!isAuthenticated() || loading) return false;
         loading = true;
         errorMessage = '';
         renderPanel();
@@ -429,13 +474,14 @@
     }
 
     function getState() {
-        return JSON.parse(JSON.stringify({ accountSession, campaigns, formMode, loading, errorMessage }));
+        return JSON.parse(JSON.stringify({ accountSession, firebaseUser, remoteUser, campaigns, formMode, loading, errorMessage }));
     }
 
     const api = Object.freeze({
         SESSION_KEY,
         getPanelMarkup,
         mountPanel,
+        useFirebaseUser,
         renderPanel,
         setFormMode,
         registerFromView,

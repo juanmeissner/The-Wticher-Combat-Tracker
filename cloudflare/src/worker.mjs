@@ -1860,15 +1860,19 @@ export default {
             return jsonResponse({
                 ok: true,
                 service: 'witcher-combat-collaboration',
-                version: 2,
-                accounts: Boolean(env.ACCOUNT_DB)
+                version: 3,
+                accounts: Boolean(env.ACCOUNT_DB),
+                firebase: Boolean(env.FIREBASE_PROJECT_ID)
             }, 200, headers);
         }
 
         let response;
         try {
             if (isAccountRequest(url)) {
-                response = await handleAccountRequest(request, env.ACCOUNT_DB, url);
+                response = await handleAccountRequest(request, env.ACCOUNT_DB, url, {
+                    firebaseProjectId: env.FIREBASE_PROJECT_ID,
+                    firebaseFetch: fetch
+                });
             } else {
                 const listMatch = request.method === 'GET' && url.pathname === '/api/rooms';
                 const createMatch = request.method === 'POST' && url.pathname === '/api/rooms';

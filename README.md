@@ -1090,6 +1090,34 @@ mais recente silenciosamente.
 - o modo offline permanece completo e não exige cadastro;
 - somente o Mestre pode publicar a campanha ativa na conta durante a colaboração.
 
+### 🔐 Transição para Firebase Authentication
+
+A fundação da nova autenticação já está preparada de forma reversível. O Firebase
+será responsável por e-mail/senha, confirmação de e-mail, recuperação de senha e
+login com Google; o Cloudflare continuará armazenando perfis e campanhas no D1 e
+mantendo as salas em Durable Objects. O Worker valida os tokens assinados pelo
+Firebase e associa cada UID confirmado a um proprietário isolado no D1; o login
+legado segue disponível sem migração ou exclusão automática de contas.
+
+- a configuração Web pública fica isolada de credenciais administrativas;
+- campos como `privateKey`, `clientSecret` e service account são proibidos no PWA;
+- a migração de identidades é aditiva e não altera campanhas ou proprietários atuais;
+- a migração futura será aditiva e manterá um caminho explícito de rollback;
+- o modo offline continuará sem exigir cadastro.
+- o SDK modular é empacotado localmente e carregado somente ao abrir a área de conta;
+- cadastro, confirmação de e-mail, login, Google, recuperação e saída usam o Firebase;
+- contas ainda não confirmadas não avançam para o acesso permanente às campanhas.
+- tokens de outro projeto, expirados ou com assinatura inválida são rejeitados;
+- nenhuma service account ou chave privada é necessária no Worker.
+- o usuário autenticado pode atualizar o nome exibido sem alterar suas campanhas;
+- contas por E-mail/senha podem trocar a senha após confirmar a senha atual;
+- contas exclusivamente Google continuam gerenciando a senha pela própria Conta Google;
+- senhas atuais e novas nunca são armazenadas no PWA, no backup ou no D1.
+
+Consulte o [guia de preparação e configuração do Firebase](docs/firebase-auth-rollout.md)
+para criar o projeto, habilitar E-mail/senha e Google, autorizar os domínios e
+preencher os identificadores públicos do aplicativo Web.
+
 > [!NOTE]
 > O endereço do serviço oficial já vem configurado no aplicativo. Mestre e
 > jogadores de salas públicas informam somente nome e senha; o código continua

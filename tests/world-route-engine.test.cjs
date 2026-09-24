@@ -301,5 +301,5 @@ test('interface e pacote offline incluem planejamento, confirmação e calibraç
     assert.match(index, /world-feature-loader\.js/);
     assert.match(featureLoader, /world-route-engine\.js/);
     assert.match(worker, /world-route-engine\.js/);
-    assert.match(worker, /witcher-combat-tracker-v181/);
+    assert.match(worker, /witcher-combat-tracker-v185/);
 });

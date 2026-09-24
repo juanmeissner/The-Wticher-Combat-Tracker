@@ -1,3 +1,5 @@
+import { FirebaseTokenError, verifyFirebaseIdToken } from './firebase-token-verifier.mjs';
+
 const MAX_BODY_BYTES = 3 * 1024 * 1024;
 const PASSWORD_ITERATIONS = 100_000;
 const SESSION_LIFETIME_MS = 30 * 24 * 60 * 60_000;
@@ -87,6 +89,9 @@ function publicUser(row) {
         id: String(row.id),
         username: String(row.username),
         displayName: String(row.display_name),
+        email: String(row.firebase_email || ''),
+        emailVerified: Boolean(row.firebase_email_verified),
+        authProvider: row.firebase_uid ? 'firebase' : 'legacy',
         createdAt: String(row.created_at)
     };
 }
@@ -111,13 +116,12 @@ async function createSession(db, userId, deviceId = '') {
     return { token, expiresAt: expiresAt.toISOString() };
 }
 
-async function authenticate(request, db) {
-    const match = request.headers.get('authorization')?.match(/^Bearer\s+(.+)$/i);
-    if (!match) return null;
-    const tokenHash = await sha256(match[1]);
+async function authenticateLegacyToken(token, db) {
+    const tokenHash = await sha256(token);
     const now = new Date().toISOString();
     const row = await db.prepare(`
-        SELECT u.id, u.username, u.display_name, u.created_at, s.token_hash
+        SELECT u.id, u.username, u.display_name, u.created_at, s.token_hash,
+               NULL AS firebase_uid, NULL AS firebase_email, 0 AS firebase_email_verified
         FROM account_sessions s
         JOIN users u ON u.id = s.user_id
         WHERE s.token_hash = ? AND s.expires_at > ?
@@ -126,12 +130,98 @@ async function authenticate(request, db) {
     await db.prepare('UPDATE account_sessions SET last_seen_at = ? WHERE token_hash = ?')
         .bind(now, tokenHash)
         .run();
-    return { user: publicUser(row), tokenHash };
+    return { user: publicUser(row), tokenHash, provider: 'legacy' };
 }
 
-async function requireAuthentication(request, db) {
-    const auth = await authenticate(request, db);
-    return auth || errorResponse('account_unauthorized', 'Entre na sua conta para continuar.', 401);
+function firebaseProviderIds(claims) {
+    const provider = String(claims?.firebase?.sign_in_provider || '').trim();
+    const identities = claims?.firebase?.identities && typeof claims.firebase.identities === 'object'
+        ? Object.keys(claims.firebase.identities)
+        : [];
+    return [...new Set([provider, ...identities].filter(Boolean))];
+}
+
+async function ensureFirebaseAccount(db, claims) {
+    const firebaseUid = String(claims.uid || claims.sub || '').trim();
+    const email = String(claims.email || '').trim().toLowerCase();
+    if (!email || claims.email_verified !== true) {
+        throw new FirebaseTokenError(
+            'firebase_email_unverified',
+            'Confirme seu endereço de e-mail antes de acessar as campanhas permanentes.',
+            403
+        );
+    }
+    const digest = await sha256(firebaseUid);
+    const userId = `user-firebase-${digest.slice(0, 32)}`;
+    const username = `firebase_${digest.slice(0, 23)}`;
+    const displayName = String(claims.name || email.split('@')[0] || 'Jogador').trim().slice(0, 80) || 'Jogador';
+    const providerIdsJson = JSON.stringify(firebaseProviderIds(claims));
+    const now = new Date().toISOString();
+
+    await db.prepare(`
+        INSERT OR IGNORE INTO users
+            (id, username, display_name, password_salt, password_verifier, password_iterations, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `).bind(
+        userId,
+        username,
+        displayName,
+        randomSecret(18),
+        randomSecret(32),
+        PASSWORD_ITERATIONS,
+        now,
+        now
+    ).run();
+    await db.prepare(`
+        INSERT OR IGNORE INTO firebase_identities
+            (firebase_uid, user_id, email, email_verified, provider_ids_json, created_at, updated_at, last_login_at)
+        VALUES (?, ?, ?, 1, ?, ?, ?, ?)
+    `).bind(firebaseUid, userId, email, providerIdsJson, now, now, now).run();
+    await db.prepare(`
+        UPDATE firebase_identities
+        SET email = ?, email_verified = 1, provider_ids_json = ?, updated_at = ?, last_login_at = ?
+        WHERE firebase_uid = ?
+    `).bind(email, providerIdsJson, now, now, firebaseUid).run();
+    const row = await db.prepare(`
+        SELECT u.id, u.username, u.display_name, u.created_at,
+               f.firebase_uid, f.email AS firebase_email, f.email_verified AS firebase_email_verified
+        FROM firebase_identities f
+        JOIN users u ON u.id = f.user_id
+        WHERE f.firebase_uid = ?
+    `).bind(firebaseUid).first();
+    if (!row) throw new Error('firebase_identity_link_failed');
+    await db.prepare('UPDATE users SET display_name = ?, updated_at = ? WHERE id = ?')
+        .bind(displayName, now, row.id)
+        .run();
+    row.display_name = displayName;
+    return { user: publicUser(row), tokenHash: null, provider: 'firebase', firebaseUid };
+}
+
+async function authenticate(request, db, options = {}) {
+    const match = request.headers.get('authorization')?.match(/^Bearer\s+(.+)$/i);
+    if (!match) return null;
+    const token = match[1];
+    const legacy = await authenticateLegacyToken(token, db);
+    if (legacy) return legacy;
+    if (!options.firebaseProjectId || token.split('.').length !== 3) return null;
+    const claims = await verifyFirebaseIdToken(token, {
+        projectId: options.firebaseProjectId,
+        fetchImpl: options.firebaseFetch,
+        nowMs: options.firebaseNowMs
+    });
+    return ensureFirebaseAccount(db, claims);
+}
+
+async function requireAuthentication(request, db, options = {}) {
+    try {
+        const auth = await authenticate(request, db, options);
+        return auth || errorResponse('account_unauthorized', 'Entre na sua conta para continuar.', 401);
+    } catch (error) {
+        if (error instanceof FirebaseTokenError) {
+            return errorResponse(error.code, error.message, error.status);
+        }
+        throw error;
+    }
 }
 
 async function register(request, db) {
@@ -180,9 +270,9 @@ async function login(request, db) {
     return jsonResponse({ ok: true, user: publicUser(row), ...accountSession });
 }
 
-async function logout(request, db) {
-    const auth = await authenticate(request, db);
-    if (auth) {
+async function logout(request, db, options = {}) {
+    const auth = await authenticate(request, db, options).catch(() => null);
+    if (auth?.tokenHash) {
         await db.prepare('DELETE FROM account_sessions WHERE token_hash = ?')
             .bind(auth.tokenHash)
             .run();
@@ -190,8 +280,8 @@ async function logout(request, db) {
     return jsonResponse({ ok: true });
 }
 
-async function getProfile(request, db) {
-    const auth = await requireAuthentication(request, db);
+async function getProfile(request, db, options = {}) {
+    const auth = await requireAuthentication(request, db, options);
     if (auth instanceof Response) return auth;
     return jsonResponse({ ok: true, user: auth.user });
 }
@@ -206,8 +296,8 @@ function campaignSummary(row) {
     };
 }
 
-async function listCampaigns(request, db) {
-    const auth = await requireAuthentication(request, db);
+async function listCampaigns(request, db, options = {}) {
+    const auth = await requireAuthentication(request, db, options);
     if (auth instanceof Response) return auth;
     const result = await db.prepare(`
         SELECT id, name, revision, created_at, updated_at
@@ -219,8 +309,8 @@ async function listCampaigns(request, db) {
     return jsonResponse({ ok: true, campaigns: (result.results || []).map(campaignSummary) });
 }
 
-async function getCampaign(request, db, campaignId) {
-    const auth = await requireAuthentication(request, db);
+async function getCampaign(request, db, campaignId, options = {}) {
+    const auth = await requireAuthentication(request, db, options);
     if (auth instanceof Response) return auth;
     const row = await db.prepare(`
         SELECT id, name, snapshot_json, revision, created_at, updated_at
@@ -234,8 +324,8 @@ async function getCampaign(request, db, campaignId) {
     return jsonResponse({ ok: true, campaign, cloud: campaignSummary(row) });
 }
 
-async function saveCampaign(request, db, campaignId) {
-    const auth = await requireAuthentication(request, db);
+async function saveCampaign(request, db, campaignId, options = {}) {
+    const auth = await requireAuthentication(request, db, options);
     if (auth instanceof Response) return auth;
     const body = await readJson(request);
     const campaign = body.campaign;
@@ -294,8 +384,8 @@ async function saveCampaign(request, db, campaignId) {
     }, existing ? 200 : 201);
 }
 
-async function deleteCampaign(request, db, campaignId) {
-    const auth = await requireAuthentication(request, db);
+async function deleteCampaign(request, db, campaignId, options = {}) {
+    const auth = await requireAuthentication(request, db, options);
     if (auth instanceof Response) return auth;
     const existing = await db.prepare(`
         SELECT id, name, revision, created_at, updated_at
@@ -323,20 +413,20 @@ export function isAccountRequest(url) {
         || /^\/api\/account\/campaigns\/[^/]+$/.test(url.pathname);
 }
 
-export async function handleAccountRequest(request, db, url = new URL(request.url)) {
+export async function handleAccountRequest(request, db, url = new URL(request.url), options = {}) {
     if (!db) return errorResponse('accounts_unavailable', 'As contas online ainda não estão configuradas.', 503);
     try {
         if (request.method === 'POST' && url.pathname === '/api/account/register') return register(request, db);
         if (request.method === 'POST' && url.pathname === '/api/account/login') return login(request, db);
-        if (request.method === 'POST' && url.pathname === '/api/account/logout') return logout(request, db);
-        if (request.method === 'GET' && url.pathname === '/api/account/me') return getProfile(request, db);
-        if (request.method === 'GET' && url.pathname === '/api/account/campaigns') return listCampaigns(request, db);
+        if (request.method === 'POST' && url.pathname === '/api/account/logout') return logout(request, db, options);
+        if (request.method === 'GET' && url.pathname === '/api/account/me') return getProfile(request, db, options);
+        if (request.method === 'GET' && url.pathname === '/api/account/campaigns') return listCampaigns(request, db, options);
         const campaignMatch = url.pathname.match(/^\/api\/account\/campaigns\/([^/]+)$/);
         if (campaignMatch) {
             const campaignId = decodeURIComponent(campaignMatch[1]);
-            if (request.method === 'GET') return getCampaign(request, db, campaignId);
-            if (request.method === 'PUT') return saveCampaign(request, db, campaignId);
-            if (request.method === 'DELETE') return deleteCampaign(request, db, campaignId);
+            if (request.method === 'GET') return getCampaign(request, db, campaignId, options);
+            if (request.method === 'PUT') return saveCampaign(request, db, campaignId, options);
+            if (request.method === 'DELETE') return deleteCampaign(request, db, campaignId, options);
         }
         return errorResponse('not_found', 'Rota de conta não encontrada.', 404);
     } catch (error) {

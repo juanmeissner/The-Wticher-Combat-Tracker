@@ -352,7 +352,7 @@ test('mapa usa Leaflet local, tela cheia e integração offline versionada', () 
     assert.match(styles, /height:\s*100dvh/);
     assert.match(styles, /\.world-interactive-map/);
     assert.match(zoomLock, /data-allow-map-zoom/);
-    assert.match(worker, /witcher-combat-tracker-v181/);
+    assert.match(worker, /witcher-combat-tracker-v185/);
     assert.match(worker, /js\/world\/world-road-imported-data\.js/);
     assert.match(worker, /vendor\/leaflet\/leaflet\.js/);
     assert.match(worker, /js\/world\/world-map\.js/);

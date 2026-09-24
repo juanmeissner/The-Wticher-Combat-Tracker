@@ -101,6 +101,6 @@ test('expansão carrega entre o catálogo base e a interface e integra o cache o
     const uiIndex = indexSource.indexOf('js/monsters.js');
 
     assert.ok(baseIndex >= 0 && expansionIndex > baseIndex && uiIndex > expansionIndex);
-    assert.match(workerSource, /witcher-combat-tracker-v181/);
+    assert.match(workerSource, /witcher-combat-tracker-v185/);
     assert.match(workerSource, /\.\/js\/bestiary-expansion\.js/);
 });

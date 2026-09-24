@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'witcher-combat-tracker-v181';
+const CACHE_VERSION = 'witcher-combat-tracker-v185';
 const CORE_CACHE_NAME = `${CACHE_VERSION}-core`;
 const RUNTIME_CACHE_NAME = `${CACHE_VERSION}-runtime`;
 
@@ -45,6 +45,10 @@ const CORE_SHELL = [
     './js/campaign/campaign-database.js',
     './js/campaign/campaign-store.js',
     './js/world/world-store.js',
+    './js/auth/firebase-project-config.js',
+    './js/auth/firebase-auth-config.js',
+    './js/auth/firebase-auth-loader.js',
+    './js/auth/firebase-auth-ui.js',
     './js/zoom-lock.js',
     './js/core/toast.js',
     './js/core/helpers.js',
@@ -103,6 +107,7 @@ const CORE_SHELL = [
 ];
 
 const RUNTIME_ASSETS = [
+    './js/auth/firebase-auth.bundle.js',
     './vendor/leaflet/leaflet.css',
     './vendor/leaflet/leaflet.js',
     './vendor/leaflet/images/layers.png',

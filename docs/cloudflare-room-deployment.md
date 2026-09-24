@@ -52,9 +52,15 @@ Depois aplique as migrações no banco remoto:
 npx wrangler@latest d1 migrations apply witcher-combat-accounts --remote
 ```
 
-A migração cria usuários, sessões revogáveis e campanhas privadas versionadas.
+A primeira migração cria usuários, sessões revogáveis e campanhas privadas
+versionadas. A segunda cria os vínculos entre Firebase UID e proprietário do D1.
 Ela pode ser executada novamente com segurança: o Wrangler aplica somente as
 migrações ainda pendentes.
+
+Confirme também que `FIREBASE_PROJECT_ID` está definido como
+`thewitcherrpgmanager`. O Worker usa esse valor para rejeitar tokens emitidos por
+qualquer outro projeto Firebase. Não é necessário armazenar service account,
+chave privada ou client secret na Cloudflare.
 
 ## 5. Publicar
 
@@ -78,14 +84,14 @@ revogável do dispositivo; a senha da sala não é persistida.
 
 ## Fluxo de teste das campanhas permanentes
 
-1. Fora de uma sala, abra **⋯ → Sala → Conta e campanhas permanentes**.
-2. Crie uma conta com nome exibido, usuário e senha de pelo menos oito caracteres.
-3. Toque em **Salvar campanha atual**, informe um nome e confira a versão criada na lista.
+1. Fora de uma sala, abra **⋯ → Sala → Conta The Witcher RPG Manager**.
+2. Entre pelo Google ou crie uma conta com e-mail e confirme a mensagem recebida.
+3. Depois da confirmação, toque em **Salvar campanha atual**, informe um nome e confira a versão criada na lista.
 4. Em outro dispositivo, entre com a mesma conta e toque em **Carregar**.
 5. Confirme que outra conta não consegue listar nem abrir essa campanha.
 6. Altere a campanha nos dois dispositivos e confirme que uma versão antiga gera
    conflito, sem sobrescrever silenciosamente a versão mais recente.
-7. Saia da conta e confirme que a sessão desaparece, mas a campanha local continua disponível.
+7. Saia da conta e confirme que a sessão Firebase desaparece, mas a campanha local continua disponível.
 8. Use **Excluir**, confirme a remoção da campanha na nuvem e confira que a cópia local continua disponível.
 
 ## Fluxo de teste entre dois dispositivos

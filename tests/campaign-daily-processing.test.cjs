@@ -127,7 +127,7 @@ assert.match(daily.applyWoundRecovery(recoveryContext).detail, /Ciri: Ferimento 
 assert.equal(woundTarget.criticalWounds[0].state, 'cured');
 
 assert.match(indexSource, /js\/campaign-daily-processing\.js/);
-assert.match(workerSource, /witcher-combat-tracker-v181/);
+assert.match(workerSource, /witcher-combat-tracker-v185/);
 assert.match(workerSource, /js\/campaign-daily-processing\.js/);
 
 console.log('✓ Necessidades diárias, toxicidade, Fisstech e recuperações temporais validados.');
