@@ -2,8 +2,6 @@
     'use strict';
 
     const MINUTES_PER_DAY = 1440;
-    const CARE_STATUS_IDS = Object.freeze(['hungry', 'poor_hygiene', 'sleep_deprivation']);
-
     function getDayBoundaries(beforeMinute, afterMinute) {
         const before = Math.floor(Number(beforeMinute) || 0);
         const after = Math.floor(Number(afterMinute) || 0);
@@ -21,13 +19,6 @@
         return (context.combatants || []).filter(combatant => combatant?.type === 'player');
     }
 
-    function getCareStacks(combatant) {
-        return Object.fromEntries(CARE_STATUS_IDS.map(statusId => [
-            statusId,
-            Math.max(0, Number(global.careServices?.getCareEffect?.(combatant, statusId)?.stacks) || 0)
-        ]));
-    }
-
     function previewDailyNeeds(context) {
         const boundaries = getDayBoundaries(context.beforeMinute, context.afterMinute);
         const players = getPlayers(context);
@@ -36,7 +27,7 @@
         const affected = players.filter(player => global.careServices.previewCareDayBoundary(player, firstBoundary));
         if (!affected.length) return null;
         return {
-            summary: `${boundaries.length} virada${boundaries.length === 1 ? '' : 's'} de dia verificará${boundaries.length === 1 ? '' : 'ão'} alimentação, higiene e sono de ${affected.length} personagem${affected.length === 1 ? '' : 'ns'}`,
+            summary: `${boundaries.length} virada${boundaries.length === 1 ? '' : 's'} de dia encerrará${boundaries.length === 1 ? '' : 'ão'} benefícios diários de ${affected.length} personagem${affected.length === 1 ? '' : 'ns'}; necessidades continuam pelas barras`,
             days: boundaries.length,
             participants: affected.map(player => ({ id: player.id, name: player.name }))
         };
@@ -47,7 +38,6 @@
         const players = getPlayers(context);
         if (!boundaries.length || !players.length || !global.careServices?.processCareDayBoundary) return null;
 
-        const before = new Map(players.map(player => [String(player.id), getCareStacks(player)]));
         const processed = new Map();
         boundaries.forEach(boundary => {
             players.forEach(player => {
@@ -61,17 +51,8 @@
         });
         if (!processed.size) return null;
 
-        const statusLabels = {
-            hungry: 'Faminto',
-            poor_hygiene: 'Falta de Higiene',
-            sleep_deprivation: 'Privação de Sono'
-        };
         const details = [...processed.values()].map(entry => {
-            const initial = before.get(String(entry.player.id));
-            const final = getCareStacks(entry.player);
-            const changes = CARE_STATUS_IDS.map(statusId => (
-                `${statusLabels[statusId]} ${initial[statusId]} → ${final[statusId]}`
-            ));
+            const changes = [`barras contínuas preservadas`];
             if (entry.expired.size) changes.push(`${entry.expired.size} benefício(s) diário(s) encerrado(s)`);
             return `${entry.player.name} · ${entry.days} dia(s): ${changes.join(' · ')}`;
         });
@@ -81,7 +62,7 @@
         global.renderList?.(false);
         global.renderAutomationCardSummaries?.();
         return {
-            summary: `Necessidades diárias processadas para ${processed.size} personagem${processed.size === 1 ? '' : 'ns'}`,
+            summary: `Fechamento diário processado para ${processed.size} personagem${processed.size === 1 ? '' : 'ns'} sem penalidades duplicadas`,
             detail: `Fechamento diário:\n${details.join('\n')}`,
             days: boundaries.length,
             participants: processed.size

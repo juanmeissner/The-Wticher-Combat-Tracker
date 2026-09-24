@@ -536,6 +536,7 @@ function getSheetResourceCurrent(sheet, currentKey, maximum) {
 
 function migrateCharacterSheetResourceState() {
     let changed = false;
+    const currentCampaignMinute = Number(window.campaignClock?.describeMinute?.().epochMinute);
 
     characterSheets.forEach(sheet => {
         // Fichas existentes já podem conter PV/EST de uma sessão anterior.
@@ -544,6 +545,17 @@ function migrateCharacterSheetResourceState() {
         if (typeof sheet.resourceStateSaved !== 'boolean') {
             sheet.resourceStateSaved = true;
             changed = true;
+        }
+
+        if (window.characterNeeds?.normalizeNeedsState) {
+            const normalizedNeeds = window.characterNeeds.normalizeNeedsState(
+                sheet.needsState,
+                Number.isFinite(currentCampaignMinute) ? currentCampaignMinute : null
+            );
+            if (JSON.stringify(sheet.needsState || null) !== JSON.stringify(normalizedNeeds)) {
+                sheet.needsState = normalizedNeeds;
+                changed = true;
+            }
         }
     });
 
@@ -571,6 +583,7 @@ function buildSheetFromCombatant(combatant) {
         equipment: cloneEnhancementData(combatant.equipment || {}),
         transport: cloneEnhancementData(combatant.transport || {}),
         careState: cloneEnhancementData(window.serializeCareState?.(combatant) || combatant.careState || null),
+        needsState: cloneEnhancementData(window.characterNeeds?.serializeNeedsState?.(combatant) || combatant.needsState || null),
         criticalWounds: cloneEnhancementData(combatant.criticalWounds || []),
         criticalWoundBaseResources: cloneEnhancementData(combatant.criticalWoundBaseResources || null),
         updatedAt: new Date().toISOString()
@@ -635,6 +648,15 @@ function syncCombatantsToCharacterSheets() {
             combatant.transport = cloneEnhancementData(sheet.transport || {});
         }
 
+        if (!combatant.needsState || typeof combatant.needsState !== 'object') {
+            combatant.needsState = cloneEnhancementData(sheet.needsState || null);
+        }
+        window.characterNeeds?.ensureNeedsState?.(
+            combatant,
+            Number(window.campaignClock?.describeMinute?.().epochMinute)
+        );
+        window.characterNeeds?.syncNeedConditions?.(combatant, { refresh: false });
+
         window.ensureEquipmentLoadout?.(combatant);
         window.ensureTransportState?.(combatant);
         refreshCharacterDerivedValues(combatant);
@@ -658,6 +680,7 @@ function syncCombatantsToCharacterSheets() {
             equipment: cloneEnhancementData(combatant.equipment || {}),
             transport: cloneEnhancementData(combatant.transport || {}),
             careState: cloneEnhancementData(window.serializeCareState?.(combatant) || combatant.careState || null),
+            needsState: cloneEnhancementData(window.characterNeeds?.serializeNeedsState?.(combatant) || combatant.needsState || null),
             criticalWounds: cloneEnhancementData(combatant.criticalWounds || []),
             criticalWoundBaseResources: cloneEnhancementData(combatant.criticalWoundBaseResources || null)
         });
@@ -722,6 +745,9 @@ function buildCharacterSheetRecord(foundation = {}, overrides = {}) {
             : {},
         transport: {},
         careState: null,
+        needsState: window.characterNeeds?.createInitialNeedsState?.(
+            Number(window.campaignClock?.describeMinute?.().epochMinute)
+        ) || null,
         criticalWounds: [],
         criticalWoundBaseResources: null,
         updatedAt: new Date().toISOString(),
@@ -920,6 +946,7 @@ function buildCombatantFromCharacterSheet(sheet, { linkSheet = true } = {}) {
         equipment: cloneEnhancementData(sheet.equipment || {}),
         transport: cloneEnhancementData(sheet.transport || {}),
         careState: cloneEnhancementData(sheet.careState || null),
+        needsState: cloneEnhancementData(sheet.needsState || null),
         criticalWounds: cloneEnhancementData(sheet.criticalWounds || []),
         criticalWoundBaseResources: cloneEnhancementData(sheet.criticalWoundBaseResources || null),
         type: 'player',
@@ -932,6 +959,11 @@ function buildCombatantFromCharacterSheet(sheet, { linkSheet = true } = {}) {
 
     copyCharacterFoundation(combatant, sheet);
     window.restoreCareStateEffects?.(combatant);
+    window.characterNeeds?.ensureNeedsState?.(
+        combatant,
+        Number(window.campaignClock?.describeMinute?.().epochMinute)
+    );
+    window.characterNeeds?.syncNeedConditions?.(combatant, { refresh: false });
     refreshCharacterDerivedValues(combatant);
     return combatant;
 }

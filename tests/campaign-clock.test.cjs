@@ -70,6 +70,12 @@ assert.equal(previewCalls, 1);
 assert.equal(preview.impacts.length, 1);
 assert.equal(preview.impacts[0].summary, 'Um efeito será processado');
 
+const sleepPreview = clock.previewAdvance(480, {
+    source: 'care-sleep',
+    pausedNeeds: { sleep: ['geralt'] }
+});
+assert.deepEqual(sleepPreview.pausedNeeds, { sleep: ['geralt'] });
+
 const advanced = clock.advanceByMinutes(1, { source: 'combat-turn' });
 assert.equal(advanced.changed, true);
 assert.equal(applyCalls, 1);
@@ -81,6 +87,12 @@ assert.equal(clock.getSnapshot().revision, 1);
 
 const saved = JSON.parse(storage.get(clock.STORAGE_KEY));
 assert.equal(saved.currentMinute, start + 1);
+
+const forwardAdjustment = clock.setDateTime(start + 61, false);
+assert.equal(forwardAdjustment.changed, true);
+assert.equal(forwardAdjustment.context.minutes, 60);
+assert.equal(forwardAdjustment.context.source, 'manual-adjustment');
+assert.equal(applyCalls, 2, 'Ajustar o relógio para o futuro deve executar os processadores temporais.');
 
 clock.restoreSnapshot({
     version: 1,
@@ -228,7 +240,7 @@ assert.match(sessionSource, /window\.campaignClock\?\.restoreSnapshot/);
 assert.match(sessionSource, /advanceByMinutes\?\.\(1, \{ source: 'combat-turn' \}\)/);
 assert.match(sessionSource, /time: \{ icon: '🕰️', label: 'Tempo' \}/);
 assert.match(appInitSource, /'dnd_campaign_clock'/);
-assert.match(workerSource, /witcher-combat-tracker-v177/);
+assert.match(workerSource, /witcher-combat-tracker-v181/);
 assert.match(workerSource, /js\/campaign-timeline-data\.js/);
 assert.match(indexSource, /js\/campaign-timeline-data\.js[\s\S]+js\/campaign-clock\.js/);
 assert.match(workerSource, /js\/campaign-daily-processing\.js/);
@@ -259,6 +271,8 @@ assert.match(clockSource, /Somente leitura/);
 assert.match(clockSource, /openCampaignEventReward/);
 assert.match(clockSource, /campaignRewardRecipient/);
 assert.match(clockStyles, /campaign-reward-recipients/);
+assert.match(clockSource, /impact\.detail/, 'A confirmação temporal deve exibir a previsão detalhada das necessidades.');
+assert.match(clockStyles, /campaign-clock-impact-list li\.is-critical/);
 assert.equal(clock.getCombinedTimelineEntries().filter(event => event.sourceKind === 'official').length, 83);
 assert.equal(clock.getCombinedTimelineEntries().filter(event => event.sourceKind === 'campaign').length, 1);
 assert.equal(clock.getOfficialTimelineEntriesForCalendar(1267, 'DR', 7, 1).length, 7);

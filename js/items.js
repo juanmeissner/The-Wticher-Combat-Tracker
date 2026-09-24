@@ -93,8 +93,8 @@ const predefinedItems = [
         icon: '💧',
         category: 'usable',
         goldValue: 1,
-        description: 'Uma porção de água própria para consumo. O uso é registrado, mas não substitui uma refeição.',
-        shortDescription: 'Bebida · Sem efeito de refeição · 1 porção',
+        description: 'Uma porção de água própria para consumo. Recupera 480 pontos (48%) de Sede, sem substituir uma refeição.',
+        shortDescription: 'Bebida · Sede +48% · 1 porção',
         recipe: [
             '2x Água Bruta',
             '1x Carvão'
@@ -106,7 +106,8 @@ const predefinedItems = [
             quality: 'simple',
             portionsPerUnit: 1,
             durationCycles: 0,
-            effect: 'Hidratação registrada; não substitui uma refeição.'
+            needs: { thirst: 480 },
+            effect: 'Hidratação com Água Potável registrada; não substitui uma refeição.'
         }
     },
 
@@ -116,8 +117,8 @@ const predefinedItems = [
         icon: '🍺',
         category: 'usable',
         goldValue: 3,
-        description: 'Uma porção de bebida alcoólica anã. O uso é registrado, mas não substitui uma refeição.',
-        shortDescription: 'Bebida alcoólica · 1 porção',
+        description: 'Uma porção de bebida alcoólica anã. Recupera 180 pontos (18%) de Sede, sem substituir uma refeição.',
+        shortDescription: 'Bebida alcoólica · Sede +18% · 1 porção',
         recipe: [
             '2x Cereais',
             '1x Lúpulo',
@@ -132,6 +133,7 @@ const predefinedItems = [
             alcoholic: true,
             portionsPerUnit: 1,
             durationCycles: 0,
+            needs: { thirst: 180 },
             effect: 'Consumo alcoólico registrado; efeitos adicionais ficam a critério do mestre.'
         }
     },
@@ -142,8 +144,8 @@ const predefinedItems = [
         icon: '🍷',
         category: 'usable',
         goldValue: 10,
-        description: 'Uma porção de vinho refinado. O uso é registrado, mas não substitui uma refeição.',
-        shortDescription: 'Bebida alcoólica sofisticada · 1 porção',
+        description: 'Uma porção de vinho refinado. Recupera 120 pontos (12%) de Sede, sem substituir uma refeição.',
+        shortDescription: 'Bebida alcoólica sofisticada · Sede +12% · 1 porção',
         recipe: [
             '2x Uvas de Toussaint',
             '1x Levedura'
@@ -156,6 +158,7 @@ const predefinedItems = [
             alcoholic: true,
             portionsPerUnit: 1,
             durationCycles: 0,
+            needs: { thirst: 120 },
             effect: 'Consumo alcoólico registrado; efeitos adicionais ficam a critério do mestre.'
         }
     },

@@ -37,14 +37,6 @@ const context = vm.createContext({
         },
         processCareDayBoundary(combatant, boundary) {
             careCalls.push({ id: combatant.id, boundary });
-            ['hungry', 'poor_hygiene', 'sleep_deprivation'].forEach(statusId => {
-                let effect = this.getCareEffect(combatant, statusId);
-                if (!effect) {
-                    effect = { id: statusId, type: 'condition', careStatusId: statusId, stacks: 0 };
-                    combatant.effects.push(effect);
-                }
-                effect.stacks += 1;
-            });
             return { expiredBenefits: [] };
         }
     },
@@ -97,7 +89,8 @@ const passage = {
 assert.match(daily.previewDailyNeeds(passage).summary, /2 viradas de dia/);
 const needsResult = daily.applyDailyNeeds(passage);
 assert.equal(careCalls.length, 2, 'Somente o jogador deve ser processado em cada meia-noite.');
-assert.match(needsResult.detail, /Faminto 0 → 2/);
+assert.match(needsResult.detail, /barras contínuas preservadas/);
+assert.equal(player.effects.some(effect => effect.careStatusId === 'hungry'), false);
 
 const toxicityResult = daily.applyNarrativeToxicity(passage);
 assert.equal(player.toxicityCurrent, 12, 'A toxicidade deve cair uma vez por dia sem aplicar consequências não confirmadas.');
@@ -134,7 +127,7 @@ assert.match(daily.applyWoundRecovery(recoveryContext).detail, /Ciri: Ferimento 
 assert.equal(woundTarget.criticalWounds[0].state, 'cured');
 
 assert.match(indexSource, /js\/campaign-daily-processing\.js/);
-assert.match(workerSource, /witcher-combat-tracker-v177/);
+assert.match(workerSource, /witcher-combat-tracker-v181/);
 assert.match(workerSource, /js\/campaign-daily-processing\.js/);
 
 console.log('✓ Necessidades diárias, toxicidade, Fisstech e recuperações temporais validados.');

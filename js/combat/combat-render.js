@@ -762,6 +762,7 @@
 
             const data = getEffectData(effect);
             if (!data) return '';
+            const needDescription = window.characterNeeds?.getNeedEffectDescription?.(c, effect) || '';
 
             const augment = data.augment || "default";
 
@@ -773,7 +774,7 @@
                 default: "effect-border-default"
             }[augment];
 
-            const editing = effect.systemManaged !== 'encumbrance' &&
+            const editing = !['encumbrance', 'care-needs'].includes(effect.systemManaged) &&
 
             selectedEffect.combatantId === c.id &&
             selectedEffect.effectId === effect.id &&
@@ -869,9 +870,9 @@
         
                 <div class="effect-description">
 
-                    ${data.shortDescription}
+                    ${needDescription || data.shortDescription}
 
-                    ${effect.automation?.note ? `
+                    ${!needDescription && effect.automation?.note ? `
                         <span class="effect-automation-note">${effect.automation.note}</span>
                     ` : ''}
 

@@ -96,6 +96,21 @@ function renderTransportItemDetailFacts(item) {
     return facts.map(fact => `<span>${escapeInventoryHtml(fact)}</span>`).join('');
 }
 
+function getCareConsumableDisplaySummary(item, perUnit = false) {
+    const definition = item?.careConsumable;
+    if (!definition) return '';
+    const portions = Math.max(1, Number(definition.portionsPerUnit) || 1);
+    const portionLabel = `${portions} porção${portions === 1 ? '' : 's'}${perUnit ? ' por unidade' : ''}`;
+    if (definition.kind === 'food') {
+        const option = window.careServices?.CARE_CATALOG?.food?.options
+            ?.find(entry => entry.id === definition.optionId);
+        const hunger = Math.max(0, Number(option?.needs?.hunger) || 0);
+        return `🍽️ Alimento · ${portionLabel} · ${option?.name || 'Alimentação'}${hunger ? ` · Fome +${Math.round(hunger / 10)}%` : ''}`;
+    }
+    const thirst = Math.max(0, Number(definition.needs?.thirst) || 0);
+    return `🥤 Bebida · ${portionLabel}${thirst ? ` · Sede +${Math.round(thirst / 10)}%` : ''} · não substitui refeição`;
+}
+
 function handleItemTouchEnd(itemId) {
 
     cancelItemLongPress();
@@ -379,11 +394,7 @@ function showItemDetails(itemId) {
             ${catalogItem.careConsumable
                 ? `
                     <div class="text-amber-300 mb-3">
-                        ${catalogItem.careConsumable.kind === 'food' ? '🍽️ Alimento' : '🥤 Bebida'}
-                        · ${Math.max(1, Number(catalogItem.careConsumable.portionsPerUnit) || 1)} porção por unidade
-                        ${catalogItem.careConsumable.kind === 'food'
-                            ? ` · ${window.careServices?.CARE_CATALOG?.food?.options?.find(option => option.id === catalogItem.careConsumable.optionId)?.name || 'Alimentação'}`
-                            : ' · não substitui uma refeição'}
+                        ${escapeInventoryHtml(getCareConsumableDisplaySummary(catalogItem, true))}
                     </div>
                 `
                 : ''}
@@ -999,7 +1010,7 @@ function renderInventory() {
                 : ''}
 
             ${item.careConsumable
-                ? `${item.careConsumable.kind === 'food' ? '🍽️ Alimento' : '🥤 Bebida'} · ${Math.max(1, Number(item.careConsumable.portionsPerUnit) || 1)} porção`
+                ? escapeInventoryHtml(getCareConsumableDisplaySummary(item))
                 : ''}
 
             ${transportKind === 'mount'
@@ -1326,7 +1337,7 @@ function renderInventoryItemsModal() {
                             : ''}
 
                         ${item.careConsumable
-                            ? `${item.careConsumable.kind === 'food' ? '🍽️ Alimento' : '🥤 Bebida'} · ${Math.max(1, Number(item.careConsumable.portionsPerUnit) || 1)} porção`
+                            ? escapeInventoryHtml(getCareConsumableDisplaySummary(item))
                             : ''}
 
                     </div>

@@ -4,9 +4,15 @@
     const CARE_STATE_VERSION = 6;
     const CARE_MINUTES_PER_DAY = 1440;
     const MAX_CARE_RECORDS = 30;
+    const CARE_NEED_BENEFIT_STATUS_IDS = Object.freeze([
+        'well_fed', 'refreshed', 'well_rested'
+    ]);
     const CARE_DAILY_BENEFIT_STATUS_IDS = Object.freeze([
-        'well_fed', 'refreshed', 'well_rested',
         'survivor_ballad', 'freya_abundance', 'freya_fruits'
+    ]);
+    const CARE_PERSISTED_BENEFIT_STATUS_IDS = Object.freeze([
+        ...CARE_NEED_BENEFIT_STATUS_IDS,
+        ...CARE_DAILY_BENEFIT_STATUS_IDS
     ]);
 
     const CARE_PROFESSIONAL_SKILL_IDS = Object.freeze({
@@ -21,9 +27,10 @@
     const PROLONGED_CARE_HP_BY_LEVEL = Object.freeze([0, 3, 5, 7, 9]);
 
     const CARE_STATUS_DEFINITIONS = Object.freeze({
-        hungry: Object.freeze({ icon: '🍽️', name: 'Faminto', augment: 'debuff', maxStacks: 99 }),
-        poor_hygiene: Object.freeze({ icon: '🧼', name: 'Falta de Higiene', augment: 'debuff', maxStacks: 99 }),
-        sleep_deprivation: Object.freeze({ icon: '🥱', name: 'Privação de Sono', augment: 'debuff', maxStacks: 99 }),
+        hungry: Object.freeze({ icon: '🍽️', name: 'Faminto', augment: 'debuff', maxStacks: 3 }),
+        dehydrated: Object.freeze({ icon: '💧', name: 'Desidratado', augment: 'debuff', maxStacks: 3 }),
+        poor_hygiene: Object.freeze({ icon: '🧼', name: 'Falta de Higiene', augment: 'debuff', maxStacks: 3 }),
+        sleep_deprivation: Object.freeze({ icon: '🥱', name: 'Privação de Sono', augment: 'debuff', maxStacks: 3 }),
         uncomfortable: Object.freeze({ icon: '🪵', name: 'Desconfortável', augment: 'debuff', maxStacks: 1 }),
         well_fed: Object.freeze({ icon: '🍲', name: 'Bem Alimentado', augment: 'buff', maxStacks: 2 }),
         refreshed: Object.freeze({ icon: '🛁', name: 'Revigorado', augment: 'buff', maxStacks: 2 }),
@@ -56,6 +63,7 @@
     const CARE_HYGIENE_SKILL_IDS = Object.freeze([
         'appearance_style', 'persuasion', 'seduction', 'social_etiquette'
     ]);
+    const CARE_HYDRATION_SKILL_IDS = Object.freeze([...CARE_CONCENTRATION_SKILL_IDS]);
     const CARE_REFRESHED_SKILL_IDS = Object.freeze([
         'seduction', 'persuasion', 'fine_arts', 'appearance_style'
     ]);
@@ -74,10 +82,10 @@
             icon: '🍲',
             name: 'Alimentação',
             options: Object.freeze([
-                Object.freeze({ id: 'no_food', name: 'Sem alimentação', cost: 0, recovery: { hp: 0, st: 0 }, status: { id: 'hungry', stacks: 1 }, summary: 'Faminto +1; −1 por pilha nas perícias físicas.' }),
-                Object.freeze({ id: 'simple_meal', name: 'Refeição Simples', cost: 10, recovery: { hp: 10, st: 5 }, summary: 'Recupera 10 HP e 5 EST.' }),
-                Object.freeze({ id: 'good_meal', name: 'Refeição Boa', cost: 20, recovery: { hp: 20, st: 10 }, status: { id: 'well_fed', stacks: 1 }, resources: { adrenaline: 1, temporaryHp: 5, temporarySt: 5 }, summary: 'Recupera 20 HP e 10 EST; Bem Alimentado ×1.' }),
-                Object.freeze({ id: 'sophisticated_meal', name: 'Refeição Sofisticada', cost: 60, recovery: { hp: 30, st: 20 }, status: { id: 'well_fed', stacks: 2 }, resources: { adrenaline: 2, temporaryHp: 10, temporarySt: 10 }, summary: 'Recupera 30 HP e 20 EST; Bem Alimentado ×2.' })
+                Object.freeze({ id: 'no_food', name: 'Sem alimentação', cost: 0, recovery: { hp: 0, st: 0 }, status: { id: 'hungry', stacks: 1 }, summary: 'Não recupera Fome; Faminto acompanha automaticamente a barra contínua.' }),
+                Object.freeze({ id: 'simple_meal', name: 'Refeição Simples', cost: 10, recovery: { hp: 10, st: 5 }, needs: { hunger: 480 }, summary: 'Recupera 10 HP, 5 EST e 48% de Fome.' }),
+                Object.freeze({ id: 'good_meal', name: 'Refeição Boa', cost: 20, recovery: { hp: 20, st: 10 }, needs: { hunger: 720 }, status: { id: 'well_fed', stacks: 1 }, resources: { adrenaline: 1, temporaryHp: 5, temporarySt: 5 }, summary: 'Recupera 20 HP, 10 EST e 72% de Fome; Bem Alimentado ×1.' }),
+                Object.freeze({ id: 'sophisticated_meal', name: 'Refeição Sofisticada', cost: 60, recovery: { hp: 30, st: 20 }, needs: { hunger: 1000 }, status: { id: 'well_fed', stacks: 2 }, resources: { adrenaline: 2, temporaryHp: 10, temporarySt: 10 }, summary: 'Recupera 30 HP, 20 EST e toda a Fome; Bem Alimentado ×2.' })
             ])
         }),
         hygiene: Object.freeze({
@@ -85,18 +93,19 @@
             icon: '🛁',
             name: 'Higiene',
             options: Object.freeze([
-                Object.freeze({ id: 'no_bath', name: 'Sem banho', cost: 0, recovery: { hp: 0, st: 0 }, status: { id: 'poor_hygiene', stacks: 1 }, summary: 'Falta de Higiene +1.' }),
-                Object.freeze({ id: 'cold_bath', name: 'Banho Frio', cost: 5, recovery: { hp: 0, st: 0 }, summary: 'Remove a falta de higiene, sem bônus adicional.' }),
-                Object.freeze({ id: 'hot_bath', name: 'Banho Quente', cost: 15, recovery: { hp: 5, st: 10 }, status: { id: 'refreshed', stacks: 1 }, resources: { temporaryHp: 5, temporarySt: 5 }, summary: 'Recupera 5 HP e 10 EST; Revigorado ×1.' }),
+                Object.freeze({ id: 'no_bath', name: 'Sem banho', cost: 0, recovery: { hp: 0, st: 0 }, status: { id: 'poor_hygiene', stacks: 1 }, summary: 'Não recupera Higiene; Falta de Higiene acompanha automaticamente a barra contínua.' }),
+                Object.freeze({ id: 'cold_bath', name: 'Banho Frio', cost: 5, recovery: { hp: 0, st: 0 }, needs: { hygiene: 480 }, summary: 'Recupera 48% de Higiene e remove a falta de higiene.' }),
+                Object.freeze({ id: 'hot_bath', name: 'Banho Quente', cost: 15, recovery: { hp: 5, st: 10 }, needs: { hygiene: 720 }, status: { id: 'refreshed', stacks: 1 }, resources: { temporaryHp: 5, temporarySt: 5 }, summary: 'Recupera 5 HP, 10 EST e 72% de Higiene; Revigorado ×1.' }),
                 Object.freeze({
                     id: 'sophisticated_bath',
                     name: 'Sofisticado com Espuma e Ervas',
                     cost: 60,
                     recovery: { hp: 15, st: 20 },
+                    needs: { hygiene: 1000 },
                     status: { id: 'refreshed', stacks: 2 },
                     resources: { temporaryHp: 10, temporarySt: 15, luckDice: 1 },
                     directSkillBonuses: { seduction: 3, appearance_style: 3 },
-                    summary: 'Recupera 15 HP e 20 EST; Revigorado ×2, +1 Dado da Sorte, +3 Sedução e +3 Aparência e Estilo.'
+                    summary: 'Recupera 15 HP, 20 EST e toda a Higiene; Revigorado ×2, +1 Dado da Sorte, +3 Sedução e +3 Aparência e Estilo.'
                 })
             ])
         }),
@@ -105,13 +114,13 @@
             icon: '🛏️',
             name: 'Sono e hospedagem',
             options: Object.freeze([
-                Object.freeze({ id: 'no_sleep', name: 'Ficar sem dormir', cost: 0, recovery: { hp: 0, st: 0 }, status: { id: 'sleep_deprivation', stacks: 1 }, summary: 'Privação de Sono +1 e sem recuperação diária.' }),
-                Object.freeze({ id: 'straw_stable', name: 'Palha no Chão / Estábulo', cost: 2, costRange: { min: 1, max: 2 }, recovery: { hp: 10, st: 5 }, assistedTests: [{ skill: 'Físico', difficulty: 16, failure: 'Desconfortável' }], summary: 'Recupera 10 HP e 5 EST; teste de Físico ND 16.' }),
-                Object.freeze({ id: 'strange_inn', name: 'Quarto de Hospedaria Esquisito', cost: 4, recovery: { hp: 15, st: 10 }, assistedTests: [{ skill: 'Físico', difficulty: 14, failure: 'Desconfortável' }, { skill: 'Intimidação', difficulty: 14, failure: 'Roubo assistido pelo mestre' }], summary: 'Recupera 15 HP e 10 EST; testes de Físico e Intimidação ND 14.' }),
-                Object.freeze({ id: 'cheap_inn', name: 'Quarto de Hospedaria Barato', cost: 8, recovery: { hp: 25, st: 15 }, assistedTests: [{ skill: 'Físico', difficulty: 10, failure: 'Desconfortável' }], summary: 'Recupera 25 HP e 15 EST; teste de Físico ND 10.' }),
-                Object.freeze({ id: 'normal_inn', name: 'Quarto de Hospedaria Normal', cost: 10, recovery: { hp: 30, st: 20 }, summary: 'Recupera 30 HP e 20 EST.' }),
-                Object.freeze({ id: 'quality_inn', name: 'Quarto de Hospedaria de Qualidade', cost: 20, recovery: { hp: 40, st: 30 }, status: { id: 'well_rested', stacks: 1 }, resources: { adrenaline: 1, temporaryHp: 10, temporarySt: 10 }, summary: 'Recupera 40 HP e 30 EST; Bem Descansado ×1.' }),
-                Object.freeze({ id: 'luxury_inn', name: 'Quarto de Hospedaria Chique', cost: 60, recovery: { hp: 50, st: 40 }, status: { id: 'well_rested', stacks: 2 }, resources: { adrenaline: 2, temporaryHp: 20, temporarySt: 20 }, summary: 'Recupera 50 HP e 40 EST; Bem Descansado ×2 e +2 Adrenalina.' })
+                Object.freeze({ id: 'no_sleep', name: 'Ficar sem dormir', cost: 0, recovery: { hp: 0, st: 0 }, status: { id: 'sleep_deprivation', stacks: 1 }, summary: 'Não recupera Sono; Privação de Sono acompanha automaticamente a barra contínua.' }),
+                Object.freeze({ id: 'straw_stable', name: 'Palha no Chão / Estábulo', cost: 2, costRange: { min: 1, max: 2 }, recovery: { hp: 10, st: 5 }, needs: { sleep: 480 }, assistedTests: [{ skill: 'Físico', difficulty: 16, failure: 'Desconfortável' }], summary: 'Recupera 10 HP, 5 EST e 48% de Sono; teste de Físico ND 16.' }),
+                Object.freeze({ id: 'strange_inn', name: 'Quarto de Hospedaria Esquisito', cost: 4, recovery: { hp: 15, st: 10 }, needs: { sleep: 600 }, assistedTests: [{ skill: 'Físico', difficulty: 14, failure: 'Desconfortável' }, { skill: 'Intimidação', difficulty: 14, failure: 'Roubo assistido pelo mestre' }], summary: 'Recupera 15 HP, 10 EST e 60% de Sono; testes de Físico e Intimidação ND 14.' }),
+                Object.freeze({ id: 'cheap_inn', name: 'Quarto de Hospedaria Barato', cost: 8, recovery: { hp: 25, st: 15 }, needs: { sleep: 720 }, assistedTests: [{ skill: 'Físico', difficulty: 10, failure: 'Desconfortável' }], summary: 'Recupera 25 HP, 15 EST e 72% de Sono; teste de Físico ND 10.' }),
+                Object.freeze({ id: 'normal_inn', name: 'Quarto de Hospedaria Normal', cost: 10, recovery: { hp: 30, st: 20 }, needs: { sleep: 960 }, summary: 'Recupera 30 HP, 20 EST e 96% de Sono.' }),
+                Object.freeze({ id: 'quality_inn', name: 'Quarto de Hospedaria de Qualidade', cost: 20, recovery: { hp: 40, st: 30 }, needs: { sleep: 1000 }, status: { id: 'well_rested', stacks: 1 }, resources: { adrenaline: 1, temporaryHp: 10, temporarySt: 10 }, summary: 'Recupera 40 HP, 30 EST e todo o Sono; Bem Descansado ×1.' }),
+                Object.freeze({ id: 'luxury_inn', name: 'Quarto de Hospedaria Chique', cost: 60, recovery: { hp: 50, st: 40 }, needs: { sleep: 1000 }, status: { id: 'well_rested', stacks: 2 }, resources: { adrenaline: 2, temporaryHp: 20, temporarySt: 20 }, summary: 'Recupera 50 HP, 40 EST e todo o Sono; Bem Descansado ×2 e +2 Adrenalina.' })
             ])
         })
     });
@@ -259,6 +268,12 @@
         if (sleepStacks && CARE_CONCENTRATION_SKILL_IDS.includes(skillId)) {
             result.total -= sleepStacks;
             result.details.push(`Privação de Sono ×${sleepStacks}: −${sleepStacks}`);
+        }
+
+        const dehydrationStacks = Math.max(0, Number(getCareEffect(combatant, 'dehydrated')?.stacks) || 0);
+        if (dehydrationStacks && CARE_HYDRATION_SKILL_IDS.includes(skillId)) {
+            result.total -= dehydrationStacks;
+            result.details.push(`Desidratado ×${dehydrationStacks}: −${dehydrationStacks}`);
         }
 
         if (getCareEffect(combatant, 'uncomfortable') && CARE_PHYSICAL_SKILL_IDS.includes(skillId)) {
@@ -595,8 +610,9 @@
             <section class="care-services-summary" aria-live="polite">
                 <small>RESUMO</small>
                 <p id="careServicesSummary">Selecione ao menos uma categoria.</p>
+                <div id="careNeedsForecast" class="care-needs-forecast"></div>
             </section>
-            <p class="care-services-stage-note">Cada confirmação inicia um novo ciclo diário. Categorias desmarcadas preservam seus contadores; benefícios do ciclo anterior expiram.</p>
+            <p class="care-services-stage-note">As barras são atualizadas pelo horário real da campanha. Benefícios de alimentação, banho e descanso permanecem enquanto a necessidade correspondente estiver acima do limite.</p>
 
             <div class="session-dialog-actions">
                 <button type="button" class="session-secondary" onclick="closeCareServicesModal()">Cancelar</button>
@@ -714,6 +730,66 @@
         )) ? 480 : 0;
     }
 
+    function buildCareNeedsForecast(beneficiaries = [], selections = []) {
+        const needsApi = global.characterNeeds;
+        if (!needsApi?.normalizeNeedsState || !Array.isArray(beneficiaries) || !beneficiaries.length) {
+            return { entries: [], critical: [], detail: '' };
+        }
+        const minutes = getCareTimeAdvanceMinutes(selections);
+        const sleeping = minutes > 0;
+        const recovery = selections.reduce((totals, selection) => {
+            Object.entries(selection?.option?.needs || {}).forEach(([needId, amount]) => {
+                totals[needId] = (totals[needId] || 0) + Math.max(0, Number(amount) || 0);
+            });
+            return totals;
+        }, {});
+        const definitions = needsApi.NEED_DEFINITIONS || [];
+        const entries = beneficiaries.map(beneficiary => {
+            const state = needsApi.normalizeNeedsState(
+                beneficiary.needsState,
+                global.campaignClock?.describeMinute?.().epochMinute
+            );
+            const needs = definitions.map(definition => {
+                const before = Math.max(0, Math.min(needsApi.NEED_MAXIMUM, Number(state.values?.[definition.id]) || 0));
+                const afterCare = Math.min(needsApi.NEED_MAXIMUM, before + Math.max(0, Number(recovery[definition.id]) || 0));
+                const decay = sleeping && definition.id === 'sleep' ? 0 : minutes * needsApi.NEED_DECAY_PER_MINUTE;
+                const after = Math.max(0, afterCare - decay);
+                return {
+                    ...definition,
+                    before,
+                    after,
+                    beforePercentage: Math.round((before / needsApi.NEED_MAXIMUM) * 100),
+                    afterPercentage: Math.round((after / needsApi.NEED_MAXIMUM) * 100),
+                    critical: before > 0 && after === 0
+                        ? needsApi.getCriticalNeedState?.(definition.id, 0)
+                        : null
+                };
+            });
+            return { id: beneficiary.id, name: beneficiary.name, needs };
+        });
+        const critical = entries.flatMap(entry => entry.needs
+            .filter(need => need.critical)
+            .map(need => ({ ...need.critical, combatantId: entry.id, combatantName: entry.name })));
+        const detail = entries.map(entry => (
+            `${entry.name}: ${entry.needs.map(need => `${need.icon} ${need.name} ${need.beforePercentage}% → ${need.afterPercentage}%`).join(' · ')}`
+        )).join('\n');
+        return { entries, critical, detail, minutes, sleeping, recovery };
+    }
+
+    function renderCareNeedsForecast(forecast) {
+        if (!forecast?.entries?.length) return '';
+        const rows = forecast.entries.map(entry => `
+            <article>
+                <strong>${escapeCareHtml(entry.name)}</strong>
+                <span>${entry.needs.map(need => `${need.icon} ${need.beforePercentage}%→${need.afterPercentage}%`).join(' · ')}</span>
+            </article>
+        `).join('');
+        const warning = forecast.critical.length
+            ? `<p class="care-needs-forecast-warning">⚠️ ${forecast.critical.length} necessidade(s) chegará(ão) a 0%. As consequências serão resolvidas pelo mestre e nenhum dano será aplicado silenciosamente.</p>`
+            : '';
+        return `<small>PREVISÃO APÓS OS CUIDADOS${forecast.minutes ? ' E 8 HORAS' : ''}</small>${rows}${warning}`;
+    }
+
     function refreshCareServicesModal() {
         if (!pendingCarePlan || !document.getElementById('careServicesModal')) return;
 
@@ -734,6 +810,7 @@
         const provider = getCareParticipants().find(entry => String(entry.id) === String(plan.professional?.providerId)) || null;
         const totalNode = document.getElementById('careGrandTotal');
         const summaryNode = document.getElementById('careServicesSummary');
+        const forecastNode = document.getElementById('careNeedsForecast');
 
         if (totalNode) totalNode.textContent = `${total} ${total === 1 ? 'Coroa' : 'Coroas'}`;
         if (summaryNode) {
@@ -742,6 +819,11 @@
                 : 'Nenhuma categoria selecionada';
             const providerText = provider ? `responsável: ${provider.name}` : 'sem responsável profissional';
             summaryNode.textContent = `${beneficiaries.length} beneficiário(s) · ${serviceText} · ${providerText} · ${payers.length ? `${payers.length} pagador(es)` : 'sem débito de Coroas'}`;
+        }
+        if (forecastNode) {
+            forecastNode.innerHTML = selections.length
+                ? renderCareNeedsForecast(buildCareNeedsForecast(beneficiaries, selections))
+                : '';
         }
     }
 
@@ -776,6 +858,10 @@
             );
         }
 
+        if (record.needsForecast?.detail) {
+            lines.push(`Previsão confirmada:\n${record.needsForecast.detail}`);
+        }
+
         if (record.payments.length) {
             lines.push(`Pagamento: ${record.payments.map(payment => `${payment.payerName} −${payment.amount}`).join(', ')}`);
         } else if (record.baseTotalCost > 0 && record.totalCost === 0) {
@@ -801,7 +887,8 @@
             const current = combatant.careState.needs[categoryId];
             if (!current || typeof current !== 'object') combatant.careState.needs[categoryId] = {};
             const need = combatant.careState.needs[categoryId];
-            need.daysWithout = getCareNeedDays(combatant, categoryId);
+            need.daysWithout = 0;
+            need.lastPenaltyCampaignDay = null;
             if (!need.lastOption || typeof need.lastOption !== 'object') need.lastOption = null;
         });
         if (!combatant.careState.benefits || typeof combatant.careState.benefits !== 'object') {
@@ -847,10 +934,9 @@
         const campaignDayKey = getCareCampaignDayKey(campaignMinute);
 
         if (relationship && option.status?.id === relationship.negative) {
-            const negativeEffect = getCareEffect(combatant, relationship.negative);
-            need.daysWithout = Math.max(0, Number(negativeEffect?.stacks) || (need.daysWithout + 1));
-            if (campaignDayKey !== null) need.lastPenaltyCampaignDay = campaignDayKey;
-            details.push(`${need.daysWithout} dia(s) sem ${category.id === 'food' ? 'alimentação' : category.id === 'hygiene' ? 'banho' : 'dormir'}`);
+            need.daysWithout = 0;
+            need.lastPenaltyCampaignDay = null;
+            details.push(`${category.name}: serviço não realizado; barra contínua mantida`);
         } else {
             need.daysWithout = 0;
             need.lastFulfilledAt = timestamp;
@@ -863,20 +949,24 @@
         if (campaignDayKey !== null) need.lastProcessedCampaignDay = campaignDayKey;
         need.lastOption = { id: option.id, name: option.name };
 
-        if (option.status?.id && CARE_DAILY_BENEFIT_STATUS_IDS.includes(option.status.id)) {
+        if (option.status?.id && CARE_PERSISTED_BENEFIT_STATUS_IDS.includes(option.status.id)) {
             const effect = getCareEffect(combatant, option.status.id);
             if (effect) {
                 const benefitMinute = category.id === 'lodging' && option.id !== 'no_sleep'
                     ? getCareCampaignMinute(480)
                     : campaignMinute;
                 const benefitCampaignDay = getCareCampaignDayKey(benefitMinute);
+                const needLinked = CARE_NEED_BENEFIT_STATUS_IDS.includes(option.status.id);
                 effect.automation = {
                     ...(effect.automation || {}),
                     careCycleApplied: cycleContext.cycle,
-                    careDurationCycles: 1,
-                    expiresAtCareCycle: cycleContext.cycle + 1,
-                    note: `Benefício diário · válido durante o ciclo ${cycleContext.cycle}`,
-                    ...(benefitCampaignDay !== null ? {
+                    careDurationCycles: needLinked ? 0 : 1,
+                    careDurationMode: needLinked ? 'need-threshold' : 'daily-cycle',
+                    ...(needLinked ? {} : { expiresAtCareCycle: cycleContext.cycle + 1 }),
+                    note: needLinked
+                        ? 'Benefício mantido enquanto a necessidade correspondente permanecer acima do limite.'
+                        : `Benefício diário · válido durante o ciclo ${cycleContext.cycle}`,
+                    ...(!needLinked && benefitCampaignDay !== null ? {
                         careAppliedCampaignDay: benefitCampaignDay,
                         expiresAtCampaignDay: benefitCampaignDay + 1
                     } : {})
@@ -885,14 +975,17 @@
                     name: effect.name,
                     stacks: Math.max(1, Number(effect.stacks) || 1),
                     appliedCycle: cycleContext.cycle,
-                    expiresAtCycle: cycleContext.cycle + 1,
+                    durationMode: needLinked ? 'need-threshold' : 'daily-cycle',
+                    ...(needLinked ? {} : { expiresAtCycle: cycleContext.cycle + 1 }),
                     effect: cloneCareValue(effect, {}),
-                    ...(benefitCampaignDay !== null ? {
+                    ...(!needLinked && benefitCampaignDay !== null ? {
                         appliedCampaignDay: benefitCampaignDay,
                         expiresAtCampaignDay: benefitCampaignDay + 1
                     } : {})
                 };
-                details.push(`${effect.name} válido durante o ciclo ${cycleContext.cycle}`);
+                details.push(needLinked
+                    ? `${effect.name} vinculado à barra contínua`
+                    : `${effect.name} válido durante o ciclo ${cycleContext.cycle}`);
             }
         }
 
@@ -955,21 +1048,9 @@
             const need = state.needs[categoryId];
             const categoryName = getCareCategory(categoryId)?.name || categoryId;
             const fulfilled = Number(need.lastFulfilledCampaignDay) === preview.closedDay;
-            const penaltyAlreadyApplied = Number(need.lastPenaltyCampaignDay) === preview.closedDay;
-
-            if (fulfilled) {
-                need.daysWithout = 0;
-                details.push(`${categoryName}: atendida`);
-            } else if (!penaltyAlreadyApplied) {
-                const changed = setCareStatus(combatant, relationship.negative, 1, {}, true);
-                removeCareStatus(combatant, relationship.positive);
-                need.daysWithout = Math.max(1, Number(changed?.nextStacks) || (Number(need.daysWithout) || 0) + 1);
-                need.lastPenaltyCampaignDay = preview.closedDay;
-                details.push(`${changed?.effect?.name || categoryName}: +1 pilha (×${need.daysWithout})`);
-            } else {
-                need.daysWithout = getCareNeedDays(combatant, categoryId);
-                details.push(`${categoryName}: penalidade do dia já registrada`);
-            }
+            need.daysWithout = 0;
+            need.lastPenaltyCampaignDay = null;
+            details.push(`${categoryName}: ${fulfilled ? 'serviço registrado' : 'sem serviço'}; penalidade controlada pela barra contínua`);
 
             need.lastProcessedCampaignDay = preview.closedDay;
             need.lastProcessedAt = Number(boundaryMinute);
@@ -1112,16 +1193,11 @@
             changed = true;
         });
 
-        Object.entries(CARE_CATEGORY_RELATIONSHIPS).forEach(([categoryId, relationship]) => {
-            const daysWithout = Math.max(0, Number(state.needs?.[categoryId]?.daysWithout) || 0);
-            if (daysWithout <= 0 || getCareEffect(combatant, relationship.negative)) return;
-            setCareStatus(combatant, relationship.negative, daysWithout, {}, false);
-            changed = true;
-        });
-
         Object.entries(state.benefits || {}).forEach(([statusId, benefit]) => {
-            if (!CARE_DAILY_BENEFIT_STATUS_IDS.includes(statusId)) return;
-            if (Number(benefit?.expiresAtCycle) <= state.cycle || getCareEffect(combatant, statusId)) return;
+            if (!CARE_PERSISTED_BENEFIT_STATUS_IDS.includes(statusId)) return;
+            const needLinked = CARE_NEED_BENEFIT_STATUS_IDS.includes(statusId)
+                || benefit?.durationMode === 'need-threshold';
+            if ((!needLinked && Number(benefit?.expiresAtCycle) <= state.cycle) || getCareEffect(combatant, statusId)) return;
             const snapshot = cloneCareValue(benefit?.effect, null);
             if (snapshot?.id) combatant.effects.push(snapshot);
             else {
@@ -1138,6 +1214,8 @@
             combatant.effects.push(cloneCareValue(uncomfortable, {}));
             changed = true;
         }
+        const needSync = global.characterNeeds?.syncNeedConditions?.(combatant, { refresh: false });
+        changed ||= Boolean(needSync?.changed);
         return changed;
     }
 
@@ -1159,8 +1237,22 @@
             ...cloneCareValue(definition, {}),
             kind,
             portionsPerUnit: Math.max(1, normalizeCareAmount(definition.portionsPerUnit, 1)),
-            durationCycles: normalizeCareAmount(definition.durationCycles)
+            durationCycles: normalizeCareAmount(definition.durationCycles),
+            needs: cloneCareValue(definition.needs, {})
         };
+    }
+
+    function applyCareNeedsRecovery(combatant, recovery) {
+        if (!global.characterNeeds?.restoreNeeds || !recovery || typeof recovery !== 'object') return [];
+        const result = global.characterNeeds.restoreNeeds(combatant, recovery, {
+            persist: false,
+            refresh: false,
+            referenceMinute: global.campaignClock?.describeMinute?.().epochMinute
+        });
+        return (result?.changes || []).map(change => {
+            if (change.applied <= 0) return `${change.name} permanece em ${change.afterPercentage}%`;
+            return `${change.name} ${change.beforePercentage}% → ${change.afterPercentage}% (+${change.applied})`;
+        });
     }
 
     function consumeCareInventoryItem(combatant, item, timestamp = new Date().toISOString()) {
@@ -1206,7 +1298,8 @@
                 details.push(`Ciclo de Abundância ×${abundanceLevel} aplicado`);
             }
         } else {
-            details.push(definition.effect || 'Bebida consumida; sem efeito mecânico definido.');
+            details.push(...applyCareNeedsRecovery(combatant, definition.needs));
+            details.push(definition.effect || 'Bebida consumida.');
         }
 
         const consumption = {
@@ -1276,10 +1369,27 @@
         return combatant.progression;
     }
 
+    function getCareRewardTarget(effect, resourceKey) {
+        const recorded = Number(effect?.automation?.careRewardGrants?.[resourceKey]);
+        if (Number.isFinite(recorded)) return Math.max(0, recorded);
+        const optionId = String(effect?.automation?.careOptionId || '');
+        const option = Object.values(CARE_CATALOG)
+            .flatMap(category => category.options)
+            .find(entry => entry.id === optionId);
+        return Math.max(0, Number(option?.resources?.[resourceKey]) || 0);
+    }
+
     function applyCareSelectionToCombatant(combatant, selection, assistedTests = []) {
         const { category, option } = selection;
         const relationship = CARE_CATEGORY_RELATIONSHIPS[category.id];
         const details = [];
+        const previousPositiveEffect = relationship?.positive
+            ? getCareEffect(combatant, relationship.positive)
+            : null;
+        const previousRewardTargets = {
+            adrenaline: getCareRewardTarget(previousPositiveEffect, 'adrenaline'),
+            luckDice: getCareRewardTarget(previousPositiveEffect, 'luckDice')
+        };
         const hpBefore = Math.max(0, Number(combatant.hpCurrent) || 0);
         const stBefore = Math.max(0, Number(combatant.stCurrent) || 0);
         const hpMaximum = Math.max(hpBefore, Number(combatant.hpMax) || 0);
@@ -1290,12 +1400,11 @@
         combatant.stCurrent = stBefore + recoveredSt;
         if (recoveredHp || Number(option.recovery?.hp)) details.push(`HP ${hpBefore} → ${combatant.hpCurrent}`);
         if (recoveredSt || Number(option.recovery?.st)) details.push(`EST ${stBefore} → ${combatant.stCurrent}`);
+        details.push(...applyCareNeedsRecovery(combatant, option.needs));
 
         if (relationship) {
             if (option.status?.id === relationship.negative) {
-                const changed = setCareStatus(combatant, relationship.negative, option.status.stacks, option, true);
-                removeCareStatus(combatant, relationship.positive);
-                details.push(`${changed.effect.name} ${changed.previousStacks} → ${changed.nextStacks}`);
+                details.push(`${category.name}: sem recuperação; a condição acompanha a barra`);
             } else {
                 const removedNegative = removeCareStatus(combatant, relationship.negative);
                 if (removedNegative) details.push(`${removedNegative.name} removido`);
@@ -1303,9 +1412,6 @@
                 if (option.status?.id === relationship.positive) {
                     const changed = setCareStatus(combatant, relationship.positive, option.status.stacks, option, false);
                     details.push(`${changed.effect.name} ×${changed.nextStacks}`);
-                } else {
-                    const removedPositive = removeCareStatus(combatant, relationship.positive);
-                    if (removedPositive) details.push(`${removedPositive.name} removido`);
                 }
             }
         }
@@ -1327,26 +1433,50 @@
         }
 
         const progression = ensureCareProgression(combatant);
-        const adrenaline = Math.max(0, Number(option.resources?.adrenaline) || 0);
-        const luckDice = Math.max(0, Number(option.resources?.luckDice) || 0);
+        const positiveEffect = option.status?.id ? getCareEffect(combatant, option.status.id) : null;
+        const adrenalineTarget = Math.max(0, Number(option.resources?.adrenaline) || 0);
+        const luckDiceTarget = Math.max(0, Number(option.resources?.luckDice) || 0);
+        const adrenaline = positiveEffect
+            ? Math.max(0, adrenalineTarget - previousRewardTargets.adrenaline)
+            : adrenalineTarget;
+        const luckDice = positiveEffect
+            ? Math.max(0, luckDiceTarget - previousRewardTargets.luckDice)
+            : luckDiceTarget;
         if (adrenaline) {
             const before = progression.adrenaline;
             progression.adrenaline += adrenaline;
             details.push(`Adrenalina ${before} → ${progression.adrenaline}`);
+        } else if (adrenalineTarget) {
+            details.push('Adrenalina não repetida: benefício já estava ativo neste nível');
         }
         if (luckDice) {
             const before = progression.luckDice;
             progression.luckDice += luckDice;
             details.push(`Dado da Sorte ${before} → ${progression.luckDice}`);
+        } else if (luckDiceTarget) {
+            details.push('Dado da Sorte não repetido: benefício já estava ativo neste nível');
         }
 
-        const positiveEffect = option.status?.id ? getCareEffect(combatant, option.status.id) : null;
+        if (positiveEffect && CARE_NEED_BENEFIT_STATUS_IDS.includes(option.status?.id)) {
+            positiveEffect.automation = {
+                ...(positiveEffect.automation || {}),
+                careDurationMode: 'need-threshold',
+                careRewardGrants: {
+                    adrenaline: Math.max(previousRewardTargets.adrenaline, adrenalineTarget),
+                    luckDice: Math.max(previousRewardTargets.luckDice, luckDiceTarget)
+                }
+            };
+        }
         if (positiveEffect && Number(positiveEffect.automation?.temporaryHp) > 0) {
             details.push(`PV temporários: ${positiveEffect.automation.temporaryHp}`);
         }
         if (positiveEffect && Number(positiveEffect.automation?.temporarySt) > 0) {
             details.push(`EST temporário: ${positiveEffect.automation.temporarySt}`);
         }
+        const needSync = global.characterNeeds?.syncNeedConditions?.(combatant, { refresh: false });
+        (needSync?.changes || []).forEach(change => {
+            details.push(`${change.statusName} ${change.beforeStacks} → ${change.afterStacks}`);
+        });
         return details.length ? details : ['Nenhuma alteração de recurso'];
     }
 
@@ -1542,6 +1672,10 @@
         record.campaignMinute = Number(global.campaignClock?.describeMinute?.().epochMinute) || null;
         const careTimeAdvance = getCareTimeAdvanceMinutes(selections);
         record.campaignTime = careTimeAdvance ? { minutes: careTimeAdvance } : null;
+        record.needsForecast = cloneCareValue(
+            context.needsForecast || buildCareNeedsForecast(beneficiaries, selections),
+            null
+        );
 
         const mutate = () => {
             payments.forEach(payment => {
@@ -1602,7 +1736,10 @@
             });
             if (record.campaignTime?.minutes && global.campaignClock?.advanceByMinutes) {
                 const timeResult = global.campaignClock.advanceByMinutes(record.campaignTime.minutes, {
-                    source: 'care-sleep'
+                    source: 'care-sleep',
+                    pausedNeeds: {
+                        sleep: beneficiaries.map(beneficiary => String(beneficiary.id))
+                    }
                 });
                 if (timeResult?.changed) {
                     record.campaignTime.before = timeResult.before.short;
@@ -1696,16 +1833,35 @@
             outcomes: [],
             cycles: []
         };
-        const context = { beneficiaries, payers, selections, record, provider, professional };
-        const testRequests = collectCareAssistedTestRequests(beneficiaries, selections, { provider, professional });
-        if (testRequests.length) {
-            openCareAssistedTestsModal({ ...context, testRequests });
-            return true;
-        }
+        const needsForecast = buildCareNeedsForecast(beneficiaries, selections);
+        const context = { beneficiaries, payers, selections, record, provider, professional, needsForecast };
+        const proceed = () => {
+            const testRequests = collectCareAssistedTestRequests(beneficiaries, selections, { provider, professional });
+            if (testRequests.length) {
+                openCareAssistedTestsModal({ ...context, testRequests });
+                return true;
+            }
+            const finalized = finalizeCareServices(context, []);
+            if (finalized) closeCareServicesModal();
+            return finalized;
+        };
 
-        const finalized = finalizeCareServices(context, []);
-        if (finalized) closeCareServicesModal();
-        return finalized;
+        if (needsForecast.critical.length) {
+            const names = [...new Set(needsForecast.critical.map(entry => entry.combatantName))].join(', ');
+            const confirmation = {
+                title: 'Necessidades chegarão a 0%',
+                message: `${names}: o período levará uma ou mais necessidades ao estado crítico. Nenhum dano será aplicado automaticamente; o mestre deverá resolver as consequências. Deseja continuar?`,
+                confirmLabel: 'Continuar',
+                danger: true,
+                onConfirm: proceed
+            };
+            if (typeof global.openSessionConfirm === 'function') {
+                global.openSessionConfirm(confirmation);
+                return true;
+            }
+            if (global.confirm && !global.confirm(confirmation.message)) return false;
+        }
+        return proceed();
     }
 
     function handleHeartAction() {
@@ -1726,14 +1882,18 @@
         CARE_STATE_VERSION,
         CARE_CATALOG,
         CARE_STATUS_DEFINITIONS,
+        CARE_NEED_BENEFIT_STATUS_IDS,
         CARE_DAILY_BENEFIT_STATUS_IDS,
+        CARE_PERSISTED_BENEFIT_STATUS_IDS,
         CARE_PHYSICAL_SKILL_IDS,
         CARE_CONCENTRATION_SKILL_IDS,
+        CARE_HYDRATION_SKILL_IDS,
         CARE_PROFESSIONAL_SKILL_IDS,
         normalizeCareAmount,
         getCareOption,
         divideCareCost,
         getCareTimeAdvanceMinutes,
+        buildCareNeedsForecast,
         buildCareHistoryDetail,
         getCareStatusIdFromEffect,
         getCareEffect,

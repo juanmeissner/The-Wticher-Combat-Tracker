@@ -207,6 +207,13 @@
         const expanded = expandedResourcePanels.has(key);
         const luckDice = Math.max(0, Number(combatant.progression?.luckDice) || 0);
         const adrenaline = Math.max(0, Number(combatant.progression?.adrenaline) || 0);
+        const needs = global.characterNeeds?.getNeedSummaries?.(combatant) || [
+            { id: 'hunger', name: 'Fome', icon: '🍖' },
+            { id: 'thirst', name: 'Sede', icon: '💧' },
+            { id: 'sleep', name: 'Sono', icon: '🌙' },
+            { id: 'hygiene', name: 'Higiene', icon: '🧼' }
+        ].map(definition => ({ ...definition, value: 1000, maximum: 1000, percentage: 100, tone: 'healthy' }));
+        const canAdjustNeeds = !global.collaborationSession?.isPlayer?.();
 
         const renderResource = ({ key: resourceKey, icon, label, value, descriptions }) => `
             <article class="character-resource-card">
@@ -224,6 +231,33 @@
                 <ul class="character-resource-description">
                     ${descriptions.map(description => `<li><strong>${escapeSkillHtml(description.name)}:</strong> ${escapeSkillHtml(description.text)}</li>`).join('')}
                 </ul>
+            </article>
+        `;
+
+        const renderNeed = need => `
+            <article class="character-need-row" data-need-tone="${need.tone}" title="${need.value}/${need.maximum} pontos · redução atual de 1 ponto por minuto da campanha">
+                <div class="character-need-heading">
+                    <span class="character-need-label"><span aria-hidden="true">${need.icon}</span> ${escapeSkillHtml(need.name)}</span>
+                    <output aria-label="${escapeSkillHtml(need.name)} atual">${need.percentage}%</output>
+                </div>
+                ${need.condition?.stacks ? `
+                    <div class="character-need-condition">
+                        ${escapeSkillHtml(need.condition.statusName)} ×${need.condition.stacks} · ${escapeSkillHtml(need.condition.severity)}
+                    </div>
+                ` : ''}
+                ${need.critical ? `
+                    <div class="character-need-critical" role="status">
+                        <strong>⚠️ ${escapeSkillHtml(need.critical.title)}</strong>
+                        <span>${escapeSkillHtml(need.critical.guidance)}</span>
+                    </div>
+                ` : ''}
+                <div class="character-need-control-row">
+                    <button type="button" onclick="event.stopPropagation(); adjustCharacterNeed('${encodedId}', '${need.id}', -1)" aria-label="Reduzir ${escapeSkillHtml(need.name)} em 5%" ${canAdjustNeeds && need.value > 0 ? '' : 'disabled'}>−</button>
+                    <div class="character-need-meter" role="meter" aria-label="${escapeSkillHtml(need.name)}" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${need.percentage}">
+                        <span style="width: ${need.percentage}%"></span>
+                    </div>
+                    <button type="button" onclick="event.stopPropagation(); adjustCharacterNeed('${encodedId}', '${need.id}', 1)" aria-label="Aumentar ${escapeSkillHtml(need.name)} em 5%" ${canAdjustNeeds && need.value < need.maximum ? '' : 'disabled'}>+</button>
+                </div>
             </article>
         `;
 
@@ -256,6 +290,18 @@
                                 { name: 'Adrenalina de Combate', text: 'Permite realizar um surto de ação e realizar mais um ataque.' }
                             ]
                         })}
+                        <article class="character-needs-card">
+                            <div class="character-needs-title">
+                                <div>
+                                    <strong>Necessidades</strong>
+                                    <small>Redução contínua pelo relógio da campanha</small>
+                                </div>
+                                <span>1 ponto/min</span>
+                            </div>
+                            <div class="character-needs-list">
+                                ${needs.map(renderNeed).join('')}
+                            </div>
+                        </article>
                     </div>
                 ` : ''}
             </section>

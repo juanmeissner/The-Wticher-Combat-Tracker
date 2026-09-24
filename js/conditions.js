@@ -362,25 +362,33 @@ const conditionDescriptions = {
     '🍽️': {
         title: 'Faminto',
         active: 0,
-        stack: 99,
+        stack: 3,
         augment: 'debuff',
-        desc: 'Cada dia sem alimentação adiciona 1 pilha e aplica −1 por pilha nas perícias físicas. Uma refeição remove todas as pilhas.'
+        desc: 'Condição automática da barra de Fome. O card ativo mostra a penalidade atual do personagem.'
+    },
+
+    '💧': {
+        title: 'Desidratado',
+        active: 0,
+        stack: 3,
+        augment: 'debuff',
+        desc: 'Condição automática da barra de Sede. O card ativo mostra a penalidade atual do personagem.'
     },
 
     '🧼': {
         title: 'Falta de Higiene',
         active: 0,
-        stack: 99,
+        stack: 3,
         augment: 'debuff',
-        desc: 'Cada período sem banho adiciona 1 pilha e aplica −1 por pilha em Aparência e Estilo, Persuasão, Sedução e Etiqueta Social.'
+        desc: 'Condição automática da barra de Higiene. O card ativo mostra a penalidade atual do personagem.'
     },
 
     '🥱': {
         title: 'Privação de Sono',
         active: 0,
-        stack: 99,
+        stack: 3,
         augment: 'debuff',
-        desc: 'Cada período sem dormir adiciona 1 pilha e aplica −1 por pilha nas perícias físicas e de concentração, incluindo Físico.'
+        desc: 'Condição automática da barra de Sono. O card ativo mostra a penalidade atual do personagem.'
     },
 
     '🪵': {
@@ -396,7 +404,7 @@ const conditionDescriptions = {
         active: 0,
         stack: 2,
         augment: 'buff',
-        desc: 'Refeição Boa concede 1 pilha e Refeição Sofisticada concede 2. Cada pilha concede Adrenalina e recursos temporários conforme o serviço.'
+        desc: 'Benefício alimentar controlado pela barra de Fome. O card ativo mostra somente os efeitos atuais do personagem.'
     },
 
     '🛁': {
@@ -404,7 +412,7 @@ const conditionDescriptions = {
         active: 0,
         stack: 2,
         augment: 'buff',
-        desc: 'Cada pilha concede +1 em Sedução, Persuasão, Belas Artes e Aparência e Estilo, além dos recursos temporários do banho.'
+        desc: 'Benefício de banho controlado pela barra de Higiene. O card ativo mostra somente os bônus atuais do personagem.'
     },
 
     '🌙': {
@@ -412,7 +420,7 @@ const conditionDescriptions = {
         active: 0,
         stack: 2,
         augment: 'buff',
-        desc: 'Hospedaria de Qualidade concede 1 pilha e Hospedaria Chique concede 2, com recursos temporários e Adrenalina conforme o serviço.'
+        desc: 'Benefício de descanso controlado pela barra de Sono. O card ativo mostra somente os efeitos atuais do personagem.'
     }
     };
 

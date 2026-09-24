@@ -1166,6 +1166,29 @@
     font-size: .8rem;
 }
 
+.campaign-clock-impact-list li strong,
+.campaign-clock-impact-list li small {
+    display: block;
+}
+
+.campaign-clock-impact-list li small {
+    margin-top: 0.3rem;
+    color: var(--text-muted, #9fb0c8);
+    font-size: 0.75rem;
+    line-height: 1.4;
+    white-space: pre-line;
+}
+
+.campaign-clock-impact-list li.is-warning {
+    border-color: rgba(245, 158, 11, 0.45);
+    background: rgba(120, 53, 15, 0.18);
+}
+
+.campaign-clock-impact-list li.is-critical {
+    border-color: rgba(248, 113, 113, 0.55);
+    background: rgba(127, 29, 29, 0.22);
+}
+
 .campaign-clock-damage-choice {
     display: flex;
     align-items: flex-start;

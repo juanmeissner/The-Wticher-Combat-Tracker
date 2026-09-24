@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'witcher-combat-tracker-v177';
+const CACHE_VERSION = 'witcher-combat-tracker-v181';
 const CORE_CACHE_NAME = `${CACHE_VERSION}-core`;
 const RUNTIME_CACHE_NAME = `${CACHE_VERSION}-runtime`;
 
@@ -88,6 +88,7 @@ const CORE_SHELL = [
     './js/app-init.js',
     './js/campaign-timeline-data.js',
     './js/campaign-clock.js',
+    './js/character-needs.js',
     './js/world/world-time.js',
     './js/world/world-commerce.js',
     './js/temporal-effects.js',

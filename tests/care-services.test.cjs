@@ -4,6 +4,7 @@ const path = require('node:path');
 const vm = require('node:vm');
 
 const source = fs.readFileSync(path.join(__dirname, '..', 'js', 'care-services.js'), 'utf8');
+const needsSource = fs.readFileSync(path.join(__dirname, '..', 'js', 'character-needs.js'), 'utf8');
 const itemAutomationSource = fs.readFileSync(path.join(__dirname, '..', 'js', 'item-use-automation.js'), 'utf8');
 const spellSource = fs.readFileSync(path.join(__dirname, '..', 'js', 'character-spells.js'), 'utf8');
 const rulesSource = fs.readFileSync(path.join(__dirname, '..', 'js', 'rules-automation.js'), 'utf8');
@@ -13,6 +14,7 @@ const equipmentSource = fs.readFileSync(path.join(__dirname, '..', 'js', 'equipm
 const interactionsSource = fs.readFileSync(path.join(__dirname, '..', 'js', 'interactions.js'), 'utf8');
 const sessionFeaturesSource = fs.readFileSync(path.join(__dirname, '..', 'js', 'session-features.js'), 'utf8');
 const professionalSkillsSource = fs.readFileSync(path.join(__dirname, '..', 'js', 'professional-skills-data.js'), 'utf8');
+const conditionsSource = fs.readFileSync(path.join(__dirname, '..', 'js', 'conditions.js'), 'utf8');
 
 function createContext(overrides = {}) {
     const context = {
@@ -32,6 +34,7 @@ function createContext(overrides = {}) {
     context.window = context;
     context.globalThis = context;
     vm.createContext(context);
+    vm.runInContext(needsSource, context);
     vm.runInContext(source, context);
     return context;
 }
@@ -44,6 +47,50 @@ assert.equal(care.CARE_CATALOG.food.options.find(option => option.id === 'sophis
 assert.equal(care.CARE_CATALOG.hygiene.options.find(option => option.id === 'sophisticated_bath').directSkillBonuses.seduction, 3);
 assert.equal(care.CARE_CATALOG.lodging.options.find(option => option.id === 'luxury_inn').resources.adrenaline, 2);
 assert.equal(care.CARE_CATALOG.lodging.options.find(option => option.id === 'quality_inn').recovery.hp, 40);
+assert.equal(care.CARE_CATALOG.food.options.find(option => option.id === 'simple_meal').needs.hunger, 480);
+assert.equal(care.CARE_CATALOG.food.options.find(option => option.id === 'good_meal').needs.hunger, 720);
+assert.equal(care.CARE_CATALOG.food.options.find(option => option.id === 'sophisticated_meal').needs.hunger, 1000);
+assert.equal(care.CARE_CATALOG.hygiene.options.find(option => option.id === 'hot_bath').needs.hygiene, 720);
+assert.equal(care.CARE_CATALOG.lodging.options.find(option => option.id === 'normal_inn').needs.sleep, 960);
+
+const thresholdPlayer = {
+    id: 'thresholds',
+    name: 'Teste de Limiares',
+    type: 'player',
+    effects: [],
+    needsState: { values: { hunger: 501, thirst: 500, sleep: 250, hygiene: 0 } }
+};
+const thresholdSync = context.characterNeeds.syncNeedConditions(thresholdPlayer, { refresh: false });
+assert.equal(thresholdSync.changed, true);
+assert.equal(care.getCareEffect(thresholdPlayer, 'hungry'), null);
+assert.equal(care.getCareEffect(thresholdPlayer, 'dehydrated').stacks, 1);
+assert.equal(care.getCareEffect(thresholdPlayer, 'sleep_deprivation').stacks, 2);
+assert.equal(care.getCareEffect(thresholdPlayer, 'poor_hygiene').stacks, 3);
+assert.equal(care.getCareEffect(thresholdPlayer, 'dehydrated').systemManaged, 'care-needs');
+assert.equal(care.getCareSkillModifier(thresholdPlayer, { id: 'athletics' }).total, -3);
+assert.equal(care.getCareSkillModifier(thresholdPlayer, { id: 'appearance_style' }).total, -3);
+
+const legacyPenaltyPlayer = {
+    id: 'legacy-needs',
+    name: 'Legado',
+    type: 'player',
+    effects: [{
+        id: '🍽️',
+        type: 'condition',
+        name: 'Faminto',
+        stacks: 99,
+        systemManaged: 'care',
+        automation: { careStatusId: 'hungry' }
+    }],
+    needsState: { values: { hunger: 200, thirst: 1000, sleep: 1000, hygiene: 1000 } }
+};
+context.characterNeeds.syncNeedConditions(legacyPenaltyPlayer, { refresh: false });
+assert.equal(care.getCareEffect(legacyPenaltyPlayer, 'hungry').stacks, 2);
+assert.equal(care.getCareEffect(legacyPenaltyPlayer, 'hungry').systemManaged, 'care-needs');
+
+thresholdPlayer.needsState.values = { hunger: 501, thirst: 501, sleep: 501, hygiene: 501 };
+context.characterNeeds.syncNeedConditions(thresholdPlayer, { refresh: false });
+assert.equal(thresholdPlayer.effects.length, 0, 'Condições devem sair automaticamente acima de 50%.');
 
 assert.deepEqual(
     JSON.parse(JSON.stringify(care.divideCareCost(10, ['1', '2', '3']))),
@@ -78,9 +125,9 @@ const dailyPreview = dailyCare.previewCareDayBoundary(dailyPlayer, 101 * 1440);
 assert.deepEqual(JSON.parse(JSON.stringify(dailyPreview.missing)), ['Higiene', 'Sono e hospedagem']);
 dailyCare.processCareDayBoundary(dailyPlayer, 101 * 1440);
 assert.equal(dailyCare.getCareEffect(dailyPlayer, 'hungry'), null, 'Alimentação registrada não deve gerar Faminto.');
-assert.equal(dailyCare.getCareEffect(dailyPlayer, 'poor_hygiene').stacks, 1);
-assert.equal(dailyCare.getCareEffect(dailyPlayer, 'sleep_deprivation').stacks, 1);
-assert.equal(dailyCare.getCareEffect(dailyPlayer, 'well_fed'), null, 'Benefício diário deve expirar na virada seguinte.');
+assert.equal(dailyCare.getCareEffect(dailyPlayer, 'poor_hygiene'), null);
+assert.equal(dailyCare.getCareEffect(dailyPlayer, 'sleep_deprivation'), null);
+assert.ok(dailyCare.getCareEffect(dailyPlayer, 'well_fed'), 'Bem Alimentado deve depender da barra, não da virada do dia.');
 assert.equal(dailyCare.processCareDayBoundary(dailyPlayer, 101 * 1440), null, 'A mesma meia-noite não pode ser processada duas vezes.');
 
 campaignMinute = 200 * 1440 + 1200;
@@ -110,6 +157,7 @@ const automated = {
     effects: [],
     progression: { adrenaline: 0, luckDice: 0 }
 };
+automated.needsState = { values: { hunger: 100, thirst: 1000, sleep: 1000, hygiene: 1000 } };
 const selection = (categoryId, optionId) => ({
     category: care.CARE_CATALOG[categoryId],
     option: care.CARE_CATALOG[categoryId].options.find(option => option.id === optionId),
@@ -118,6 +166,18 @@ const selection = (categoryId, optionId) => ({
 assert.equal(care.getCareTimeAdvanceMinutes([selection('lodging', 'quality_inn')]), 480);
 assert.equal(care.getCareTimeAdvanceMinutes([selection('lodging', 'no_sleep')]), 0);
 assert.equal(care.getCareTimeAdvanceMinutes([selection('food', 'good_meal')]), 0);
+const careForecast = care.buildCareNeedsForecast([
+    {
+        id: 'forecast-player',
+        name: 'Eskel',
+        type: 'player',
+        needsState: { values: { hunger: 300, thirst: 900, sleep: 100, hygiene: 900 } }
+    }
+], [selection('lodging', 'quality_inn')]);
+assert.equal(careForecast.minutes, 480);
+assert.equal(careForecast.entries[0].needs.find(need => need.id === 'sleep').afterPercentage, 100);
+assert.equal(careForecast.entries[0].needs.find(need => need.id === 'hunger').afterPercentage, 0);
+assert.equal(careForecast.critical[0].needId, 'hunger');
 
 care.applyCareSelectionToCombatant(automated, selection('food', 'no_food'));
 care.applyCareSelectionToCombatant(automated, selection('food', 'no_food'));
@@ -132,14 +192,24 @@ assert.equal(automated.hpCurrent, 40);
 assert.equal(automated.stCurrent, 20);
 assert.equal(automated.progression.adrenaline, 1);
 assert.equal(care.getCareTemporarySt(automated), 5);
+assert.equal(automated.needsState.values.hunger, 820);
 assert.deepEqual(
     JSON.parse(JSON.stringify(care.spendCareTemporarySt(automated, 3))),
     { requested: 3, spent: 3, remaining: 0, availableBefore: 5, availableAfter: 2 }
 );
+care.applyCareSelectionToCombatant(automated, selection('food', 'good_meal'));
+assert.equal(automated.progression.adrenaline, 1, 'Repetir o mesmo benefício não pode conceder Adrenalina novamente.');
+care.applyCareSelectionToCombatant(automated, selection('food', 'sophisticated_meal'));
+assert.equal(automated.progression.adrenaline, 2, 'Melhorar Bem Alimentado deve conceder somente a diferença.');
+care.applyCareSelectionToCombatant(automated, selection('food', 'sophisticated_meal'));
+assert.equal(automated.progression.adrenaline, 2, 'Repetir o nível máximo não pode gerar recursos infinitos.');
 
 care.applyCareSelectionToCombatant(automated, selection('hygiene', 'sophisticated_bath'));
 assert.equal(automated.progression.luckDice, 1);
 assert.equal(care.getCareSkillModifier(automated, { id: 'seduction' }).total, 5);
+assert.equal(automated.needsState.values.hygiene, 1000);
+care.applyCareSelectionToCombatant(automated, selection('hygiene', 'sophisticated_bath'));
+assert.equal(automated.progression.luckDice, 1, 'Revigorado ativo não pode repetir o Dado da Sorte.');
 
 care.applyCareSelectionToCombatant(automated, selection('lodging', 'cheap_inn'), [
     { skillId: 'physique', success: false }
@@ -271,8 +341,9 @@ care.applyCareSelectionToCombatant(persistent, selection('food', 'good_meal'));
 care.updateCarePersistence(persistent, selection('food', 'good_meal'), cycleOne, '2026-08-30T12:00:00.000Z');
 assert.equal(persistent.careState.cycle, 1);
 assert.equal(persistent.careState.needs.food.daysWithout, 0);
-assert.equal(persistent.careState.benefits.well_fed.expiresAtCycle, 2);
-assert.equal(care.getCareEffect(persistent, 'well_fed').automation.careDurationCycles, 1);
+assert.equal(persistent.careState.benefits.well_fed.durationMode, 'need-threshold');
+assert.equal(persistent.careState.benefits.well_fed.expiresAtCycle, undefined);
+assert.equal(care.getCareEffect(persistent, 'well_fed').automation.careDurationCycles, 0);
 
 const savedCareState = JSON.parse(JSON.stringify(persistent.careState));
 const restoredBenefit = { ...persistent, effects: [], careState: savedCareState };
@@ -286,15 +357,21 @@ care.restoreCareStateEffects(restoredRemainingResources);
 assert.equal(care.getCareEffect(restoredRemainingResources, 'well_fed').automation.temporarySt, 2);
 
 const cycleTwo = care.beginCareCycle(persistent, '2026-08-31T12:00:00.000Z');
+assert.ok(care.getCareEffect(persistent, 'well_fed'), 'A troca de ciclo não encerra um benefício ligado à barra.');
+assert.deepEqual(JSON.parse(JSON.stringify(cycleTwo.expiredBenefits)), []);
+persistent.needsState.values.hunger = 500;
+const benefitExpiry = context.characterNeeds.syncNeedConditions(persistent, { refresh: false });
 assert.equal(care.getCareEffect(persistent, 'well_fed'), null);
-assert.match(cycleTwo.expiredBenefits[0], /Bem Alimentado expirou/);
+assert.equal(care.getCareEffect(persistent, 'hungry').stacks, 1, 'Faminto deve substituir Bem Alimentado sem coexistência.');
+assert.equal(persistent.careState.benefits.well_fed, undefined);
+assert.equal(benefitExpiry.changes.some(change => change.action === 'expired' && change.statusId === 'well_fed'), true);
 care.applyCareSelectionToCombatant(persistent, selection('food', 'no_food'));
 care.updateCarePersistence(persistent, selection('food', 'no_food'), cycleTwo, '2026-08-31T12:00:00.000Z');
-assert.equal(persistent.careState.needs.food.daysWithout, 1);
+assert.equal(persistent.careState.needs.food.daysWithout, 0);
 
 const restoredHunger = { ...persistent, effects: [], careState: JSON.parse(JSON.stringify(persistent.careState)) };
 care.restoreCareStateEffects(restoredHunger);
-assert.equal(care.getCareEffect(restoredHunger, 'hungry').stacks, 1);
+assert.equal(care.getCareEffect(restoredHunger, 'hungry').stacks, 1, 'A restauração deve reconstruir a condição pela barra atual.');
 
 const consumptionHistory = [];
 const consumptionContext = createContext({
@@ -352,6 +429,7 @@ const drinkOwner = {
     effects: [],
     progression: {}
 };
+drinkOwner.needsState = { values: { hunger: 500, thirst: 100, sleep: 500, hygiene: 500 } };
 consumptionContext.careServices.applyCareSelectionToCombatant(
     drinkOwner,
     {
@@ -368,6 +446,7 @@ const consumedDrink = consumptionContext.careServices.consumeCareInventoryItem(d
         quality: 'good',
         alcoholic: true,
         portionsPerUnit: 1,
+        needs: { thirst: 180 },
         effect: 'Consumo alcoólico registrado.'
     }
 }, '2026-09-01T13:00:00.000Z');
@@ -376,6 +455,8 @@ assert.equal(drinkOwner.hpCurrent, 10);
 assert.equal(drinkOwner.stCurrent, 5);
 assert.equal(consumptionContext.careServices.getCareEffect(drinkOwner, 'hungry').stacks, 1);
 assert.equal(drinkOwner.careState.lastConsumption.kind, 'drink');
+assert.equal(drinkOwner.needsState.values.thirst, 280);
+assert.match(consumedDrink.summary, /Sede 10% → 28%/);
 
 const inventoryMeal = {
     id: 'racaodeviagem',
@@ -455,7 +536,10 @@ heartContext.combatants[0].hpCurrent = 0;
 assert.equal(heartContext.handleHeartAction(), 'healing');
 assert.equal(healingCalls, 2);
 
-assert.match(source, /Cada confirmação inicia um novo ciclo diário/);
+assert.match(source, /As barras são atualizadas pelo horário real da campanha/);
+assert.match(source, /pausedNeeds:\s*\{\s*sleep:/);
+assert.match(source, /buildCareNeedsForecast/);
+assert.match(source, /Necessidades chegarão a 0%/);
 assert.match(source, /Roubo assistido pelo mestre/);
 assert.match(itemAutomationSource, /getCareSkillModifier/);
 assert.match(spellSource, /temporaryStSpent/);
@@ -471,5 +555,8 @@ assert.match(sessionFeaturesSource, /type: 'care-consumable'/);
 assert.match(source, /INTEGRAÇÕES PROFISSIONAIS/);
 assert.match(professionalSkillsSource, /melitele_cuidado_prolongado/);
 assert.match(professionalSkillsSource, /grey_roads_minstrel_cantar_por_moedas/);
+assert.match(conditionsSource, /Desidratado/);
+assert.match(conditionsSource, /O card ativo mostra a penalidade atual do personagem/);
+assert.match(conditionsSource, /O card ativo mostra somente os bônus atuais do personagem/);
 
 console.log('care-services tests passed');

@@ -376,6 +376,9 @@
             afterMinute: clockState.currentMinute + amount,
             source: options.source || 'manual',
             processRecurringDamage: Boolean(options.processRecurringDamage),
+            pausedNeeds: options.pausedNeeds && typeof options.pausedNeeds === 'object'
+                ? options.pausedNeeds
+                : null,
             combatants: getCombatants()
         };
     }
@@ -451,6 +454,16 @@
         const previousStart = clockState.startMinute;
         const changed = target !== clockState.currentMinute || (resetStart && target !== previousStart);
         if (!changed) return { changed: false, before, after: before };
+
+        // Ajustes futuros representam passagem real do tempo da campanha e
+        // precisam usar o mesmo fluxo central de turnos, viagens e saltos.
+        // Redefinir o início ou voltar o relógio permanece uma correção manual,
+        // sem reaplicar nem reverter efeitos automaticamente.
+        if (!resetStart && target > clockState.currentMinute) {
+            return advanceByMinutes(target - clockState.currentMinute, {
+                source: 'manual-adjustment'
+            });
+        }
 
         clockState.currentMinute = target;
         if (resetStart) clockState.startMinute = target;
@@ -1542,7 +1555,12 @@
         const roundMinutes = getRoundMinutes();
         const preview = pendingAdvance;
         const impactList = preview?.impacts?.length
-            ? `<ul class="campaign-clock-impact-list">${preview.impacts.map(impact => `<li>${escapeHtml(impact.summary || impact.label || 'Alteração temporal')}</li>`).join('')}</ul>`
+            ? `<ul class="campaign-clock-impact-list">${preview.impacts.map(impact => `
+                <li class="is-${escapeHtml(impact.severity || 'normal')}">
+                    <strong>${escapeHtml(impact.summary || impact.label || 'Alteração temporal')}</strong>
+                    ${impact.detail ? `<small>${escapeHtml(impact.detail)}</small>` : ''}
+                </li>
+            `).join('')}</ul>`
             : '<p class="campaign-clock-no-impact">Nenhum efeito em horas ou dias será alterado neste avanço.</p>';
 
         dialog.innerHTML = `

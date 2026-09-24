@@ -158,7 +158,7 @@ test('listas extensas são renderizadas progressivamente em lotes ociosos', () =
 
 test('cache offline mantém os recursos carregados sob demanda', () => {
     const workerSource = read(path.join('js', 'service-worker.js'));
-    assert.match(workerSource, /witcher-combat-tracker-v177/);
+    assert.match(workerSource, /witcher-combat-tracker-v181/);
     assert.match(workerSource, /js\/core\/performance\.js/);
     assert.match(workerSource, /js\/world\/world-feature-loader\.js/);
     assert.match(workerSource, /js\/world\/world-road-imported-data\.js/);

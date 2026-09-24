@@ -71,7 +71,7 @@ flowchart LR
 | 🌀 Condições | Painel responsivo em grade, duração, stacks e dano recorrente automatizado |
 | 🕰️ Tempo da campanha | Calendário iniciado em 1276 DR, eras AR/DR, fases lunares, nomes medievais e avanços temporais auditáveis |
 | 🌍 Mundo | Atlas político, locais, NPCs, comerciantes, estoques, serviços, deslocamentos e situação histórica por ano |
-| 🛏️ Cuidados | Alimentação, higiene, hospedagem, ciclos diários, recuperação e estados persistentes |
+| 🛏️ Cuidados | Alimentação, hidratação, higiene, hospedagem, barras contínuas, recuperação e estados persistentes |
 | ☣️ Toxicidade | Poções com valores próprios, limiares cumulativos, Tolerância, overdose e Mel Branco |
 | ✨ Efeitos | Magias e itens ativos vinculados individualmente aos participantes |
 | 🎒 Inventário | Itens individuais por personagem, troca pelo turno ativo, catálogo, quantidades, filtros e detalhes |
@@ -261,7 +261,7 @@ O motor oferece uma interface única para os processadores de efeitos temporais.
 
 Antes de um salto capaz de processar Sangramento, Chamas ou Veneno, a prévia pergunta se o mestre deseja aplicar o dano recorrente. Se confirmado, os ciclos completos são calculados pela duração atual de uma rodada e o resultado fica agrupado na mesma ação temporal, evitando dezenas de registros soltos.
 
-Na virada da meia-noite, o motor encerra o dia anterior uma única vez e verifica alimentação, higiene e sono de cada personagem. Ausências acumulam **Faminto**, **Falta de Higiene** e **Privação de Sono**; cuidados registrados na data impedem a penalidade correspondente. Benefícios diários expiram pelo calendário, enquanto benefícios obtidos ao terminar uma noite de hospedagem permanecem válidos no novo dia.
+Na virada da meia-noite, o motor encerra o dia anterior uma única vez para expirar benefícios diários e manter os registros de cuidados. A virada não cria penalidades: **Faminto**, **Desidratado**, **Falta de Higiene** e **Privação de Sono** são controlados exclusivamente pelos valores contínuos das barras. Benefícios obtidos ao terminar uma noite de hospedagem permanecem válidos no novo dia.
 
 Saltos fora do combate também processam a passagem narrativa da toxicidade e o intervalo para **Abstinência de Fisstech**. A toxicidade reduz uma vez por dia conforme `Tolerância total + nível`; consequências e dano só são executados quando o mestre marca a confirmação apresentada na prévia. O Fisstech conserva a regra de dez turnos/minutos após o fim do efeito, sem contagem dupla nos turnos normais. Recuperações médicas informadas em horas ou dias recebem um prazo exato e mudam o ferimento de **Tratado** para **Curado** quando esse horário é alcançado.
 
@@ -422,28 +422,75 @@ O local atual, o relógio, as rotas confirmadas, as viagens, os eventos público
 
 Com o pad zerado, o botão de Coração abre o fluxo contextual **Cuidados e descanso** sem adicionar controles permanentes à interface. O mestre escolhe os beneficiários, alimentação, banho, hospedagem, valores e pagadores; sem pagador selecionado, nenhuma Coroa é removida.
 
+O painel recolhível de **Recursos** também apresenta quatro necessidades contínuas por personagem: **Fome**, **Sede**, **Sono** e **Higiene**. Cada valor é armazenado entre `0` e `1000`, mas exibido como uma barra de `0%` a `100%`. Fichas novas e antigas começam com `1000` pontos em cada necessidade, e o mestre pode realizar ajustes manuais de 5% diretamente nos cards.
+
+- cada minuto do relógio da campanha reduz `1` ponto das quatro necessidades;
+- um turno de combate equivale a um minuto e utiliza exatamente o mesmo processador;
+- saltos de horas, dias, viagens e ajustes futuros do relógio calculam a redução em lote, sem executar centenas de operações intermediárias;
+- cada passagem temporal possui uma identificação própria para impedir processamento duplicado;
+- desfazer uma ação temporal restaura relógio e necessidades juntos pelo instantâneo da sessão;
+- as barras são persistidas na ficha individual, exportadas com ela e restauradas ao retornar ao combate;
+- a atualização usa somente o painel de Recursos do personagem alterado, sem reconstruir todo o combat tracker.
+
+Refeições, bebidas, banhos e hospedagens agora recuperam diretamente suas barras, sempre respeitando o limite de `1000` pontos:
+
+- Refeição Simples recupera `480` de Fome, Refeição Boa recupera `720` e Refeição Sofisticada recupera `1000`;
+- Água Potável recupera `480` de Sede, Cerveja de Mahakam recupera `180` e Vinho de Toussaint recupera `120`;
+- Banho Frio recupera `480` de Higiene, Banho Quente recupera `720` e Banho Sofisticado recupera `1000`;
+- Palha/Estábulo recupera `480` de Sono, hospedagem Esquisita `600`, Barata `720`, Normal `960` e hospedagens de Qualidade ou Chique recuperam `1000`.
+
+Ao dormir, a hospedagem continua avançando o relógio em oito horas. A barra de **Sono** fica pausada nesse intervalo, enquanto **Fome**, **Sede** e **Higiene** continuam diminuindo normalmente. O histórico registra a recuperação efetiva, inclusive quando o teto limita parte do valor.
+
+As quatro barras usam os mesmos limiares automáticos:
+
+| Valor da barra | Condição |
+|---:|---|
+| `501–1000` (`51–100%`) | saudável, sem penalidade |
+| `251–500` (`26–50%`) | 1 pilha |
+| `1–250` (`1–25%`) | 2 pilhas |
+| `0` | 3 pilhas |
+
+- **Faminto** aplica `−1` por pilha nas perícias físicas;
+- **Desidratado** aplica `−1` por pilha nas perícias físicas e de concentração;
+- **Privação de Sono** aplica `−1` por pilha nas perícias físicas e de concentração, incluindo Físico;
+- **Falta de Higiene** aplica `−1` por pilha em Aparência e Estilo, Persuasão, Sedução e Etiqueta Social.
+
+As condições aparecem, mudam de pilha e desaparecem automaticamente quando uma barra cruza um limiar. Elas não podem ser removidas manualmente e nunca são acumuladas novamente na virada do dia. Ao alcançar `0`, o card destaca uma consequência crítica assistida: Fome e Desidratação extremas, Exaustão extrema ou risco de doença por Higiene crítica. O aplicativo registra o alerta e deixa testes, dano, inconsciência ou doença para decisão do mestre, sem aplicar dano silenciosamente.
+
+Os benefícios positivos agora também seguem as barras em vez da meia-noite:
+
+- **Bem Alimentado** permanece enquanto Fome estiver acima de `50%`;
+- **Revigorado** permanece enquanto Higiene estiver acima de `50%`;
+- **Bem Descansado** permanece enquanto Sono estiver acima de `50%`;
+- benefícios positivos são removidos antes que a condição negativa correspondente seja aplicada, portanto nunca coexistem com **Faminto**, **Falta de Higiene** ou **Privação de Sono**;
+- os cards de efeitos ativos descrevem dinamicamente somente o percentual, a penalidade ou o bônus vigente para aquele personagem.
+
+Repetir o mesmo serviço enquanto o benefício está ativo não concede Adrenalina ou Dado da Sorte novamente. Melhorar de uma qualidade com 1 pilha para outra com 2 concede somente a diferença; depois que a barra encerrar o benefício, ele poderá ser conquistado novamente.
+
 - alimentação, banho e sono são marcados no dia atual da campanha, sem criar ciclos duplicados ao usar mais de um serviço;
-- dias sem alimentação, banho ou sono permanecem salvos individualmente;
-- `Faminto`, `Falta de Higiene` e `Privação de Sono` acumulam pilhas e alteram testes de perícia;
+- o horário da última alimentação, banho ou hospedagem permanece no histórico, mas não gera pilhas diárias paralelas;
+- `Faminto`, `Desidratado`, `Falta de Higiene` e `Privação de Sono` alteram automaticamente os testes de perícia conforme as pilhas definidas pelas barras;
 - refeições, banhos e hospedagens recuperam HP e EST conforme a qualidade;
 - registrar qualquer hospedagem com sono avança o relógio da campanha **uma única vez em 8 horas**, independentemente da quantidade de beneficiários;
 - dormir atravessando a meia-noite satisfaz a necessidade de sono do dia encerrado e mantém o benefício da hospedagem no novo dia;
 - alimentação e banho recebem o horário da campanha no registro, mas não avançam tempo arbitrariamente enquanto uma duração oficial não for definida;
-- `Bem Alimentado`, `Revigorado` e `Bem Descansado` concedem benefícios válidos por um ciclo;
+- `Bem Alimentado`, `Revigorado` e `Bem Descansado` persistem pelos limites percentuais das barras, inclusive ao atravessar a meia-noite;
 - PV e EST temporários de fontes diferentes coexistem, e o EST temporário é consumido antes do normal;
 - hospedagens simples usam testes assistidos de Físico e Intimidação, com Desconforto e risco de roubo;
 - estado diário, última escolha, benefícios e histórico são preservados nas fichas salvas e restaurados ao voltar ao combate.
 - alimentos e bebidas ficam disponíveis em **Itens → Usáveis**, com tipo, qualidade e quantidade de porções;
 - os 11 alimentos preparados — de Pão Rústico e Sopa de Legumes a Estufado Real da Caça e Banquete de Toussaint — aplicam automaticamente Refeição Simples, Boa ou Sofisticada ao proprietário do inventário;
 - o consumo direto de alimento recupera os recursos correspondentes, atende a necessidade diária, atualiza os efeitos e remove uma unidade do inventário;
-- Água Potável, Cerveja de Mahakam e Vinho de Toussaint têm consumo e histórico próprios, mas não substituem uma refeição enquanto uma regra de hidratação ou álcool não for definida.
+- Água Potável, Cerveja de Mahakam e Vinho de Toussaint têm consumo e histórico próprios e recuperam automaticamente a barra de Sede conforme sua qualidade;
 - um **responsável profissional** pode ser escolhido dentro do próprio fluxo, sem acrescentar botões ao pad;
 - **Iniciado dos Deuses** e **Cantar por Moedas** abrem testes assistidos e, em caso de sucesso, reduzem somente os custos compatíveis;
 - **Cuidado Prolongado** aumenta a recuperação de HP dos aliados após hospedagem, enquanto **Dormir Leve** neutraliza Desconfortável para o próprio responsável;
 - **Balada do Sobrevivente**, **Ciclo de Abundância** e **Frutos de Freya** criam benefícios diários persistentes, visíveis em Efeitos Ativos e considerados nos testes correspondentes;
 - o histórico registra responsável, teste, ND, cálculo, redução de Coroas e cada benefício profissional aplicado.
 
-Categorias desmarcadas não aumentam contadores de ausência. Ao iniciar o ciclo seguinte, benefícios diários antigos expiram e somente os escolhidos novamente são renovados.
+Antes de confirmar um salto temporal, o relógio mostra a previsão completa de cada personagem, com o percentual inicial e final das quatro necessidades, limiares cruzados, benefícios prestes a expirar e alertas críticos. O fluxo de cuidados exibe a mesma previsão já considerando recuperação e as oito horas de sono; se alguma necessidade chegar a `0`, exige confirmação adicional do mestre. Avanços registram um resumo agrupado somente quando um limiar é atravessado, podem ser desfeitos junto com o relógio e são sincronizados pela campanha online como parte do estado do personagem.
+
+Categorias desmarcadas não recuperam a barra correspondente nem criam penalidades imediatamente. Benefícios profissionais que ainda são diários continuam usando o ciclo próprio; os três benefícios ligados às necessidades expiram exclusivamente pelos percentuais acima.
 
 ### ☣️ Toxicidade de poções
 
@@ -1226,6 +1273,7 @@ node tests/character-skill-tests.test.cjs
 node tests/character-spells.test.cjs
 node tests/campaign-timeline-data.test.cjs
 node tests/campaign-clock.test.cjs
+node tests/character-needs.test.cjs
 node tests/care-services.test.cjs
 node tests/combat-effects-panel.test.cjs
 node tests/critical-wounds.test.cjs
@@ -1251,7 +1299,7 @@ node tests/world-map.test.cjs
 node tests/world-route-engine.test.cjs
 ```
 
-Os testes verificam o isolamento entre personagens, a migração e o backup do armazenamento antigo, a criação completa, nascimento, idade, aniversários sincronizados, exportação e importação individual sem sobrescrita, a evolução de nível sem regressão de investimentos, a preservação de recursos, o histórico e o desfazer da última evolução, os seis modelos prontos, os orçamentos de progressão, as recomendações próprias das 28 subclasses e escolas, o aprendizado de magias, os painéis de perícias e magias, os custos efetivos, Magia Expandida, Sobrecarga Arcana, Cura Mágica, dano mágico por alvo, fórmulas ofensivas, áreas, tipo Fogo, Bafo de Dragão, Inflamador, Fisstech e sua Abstinência atrasada. Também cobrem a integridade dos 83 acontecimentos históricos, das 13 celebrações anuais, de seus dias adicionais, descrições e datas organizacionais, além do parsing de datas completas, ambíguas e relativas, ordenação AR/DR, busca, filtros e integração da cronologia com o calendário. O relógio da campanha continua validado em seu início em 1276 DR, ciclos lunares, conversões de minutos, passagem entre dias, nomes medievais, persistência, backup, efeitos em horas e dias, expiração vinculada, recompensas de eventos sem duplicidade e integração com turnos e sono. O Mundo é validado quanto à hierarquia, isolamento por campanha, IDs, exportação, 69 entidades políticas, 90 locais canônicos, 126 pontos cartográficos, coordenadas, confiabilidade, locais personalizados protegidos, NPCs, deslocamentos cronológicos, comerciantes, estoques, serviços, descontos de Negócios, reposição temporal sem duplicidade, remoção de locais em uso, privacidade online, 37 situações históricas, 15 acontecimentos, vínculos territoriais, fontes, períodos AR/DR e mudanças de governo, ocupação ou reconstrução conforme o calendário. A camada visual também valida 215 locais posicionados, os 144 círculos verdes importados do SVG sem conflitos, a migração das coordenadas oficiais corrigidas, 270 trechos viários, 116 entroncamentos, distâncias na escala comum, calibração por campanha, A*, modos a pé/cavalo/carruagem, restrições viárias e duração calculada. Cuidados e descanso, ciclos diários, contadores de ausência, duração e restauração dos benefícios, recursos temporários, testes de hospedagem, redução profissional de custos, Cuidado Prolongado, Dormir Leve, Balada do Sobrevivente e os benefícios de Freya também são validados. A suíte cobre ainda os itens instantâneos, seleção contextual de alvos, ablação em armadura e arma, preparação de dano por item, Veneno Negro, remoção de intoxicação, fórmula e recompensas dos testes, integração do `20 natural`, as quatro gravidades e os 24 ferimentos críticos, tratamento médico, vacilos, críticos defensivos, desarme, consequências avançadas, toxicidade, overdose e Mel Branco. Por fim, cobre a sincronização com fichas, a integridade do catálogo, equipamentos, munições, defesas, reparos, ataques de monstros, saque, Coroas, receitas, rendimentos, transferências entre armazenamentos, renderização de ícones na Central de Carga, o bloqueio global de zoom e a colaboração: campanhas versionadas, checkpoints, papéis, propostas, conflitos, projeções seguras, criação protegida de salas, autenticação por dispositivo e comandos de recursos em tempo real.
+Os testes verificam o isolamento entre personagens, a migração e o backup do armazenamento antigo, a criação completa, nascimento, idade, aniversários sincronizados, exportação e importação individual sem sobrescrita, a evolução de nível sem regressão de investimentos, a preservação de recursos, o histórico e o desfazer da última evolução, os seis modelos prontos, os orçamentos de progressão, as recomendações próprias das 28 subclasses e escolas, o aprendizado de magias, os painéis de perícias e magias, os custos efetivos, Magia Expandida, Sobrecarga Arcana, Cura Mágica, dano mágico por alvo, fórmulas ofensivas, áreas, tipo Fogo, Bafo de Dragão, Inflamador, Fisstech e sua Abstinência atrasada. Também cobrem a integridade dos 83 acontecimentos históricos, das 13 celebrações anuais, de seus dias adicionais, descrições e datas organizacionais, além do parsing de datas completas, ambíguas e relativas, ordenação AR/DR, busca, filtros e integração da cronologia com o calendário. O relógio da campanha continua validado em seu início em 1276 DR, ciclos lunares, conversões de minutos, passagem entre dias, nomes medievais, persistência, backup, efeitos em horas e dias, expiração vinculada, recompensas de eventos sem duplicidade e integração com turnos e sono. O Mundo é validado quanto à hierarquia, isolamento por campanha, IDs, exportação, 69 entidades políticas, 90 locais canônicos, 126 pontos cartográficos, coordenadas, confiabilidade, locais personalizados protegidos, NPCs, deslocamentos cronológicos, comerciantes, estoques, serviços, descontos de Negócios, reposição temporal sem duplicidade, remoção de locais em uso, privacidade online, 37 situações históricas, 15 acontecimentos, vínculos territoriais, fontes, períodos AR/DR e mudanças de governo, ocupação ou reconstrução conforme o calendário. A camada visual também valida 215 locais posicionados, os 144 círculos verdes importados do SVG sem conflitos, a migração das coordenadas oficiais corrigidas, 270 trechos viários, 116 entroncamentos, distâncias na escala comum, calibração por campanha, A*, modos a pé/cavalo/carruagem, restrições viárias e duração calculada. Cuidados e descanso, barras contínuas, limiares automáticos, previsão temporal, consequências críticas assistidas, duração dos benefícios por percentual, prevenção de recompensas repetidas, histórico, desfazer, sincronização, recursos temporários, testes de hospedagem, redução profissional de custos, Cuidado Prolongado, Dormir Leve, Balada do Sobrevivente e os benefícios de Freya também são validados. A suíte cobre ainda os itens instantâneos, seleção contextual de alvos, ablação em armadura e arma, preparação de dano por item, Veneno Negro, remoção de intoxicação, fórmula e recompensas dos testes, integração do `20 natural`, as quatro gravidades e os 24 ferimentos críticos, tratamento médico, vacilos, críticos defensivos, desarme, consequências avançadas, toxicidade, overdose e Mel Branco. Por fim, cobre a sincronização com fichas, a integridade do catálogo, equipamentos, munições, defesas, reparos, ataques de monstros, saque, Coroas, receitas, rendimentos, transferências entre armazenamentos, renderização de ícones na Central de Carga, o bloqueio global de zoom e a colaboração: campanhas versionadas, checkpoints, papéis, propostas, conflitos, projeções seguras, criação protegida de salas, autenticação por dispositivo e comandos de recursos em tempo real.
 
 ## ✅ Estado atual
 
@@ -1312,6 +1360,7 @@ Os testes verificam o isolamento entre personagens, a migração e o backup do a
 - [x] Migração segura com cópia local única das fichas anteriores e resumo atualizado
 - [x] Painéis de perícias e habilidades profissionais para jogadores no combate
 - [x] Cuidados, descanso, necessidades, benefícios diários e integrações profissionais persistentes
+- [x] Barras contínuas de Fome, Sede, Sono e Higiene com escala interna de 1000 pontos e processamento por minuto
 - [x] Painel de magias conhecidas com detalhes, custo efetivo e conjuração direta no combate
 - [x] Magia Expandida e Sobrecarga Arcana integradas ao custo, teste, recursos e histórico
 - [x] Dano mágico por alvo com D20 natural, dano, região, crítico contextual e processamento automático
