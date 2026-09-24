@@ -218,7 +218,7 @@ assert.ok(
     'As necessidades precisam carregar depois do relógio para registrar seu processador.'
 );
 assert.match(workerSource, /\.\/js\/character-needs\.js/);
-assert.match(workerSource, /witcher-combat-tracker-v185/);
+assert.match(workerSource, /witcher-combat-tracker-v186/);
 assert.match(equipmentCss, /character-needs-card/);
 assert.match(equipmentCss, /character-need-meter/);
 assert.match(enhancementsSource, /needsState/);

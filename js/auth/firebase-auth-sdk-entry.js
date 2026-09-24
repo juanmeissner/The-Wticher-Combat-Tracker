@@ -62,6 +62,32 @@ function actionCodeSettings() {
     return url ? { url, handleCodeInApp: false } : undefined;
 }
 
+function shouldUseFirebaseHostedAction(error) {
+    return ['auth/invalid-continue-uri', 'auth/unauthorized-continue-uri'].includes(String(error?.code || ''));
+}
+
+async function sendVerificationEmail(user) {
+    const settings = actionCodeSettings();
+    if (!settings) return sendEmailVerification(user);
+    try {
+        return await sendEmailVerification(user, settings);
+    } catch (error) {
+        if (!shouldUseFirebaseHostedAction(error)) throw error;
+        return sendEmailVerification(user);
+    }
+}
+
+async function sendResetEmail(email) {
+    const settings = actionCodeSettings();
+    if (!settings) return sendPasswordResetEmail(auth, email);
+    try {
+        return await sendPasswordResetEmail(auth, email, settings);
+    } catch (error) {
+        if (!shouldUseFirebaseHostedAction(error)) throw error;
+        return sendPasswordResetEmail(auth, email);
+    }
+}
+
 function firebaseErrorMessage(error) {
     const code = String(error?.code || '');
     const messages = {
@@ -119,7 +145,7 @@ async function register({ email, password, displayName }) {
     if (String(displayName || '').trim()) {
         await updateProfile(credential.user, { displayName: String(displayName).trim() });
     }
-    await sendEmailVerification(credential.user, actionCodeSettings());
+    await sendVerificationEmail(credential.user);
     await reload(credential.user);
     currentUser = auth.currentUser;
     notify();
@@ -156,7 +182,7 @@ async function resendVerification() {
     await initialize();
     if (!auth.currentUser) throw new Error('Entre na conta antes de solicitar a confirmação.');
     if (auth.currentUser.emailVerified) return publicUser(auth.currentUser);
-    await sendEmailVerification(auth.currentUser, actionCodeSettings());
+    await sendVerificationEmail(auth.currentUser);
     return publicUser(auth.currentUser);
 }
 
@@ -171,7 +197,7 @@ async function refreshUser() {
 
 async function requestPasswordReset(email) {
     await initialize();
-    await sendPasswordResetEmail(auth, String(email || '').trim(), actionCodeSettings());
+    await sendResetEmail(String(email || '').trim());
     return true;
 }
 

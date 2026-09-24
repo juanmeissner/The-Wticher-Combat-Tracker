@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'witcher-combat-tracker-v185';
+const CACHE_VERSION = 'witcher-combat-tracker-v186';
 const CORE_CACHE_NAME = `${CACHE_VERSION}-core`;
 const RUNTIME_CACHE_NAME = `${CACHE_VERSION}-runtime`;
 

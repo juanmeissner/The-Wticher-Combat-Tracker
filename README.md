@@ -1113,6 +1113,8 @@ legado segue disponível sem migração ou exclusão automática de contas.
 - contas por E-mail/senha podem trocar a senha após confirmar a senha atual;
 - contas exclusivamente Google continuam gerenciando a senha pela própria Conta Google;
 - senhas atuais e novas nunca são armazenadas no PWA, no backup ou no D1.
+- e-mails de confirmação e recuperação possuem fallback para a página oficial
+  do Firebase quando o endereço de retorno personalizado não for aceito.
 
 Consulte o [guia de preparação e configuração do Firebase](docs/firebase-auth-rollout.md)
 para criar o projeto, habilitar E-mail/senha e Google, autorizar os domínios e

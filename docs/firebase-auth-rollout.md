@@ -130,3 +130,5 @@ e-mail. Isso evita que duas pessoas recebam dados uma da outra por engano.
 - nova senha mantida exclusivamente pelo Firebase, sem persistência local ou no D1;
 - contas exclusivamente Google continuam gerenciando a senha pela Conta Google;
 - interface responsiva e recolhível para não ocupar permanentemente o painel da conta.
+- confirmação e recuperação tentam retornar ao PWA e usam automaticamente a
+  página segura hospedada pelo Firebase quando a URL de retorno for recusada.

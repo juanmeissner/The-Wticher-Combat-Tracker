@@ -24,10 +24,14 @@ test('cliente Firebase cobre cadastro, confirmação, login, Google, recuperaç�
     const source = read(path.join('js', 'auth', 'firebase-auth-sdk-entry.js'));
     assert.match(source, /createUserWithEmailAndPassword/);
     assert.match(source, /sendEmailVerification/);
+    assert.match(source, /shouldUseFirebaseHostedAction/);
+    assert.match(source, /auth\/invalid-continue-uri/);
+    assert.match(source, /sendEmailVerification\(user\)/);
     assert.match(source, /signInWithEmailAndPassword/);
     assert.match(source, /signInWithPopup/);
     assert.match(source, /signInWithRedirect/);
     assert.match(source, /sendPasswordResetEmail/);
+    assert.match(source, /sendPasswordResetEmail\(auth, email\)/);
     assert.match(source, /reauthenticateWithCredential/);
     assert.match(source, /EmailAuthProvider\.credential/);
     assert.match(source, /updatePassword/);
