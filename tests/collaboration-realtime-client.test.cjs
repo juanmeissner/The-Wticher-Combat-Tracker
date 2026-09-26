@@ -42,7 +42,7 @@ const wrangler = fs.readFileSync(path.join(projectRoot, 'cloudflare', 'wrangler.
 
 assert.match(indexSource, /collaboration\/realtime-client\.js/);
 assert.match(indexSource, /collaboration\/offline-queue\.js/);
-assert.match(serviceWorker, /witcher-combat-tracker-v186/);
+assert.match(serviceWorker, /witcher-combat-tracker-v193/);
 assert.match(serviceWorker, /collaboration\/realtime-client\.js/);
 assert.match(serviceWorker, /collaboration\/offline-queue\.js/);
 assert.match(serviceWorker, /core\/performance\.js/);
@@ -62,6 +62,9 @@ assert.match(sessionSource, /Acesso removido pelo Mestre/);
 assert.match(sessionSource, /Entrar em outra sala/);
 assert.match(fs.readFileSync(path.join(projectRoot, 'js', 'collaboration', 'realtime-client.js'), 'utf8'), /handleTerminalAccessError/);
 assert.match(fs.readFileSync(path.join(projectRoot, 'js', 'collaboration', 'realtime-client.js'), 'utf8'), /transient/);
+assert.match(fs.readFileSync(path.join(projectRoot, 'js', 'collaboration', 'realtime-client.js'), 'utf8'), /getCollaborationAccessToken/);
+assert.match(fs.readFileSync(path.join(projectRoot, 'js', 'collaboration', 'realtime-client.js'), 'utf8'), /account:\s*true/);
+assert.match(sessionSource, /Identidade da conta ativa/);
 assert.doesNotMatch(sessionSource, /id="collaborationEndpoint"/);
 assert.match(sessionSource, /conexão segura já está configurada/i);
 assert.match(sessionSource, /Aprovar/);

@@ -1,4 +1,4 @@
-import { handleAccountRequest, isAccountRequest } from './account-service.mjs';
+import { authenticateOptionalAccount, handleAccountRequest, isAccountRequest } from './account-service.mjs';
 
 const ROOM_KEY = 'room';
 const ROOM_DIRECTORY_KEY = 'rooms';
@@ -300,6 +300,9 @@ function normalizeMember(value = {}) {
         role: value.role === 'master' ? 'master' : 'player',
         participantId: value.participantId ? String(value.participantId) : null,
         sheetId: value.sheetId ? String(value.sheetId) : null,
+        accountUserId: value.accountUserId ? String(value.accountUserId) : null,
+        accountDisplayName: value.accountDisplayName ? String(value.accountDisplayName).slice(0, 80) : null,
+        authenticated: Boolean(value.accountUserId),
         tokenHash: String(value.tokenHash || ''),
         revoked: value.revoked === true,
         createdAt: value.createdAt || new Date().toISOString(),
@@ -314,7 +317,20 @@ function publicMember(member) {
         name: member.name,
         role: member.role,
         participantId: member.participantId,
-        sheetId: member.sheetId
+        sheetId: member.sheetId,
+        accountUserId: member.accountUserId || null,
+        accountDisplayName: member.accountDisplayName || null,
+        authenticated: Boolean(member.accountUserId)
+    };
+}
+
+function trustedAccountFromRequest(request) {
+    const accountUserId = String(request.headers.get('x-witcher-account-id') || '').trim().slice(0, 120);
+    if (!accountUserId) return null;
+    return {
+        userId: accountUserId,
+        displayName: String(request.headers.get('x-witcher-account-name') || '').trim().slice(0, 80) || 'Conta autenticada',
+        provider: String(request.headers.get('x-witcher-account-provider') || '').trim().slice(0, 24) || 'account'
     };
 }
 
@@ -898,10 +914,29 @@ export class CampaignRoom {
             memberId: member?.id || null,
             memberName: member?.name || null,
             role: member?.role || null,
+            accountUserId: member?.accountUserId || null,
+            accountDisplayName: member?.accountDisplayName || null,
+            authenticated: Boolean(member?.accountUserId),
             detail: clone(detail),
             createdAt: new Date().toISOString()
         });
         this.room.accessLog = this.room.accessLog.slice(-200);
+    }
+
+    recordMutation(member, action, detail = {}) {
+        if (!this.room) return;
+        this.room.lastMutation = {
+            action: String(action || 'campaign.changed'),
+            actorId: member?.actorId || null,
+            memberId: member?.id || null,
+            memberName: member?.name || null,
+            role: member?.role || null,
+            accountUserId: member?.accountUserId || null,
+            accountDisplayName: member?.accountDisplayName || null,
+            authenticated: Boolean(member?.accountUserId),
+            detail: clone(detail),
+            createdAt: new Date().toISOString()
+        };
     }
 
     async syncDirectory(options = {}) {
@@ -1027,9 +1062,13 @@ export class CampaignRoom {
         const salt = randomSecret(18);
         const iterations = normalizePbkdf2Iterations(this.env?.PBKDF2_ITERATIONS);
         const token = randomSecret();
+        const account = trustedAccountFromRequest(request);
         const master = normalizeMember({
             name: String(body.actorName).trim(),
             role: 'master',
+            actorId: account ? `account:${account.userId}` : undefined,
+            accountUserId: account?.userId,
+            accountDisplayName: account?.displayName,
             deviceId: body.deviceId,
             tokenHash: await sha256(token)
         });
@@ -1061,6 +1100,7 @@ export class CampaignRoom {
             autoCloseAt: new Date(Date.now() + this.getMasterReconnectGraceMs()).toISOString(),
             closedAt: null
         };
+        this.recordMutation(master, 'room.created');
         const ticket = await this.createTicket(master.id);
         this.appendAccessLog('room.created', master);
         await this.persist();
@@ -1129,10 +1169,14 @@ export class CampaignRoom {
                 ? 'Escolha qual personagem será controlado neste dispositivo.'
                 : 'Não há personagens disponíveis nesta sala.', 409, { participants: candidates });
         }
+        const account = trustedAccountFromRequest(request);
         const token = randomSecret();
         const member = normalizeMember({
             name: body.actorName || selected.name,
             role: 'player',
+            actorId: account ? `account:${account.userId}` : undefined,
+            accountUserId: account?.userId,
+            accountDisplayName: account?.displayName,
             deviceId: body.deviceId,
             participantId: selected.participantId,
             sheetId: selected.sheetId,
@@ -1143,6 +1187,7 @@ export class CampaignRoom {
         this.appendAccessLog(imported ? 'member.joined-with-character' : 'member.joined', member, {
             participantId: selected.participantId
         });
+        if (imported) this.recordMutation(member, 'character.imported', { participantId: selected.participantId });
         const ticket = await this.createTicket(member.id);
         await this.persist();
         await this.syncDirectory();
@@ -1257,6 +1302,7 @@ export class CampaignRoom {
             conflicts,
             decisions,
             activity: this.room.activity.slice(-80).map(clone),
+            lastMutation: member?.role === 'master' ? clone(this.room.lastMutation || null) : null,
             accessLog: member?.role === 'master' ? this.room.accessLog.slice(-80).map(clone) : [],
             members: member?.role === 'master'
                 ? Object.values(this.room.members || {}).map(entry => ({
@@ -1325,6 +1371,7 @@ export class CampaignRoom {
                 return;
             }
             this.room.campaign = campaign;
+            this.recordMutation(member, 'campaign.snapshot');
             this.room.sequence += 1;
             this.room.updatedAt = new Date().toISOString();
             await this.persist();
@@ -1351,6 +1398,7 @@ export class CampaignRoom {
                 return;
             }
             this.room.campaign = campaign;
+            this.recordMutation(member, 'campaign.patch');
             this.room.sequence += 1;
             this.room.updatedAt = new Date().toISOString();
             await this.persist();
@@ -1380,6 +1428,13 @@ export class CampaignRoom {
             this.send(socket, { type: 'command.rejected', commandId: command?.id || null, reason: 'Comando não suportado nesta etapa.' });
             return;
         }
+        command = clone({
+            ...command,
+            actorId: member.actorId,
+            role: member.role,
+            actorAccountId: member.accountUserId || null,
+            actorAccountName: member.accountDisplayName || null
+        });
         if (this.room.seenCommandIds.includes(command.id)) {
             this.send(socket, { type: 'command.accepted', commandId: command.id, duplicate: true, sequence: this.room.sequence });
             return;
@@ -1463,6 +1518,9 @@ export class CampaignRoom {
                 type: command.type,
                 memberId: member.id,
                 memberName: member.name,
+                actorId: member.actorId,
+                accountUserId: member.accountUserId || null,
+                accountDisplayName: member.accountDisplayName || null,
                 participantId: member.participantId,
                 payload: clone(command.payload),
                 createdAt: new Date().toISOString()
@@ -1487,6 +1545,10 @@ export class CampaignRoom {
             [String(command.entityKey || `${command.type}:${command.targetId || 'campaign'}`)]: this.room.campaign.revision
         };
         this.room.updatedAt = new Date().toISOString();
+        this.recordMutation(member, command.type, {
+            commandId: command.id,
+            targetId: command.targetId || null
+        });
         await this.persist();
         await this.syncDirectory();
         const accepted = { type: 'command.accepted', commandId: command.id, sequence: this.room.sequence, result };
@@ -1559,6 +1621,8 @@ export class CampaignRoom {
             status: 'pending',
             memberId: member.id,
             memberName: member.name,
+            accountUserId: member.accountUserId || null,
+            accountDisplayName: member.accountDisplayName || null,
             participantId: member.participantId,
             sheetId: member.sheetId,
             command: clone({ ...command, actorId: member.actorId, role: member.role }),
@@ -1571,6 +1635,7 @@ export class CampaignRoom {
         this.room.seenCommandIds = this.room.seenCommandIds.slice(-MAX_SEEN_COMMANDS);
         this.room.sequence += 1;
         this.room.updatedAt = new Date().toISOString();
+        this.recordMutation(member, 'proposal.created', { proposalId: proposal.id });
         await this.persist();
         this.broadcast(target => target.role === 'master' || target.id === member.id
             ? { type: 'proposal.created', sequence: this.room.sequence, proposal: clone(proposal) }
@@ -1634,6 +1699,8 @@ export class CampaignRoom {
             label: proposal.label,
             note: proposal.note,
             decidedBy: member.name,
+            decidedByAccountId: member.accountUserId || null,
+            decidedByAccountName: member.accountDisplayName || null,
             createdAt: proposal.resolvedAt
         };
         this.room.decisions.push(record);
@@ -1642,6 +1709,10 @@ export class CampaignRoom {
         this.room.seenCommandIds = this.room.seenCommandIds.slice(-MAX_SEEN_COMMANDS);
         this.room.sequence += 1;
         this.room.updatedAt = new Date().toISOString();
+        this.recordMutation(member, 'proposal.resolve', {
+            proposalId: proposal.id,
+            decision
+        });
         await this.persist();
         this.broadcast({ type: 'proposal.resolved', sequence: this.room.sequence, proposal: clone(proposal), decision: record });
         this.broadcast(target => this.snapshotEvent(target));
@@ -1656,6 +1727,8 @@ export class CampaignRoom {
             status: 'pending',
             memberId: options.memberId || member.id,
             memberName: options.memberName || member.name,
+            accountUserId: member.accountUserId || null,
+            accountDisplayName: member.accountDisplayName || null,
             proposalId: options.proposalId || null,
             entityKey: String(command.entityKey || `${command.type}:${command.targetId || 'campaign'}`),
             expectedVersion: Math.max(0, Number(command.baseVersion) || 0),
@@ -1849,6 +1922,29 @@ async function routeToDirectory(env, request, internalPath) {
     return stub.fetch(new Request(target, request));
 }
 
+export function requestWithTrustedAccount(request, auth) {
+    const headers = new Headers(request.headers);
+    headers.delete('x-witcher-account-id');
+    headers.delete('x-witcher-account-name');
+    headers.delete('x-witcher-account-provider');
+    if (auth?.user?.id) {
+        headers.delete('authorization');
+        headers.set('x-witcher-account-id', String(auth.user.id));
+        headers.set('x-witcher-account-name', String(auth.user.displayName || auth.user.username || 'Conta autenticada'));
+        headers.set('x-witcher-account-provider', String(auth.provider || auth.user.authProvider || 'account'));
+    }
+    return new Request(request, { headers });
+}
+
+function internalRoomHeaders(request) {
+    const headers = new Headers({ 'content-type': 'application/json' });
+    ['x-witcher-account-id', 'x-witcher-account-name', 'x-witcher-account-provider'].forEach(name => {
+        const value = request.headers.get(name);
+        if (value) headers.set(name, value);
+    });
+    return headers;
+}
+
 export default {
     async fetch(request, env) {
         const url = new URL(request.url);
@@ -1860,7 +1956,7 @@ export default {
             return jsonResponse({
                 ok: true,
                 service: 'witcher-combat-collaboration',
-                version: 3,
+                version: 6,
                 accounts: Boolean(env.ACCOUNT_DB),
                 firebase: Boolean(env.FIREBASE_PROJECT_ID)
             }, 200, headers);
@@ -1877,28 +1973,41 @@ export default {
                 const listMatch = request.method === 'GET' && url.pathname === '/api/rooms';
                 const createMatch = request.method === 'POST' && url.pathname === '/api/rooms';
                 const roomMatch = url.pathname.match(/^\/api\/rooms\/([A-Z0-9]{6,12})\/(join|ticket|socket|status)$/i);
-                if (listMatch) {
-                    response = await routeToDirectory(env, request, '/internal/list');
-                } else if (createMatch) {
-                    const body = await readJson(request).catch(() => null);
-                    if (!body) return errorResponse('invalid_json', 'Os dados enviados são inválidos.', 400, {}, headers);
-                    let lastResponse = null;
-                    for (let attempt = 0; attempt < 5; attempt++) {
-                        const code = createRoomCode();
-                        const forwarded = new Request(`${url.origin}/internal/create`, {
-                            method: 'POST', headers: { 'content-type': 'application/json' },
-                            body: JSON.stringify({ ...body, roomCode: code })
-                        });
-                        lastResponse = await routeToRoom(env, code, forwarded, '/internal/create');
-                        if (lastResponse.status !== 409) break;
-                    }
-                    response = lastResponse || errorResponse('room_code_failed', 'Não foi possível gerar o código da sala.', 503);
-                } else if (roomMatch) {
-                    const code = normalizeRoomCode(roomMatch[1]);
-                    const action = roomMatch[2].toLowerCase();
-                    response = await routeToRoom(env, code, request, `/internal/${action}`);
+                const shouldResolveAccount = createMatch
+                    || (request.method === 'POST' && roomMatch?.[2]?.toLowerCase() === 'join');
+                const accountResult = shouldResolveAccount
+                    ? await authenticateOptionalAccount(request, env.ACCOUNT_DB, {
+                        firebaseProjectId: env.FIREBASE_PROJECT_ID,
+                        firebaseFetch: fetch
+                    })
+                    : { auth: null, error: null };
+                if (accountResult.error) {
+                    response = accountResult.error;
                 } else {
-                    response = errorResponse('not_found', 'Rota não encontrada.', 404);
+                    request = requestWithTrustedAccount(request, accountResult.auth);
+                    if (listMatch) {
+                        response = await routeToDirectory(env, request, '/internal/list');
+                    } else if (createMatch) {
+                        const body = await readJson(request).catch(() => null);
+                        if (!body) return errorResponse('invalid_json', 'Os dados enviados são inválidos.', 400, {}, headers);
+                        let lastResponse = null;
+                        for (let attempt = 0; attempt < 5; attempt++) {
+                            const code = createRoomCode();
+                            const forwarded = new Request(`${url.origin}/internal/create`, {
+                                method: 'POST', headers: internalRoomHeaders(request),
+                                body: JSON.stringify({ ...body, roomCode: code })
+                            });
+                            lastResponse = await routeToRoom(env, code, forwarded, '/internal/create');
+                            if (lastResponse.status !== 409) break;
+                        }
+                        response = lastResponse || errorResponse('room_code_failed', 'Não foi possível gerar o código da sala.', 503);
+                    } else if (roomMatch) {
+                        const code = normalizeRoomCode(roomMatch[1]);
+                        const action = roomMatch[2].toLowerCase();
+                        response = await routeToRoom(env, code, request, `/internal/${action}`);
+                    } else {
+                        response = errorResponse('not_found', 'Rota não encontrada.', 404);
+                    }
                 }
             }
         } catch (error) {

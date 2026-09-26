@@ -140,6 +140,83 @@ test('criação da sala exige nomes explícitos para sala e Mestre', async () =>
     assert.equal((await missingRoom.json()).error, 'invalid_room_name');
 });
 
+test('sala associa Mestre e jogadores à identidade autenticada sem expor credenciais', async () => {
+    const moduleUrl = pathToFileURL(path.resolve(__dirname, '..', 'cloudflare', 'src', 'worker.mjs')).href;
+    const worker = await import(moduleUrl);
+    const ctx = new FakeContext();
+    const room = new worker.CampaignRoom(ctx, { PBKDF2_ITERATIONS: '1000' });
+    const createResponse = await room.fetch(new Request('https://room.test/internal/create', {
+        method: 'POST',
+        headers: {
+            'content-type': 'application/json',
+            'x-witcher-account-id': 'user-master-123',
+            'x-witcher-account-name': 'Conta do Mestre',
+            'x-witcher-account-provider': 'firebase'
+        },
+        body: JSON.stringify({
+            roomCode: 'AUTH2345', roomName: 'Sala autenticada', actorName: 'Mestre da mesa',
+            password: 'segredo-forte', deviceId: 'master-device', campaign: campaignFixture(),
+            accountUserId: 'identidade-forjada'
+        })
+    }));
+    assert.equal(createResponse.status, 201);
+    const created = await createResponse.json();
+    assert.equal(created.member.accountUserId, 'user-master-123');
+    assert.equal(created.member.accountDisplayName, 'Conta do Mestre');
+    assert.equal(created.member.authenticated, true);
+    assert.equal(created.member.actorId, 'account:user-master-123');
+
+    const joinResponse = await room.fetch(new Request('https://room.test/internal/join', {
+        method: 'POST',
+        headers: {
+            'content-type': 'application/json',
+            'x-witcher-account-id': 'user-player-456',
+            'x-witcher-account-name': 'Conta do Jogador'
+        },
+        body: JSON.stringify({
+            password: 'segredo-forte', participantId: 'geralt', actorName: 'Geralt Jogador',
+            deviceId: 'player-device', accountUserId: 'outra-identidade-forjada'
+        })
+    }));
+    assert.equal(joinResponse.status, 200);
+    const joined = await joinResponse.json();
+    assert.equal(joined.member.accountUserId, 'user-player-456');
+    assert.equal(joined.member.accountDisplayName, 'Conta do Jogador');
+    assert.equal(joined.member.actorId, 'account:user-player-456');
+
+    const stored = await ctx.storage.get('room');
+    const members = Object.values(stored.members);
+    assert.deepEqual(members.map(member => member.accountUserId).sort(), ['user-master-123', 'user-player-456']);
+    assert.doesNotMatch(JSON.stringify(stored), /identidade-forjada|outra-identidade-forjada|Bearer/);
+    assert.equal(stored.accessLog.at(-1).accountUserId, 'user-player-456');
+    assert.equal(stored.lastMutation.accountUserId, 'user-master-123');
+});
+
+test('roteador remove identidade interna forjada e não encaminha token da conta', async () => {
+    const moduleUrl = pathToFileURL(path.resolve(__dirname, '..', 'cloudflare', 'src', 'worker.mjs')).href;
+    const worker = await import(moduleUrl);
+    const forged = new Request('https://worker.test/api/rooms', {
+        method: 'POST',
+        headers: {
+            authorization: 'Bearer segredo-da-conta',
+            'x-witcher-account-id': 'forjado',
+            'x-witcher-account-name': 'Nome forjado'
+        },
+        body: '{}'
+    });
+    const guest = worker.requestWithTrustedAccount(forged.clone(), null);
+    assert.equal(guest.headers.get('x-witcher-account-id'), null);
+
+    const authenticated = worker.requestWithTrustedAccount(forged.clone(), {
+        provider: 'firebase',
+        user: { id: 'user-confirmed', displayName: 'Identidade confirmada' }
+    });
+    assert.equal(authenticated.headers.get('authorization'), null);
+    assert.equal(authenticated.headers.get('x-witcher-account-id'), 'user-confirmed');
+    assert.equal(authenticated.headers.get('x-witcher-account-name'), 'Identidade confirmada');
+    assert.equal(authenticated.headers.get('x-witcher-account-provider'), 'firebase');
+});
+
 test('iterações PBKDF2 respeitam o limite aceito pelo Cloudflare Workers', async () => {
     const moduleUrl = pathToFileURL(path.resolve(__dirname, '..', 'cloudflare', 'src', 'worker.mjs')).href;
     const worker = await import(moduleUrl);

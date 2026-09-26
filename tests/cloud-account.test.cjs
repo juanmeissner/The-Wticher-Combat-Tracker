@@ -51,7 +51,14 @@ test('contas privadas autenticam e isolam campanhas permanentes por proprietári
     const moduleUrl = pathToFileURL(path.join(projectRoot, 'cloudflare', 'src', 'account-service.mjs')).href;
     const accountService = await import(moduleUrl);
     const database = new DatabaseSync(':memory:');
-    database.exec(fs.readFileSync(path.join(projectRoot, 'cloudflare', 'migrations', '0001_accounts_and_campaigns.sql'), 'utf8'));
+    for (const migration of [
+        '0001_accounts_and_campaigns.sql',
+        '0002_firebase_identities.sql',
+        '0003_account_security_events.sql',
+        '0004_legacy_account_migrations.sql'
+    ]) {
+        database.exec(fs.readFileSync(path.join(projectRoot, 'cloudflare', 'migrations', migration), 'utf8'));
+    }
     const d1 = new D1DatabaseAdapter(database);
 
     const registerResponse = await accountService.handleAccountRequest(jsonRequest(
@@ -84,6 +91,18 @@ test('contas privadas autenticam e isolam campanhas permanentes por proprietári
     ), d1);
     assert.equal(profileResponse.status, 200);
     assert.equal((await profileResponse.json()).user.displayName, 'Juan');
+    const collaborationIdentity = await accountService.authenticateOptionalAccount(new Request(
+        'https://account.test/api/rooms',
+        { method: 'POST', headers: { authorization: `Bearer ${registered.token}` } }
+    ), d1);
+    assert.equal(collaborationIdentity.error, null);
+    assert.equal(collaborationIdentity.auth.user.id, registered.user.id);
+    const invalidCollaborationIdentity = await accountService.authenticateOptionalAccount(new Request(
+        'https://account.test/api/rooms',
+        { method: 'POST', headers: { authorization: 'Bearer token-invalido' } }
+    ), d1);
+    assert.equal(invalidCollaborationIdentity.auth, null);
+    assert.equal(invalidCollaborationIdentity.error.status, 401);
 
     const campaign = {
         schemaVersion: 1,
@@ -192,12 +211,19 @@ test('PWA carrega a conta opcional sem incluir o token em backups', () => {
     const styles = fs.readFileSync(path.join(projectRoot, 'collaboration.css'), 'utf8');
     assert.match(indexSource, /cloud-account\.js[\s\S]+collaboration-session\.js/);
     assert.match(workerSource, /cloud-account\.js/);
-assert.match(workerSource, /witcher-combat-tracker-v186/);
+assert.match(workerSource, /witcher-combat-tracker-v193/);
     assert.match(appInit, /APP_SENSITIVE_STORAGE_KEYS/);
     assert.match(appInit, /dnd_cloud_account_session_v1/);
     assert.match(sessionSource, /cloudAccount.*getPanelMarkup/);
     assert.match(accountSource, /Salvar campanha na nuvem/);
     assert.match(accountSource, /requestDeleteCloudCampaign/);
+    assert.match(accountSource, /linkFirebaseLegacyAccount/);
     assert.match(styles, /cloud-account-panel/);
     assert.match(styles, /cloud-campaign-card-actions/);
+    assert.match(styles, /firebase-legacy-link-form/);
+assert.match(accountSource, /getCollaborationAccessToken/);
+assert.match(accountSource, /getPublicIdentity/);
+assert.match(accountSource, /Neste dispositivo/);
+assert.match(accountSource, /Na sua conta/);
+    assert.match(styles, /@media \(max-width: 520px\)/);
 });

@@ -1115,6 +1115,57 @@ legado segue disponível sem migração ou exclusão automática de contas.
 - senhas atuais e novas nunca são armazenadas no PWA, no backup ou no D1.
 - e-mails de confirmação e recuperação possuem fallback para a página oficial
   do Firebase quando o endereço de retorno personalizado não for aceito.
+- a confirmação do e-mail renova o token imediatamente e recupera automaticamente
+  requisições que ainda tenham recebido a reivindicação antiga de e-mail pendente.
+- contas Cloudflare anteriores podem ser vinculadas explicitamente ao Firebase
+  informando novamente o usuário e a senha antigos;
+- a vinculação preserva campanhas e sessões das duas origens, mas bloqueia IDs
+  repetidos em vez de sobrescrever uma campanha silenciosamente;
+- depois da vinculação, Firebase e acesso legado apontam para o mesmo proprietário
+  no D1, sem recriar o perfil técnico temporário.
+- reenvios de confirmação respeitam um intervalo de 60 segundos, evitando cliques
+  repetidos e mantendo o limite mesmo ao reabrir o painel;
+- antes da confirmação, contas por senha podem corrigir o e-mail digitado e recebem
+  o novo link somente após confirmar a senha atual;
+- a recuperação de senha mantém resposta neutra e retorna ao login depois que o
+  link seguro do Firebase é concluído;
+- alterações de senha encerram as sessões legadas vinculadas e ficam registradas
+  em um histórico privado de segurança, sem armazenar credenciais;
+- a troca de endereço só é efetivada pelo Firebase depois da verificação do novo e-mail.
+- o login com Google usa popup nos navegadores compatíveis e redirecionamento no
+  PWA instalado ou quando a janela for bloqueada;
+- nome, e-mail e avatar da Conta Google são exibidos no perfil, e a sessão é
+  restaurada automaticamente nos próximos acessos;
+- a identidade Google confirmada pelo Firebase acessa as campanhas permanentes
+  sem uma segunda confirmação de e-mail;
+- conflitos com uma conta existente por outro método são informados sem unir ou
+  sobrescrever identidades automaticamente.
+- quando Google e E-mail/senha usam o mesmo endereço, o aplicativo exige a senha
+  original antes de vinculá-los à mesma identidade;
+- contas Google podem adicionar uma senha, e contas por senha podem adicionar o
+  Google, preservando o mesmo UID e todas as campanhas;
+- o gerenciamento da conta mostra os métodos ativos e só permite desconectar um
+  provedor quando outro método de entrada continuar disponível;
+- credenciais pendentes ficam apenas na memória e podem ser canceladas sem alterar
+  nenhum dado da conta ou da campanha.
+- contas Cloudflare antigas recebem um assistente de migração para criar ou entrar
+  no Firebase, confirmar o e-mail e revisar a transferência antes de concluí-la;
+- migrações interrompidas preservam a senha, a sessão e todas as campanhas antigas;
+- a confirmação final reúne as campanhas, revoga as sessões legadas e desativa o
+  login antigo sem apagar seu verificador, mantendo rollback administrativo;
+- IDs de campanha repetidos bloqueiam a migração inteira, sem cópias parciais;
+- a conclusão fica registrada no D1 e no histórico privado de segurança, e pode
+  ser repetida com segurança sem duplicar dados.
+- campanhas salvas neste dispositivo e campanhas privadas da conta aparecem em
+  seções distintas, com carregamento remoto sempre explícito;
+- ao criar ou entrar em uma sala, uma conta ativa identifica com segurança o
+  Mestre ou o Jogador sem substituir o código e a senha da sala;
+- o Worker ignora identidades declaradas pelo navegador, valida o token Firebase
+  e registra a conta responsável por acessos, propostas, decisões e alterações;
+- somente o nome público e o ID interno da conta chegam ao Durable Object; e-mail,
+  token e credenciais não entram na sala, campanha, backup ou fila offline;
+- convidados continuam aceitos, e a campanha temporária do modo Jogador nunca
+  substitui a campanha pessoal salva no dispositivo.
 
 Consulte o [guia de preparação e configuração do Firebase](docs/firebase-auth-rollout.md)
 para criar o projeto, habilitar E-mail/senha e Google, autorizar os domínios e

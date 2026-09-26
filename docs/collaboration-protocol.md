@@ -1,7 +1,8 @@
 # Contrato de colaboração e sincronização
 
-Status: Etapas 0 a 8 concluídas — contrato, sala, combate em tempo real,
-aprovações, fila offline, resolução de conflitos e experiência do Jogador.
+Status: Etapas 0 a 11 concluídas — contrato, sala, combate em tempo real,
+aprovações, fila offline, resolução de conflitos, experiência do Jogador e
+identidade opcional da conta.
 
 Este documento define a fronteira entre o aplicativo offline e a sala em tempo
 real. Alterações de jogadores utilizam **comandos pequenos, identificáveis e
@@ -221,6 +222,24 @@ utiliza um Durable Object SQLite por código de sala. O cliente fica em
 - estado persistente de acesso encerrado após saída voluntária, revogação ou fechamento;
 - navegação, conteúdo e controles da campanha tornam-se inertes e invisíveis nesse estado;
 - somente o navegador de salas pode ser aberto até uma nova autenticação válida.
+
+## Implementação da Etapa 11
+
+- conta opcional: convidados continuam entrando normalmente por código e senha;
+- criação e entrada autenticadas usam o ID token Firebase apenas na borda pública;
+- cabeçalhos internos de identidade enviados pelo navegador são sempre removidos;
+- o Worker valida a conta e encaminha ao Durable Object somente ID interno, nome
+  exibido e provedor, sem e-mail ou token;
+- `actorId` autenticado é estável por conta e a autoria confiável é acrescentada
+  a participantes, acessos, propostas, decisões, atividades e última alteração;
+- o nome usado na mesa continua independente do nome da conta, permitindo que o
+  jogador apareça como o personagem sem perder a identificação administrativa;
+- o Mestre vê quais dispositivos possuem conta confirmada e qual conta realizou
+  a alteração mais recente;
+- token de conta nunca substitui o token revogável da sala: reconexão WebSocket,
+  expulsão e encerramento continuam baseados no dispositivo autorizado;
+- snapshots recebidos por jogadores continuam transitórios e são descartados ao
+  sair da sala, restaurando os dados locais pessoais.
 
 ## Critérios da Etapa 0
 

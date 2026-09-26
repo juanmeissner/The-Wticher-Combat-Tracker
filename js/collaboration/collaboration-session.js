@@ -71,6 +71,9 @@
             memberId: roomMode ? String(value.memberId || '') : null,
             memberName: roomMode ? String(value.memberName || '') : null,
             memberToken: roomMode ? String(value.memberToken || '') : null,
+            accountUserId: roomMode && value.accountUserId ? String(value.accountUserId) : null,
+            accountDisplayName: roomMode && value.accountDisplayName ? String(value.accountDisplayName) : null,
+            accountAuthenticated: roomMode && value.accountAuthenticated === true,
             lastServerSequence: roomMode ? Math.max(0, Number(value.lastServerSequence) || 0) : 0,
             pendingCount: roomMode ? Math.max(0, Number(value.pendingCount) || 0) : 0,
             accessEndReason: accessEndedMode && Object.values(ACCESS_END_REASONS).includes(value.accessEndReason)
@@ -174,6 +177,9 @@
             memberId: member.id,
             memberName: member.name,
             memberToken: data.memberToken,
+            accountUserId: member.accountUserId,
+            accountDisplayName: member.accountDisplayName,
+            accountAuthenticated: member.authenticated === true,
             linkedParticipantId: member.participantId,
             linkedSheetId: member.sheetId,
             lastServerSequence: room.sequence,
@@ -189,6 +195,9 @@
             actorId: member.actorId || session.actorId,
             memberId: member.id || session.memberId,
             memberName: member.name || session.memberName,
+            accountUserId: member.accountUserId ?? session.accountUserId,
+            accountDisplayName: member.accountDisplayName ?? session.accountDisplayName,
+            accountAuthenticated: member.authenticated ?? session.accountAuthenticated,
             linkedParticipantId: member.participantId ?? session.linkedParticipantId,
             linkedSheetId: member.sheetId ?? session.linkedSheetId,
             roomName: room.name || session.roomName,
@@ -492,6 +501,7 @@
             const recentDecisions = (workflow.decisions || []).slice(-5).reverse();
             const recentActivity = (workflow.activity || []).slice(-8).reverse();
             const recentAccess = (workflow.accessLog || []).slice(-8).reverse();
+            const lastMutation = workflow.lastMutation || null;
             const registeredPlayers = (workflow.members || []).filter(member => member.role === 'player' && !member.revoked);
             dialog.innerHTML = `
                 <div class="session-dialog-header">
@@ -500,8 +510,9 @@
                 </div>
                 <section id="collaborationRoomLive" class="collaboration-status-card">
                     <span class="collaboration-status-dot ${escapeHtml(presentation.className)}"></span>
-                    <div><strong>${escapeHtml(presentation.label)}</strong><small>${escapeHtml(current.memberName || getRoleLabel())} · ${getRoleLabel()}</small></div>
+                    <div><strong>${escapeHtml(presentation.label)}</strong><small>${escapeHtml(current.memberName || getRoleLabel())} · ${getRoleLabel()}${current.accountAuthenticated ? ` · conta ${escapeHtml(current.accountDisplayName || 'autenticada')}` : ' · convidado'}</small></div>
                 </section>
+                ${current.role === protocol.ROLES.MASTER && lastMutation ? `<p class="collaboration-last-author">Última alteração: <strong>${escapeHtml(lastMutation.memberName || 'Mestre')}</strong>${lastMutation.accountDisplayName ? ` · conta ${escapeHtml(lastMutation.accountDisplayName)}` : ' · convidado'}</p>` : ''}
                 <section class="collaboration-room-code">
                     <small>CÓDIGO DA SALA</small>
                     <strong>${escapeHtml(current.roomCode)}</strong>
@@ -510,13 +521,13 @@
                 <section class="collaboration-presence">
                     <strong>Conectados agora</strong>
                     <div>${onlineMembers.length
-                        ? onlineMembers.map(member => `<span>${member.role === 'master' ? '👑' : '👤'} ${escapeHtml(member.name)}${current.role === protocol.ROLES.MASTER && member.role !== 'master' ? ` <button type="button" class="collaboration-member-remove" onclick="requestRevokeCollaborationMember('${escapeHtml(member.id)}','${escapeHtml(member.name)}')" title="Remover dispositivo">×</button>` : ''}</span>`).join('')
+                        ? onlineMembers.map(member => `<span>${member.role === 'master' ? '👑' : '👤'} ${escapeHtml(member.name)}${member.authenticated ? ' <b class="collaboration-account-mark" title="Conta autenticada">✓</b>' : ''}${current.role === protocol.ROLES.MASTER && member.role !== 'master' ? ` <button type="button" class="collaboration-member-remove" onclick="requestRevokeCollaborationMember('${escapeHtml(member.id)}','${escapeHtml(member.name)}')" title="Remover dispositivo">×</button>` : ''}</span>`).join('')
                         : '<small>Aguardando a lista de presença...</small>'}</div>
                 </section>
                 ${current.role === protocol.ROLES.MASTER && registeredPlayers.length ? `
                     <details class="collaboration-decisions">
                         <summary>Dispositivos autorizados (${registeredPlayers.length})</summary>
-                        <div>${registeredPlayers.map(member => `<p class="collaboration-authorized-member"><span>👤</span><strong>${escapeHtml(member.name)}</strong><small>${onlineMembers.some(online => online.id === member.id) ? 'Online' : 'Offline'}</small><button type="button" onclick="requestRevokeCollaborationMember('${escapeHtml(member.id)}','${escapeHtml(member.name)}')">Revogar</button></p>`).join('')}</div>
+                        <div>${registeredPlayers.map(member => `<p class="collaboration-authorized-member"><span>👤</span><strong>${escapeHtml(member.name)}</strong><small>${onlineMembers.some(online => online.id === member.id) ? 'Online' : 'Offline'}${member.authenticated ? ` · ${escapeHtml(member.accountDisplayName || 'conta autenticada')}` : ' · convidado'}</small><button type="button" onclick="requestRevokeCollaborationMember('${escapeHtml(member.id)}','${escapeHtml(member.name)}')">Revogar</button></p>`).join('')}</div>
                     </details>
                 ` : ''}
                 ${current.role === protocol.ROLES.MASTER ? `
@@ -580,6 +591,18 @@
                     </button>`).join('')
                 : '<p class="collaboration-empty">Nenhuma sala pública aberta agora.</p>';
         const localSheets = getLocalCharacterSheets();
+        const accountIdentity = root?.cloudAccount?.getPublicIdentity?.();
+        const accountIdentityMarkup = accountIdentity ? `
+            <section class="collaboration-account-identity">
+                <span aria-hidden="true">✓</span>
+                <div><strong>Identidade da conta ativa</strong><small>${escapeHtml(accountIdentity.displayName)} · as ações desta sala serão registradas nesta conta</small></div>
+            </section>
+        ` : `
+            <section class="collaboration-account-identity is-guest">
+                <span aria-hidden="true">○</span>
+                <div><strong>Entrada como convidado</strong><small>O código e a senha continuam funcionando sem conta.</small></div>
+            </section>
+        `;
         const characterOptions = pendingJoin ? [
             ...(pendingJoin.participants || []).map(participant => `<option value="room:${escapeHtml(participant.participantId)}">Na sala · ${escapeHtml(participant.name)}</option>`),
             ...localSheets.map(sheet => `<option value="local:${escapeHtml(sheet.id)}">Neste dispositivo · ${escapeHtml(sheet.name)}</option>`)
@@ -639,6 +662,7 @@
                 <div><strong>Pronto para conectar</strong><small>${escapeHtml(campaign?.metadata?.name || 'Campanha principal')} · revisão ${campaign?.revision || 0}</small></div>
             </section>
             <p>Crie uma sala como Mestre ou escolha uma sala aberta. Depois de selecionar, o jogador informa somente a senha e escolhe sua ficha; a conexão segura já está configurada.</p>
+            ${accountIdentityMarkup}
             <div class="collaboration-online-grid">
                 <section class="collaboration-online-card">
                     <span class="collaboration-card-icon">👑</span>

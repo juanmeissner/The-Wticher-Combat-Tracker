@@ -93,6 +93,22 @@ revogável do dispositivo; a senha da sala não é persistida.
    conflito, sem sobrescrever silenciosamente a versão mais recente.
 7. Saia da conta e confirme que a sessão Firebase desaparece, mas a campanha local continua disponível.
 8. Use **Excluir**, confirme a remoção da campanha na nuvem e confira que a cópia local continua disponível.
+9. Se houver uma conta anterior, abra **Vincular conta antiga**, informe as
+   credenciais legadas e confira que as campanhas das duas contas aparecem juntas.
+10. Repita o teste com uma campanha de mesmo ID nas duas contas e confirme que a
+    vinculação é bloqueada sem mover ou apagar nenhuma cópia.
+
+Antes de publicar a versão que conclui a migração das contas antigas, aplique as
+migrações pendentes e depois publique o Worker:
+
+```powershell
+npx wrangler@latest d1 migrations apply witcher-combat-accounts --remote
+npx wrangler@latest deploy
+```
+
+A Etapa 10 utiliza `0004_legacy_account_migrations.sql` para registrar a conclusão,
+revogar o acesso legado sem apagar seu verificador e permitir rollback
+administrativo. O comando aplica somente migrações ainda pendentes.
 
 ## Fluxo de teste entre dois dispositivos
 

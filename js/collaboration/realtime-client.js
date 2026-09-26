@@ -23,7 +23,7 @@
     let lastCampaignFingerprint = '';
     let lastPublishedCampaign = null;
     let supportsCampaignPatches = false;
-    let workflow = { proposals: [], conflicts: [], decisions: [], activity: [], accessLog: [], members: [] };
+    let workflow = { proposals: [], conflicts: [], decisions: [], activity: [], accessLog: [], members: [], lastMutation: null };
     let queueFlushPromise = null;
     const sentCommandIds = new Set();
 
@@ -65,16 +65,28 @@
     }
 
     async function request(endpoint, path, options = {}) {
+        const accountToken = options.account === true
+            ? await root?.cloudAccount?.getCollaborationAccessToken?.(options.forceAccountRefresh === true)
+            : '';
         const response = await root.fetch(`${endpoint}${path}`, {
             method: options.method || 'POST',
             headers: {
                 'content-type': 'application/json',
-                ...(options.token ? { authorization: `Bearer ${options.token}` } : {})
+                ...(options.token ? { authorization: `Bearer ${options.token}` } : {}),
+                ...(accountToken ? { authorization: `Bearer ${accountToken}` } : {})
             },
             body: options.body === undefined ? undefined : JSON.stringify(options.body)
         });
         let data = {};
         try { data = await response.json(); } catch { data = {}; }
+        if (
+            !response.ok
+            && options.account === true
+            && options.forceAccountRefresh !== true
+            && ['firebase_email_unverified', 'account_session_revoked'].includes(data.error)
+        ) {
+            return request(endpoint, path, { ...options, forceAccountRefresh: true });
+        }
         if (!response.ok) {
             const error = new Error(data.message || `Falha de conexão (${response.status}).`);
             error.code = data.error || 'request_failed';
@@ -107,6 +119,7 @@
         if (!campaign) throw new Error('Nenhuma campanha ativa foi encontrada.');
         const current = root?.collaborationSession?.getSession?.() || {};
         const result = await request(endpoint, '/api/rooms', {
+            account: true,
             body: {
                 roomName,
                 password: options.password,
@@ -131,6 +144,7 @@
         }
         const current = root?.collaborationSession?.getSession?.() || {};
         const result = await request(endpoint, `/api/rooms/${encodeURIComponent(roomCode)}/join`, {
+            account: true,
             body: {
                 password: options.password,
                 actorName: options.actorName,
@@ -459,7 +473,8 @@
                 decisions: Array.isArray(incoming.decisions) ? incoming.decisions : [],
                 activity: Array.isArray(incoming.activity) ? incoming.activity : [],
                 accessLog: Array.isArray(incoming.accessLog) ? incoming.accessLog : [],
-                members: Array.isArray(incoming.members) ? incoming.members : []
+                members: Array.isArray(incoming.members) ? incoming.members : [],
+                lastMutation: incoming.lastMutation || null
             };
             return getWorkflow();
         }
@@ -469,7 +484,8 @@
             decisions: mergeUnique(workflow.decisions, incoming.decisions),
             activity: mergeUnique(workflow.activity, incoming.activity, 80),
             accessLog: mergeUnique(workflow.accessLog, incoming.accessLog, 80),
-            members: mergeUnique(workflow.members, incoming.members, 100)
+            members: mergeUnique(workflow.members, incoming.members, 100),
+            lastMutation: incoming.lastMutation || workflow.lastMutation || null
         };
         return getWorkflow();
     }
@@ -660,7 +676,7 @@
         socket = null;
         sentCommandIds.clear();
         presence = [];
-        workflow = { proposals: [], conflicts: [], decisions: [], activity: [], accessLog: [], members: [] };
+        workflow = { proposals: [], conflicts: [], decisions: [], activity: [], accessLog: [], members: [], lastMutation: null };
         pendingSnapshot = null;
         lastAppliedSequence = 0;
         lastCampaignFingerprint = '';

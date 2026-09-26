@@ -124,7 +124,8 @@ async function authenticateLegacyToken(token, db) {
                NULL AS firebase_uid, NULL AS firebase_email, 0 AS firebase_email_verified
         FROM account_sessions s
         JOIN users u ON u.id = s.user_id
-        WHERE s.token_hash = ? AND s.expires_at > ?
+        LEFT JOIN legacy_account_migrations m ON m.user_id = u.id AND m.status = 'completed'
+        WHERE s.token_hash = ? AND s.expires_at > ? AND m.user_id IS NULL
     `).bind(tokenHash, now).first();
     if (!row) return null;
     await db.prepare('UPDATE account_sessions SET last_seen_at = ? WHERE token_hash = ?')
@@ -158,25 +159,30 @@ async function ensureFirebaseAccount(db, claims) {
     const providerIdsJson = JSON.stringify(firebaseProviderIds(claims));
     const now = new Date().toISOString();
 
-    await db.prepare(`
-        INSERT OR IGNORE INTO users
-            (id, username, display_name, password_salt, password_verifier, password_iterations, created_at, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    `).bind(
-        userId,
-        username,
-        displayName,
-        randomSecret(18),
-        randomSecret(32),
-        PASSWORD_ITERATIONS,
-        now,
-        now
-    ).run();
-    await db.prepare(`
-        INSERT OR IGNORE INTO firebase_identities
-            (firebase_uid, user_id, email, email_verified, provider_ids_json, created_at, updated_at, last_login_at)
-        VALUES (?, ?, ?, 1, ?, ?, ?, ?)
-    `).bind(firebaseUid, userId, email, providerIdsJson, now, now, now).run();
+    const existingIdentity = await db.prepare('SELECT user_id FROM firebase_identities WHERE firebase_uid = ?')
+        .bind(firebaseUid)
+        .first();
+    if (!existingIdentity) {
+        await db.prepare(`
+            INSERT OR IGNORE INTO users
+                (id, username, display_name, password_salt, password_verifier, password_iterations, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        `).bind(
+            userId,
+            username,
+            displayName,
+            randomSecret(18),
+            randomSecret(32),
+            PASSWORD_ITERATIONS,
+            now,
+            now
+        ).run();
+        await db.prepare(`
+            INSERT OR IGNORE INTO firebase_identities
+                (firebase_uid, user_id, email, email_verified, provider_ids_json, created_at, updated_at, last_login_at)
+            VALUES (?, ?, ?, 1, ?, ?, ?, ?)
+        `).bind(firebaseUid, userId, email, providerIdsJson, now, now, now).run();
+    }
     await db.prepare(`
         UPDATE firebase_identities
         SET email = ?, email_verified = 1, provider_ids_json = ?, updated_at = ?, last_login_at = ?
@@ -194,7 +200,37 @@ async function ensureFirebaseAccount(db, claims) {
         .bind(displayName, now, row.id)
         .run();
     row.display_name = displayName;
-    return { user: publicUser(row), tokenHash: null, provider: 'firebase', firebaseUid };
+    return {
+        user: publicUser(row),
+        tokenHash: null,
+        provider: 'firebase',
+        firebaseUid,
+        firebaseIssuedAt: Math.max(0, Number(claims.iat) || 0)
+    };
+}
+
+async function assertFirebaseSessionAllowed(db, claims) {
+    const firebaseUid = String(claims.uid || claims.sub || '').trim();
+    const row = await db.prepare(`
+        SELECT e.details_json
+        FROM firebase_identities f
+        JOIN account_security_events e ON e.user_id = f.user_id
+        WHERE f.firebase_uid = ? AND e.event_type = 'password_changed'
+        ORDER BY e.created_at DESC
+        LIMIT 1
+    `).bind(firebaseUid).first();
+    if (!row) return;
+    let validAfter = 0;
+    try {
+        validAfter = Math.max(0, Number(JSON.parse(row.details_json || '{}').firebaseValidAfter) || 0);
+    } catch { validAfter = 0; }
+    if (validAfter > 0 && (Number(claims.iat) || 0) < validAfter) {
+        throw new FirebaseTokenError(
+            'account_session_revoked',
+            'Esta sessão foi encerrada após uma alteração de segurança. Entre novamente.',
+            401
+        );
+    }
 }
 
 async function authenticate(request, db, options = {}) {
@@ -209,7 +245,34 @@ async function authenticate(request, db, options = {}) {
         fetchImpl: options.firebaseFetch,
         nowMs: options.firebaseNowMs
     });
+    await assertFirebaseSessionAllowed(db, claims);
     return ensureFirebaseAccount(db, claims);
+}
+
+export async function authenticateOptionalAccount(request, db, options = {}) {
+    const hasAuthorization = Boolean(request.headers.get('authorization'));
+    if (!hasAuthorization) return { auth: null, error: null };
+    if (!db) {
+        return {
+            auth: null,
+            error: errorResponse('accounts_unavailable', 'As contas online ainda não estão configuradas.', 503)
+        };
+    }
+    try {
+        const auth = await authenticate(request, db, options);
+        if (!auth) {
+            return {
+                auth: null,
+                error: errorResponse('account_unauthorized', 'A identidade da conta não pôde ser confirmada.', 401)
+            };
+        }
+        return { auth, error: null };
+    } catch (error) {
+        if (error instanceof FirebaseTokenError) {
+            return { auth: null, error: errorResponse(error.code, error.message, error.status) };
+        }
+        throw error;
+    }
 }
 
 async function requireAuthentication(request, db, options = {}) {
@@ -258,16 +321,322 @@ async function login(request, db) {
     if (validation) return errorResponse('invalid_credentials', 'Usuário ou senha inválidos.', 401);
     const username = normalizeUsername(body.username);
     const row = await db.prepare(`
-        SELECT id, username, display_name, password_salt, password_verifier, password_iterations, created_at
-        FROM users WHERE username = ? COLLATE NOCASE
+        SELECT u.id, u.username, u.display_name, u.password_salt, u.password_verifier,
+               u.password_iterations, u.created_at, m.status AS migration_status
+        FROM users u
+        LEFT JOIN legacy_account_migrations m ON m.user_id = u.id
+        WHERE u.username = ? COLLATE NOCASE
     `).bind(username).first();
     if (!row) return errorResponse('invalid_credentials', 'Usuário ou senha inválidos.', 401);
+    if (row.migration_status === 'completed') {
+        return errorResponse(
+            'legacy_account_migrated',
+            'Esta conta já foi migrada. Entre pelo Firebase ou use a recuperação de senha.',
+            409
+        );
+    }
     const verifier = await derivePassword(body.password, row.password_salt, Number(row.password_iterations));
     if (!timingSafeEqual(verifier, row.password_verifier)) {
         return errorResponse('invalid_credentials', 'Usuário ou senha inválidos.', 401);
     }
     const accountSession = await createSession(db, row.id, body.deviceId);
     return jsonResponse({ ok: true, user: publicUser(row), ...accountSession });
+}
+
+async function linkLegacyAccount(request, db, options = {}) {
+    const auth = await requireAuthentication(request, db, options);
+    if (auth instanceof Response) return auth;
+    if (auth.provider !== 'firebase' || !auth.firebaseUid) {
+        return errorResponse(
+            'firebase_account_required',
+            'Entre com sua conta Firebase antes de vincular uma conta antiga.',
+            403
+        );
+    }
+
+    const body = await readJson(request);
+    const username = normalizeUsername(body.username);
+    const password = String(body.password || '');
+    if (!/^[a-z0-9._-]{3,32}$/.test(username) || password.length < 8 || password.length > 128) {
+        return errorResponse('invalid_legacy_credentials', 'Usuário ou senha da conta antiga inválidos.', 401);
+    }
+
+    const legacy = await db.prepare(`
+        SELECT u.id, u.username, u.display_name, u.password_salt, u.password_verifier,
+               u.password_iterations, u.created_at, f.firebase_uid AS linked_firebase_uid
+        FROM users u
+        LEFT JOIN firebase_identities f ON f.user_id = u.id
+        WHERE u.username = ? COLLATE NOCASE
+    `).bind(username).first();
+    if (!legacy) return errorResponse('invalid_legacy_credentials', 'Usuário ou senha da conta antiga inválidos.', 401);
+
+    const verifier = await derivePassword(password, legacy.password_salt, Number(legacy.password_iterations));
+    if (!timingSafeEqual(verifier, legacy.password_verifier)) {
+        return errorResponse('invalid_legacy_credentials', 'Usuário ou senha da conta antiga inválidos.', 401);
+    }
+
+    if (legacy.id === auth.user.id && legacy.linked_firebase_uid === auth.firebaseUid) {
+        return jsonResponse({ ok: true, linked: true, alreadyLinked: true, movedCampaigns: 0, user: auth.user });
+    }
+    if (!String(auth.user.id).startsWith('user-firebase-')) {
+        return errorResponse(
+            'firebase_account_already_linked',
+            `Esta identidade Firebase já está vinculada à conta antiga ${auth.user.username}.`,
+            409
+        );
+    }
+    if (legacy.linked_firebase_uid && legacy.linked_firebase_uid !== auth.firebaseUid) {
+        return errorResponse(
+            'legacy_account_already_linked',
+            'Esta conta antiga já está vinculada a outra identidade Firebase.',
+            409
+        );
+    }
+
+    const conflictsResult = await db.prepare(`
+        SELECT source.id,
+               source.name AS firebase_name,
+               target.name AS legacy_name
+        FROM cloud_campaigns source
+        JOIN cloud_campaigns target
+          ON target.owner_user_id = ? AND target.id = source.id
+        WHERE source.owner_user_id = ?
+        ORDER BY source.updated_at DESC
+    `).bind(legacy.id, auth.user.id).all();
+    const conflicts = (conflictsResult.results || []).map(row => ({
+        id: String(row.id),
+        firebaseName: String(row.firebase_name),
+        legacyName: String(row.legacy_name)
+    }));
+    if (conflicts.length) {
+        return errorResponse(
+            'legacy_campaign_conflict',
+            'Existem campanhas com o mesmo identificador nas duas contas. Remova uma das cópias antes de vincular.',
+            409,
+            { conflicts }
+        );
+    }
+
+    const sourceCountRow = await db.prepare('SELECT COUNT(*) AS total FROM cloud_campaigns WHERE owner_user_id = ?')
+        .bind(auth.user.id)
+        .first();
+    const legacyCountRow = await db.prepare('SELECT COUNT(*) AS total FROM cloud_campaigns WHERE owner_user_id = ?')
+        .bind(legacy.id)
+        .first();
+    const movedCampaigns = Number(sourceCountRow?.total) || 0;
+    const preservedLegacyCampaigns = Number(legacyCountRow?.total) || 0;
+    const now = new Date().toISOString();
+    if (typeof db.batch !== 'function') throw new Error('d1_batch_unavailable');
+    await db.batch([
+        db.prepare('UPDATE cloud_campaigns SET owner_user_id = ? WHERE owner_user_id = ?')
+            .bind(legacy.id, auth.user.id),
+        db.prepare(`
+            UPDATE firebase_identities
+            SET user_id = ?, updated_at = ?, last_login_at = ?
+            WHERE firebase_uid = ? AND user_id = ?
+        `).bind(legacy.id, now, now, auth.firebaseUid, auth.user.id),
+        db.prepare('UPDATE users SET display_name = ?, updated_at = ? WHERE id = ?')
+            .bind(auth.user.displayName, now, legacy.id),
+        db.prepare('DELETE FROM users WHERE id = ?')
+            .bind(auth.user.id)
+    ]);
+
+    const linked = await db.prepare(`
+        SELECT u.id, u.username, u.display_name, u.created_at,
+               f.firebase_uid, f.email AS firebase_email, f.email_verified AS firebase_email_verified
+        FROM firebase_identities f
+        JOIN users u ON u.id = f.user_id
+        WHERE f.firebase_uid = ?
+    `).bind(auth.firebaseUid).first();
+    if (!linked) throw new Error('legacy_link_failed');
+    return jsonResponse({
+        ok: true,
+        linked: true,
+        alreadyLinked: false,
+        movedCampaigns,
+        preservedLegacyCampaigns,
+        user: publicUser(linked)
+    });
+}
+
+async function completeLegacyMigration(request, db, options = {}) {
+    const auth = await requireAuthentication(request, db, options);
+    if (auth instanceof Response) return auth;
+    if (auth.provider !== 'firebase' || !auth.firebaseUid) {
+        return errorResponse(
+            'firebase_account_required',
+            'Entre e confirme sua conta Firebase antes de concluir a migração.',
+            403
+        );
+    }
+
+    const completed = await db.prepare(`
+        SELECT m.user_id, m.moved_campaigns, m.preserved_campaigns, m.revoked_sessions,
+               u.id, u.username, u.display_name, u.created_at,
+               f.firebase_uid, f.email AS firebase_email, f.email_verified AS firebase_email_verified
+        FROM legacy_account_migrations m
+        JOIN users u ON u.id = m.user_id
+        JOIN firebase_identities f ON f.firebase_uid = m.firebase_uid AND f.user_id = m.user_id
+        WHERE m.firebase_uid = ? AND m.status = 'completed'
+    `).bind(auth.firebaseUid).first();
+    if (completed) {
+        return jsonResponse({
+            ok: true,
+            migrationCompleted: true,
+            alreadyMigrated: true,
+            movedCampaigns: Number(completed.moved_campaigns) || 0,
+            preservedLegacyCampaigns: Number(completed.preserved_campaigns) || 0,
+            revokedLegacySessions: Number(completed.revoked_sessions) || 0,
+            user: publicUser(completed)
+        });
+    }
+
+    const body = await readJson(request);
+    const legacyToken = String(body.legacyToken || '');
+    if (legacyToken.length < 20 || legacyToken.length > 512) {
+        return errorResponse(
+            'legacy_session_required',
+            'Entre novamente na conta antiga para continuar a migração.',
+            401
+        );
+    }
+    const legacyAuth = await authenticateLegacyToken(legacyToken, db);
+    if (!legacyAuth) {
+        return errorResponse(
+            'legacy_session_expired',
+            'A sessão da conta antiga expirou. Entre novamente para retomar a migração.',
+            401
+        );
+    }
+
+    const legacy = await db.prepare(`
+        SELECT u.id, u.username, u.display_name, u.created_at,
+               f.firebase_uid AS linked_firebase_uid
+        FROM users u
+        LEFT JOIN firebase_identities f ON f.user_id = u.id
+        WHERE u.id = ?
+    `).bind(legacyAuth.user.id).first();
+    if (!legacy) return errorResponse('legacy_session_expired', 'A conta antiga não está mais disponível.', 401);
+    if (legacy.linked_firebase_uid && legacy.linked_firebase_uid !== auth.firebaseUid) {
+        return errorResponse(
+            'legacy_account_already_linked',
+            'Esta conta antiga já está vinculada a outra identidade Firebase.',
+            409
+        );
+    }
+
+    const sameOwner = legacy.id === auth.user.id && legacy.linked_firebase_uid === auth.firebaseUid;
+    if (!sameOwner && !String(auth.user.id).startsWith('user-firebase-')) {
+        return errorResponse(
+            'firebase_account_already_linked',
+            `Esta identidade Firebase já está vinculada à conta antiga ${auth.user.username}.`,
+            409
+        );
+    }
+
+    const conflictsResult = sameOwner ? { results: [] } : await db.prepare(`
+        SELECT source.id,
+               source.name AS firebase_name,
+               target.name AS legacy_name
+        FROM cloud_campaigns source
+        JOIN cloud_campaigns target
+          ON target.owner_user_id = ? AND target.id = source.id
+        WHERE source.owner_user_id = ?
+        ORDER BY source.updated_at DESC
+    `).bind(legacy.id, auth.user.id).all();
+    const conflicts = (conflictsResult.results || []).map(row => ({
+        id: String(row.id),
+        firebaseName: String(row.firebase_name),
+        legacyName: String(row.legacy_name)
+    }));
+    if (conflicts.length) {
+        return errorResponse(
+            'legacy_campaign_conflict',
+            'Existem campanhas com o mesmo identificador nas duas contas. Remova uma das cópias antes de concluir a migração.',
+            409,
+            { conflicts }
+        );
+    }
+
+    const sourceCountRow = sameOwner ? { total: 0 } : await db.prepare(
+        'SELECT COUNT(*) AS total FROM cloud_campaigns WHERE owner_user_id = ?'
+    ).bind(auth.user.id).first();
+    const legacyCountRow = await db.prepare(
+        'SELECT COUNT(*) AS total FROM cloud_campaigns WHERE owner_user_id = ?'
+    ).bind(legacy.id).first();
+    const sessionCountRow = await db.prepare(
+        'SELECT COUNT(*) AS total FROM account_sessions WHERE user_id = ?'
+    ).bind(legacy.id).first();
+    const movedCampaigns = Number(sourceCountRow?.total) || 0;
+    const preservedLegacyCampaigns = Number(legacyCountRow?.total) || 0;
+    const revokedLegacySessions = Number(sessionCountRow?.total) || 0;
+    const now = new Date().toISOString();
+    const eventId = `security-${crypto.randomUUID()}`;
+    const statements = [];
+
+    if (!sameOwner) {
+        statements.push(
+            db.prepare('UPDATE cloud_campaigns SET owner_user_id = ? WHERE owner_user_id = ?')
+                .bind(legacy.id, auth.user.id),
+            db.prepare(`
+                UPDATE firebase_identities
+                SET user_id = ?, updated_at = ?, last_login_at = ?
+                WHERE firebase_uid = ? AND user_id = ?
+            `).bind(legacy.id, now, now, auth.firebaseUid, auth.user.id),
+            db.prepare('UPDATE users SET display_name = ?, updated_at = ? WHERE id = ?')
+                .bind(auth.user.displayName, now, legacy.id),
+            db.prepare('UPDATE account_security_events SET user_id = ? WHERE user_id = ?')
+                .bind(legacy.id, auth.user.id),
+            db.prepare('DELETE FROM users WHERE id = ?')
+                .bind(auth.user.id)
+        );
+    }
+    statements.push(
+        db.prepare(`
+            INSERT INTO legacy_account_migrations
+                (user_id, firebase_uid, firebase_email, status, moved_campaigns,
+                 preserved_campaigns, revoked_sessions, completed_at)
+            VALUES (?, ?, ?, 'completed', ?, ?, ?, ?)
+        `).bind(
+            legacy.id,
+            auth.firebaseUid,
+            String(auth.user.email || '').toLowerCase(),
+            movedCampaigns,
+            preservedLegacyCampaigns,
+            revokedLegacySessions,
+            now
+        ),
+        db.prepare(`
+            INSERT INTO account_security_events
+                (id, user_id, event_type, provider, details_json, created_at)
+            VALUES (?, ?, 'legacy_migration_completed', 'firebase', ?, ?)
+        `).bind(eventId, legacy.id, JSON.stringify({
+            movedCampaigns,
+            preservedLegacyCampaigns,
+            revokedLegacySessions
+        }), now),
+        db.prepare('DELETE FROM account_sessions WHERE user_id = ?').bind(legacy.id)
+    );
+    if (typeof db.batch !== 'function') throw new Error('d1_batch_unavailable');
+    await db.batch(statements);
+
+    const migrated = await db.prepare(`
+        SELECT u.id, u.username, u.display_name, u.created_at,
+               f.firebase_uid, f.email AS firebase_email, f.email_verified AS firebase_email_verified
+        FROM firebase_identities f
+        JOIN users u ON u.id = f.user_id
+        WHERE f.firebase_uid = ?
+    `).bind(auth.firebaseUid).first();
+    if (!migrated) throw new Error('legacy_migration_failed');
+    return jsonResponse({
+        ok: true,
+        migrationCompleted: true,
+        alreadyMigrated: false,
+        movedCampaigns,
+        preservedLegacyCampaigns,
+        revokedLegacySessions,
+        user: publicUser(migrated)
+    });
 }
 
 async function logout(request, db, options = {}) {
@@ -294,6 +663,96 @@ function campaignSummary(row) {
         createdAt: String(row.created_at),
         updatedAt: String(row.updated_at)
     };
+}
+
+function securityEventSummary(row) {
+    let details = {};
+    try { details = JSON.parse(row.details_json || '{}'); } catch { details = {}; }
+    return {
+        id: String(row.id),
+        type: String(row.event_type),
+        provider: String(row.provider),
+        details,
+        createdAt: String(row.created_at)
+    };
+}
+
+async function listSecurityEvents(request, db, options = {}) {
+    const auth = await requireAuthentication(request, db, options);
+    if (auth instanceof Response) return auth;
+    const result = await db.prepare(`
+        SELECT id, event_type, provider, details_json, created_at
+        FROM account_security_events
+        WHERE user_id = ?
+        ORDER BY created_at DESC
+        LIMIT 20
+    `).bind(auth.user.id).all();
+    return jsonResponse({
+        ok: true,
+        events: (result.results || []).map(securityEventSummary)
+    });
+}
+
+async function recordPasswordChanged(request, db, options = {}) {
+    const auth = await requireAuthentication(request, db, options);
+    if (auth instanceof Response) return auth;
+    if (auth.provider !== 'firebase') {
+        return errorResponse(
+            'firebase_account_required',
+            'A troca de senha deve ser confirmada pela conta Firebase.',
+            403
+        );
+    }
+
+    const removed = await db.prepare('DELETE FROM account_sessions WHERE user_id = ?')
+        .bind(auth.user.id)
+        .run();
+    const revokedLegacySessions = Math.max(0, Number(removed.meta?.changes) || 0);
+    const now = new Date();
+    const recent = await db.prepare(`
+        SELECT id, event_type, provider, details_json, created_at
+        FROM account_security_events
+        WHERE user_id = ? AND event_type = 'password_changed' AND created_at >= ?
+        ORDER BY created_at DESC
+        LIMIT 1
+    `).bind(auth.user.id, new Date(now.getTime() - 60_000).toISOString()).first();
+
+    let event = recent;
+    if (!event) {
+        const id = `security-${crypto.randomUUID()}`;
+        const createdAt = now.toISOString();
+        const detailsJson = JSON.stringify({
+            revokedLegacySessions,
+            firebaseValidAfter: auth.firebaseIssuedAt
+        });
+        await db.prepare(`
+            INSERT INTO account_security_events
+                (id, user_id, event_type, provider, details_json, created_at)
+            VALUES (?, ?, 'password_changed', 'firebase', ?, ?)
+        `).bind(id, auth.user.id, detailsJson, createdAt).run();
+        event = {
+            id,
+            event_type: 'password_changed',
+            provider: 'firebase',
+            details_json: detailsJson,
+            created_at: createdAt
+        };
+        await db.prepare(`
+            DELETE FROM account_security_events
+            WHERE user_id = ? AND id NOT IN (
+                SELECT id FROM account_security_events
+                WHERE user_id = ?
+                ORDER BY created_at DESC
+                LIMIT 50
+            )
+        `).bind(auth.user.id, auth.user.id).run();
+    }
+
+    return jsonResponse({
+        ok: true,
+        revokedLegacySessions,
+        event: securityEventSummary(event)
+    });
 }
 
 async function listCampaigns(request, db, options = {}) {
@@ -409,6 +868,10 @@ export function isAccountRequest(url) {
         || url.pathname === '/api/account/login'
         || url.pathname === '/api/account/logout'
         || url.pathname === '/api/account/me'
+        || url.pathname === '/api/account/link-legacy'
+        || url.pathname === '/api/account/migrate-legacy'
+        || url.pathname === '/api/account/security-events'
+        || url.pathname === '/api/account/security/password-changed'
         || url.pathname === '/api/account/campaigns'
         || /^\/api\/account\/campaigns\/[^/]+$/.test(url.pathname);
 }
@@ -419,7 +882,11 @@ export async function handleAccountRequest(request, db, url = new URL(request.ur
         if (request.method === 'POST' && url.pathname === '/api/account/register') return register(request, db);
         if (request.method === 'POST' && url.pathname === '/api/account/login') return login(request, db);
         if (request.method === 'POST' && url.pathname === '/api/account/logout') return logout(request, db, options);
+        if (request.method === 'POST' && url.pathname === '/api/account/link-legacy') return linkLegacyAccount(request, db, options);
+        if (request.method === 'POST' && url.pathname === '/api/account/migrate-legacy') return completeLegacyMigration(request, db, options);
+        if (request.method === 'POST' && url.pathname === '/api/account/security/password-changed') return recordPasswordChanged(request, db, options);
         if (request.method === 'GET' && url.pathname === '/api/account/me') return getProfile(request, db, options);
+        if (request.method === 'GET' && url.pathname === '/api/account/security-events') return listSecurityEvents(request, db, options);
         if (request.method === 'GET' && url.pathname === '/api/account/campaigns') return listCampaigns(request, db, options);
         const campaignMatch = url.pathname.match(/^\/api\/account\/campaigns\/([^/]+)$/);
         if (campaignMatch) {

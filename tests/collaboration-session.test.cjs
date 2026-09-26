@@ -42,12 +42,17 @@ const online = session.normalizeSession({
     endpoint: 'https://room.example.workers.dev',
     roomCode: 'ABC234XY',
     memberToken: 'device-secret',
+    accountUserId: 'user-player-456',
+    accountDisplayName: 'Conta do Jogador',
+    accountAuthenticated: true,
     linkedParticipantId: 'geralt',
     connectionState: 'synced'
 });
 assert.equal(online.mode, 'room');
 assert.equal(online.roomCode, 'ABC234XY');
 assert.equal(online.connectionState, 'synced');
+assert.equal(online.accountUserId, 'user-player-456');
+assert.equal(online.accountAuthenticated, true);
 
 session.resetForTests();
 session.initialize({ storage: memoryStorage(), session: online });
@@ -71,6 +76,7 @@ assert.equal(accessEnded.accessEndReason, 'revoked');
 assert.equal(accessEnded.roomCode, null);
 assert.equal(accessEnded.memberToken, null);
 assert.equal(accessEnded.linkedParticipantId, null);
+assert.equal(accessEnded.accountUserId, null);
 assert.equal(session.isPlayerAccessEnded(), true);
 assert.match(session.getStatusPresentation().label, /Sem acesso/);
 assert.equal(transientRemoteActive, false);
@@ -98,7 +104,7 @@ assert.match(sessionSource, /renderSessionToolsView\('collaboration'\)/);
 assert.match(sessionSource, /masterOnlyViews/);
 assert.match(sessionSource, /session-role-chip/);
 assert.match(styles, /data-collaboration-role="player"/);
-assert.match(workerSource, /witcher-combat-tracker-v186/);
+assert.match(workerSource, /witcher-combat-tracker-v193/);
 assert.match(indexSource, /playerPadCollapsedBar/);
 assert.match(sessionSource, /Calendário/);
 assert.match(styles, /player-pad-collapsed/);

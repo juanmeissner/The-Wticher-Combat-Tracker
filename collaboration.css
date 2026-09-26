@@ -92,26 +92,29 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 9px;
+    gap: 12px;
     width: 100%;
     min-height: 42px;
     margin: 0;
-    border: 1px solid #64748b;
-    border-radius: 10px;
-    background: #f8fafc;
-    color: #172033;
-    font-weight: 900;
+    border: 1px solid #747775;
+    border-radius: 8px;
+    background: #fff;
+    color: #1f1f1f;
+    font-family: Roboto, Arial, sans-serif;
+    font-size: .875rem;
+    font-weight: 500;
 }
 
-.firebase-google-button > span {
-    display: grid;
-    width: 24px;
-    height: 24px;
-    place-items: center;
-    border-radius: 50%;
-    background: conic-gradient(from -45deg, #4285f4 0 25%, #34a853 0 50%, #fbbc05 0 75%, #ea4335 0);
-    color: #fff;
-    font-size: .78rem;
+.firebase-google-button:hover:not(:disabled),
+.firebase-google-button:focus-visible {
+    background: #f8fafd;
+    border-color: #5f6368;
+}
+
+.firebase-google-mark {
+    width: 18px;
+    height: 18px;
+    flex: 0 0 18px;
 }
 
 .firebase-auth-links {
@@ -140,6 +143,31 @@
     background: rgba(6, 78, 59, .35);
     color: #a7f3d0;
     font-size: .76rem;
+}
+
+.firebase-email-correction {
+    overflow: hidden;
+    border: 1px solid rgba(125, 211, 252, .28);
+    border-radius: 11px;
+    background: rgba(15, 23, 42, .48);
+}
+
+.firebase-email-correction > summary {
+    padding: 9px 11px;
+    color: #7dd3fc;
+    font-size: .74rem;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.firebase-email-correction > form {
+    padding: 0 11px 11px;
+}
+
+.firebase-email-correction small {
+    color: #94a3b8;
+    font-size: .69rem;
+    line-height: 1.45;
 }
 
 .firebase-account-settings {
@@ -192,6 +220,132 @@
     align-self: start;
 }
 
+.firebase-provider-conflict {
+    padding: 11px;
+    border: 1px solid rgba(251, 191, 36, .4);
+    border-radius: 11px;
+    background: rgba(120, 53, 15, .18);
+}
+
+.firebase-provider-management {
+    display: grid;
+    grid-column: 1 / -1;
+    gap: 9px;
+}
+
+.firebase-provider-list {
+    display: grid;
+    gap: 7px;
+}
+
+.firebase-provider-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 9px 10px;
+    border: 1px solid rgba(51, 65, 85, .92);
+    border-radius: 9px;
+    background: rgba(15, 23, 42, .66);
+}
+
+.firebase-provider-row > span {
+    display: grid;
+    min-width: 0;
+    gap: 2px;
+}
+
+.firebase-provider-row b {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    color: #f8fafc;
+    font-size: .74rem;
+}
+
+.firebase-provider-row small {
+    color: #86efac;
+}
+
+.firebase-provider-row em {
+    color: #94a3b8;
+    font-size: .66rem;
+    font-style: normal;
+}
+
+.firebase-provider-remove {
+    width: auto;
+    flex: 0 0 auto;
+    border-color: rgba(248, 113, 113, .38);
+    color: #fecaca;
+}
+
+.firebase-google-link-button {
+    margin-top: 1px;
+}
+
+.firebase-provider-warning {
+    color: #fcd34d !important;
+}
+
+.cloud-security-history {
+    overflow: hidden;
+    border: 1px solid rgba(125, 211, 252, .24);
+    border-radius: 11px;
+    background: rgba(15, 23, 42, .48);
+}
+
+.cloud-security-history > summary {
+    padding: 9px 11px;
+    color: #bae6fd;
+    font-size: .73rem;
+    font-weight: 850;
+    cursor: pointer;
+}
+
+.cloud-security-history-body {
+    padding: 0 11px 11px;
+}
+
+.cloud-security-history-body ul {
+    display: grid;
+    gap: 7px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.cloud-security-history-body li {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 8px 9px;
+    border: 1px solid rgba(51, 65, 85, .9);
+    border-radius: 9px;
+    background: rgba(23, 32, 51, .78);
+}
+
+.cloud-security-history-body li > div {
+    min-width: 0;
+}
+
+.cloud-security-history-body strong,
+.cloud-security-history-body small {
+    display: block;
+}
+
+.cloud-security-history-body strong {
+    color: #e0f2fe;
+    font-size: .72rem;
+}
+
+.cloud-security-history-body small {
+    margin-top: 2px;
+    color: #94a3b8;
+    font-size: .66rem;
+    line-height: 1.4;
+}
+
 .cloud-account-legacy {
     margin: 8px 0 14px;
     border: 1px solid #334155;
@@ -242,6 +396,50 @@
     color: #7dd3fc;
 }
 
+.cloud-account-heading > .firebase-account-identity {
+    flex-wrap: nowrap;
+    gap: 10px;
+}
+
+.firebase-account-avatar,
+.firebase-account-avatar-fallback {
+    width: 36px;
+    height: 36px;
+    flex: 0 0 36px;
+    border: 1px solid rgba(125, 211, 252, .48);
+    border-radius: 50%;
+}
+
+.firebase-account-avatar {
+    display: block;
+    object-fit: cover;
+}
+
+.firebase-account-avatar-fallback {
+    display: grid;
+    place-items: center;
+    background: rgba(15, 23, 42, .72);
+}
+
+.firebase-account-text {
+    display: grid;
+    min-width: 0;
+    gap: 2px;
+}
+
+.cloud-account-heading .firebase-account-text small {
+    width: auto;
+    overflow: hidden;
+    padding-left: 0;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.cloud-account-heading .firebase-account-text .firebase-account-email {
+    color: #94a3b8;
+    font-size: .68rem;
+}
+
 .cloud-account-copy,
 .cloud-account-empty {
     margin: 0;
@@ -274,6 +472,133 @@
     background: rgba(127, 29, 29, .3);
     color: #fecaca;
     font-size: .76rem;
+}
+
+.firebase-legacy-link {
+    border: 1px solid rgba(56, 189, 248, .34);
+    border-radius: 11px;
+    background: rgba(8, 47, 73, .28);
+}
+
+.firebase-legacy-link > summary {
+    padding: 10px 11px;
+    color: #bae6fd;
+    font-size: .76rem;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.firebase-legacy-link-body {
+    display: grid;
+    gap: 8px;
+    padding: 0 11px 11px;
+}
+
+.firebase-legacy-link-body p,
+.firebase-legacy-link-body small {
+    margin: 0;
+    color: #b6c6da;
+    font-size: .72rem;
+    line-height: 1.45;
+}
+
+.firebase-legacy-link-form {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 8px;
+}
+
+.firebase-legacy-link-form button {
+    grid-column: 1 / -1;
+    margin: 0;
+}
+
+.firebase-legacy-linked {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    margin: 0;
+    padding: 9px 10px;
+    border: 1px solid rgba(52, 211, 153, .38);
+    border-radius: 10px;
+    background: rgba(6, 78, 59, .24);
+    color: #a7f3d0;
+    font-size: .74rem;
+}
+
+.legacy-migration-card {
+    display: grid;
+    gap: 10px;
+    padding: 12px;
+    border: 1px solid rgba(56, 189, 248, .42);
+    border-radius: 12px;
+    background: linear-gradient(145deg, rgba(8, 47, 73, .5), rgba(15, 23, 42, .82));
+}
+
+.legacy-migration-card.is-pending {
+    border-color: rgba(250, 204, 21, .48);
+}
+
+.legacy-migration-heading {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+}
+
+.legacy-migration-heading > span {
+    display: grid;
+    width: 34px;
+    height: 34px;
+    place-items: center;
+    border-radius: 10px;
+    background: rgba(14, 165, 233, .16);
+}
+
+.legacy-migration-heading > div {
+    display: grid;
+    gap: 2px;
+}
+
+.legacy-migration-heading strong {
+    color: #e0f2fe;
+    font-size: .84rem;
+}
+
+.legacy-migration-heading small,
+.legacy-migration-card > p,
+.legacy-migration-safety {
+    margin: 0;
+    color: #b6c6da;
+    font-size: .72rem;
+    line-height: 1.45;
+}
+
+.legacy-migration-actions {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+}
+
+.legacy-migration-actions > button:last-child {
+    grid-column: 1 / -1;
+}
+
+.legacy-migration-safety {
+    padding-top: 8px;
+    border-top: 1px solid rgba(148, 163, 184, .18);
+}
+
+@media (max-width: 520px) {
+    .firebase-legacy-link-form {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .legacy-migration-actions {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .legacy-migration-actions > button:last-child {
+        grid-column: auto;
+    }
 }
 
 .cloud-campaign-card {
@@ -318,6 +643,145 @@
     min-height: 36px;
     padding: 7px 10px;
     margin: 0;
+}
+
+.campaign-storage-section {
+    display: grid;
+    gap: 9px;
+    padding: 11px;
+    border: 1px solid rgba(100, 116, 139, .42);
+    border-radius: 12px;
+    background: rgba(15, 23, 42, .46);
+}
+
+.campaign-storage-section.is-cloud {
+    border-color: rgba(14, 165, 233, .35);
+    background: rgba(8, 47, 73, .22);
+}
+
+.campaign-storage-section > header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.campaign-storage-section > header > div {
+    display: grid;
+    gap: 2px;
+}
+
+.campaign-storage-section > header strong {
+    color: #e2e8f0;
+    font-size: .8rem;
+}
+
+.campaign-storage-section > header small {
+    color: #94a3b8;
+    font-size: .66rem;
+}
+
+.campaign-storage-section > header > span,
+.campaign-storage-badge {
+    border: 1px solid rgba(125, 211, 252, .35);
+    border-radius: 999px;
+    background: rgba(14, 165, 233, .12);
+    color: #bae6fd;
+    font-size: .64rem;
+    font-weight: 800;
+}
+
+.campaign-storage-section > header > span {
+    min-width: 25px;
+    padding: 4px 7px;
+    text-align: center;
+}
+
+.campaign-storage-badge {
+    flex: 0 0 auto;
+    padding: 5px 8px;
+}
+
+.campaign-storage-badge.is-local {
+    border-color: rgba(52, 211, 153, .35);
+    background: rgba(6, 78, 59, .22);
+    color: #a7f3d0;
+}
+
+.collaboration-account-identity {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 11px;
+    border: 1px solid rgba(52, 211, 153, .38);
+    border-radius: 11px;
+    background: rgba(6, 78, 59, .22);
+}
+
+.collaboration-account-identity.is-guest {
+    border-color: rgba(148, 163, 184, .3);
+    background: rgba(30, 41, 59, .45);
+}
+
+.collaboration-account-identity > span,
+.collaboration-account-mark {
+    display: inline-grid;
+    place-items: center;
+    border-radius: 50%;
+    background: #059669;
+    color: #ecfdf5;
+    font-weight: 900;
+}
+
+.collaboration-last-author {
+    margin: -3px 0 0;
+    color: #94a3b8;
+    font-size: .68rem;
+    line-height: 1.35;
+}
+
+.collaboration-last-author strong {
+    color: #cbd5e1;
+}
+
+.collaboration-account-identity > span {
+    width: 28px;
+    height: 28px;
+    flex: 0 0 28px;
+}
+
+.collaboration-account-identity.is-guest > span {
+    background: #475569;
+}
+
+.collaboration-account-identity > div {
+    display: grid;
+    min-width: 0;
+    gap: 2px;
+}
+
+.collaboration-account-identity strong {
+    color: #ecfdf5;
+    font-size: .78rem;
+}
+
+.collaboration-account-identity small {
+    color: #a7f3d0;
+    font-size: .68rem;
+    line-height: 1.35;
+}
+
+.collaboration-account-identity.is-guest strong,
+.collaboration-account-identity.is-guest small {
+    color: #cbd5e1;
+}
+
+.collaboration-account-mark {
+    width: 15px;
+    height: 15px;
+    margin-left: 2px;
+    font-size: .58rem;
+    vertical-align: middle;
 }
 
 .cloud-campaign-name-dialog .collaboration-field {

@@ -6,15 +6,19 @@
     'use strict';
 
     const SESSION_KEY = 'dnd_cloud_account_session_v1';
+    const MIGRATION_KEY = 'dnd_cloud_account_migration_v1';
     const REFRESH_INTERVAL_MS = 30_000;
     let accountSession = readSession();
     let firebaseUser = null;
+    let firebaseCandidateUser = null;
     let remoteUser = null;
     let campaigns = [];
+    let securityEvents = [];
     let formMode = 'login';
     let loading = false;
     let errorMessage = '';
     let lastRefreshAt = 0;
+    let migrationState = readMigrationState();
 
     function readSession() {
         try {
@@ -37,6 +41,33 @@
         else root?.localStorage?.removeItem?.(SESSION_KEY);
     }
 
+    function readMigrationState() {
+        try {
+            const value = JSON.parse(root?.localStorage?.getItem?.(MIGRATION_KEY) || 'null');
+            return value?.legacyUserId ? value : null;
+        } catch {
+            root?.localStorage?.removeItem?.(MIGRATION_KEY);
+            return null;
+        }
+    }
+
+    function persistMigrationState(value) {
+        migrationState = value?.legacyUserId ? value : null;
+        if (migrationState) root?.localStorage?.setItem?.(MIGRATION_KEY, JSON.stringify(migrationState));
+        else root?.localStorage?.removeItem?.(MIGRATION_KEY);
+    }
+
+    function markMigrationStarted(method = '') {
+        if (!accountSession?.token || !accountSession?.user?.id) return false;
+        persistMigrationState({
+            legacyUserId: String(accountSession.user.id),
+            legacyUsername: String(accountSession.user.username || ''),
+            method: String(method || ''),
+            startedAt: migrationState?.startedAt || new Date().toISOString()
+        });
+        return true;
+    }
+
     function getEndpoint() {
         return root?.collaborationRealtime?.getServiceEndpoint?.()
             || 'https://witcher-combat-collaboration.juanmeissnerf.workers.dev';
@@ -50,13 +81,29 @@
         return isFirebaseAuthenticated() || Boolean(accountSession?.token);
     }
 
-    async function getBearerToken() {
-        if (isFirebaseAuthenticated()) return root.firebaseAuthClient.getIdToken();
+    async function getBearerToken(forceRefresh = false) {
+        if (isFirebaseAuthenticated()) return root.firebaseAuthClient.getIdToken(Boolean(forceRefresh));
         return String(accountSession?.token || '');
     }
 
-    async function request(path, options = {}) {
-        const bearerToken = await getBearerToken();
+    async function getCollaborationAccessToken(forceRefresh = false) {
+        if (!isAuthenticated()) return '';
+        return getBearerToken(Boolean(forceRefresh));
+    }
+
+    function getPublicIdentity() {
+        const user = remoteUser || firebaseUser || accountSession?.user || null;
+        if (!user) return null;
+        return {
+            id: String(remoteUser?.id || accountSession?.user?.id || firebaseUser?.uid || ''),
+            displayName: String(user.displayName || user.username || user.email || 'Conta autenticada'),
+            authProvider: String(remoteUser?.authProvider || (firebaseUser?.uid ? 'firebase' : 'legacy')),
+            authenticated: true
+        };
+    }
+
+    async function performRequest(path, options = {}, forceRefresh = false) {
+        const bearerToken = await getBearerToken(forceRefresh);
         const response = await root.fetch(`${getEndpoint()}${path}`, {
             method: options.method || 'GET',
             headers: {
@@ -67,6 +114,20 @@
         });
         let result = {};
         try { result = await response.json(); } catch { result = {}; }
+        return { response, result };
+    }
+
+    async function request(path, options = {}) {
+        let attempt = await performRequest(path, options);
+        if (
+            !attempt.response.ok
+            && attempt.response.status === 403
+            && attempt.result?.error === 'firebase_email_unverified'
+            && isFirebaseAuthenticated()
+        ) {
+            attempt = await performRequest(path, options, true);
+        }
+        const { response, result } = attempt;
         if (!response.ok) {
             if (response.status === 401 && !isFirebaseAuthenticated()) {
                 persistSession(null);
@@ -114,37 +175,169 @@
         `).join('');
     }
 
+    function getLocalCampaigns() {
+        return root?.campaignStore?.getCampaigns?.() || [];
+    }
+
+    function renderLocalCampaigns(localCampaigns = getLocalCampaigns()) {
+        const activeId = root?.campaignStore?.getActiveCampaign?.()?.id;
+        if (!localCampaigns.length) {
+            return '<p class="cloud-account-empty">Nenhuma campanha permanente neste dispositivo.</p>';
+        }
+        return localCampaigns.map(campaign => `
+            <article class="cloud-campaign-card cloud-campaign-card-local">
+                <div>
+                    <strong>${escapeHtml(campaign.name || 'Campanha local')}</strong>
+                    <small>${String(campaign.id) === String(activeId) ? 'Ativa agora · ' : ''}Salva somente neste dispositivo</small>
+                </div>
+                <span class="campaign-storage-badge is-local">Dispositivo</span>
+            </article>
+        `).join('');
+    }
+
+    function renderLegacyLink() {
+        if (accountSession?.token) return '';
+        if (!isFirebaseAuthenticated() || !remoteUser) return '';
+        const generatedFirebaseAccount = /^firebase_/i.test(String(remoteUser.username || ''));
+        if (!generatedFirebaseAccount) {
+            return `
+                <p class="firebase-legacy-linked">
+                    <span aria-hidden="true">🔗</span>
+                    Conta antiga vinculada: <strong>@${escapeHtml(remoteUser.username)}</strong>
+                </p>
+            `;
+        }
+        return `
+            <details class="firebase-legacy-link">
+                <summary>🔗 Vincular conta antiga</summary>
+                <div class="firebase-legacy-link-body">
+                    <p>Use o usuário e a senha do acesso Cloudflare anterior. As campanhas das duas contas serão preservadas e reunidas.</p>
+                    <form class="firebase-legacy-link-form" onsubmit="return linkFirebaseLegacyAccount(event)">
+                        <input id="firebaseLegacyUsername" class="session-input" maxlength="32" autocapitalize="none" autocomplete="username" placeholder="Usuário antigo" aria-label="Usuário da conta antiga" required>
+                        <input id="firebaseLegacyPassword" class="session-input" type="password" minlength="8" maxlength="128" autocomplete="current-password" placeholder="Senha antiga" aria-label="Senha da conta antiga" required>
+                        <button type="submit" class="session-secondary" ${loading ? 'disabled' : ''}>Vincular e preservar campanhas</button>
+                    </form>
+                    <small>A senha é usada somente nesta confirmação e não fica salva no dispositivo.</small>
+                </div>
+            </details>
+        `;
+    }
+
+    function renderLegacyMigration() {
+        if (!accountSession?.token) return '';
+        const legacy = accountSession.user || {};
+        const candidate = firebaseCandidateUser;
+        const started = Boolean(migrationState?.legacyUserId === legacy.id);
+        let content = '';
+        if (!candidate?.uid) {
+            content = `
+                <p>Crie uma conta com e-mail confirmado ou entre em uma conta Firebase existente. Suas campanhas antigas só serão transferidas depois da confirmação final.</p>
+                <div class="cloud-account-actions legacy-migration-actions">
+                    <button type="button" class="session-primary" onclick="beginLegacyAccountMigration('register')" ${loading ? 'disabled' : ''}>Criar acesso com e-mail</button>
+                    <button type="button" class="session-secondary" onclick="beginLegacyAccountMigration('login')" ${loading ? 'disabled' : ''}>Já tenho uma conta</button>
+                    <button type="button" class="session-secondary" onclick="beginLegacyAccountMigrationWithGoogle()" ${loading ? 'disabled' : ''}>Usar Conta Google</button>
+                </div>
+            `;
+        } else if (!candidate.emailVerified) {
+            content = `
+                <p>Enviamos a confirmação para <strong>${escapeHtml(candidate.email)}</strong>. O acesso antigo continuará funcionando enquanto o e-mail não for confirmado.</p>
+                <button type="button" class="session-primary" onclick="refreshLegacyMigrationVerification()" ${loading ? 'disabled' : ''}>Já confirmei o e-mail</button>
+            `;
+        } else {
+            content = `
+                <p>A identidade <strong>${escapeHtml(candidate.email)}</strong> está confirmada. Revise e conclua para transferir as campanhas e desativar a senha antiga.</p>
+                <button type="button" class="session-primary" onclick="completeLegacyAccountMigration()" ${loading ? 'disabled' : ''}>Concluir migração</button>
+            `;
+        }
+        return `
+            <section class="legacy-migration-card${started ? ' is-pending' : ''}">
+                <div class="legacy-migration-heading">
+                    <span aria-hidden="true">🔐</span>
+                    <div><strong>Atualizar conta antiga</strong><small>@${escapeHtml(legacy.username || 'conta antiga')}</small></div>
+                </div>
+                ${content}
+                <small class="legacy-migration-safety">Nenhuma campanha será apagada. Se você interromper agora, poderá entrar novamente com a conta antiga e continuar depois.</small>
+            </section>
+        `;
+    }
+
+    function securityEventLabel(event) {
+        if (event?.type === 'password_changed') return 'Senha alterada';
+        if (event?.type === 'legacy_migration_completed') return 'Conta antiga migrada';
+        return 'Alteração de segurança';
+    }
+
+    function renderSecurityHistory() {
+        if (!isFirebaseAuthenticated()) return '';
+        const content = securityEvents.length
+            ? securityEvents.map(event => {
+                const revoked = Math.max(0, Number(event?.details?.revokedLegacySessions) || 0);
+                const migrated = event?.type === 'legacy_migration_completed';
+                const moved = Math.max(0, Number(event?.details?.movedCampaigns) || 0);
+                const preserved = Math.max(0, Number(event?.details?.preservedLegacyCampaigns) || 0);
+                const totalMigrated = moved + preserved;
+                const detail = migrated
+                    ? `${totalMigrated} campanha${totalMigrated === 1 ? '' : 's'} preservada${totalMigrated === 1 ? '' : 's'} · acesso antigo desativado`
+                    : revoked > 0
+                    ? `${revoked} sessão${revoked === 1 ? '' : 'ões'} antiga${revoked === 1 ? '' : 's'} encerrada${revoked === 1 ? '' : 's'}`
+                    : 'Credenciais anteriores invalidadas pelo provedor';
+                const date = new Date(event.createdAt);
+                const timestamp = Number.isNaN(date.getTime()) ? '' : date.toLocaleString('pt-BR');
+                return `
+                    <li>
+                        <span aria-hidden="true">🔑</span>
+                        <div><strong>${escapeHtml(securityEventLabel(event))}</strong><small>${escapeHtml(detail)}${timestamp ? ` · ${escapeHtml(timestamp)}` : ''}</small></div>
+                    </li>
+                `;
+            }).join('')
+            : '<p class="cloud-account-empty">Nenhuma alteração de segurança registrada.</p>';
+        return `
+            <details class="cloud-security-history">
+                <summary>🛡️ Histórico de segurança</summary>
+                <div class="cloud-security-history-body">${securityEvents.length ? `<ul>${content}</ul>` : content}</div>
+            </details>
+        `;
+    }
+
     function renderAuthenticated() {
         const connectedUser = remoteUser || firebaseUser || accountSession?.user || {};
+        const localCampaigns = getLocalCampaigns();
         return `
             <div class="cloud-account-heading">
                 <div><span>☁️</span><strong>Campanhas na nuvem</strong><small>${escapeHtml(connectedUser.displayName || connectedUser.email || connectedUser.username || 'Conta conectada')}</small></div>
                 <button type="button" class="session-small-button" onclick="logoutCloudAccount()" ${loading ? 'disabled' : ''}>Sair</button>
             </div>
-            <p class="cloud-account-copy">Salve cópias privadas das suas campanhas para acessá-las em outros dispositivos.</p>
+            <p class="cloud-account-copy">As campanhas do dispositivo e as cópias privadas da conta permanecem separadas. Carregar uma campanha nunca apaga a campanha local atual.</p>
             ${errorMessage ? `<p class="cloud-account-error">${escapeHtml(errorMessage)}</p>` : ''}
+            ${renderLegacyMigration()}
+            ${renderLegacyLink()}
+            ${renderSecurityHistory()}
+            <section class="campaign-storage-section">
+                <header><div><strong>💾 Neste dispositivo</strong><small>Disponíveis offline</small></div><span>${localCampaigns.length}</span></header>
+                <div class="cloud-campaign-list">${renderLocalCampaigns(localCampaigns)}</div>
+            </section>
+            <section class="campaign-storage-section is-cloud">
+                <header><div><strong>☁️ Na sua conta</strong><small>Privadas e acessíveis após login</small></div><span>${campaigns.length}</span></header>
             <div class="cloud-account-actions">
                 <button type="button" class="session-primary" onclick="requestSaveActiveCampaignToCloud()" ${loading ? 'disabled' : ''}>${loading ? 'Aguarde...' : 'Salvar campanha atual'}</button>
                 <button type="button" class="session-secondary" onclick="refreshCloudAccount()" ${loading ? 'disabled' : ''}>Atualizar lista</button>
             </div>
             <div class="cloud-campaign-list">${renderCampaigns()}</div>
+            </section>
         `;
     }
 
     function renderAnonymous() {
-        const register = formMode === 'register';
         return `
             <div class="cloud-account-heading">
-                <div><span>☁️</span><strong>Conta Cloudflare legada</strong><small>Temporária durante a migração para o Firebase</small></div>
+                <div><span>☁️</span><strong>Conta Cloudflare antiga</strong><small>Disponível somente para migração</small></div>
             </div>
-            <p class="cloud-account-copy">${register ? 'Crie uma conta legada somente se precisar acessar o sistema anterior.' : 'Use este acesso somente para campanhas salvas antes da migração para o Firebase.'}</p>
+            <p class="cloud-account-copy">Entre para recuperar suas campanhas antigas e transferi-las para uma conta Firebase confirmada.</p>
             ${errorMessage ? `<p class="cloud-account-error">${escapeHtml(errorMessage)}</p>` : ''}
             <div class="cloud-account-form">
-                ${register ? '<input id="cloudAccountDisplayName" class="session-input" maxlength="80" autocomplete="name" placeholder="Nome exibido">' : ''}
                 <input id="cloudAccountUsername" class="session-input" maxlength="32" autocapitalize="none" autocomplete="username" placeholder="Nome de usuário">
-                <input id="cloudAccountPassword" class="session-input" type="password" minlength="8" maxlength="128" autocomplete="${register ? 'new-password' : 'current-password'}" placeholder="Senha">
-                <button type="button" class="session-primary" onclick="${register ? 'registerCloudAccount' : 'loginCloudAccount'}()" ${loading ? 'disabled' : ''}>${loading ? 'Aguarde...' : (register ? 'Criar conta' : 'Entrar')}</button>
-                <button type="button" class="session-secondary" onclick="setCloudAccountFormMode('${register ? 'login' : 'register'}')" ${loading ? 'disabled' : ''}>${register ? 'Já tenho uma conta' : 'Criar uma conta'}</button>
+                <input id="cloudAccountPassword" class="session-input" type="password" minlength="8" maxlength="128" autocomplete="current-password" placeholder="Senha antiga">
+                <button type="button" class="session-primary" onclick="loginCloudAccount()" ${loading ? 'disabled' : ''}>${loading ? 'Aguarde...' : 'Entrar e migrar'}</button>
             </div>
         `;
     }
@@ -164,11 +357,13 @@
     }
 
     function useFirebaseUser(nextUser) {
-        const previousUid = firebaseUser?.uid || '';
+        const previousUid = firebaseCandidateUser?.uid || '';
+        firebaseCandidateUser = nextUser?.uid ? { ...nextUser } : null;
         firebaseUser = nextUser?.emailVerified ? { ...nextUser } : null;
-        if (previousUid !== (firebaseUser?.uid || '')) {
+        if (previousUid !== (firebaseCandidateUser?.uid || '')) {
             remoteUser = null;
             campaigns = [];
+            securityEvents = [];
             lastRefreshAt = 0;
         }
         const details = root?.document?.querySelector?.('.cloud-account-legacy');
@@ -177,10 +372,10 @@
             if (summary) summary.textContent = firebaseUser
                 ? 'Campanhas permanentes da conta'
                 : 'Acesso legado às campanhas Cloudflare';
-            if (firebaseUser) details.open = true;
+            if (firebaseCandidateUser || accountSession?.token) details.open = true;
         }
         renderPanel();
-        if (firebaseUser && !loading) void refreshAccount();
+        if (firebaseUser && !accountSession?.token && !loading) void refreshAccount();
         return Boolean(firebaseUser);
     }
 
@@ -228,6 +423,7 @@
             });
             campaigns = [];
             lastRefreshAt = 0;
+            if (!register) markMigrationStarted('legacy');
             root?.showToast?.(register ? '☁️ Conta criada com sucesso.' : '☁️ Conta conectada.');
             loading = false;
             await refreshAccount();
@@ -249,19 +445,83 @@
         return authenticate('/api/account/login', false);
     }
 
+    function focusFirebasePanel(fieldId = '') {
+        const panel = root?.document?.getElementById?.('firebaseAuthPanel');
+        panel?.scrollIntoView?.({ behavior: 'smooth', block: 'start' });
+        if (fieldId) root?.setTimeout?.(() => root?.document?.getElementById?.(fieldId)?.focus?.(), 250);
+    }
+
+    function beginLegacyMigration(mode = 'register') {
+        if (!markMigrationStarted(mode)) return false;
+        root?.firebaseAuthUI?.setMode?.(mode === 'login' ? 'login' : 'register');
+        focusFirebasePanel('firebaseAuthEmail');
+        return true;
+    }
+
+    function beginLegacyMigrationWithGoogle() {
+        if (!markMigrationStarted('google')) return false;
+        focusFirebasePanel();
+        return root?.firebaseAuthUI?.loginWithGoogle?.() || false;
+    }
+
+    async function refreshLegacyMigrationVerification() {
+        if (loading) return false;
+        await root?.firebaseAuthUI?.refreshAccount?.();
+        const refreshed = root?.firebaseAuthUI?.getState?.().user || null;
+        useFirebaseUser(refreshed);
+        if (!refreshed?.emailVerified) root?.showToast?.('A confirmação ainda não foi identificada.');
+        return Boolean(refreshed?.emailVerified);
+    }
+
+    async function completeLegacyMigration() {
+        if (!isFirebaseAuthenticated() || !accountSession?.token || loading) return false;
+        loading = true;
+        errorMessage = '';
+        renderPanel();
+        try {
+            const result = await request('/api/account/migrate-legacy', {
+                method: 'POST',
+                body: { legacyToken: accountSession.token }
+            });
+            persistSession(null);
+            persistMigrationState(null);
+            remoteUser = result.user || remoteUser;
+            campaigns = [];
+            securityEvents = [];
+            lastRefreshAt = 0;
+            const total = (Number(result.movedCampaigns) || 0) + (Number(result.preservedLegacyCampaigns) || 0);
+            root?.showToast?.(`✅ Migração concluída. ${total} campanha${total === 1 ? '' : 's'} preservada${total === 1 ? '' : 's'}.`);
+            loading = false;
+            await refreshAccount();
+            return true;
+        } catch (error) {
+            errorMessage = error.code === 'legacy_campaign_conflict'
+                ? 'Há campanhas com o mesmo identificador nas duas contas. Remova uma das cópias antes de concluir.'
+                : error.message;
+            return false;
+        } finally {
+            loading = false;
+            renderPanel();
+        }
+    }
+
     async function refreshAccount() {
         if (!isAuthenticated() || loading) return false;
         loading = true;
         errorMessage = '';
         renderPanel();
         try {
-            const [profile, cloudCampaigns] = await Promise.all([
+            const [profile, cloudCampaigns, security] = await Promise.all([
                 request('/api/account/me'),
-                request('/api/account/campaigns')
+                request('/api/account/campaigns'),
+                isFirebaseAuthenticated()
+                    ? request('/api/account/security-events').catch(() => null)
+                    : Promise.resolve(null)
             ]);
             remoteUser = profile.user || null;
             if (!isFirebaseAuthenticated()) persistSession({ ...accountSession, user: profile.user });
             campaigns = Array.isArray(cloudCampaigns.campaigns) ? cloudCampaigns.campaigns : [];
+            securityEvents = Array.isArray(security?.events) ? security.events : [];
             lastRefreshAt = Date.now();
             return true;
         } catch (error) {
@@ -273,22 +533,90 @@
         }
     }
 
+    async function linkLegacyAccount(event) {
+        event?.preventDefault?.();
+        if (!isFirebaseAuthenticated() || loading) return false;
+        const usernameInput = root?.document?.getElementById('firebaseLegacyUsername');
+        const passwordInput = root?.document?.getElementById('firebaseLegacyPassword');
+        const username = String(usernameInput?.value || '').trim().toLowerCase();
+        const password = String(passwordInput?.value || '');
+        if (!/^[a-z0-9._-]{3,32}$/.test(username)) {
+            errorMessage = 'Informe o nome de usuário válido da conta antiga.';
+            renderPanel();
+            return false;
+        }
+        if (password.length < 8) {
+            errorMessage = 'Informe a senha da conta antiga com pelo menos 8 caracteres.';
+            renderPanel();
+            return false;
+        }
+        loading = true;
+        errorMessage = '';
+        renderPanel();
+        try {
+            const result = await request('/api/account/link-legacy', {
+                method: 'POST',
+                body: { username, password }
+            });
+            remoteUser = result.user || remoteUser;
+            campaigns = [];
+            lastRefreshAt = 0;
+            const total = Number(result.movedCampaigns) || 0;
+            root?.showToast?.(result.alreadyLinked
+                ? '🔗 Esta conta antiga já estava vinculada.'
+                : `🔗 Conta vinculada. ${total} campanha${total === 1 ? '' : 's'} reunida${total === 1 ? '' : 's'}.`);
+            loading = false;
+            await refreshAccount();
+            return true;
+        } catch (error) {
+            errorMessage = error.code === 'legacy_campaign_conflict'
+                ? 'Há campanhas com o mesmo identificador nas duas contas. Remova uma das cópias antes de vincular.'
+                : error.message;
+            return false;
+        } finally {
+            loading = false;
+            renderPanel();
+        }
+    }
+
     async function logout() {
         if (loading) return false;
         loading = true;
         renderPanel();
-        const firebaseConnected = isFirebaseAuthenticated();
+        const firebaseConnected = Boolean(firebaseCandidateUser?.uid);
         try { await request('/api/account/logout', { method: 'POST', body: {} }); } catch { /* a sessão local também deve terminar */ }
         if (firebaseConnected) await root?.firebaseAuthUI?.logout?.();
-        else persistSession(null);
+        persistSession(null);
+        persistMigrationState(null);
         firebaseUser = null;
+        firebaseCandidateUser = null;
         remoteUser = null;
         campaigns = [];
+        securityEvents = [];
         errorMessage = '';
         loading = false;
         renderPanel();
         root?.showToast?.('Conta desconectada deste dispositivo.');
         return true;
+    }
+
+    async function recordPasswordChanged() {
+        if (!isFirebaseAuthenticated()) return { recorded: false };
+        try {
+            const result = await request('/api/account/security/password-changed', {
+                method: 'POST',
+                body: {}
+            });
+            persistSession(null);
+            if (result.event) {
+                securityEvents = [result.event, ...securityEvents.filter(event => event.id !== result.event.id)].slice(0, 20);
+            }
+            renderPanel();
+            return { ...result, recorded: true };
+        } catch (error) {
+            console.warn('Não foi possível registrar a troca de senha no histórico.', error);
+            return { recorded: false };
+        }
     }
 
     function closeCampaignNameDialog() {
@@ -474,7 +802,7 @@
     }
 
     function getState() {
-        return JSON.parse(JSON.stringify({ accountSession, firebaseUser, remoteUser, campaigns, formMode, loading, errorMessage }));
+        return JSON.parse(JSON.stringify({ accountSession, firebaseUser, firebaseCandidateUser, remoteUser, campaigns, securityEvents, migrationState, formMode, loading, errorMessage }));
     }
 
     const api = Object.freeze({
@@ -486,6 +814,12 @@
         setFormMode,
         registerFromView,
         loginFromView,
+        beginLegacyMigration,
+        beginLegacyMigrationWithGoogle,
+        refreshLegacyMigrationVerification,
+        completeLegacyMigration,
+        linkLegacyAccount,
+        recordPasswordChanged,
         refreshAccount,
         logout,
         requestSaveActiveCampaign,
@@ -496,12 +830,19 @@
         requestDeleteCampaign,
         loadCampaign,
         requestLoadCampaign,
+        getCollaborationAccessToken,
+        getPublicIdentity,
         getState
     });
 
     root.setCloudAccountFormMode = setFormMode;
     root.registerCloudAccount = registerFromView;
     root.loginCloudAccount = loginFromView;
+    root.beginLegacyAccountMigration = beginLegacyMigration;
+    root.beginLegacyAccountMigrationWithGoogle = beginLegacyMigrationWithGoogle;
+    root.refreshLegacyMigrationVerification = refreshLegacyMigrationVerification;
+    root.completeLegacyAccountMigration = completeLegacyMigration;
+    root.linkFirebaseLegacyAccount = linkLegacyAccount;
     root.refreshCloudAccount = refreshAccount;
     root.logoutCloudAccount = logout;
     root.requestSaveActiveCampaignToCloud = requestSaveActiveCampaign;

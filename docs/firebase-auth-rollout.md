@@ -132,3 +132,160 @@ e-mail. Isso evita que duas pessoas recebam dados uma da outra por engano.
 - interface responsiva e recolhível para não ocupar permanentemente o painel da conta.
 - confirmação e recuperação tentam retornar ao PWA e usam automaticamente a
   página segura hospedada pelo Firebase quando a URL de retorno for recusada.
+- ao confirmar o e-mail, o ID token é renovado imediatamente; se o Worker ainda
+  receber a reivindicação antiga, o cliente força uma renovação e repete a operação.
+
+## Etapa 5 — vinculação assistida da conta antiga
+
+- o usuário precisa estar autenticado e confirmado pelo Firebase;
+- a vinculação exige novamente o usuário e a senha da conta Cloudflare anterior;
+- o Worker valida a senha antiga sem enviá-la ao Firebase nem persistir no cliente;
+- campanhas da identidade Firebase temporária e da conta anterior são reunidas no
+  mesmo proprietário do D1;
+- sessões antigas continuam válidas, permitindo confirmar a migração antes de
+  abandonar o acesso legado;
+- a identidade Firebase passa a apontar para a conta antiga e o perfil técnico
+  `firebase_*` é removido sem ser recriado nas solicitações seguintes;
+- uma conta antiga vinculada a outro UID é recusada;
+- IDs de campanha repetidos bloqueiam toda a operação e exibem conflito, sem
+  sobrescrever ou mover parcialmente qualquer dado;
+- repetir a vinculação da mesma identidade é seguro e não duplica campanhas.
+
+A vinculação não depende de uma nova migração D1: ela utiliza a tabela
+`firebase_identities` criada na Etapa 3 e executa a troca de proprietário em um
+lote transacional do D1.
+
+## Etapa 6 — cadastro e confirmação de e-mail
+
+- cadastro exige nome, e-mail, senha de pelo menos oito caracteres e confirmação;
+- o Firebase envia a confirmação e o painel permanece utilizável em modo local;
+- campanhas permanentes continuam bloqueadas enquanto `emailVerified` for falso;
+- **Já confirmei** recarrega o usuário e força a emissão de um ID token atualizado;
+- o reenvio possui intervalo persistente de 60 segundos por usuário, além dos
+  limites aplicados pelo próprio Firebase;
+- contas por E-mail/senha podem corrigir um endereço digitado incorretamente,
+  confirmando primeiro a senha atual;
+- a alteração usa verificação prévia: o endereço da conta somente muda depois que
+  o usuário abre o link enviado ao novo e-mail;
+- URLs de retorno recusadas continuam usando automaticamente a página segura
+  hospedada pelo Firebase;
+- nenhuma senha, token ou endereço alternativo é incluído nos backups da campanha.
+
+## Etapa 7 — recuperação, troca de senha e sessões
+
+- a recuperação usa o e-mail transacional do Firebase e mantém uma resposta
+  neutra, sem informar se o endereço existe ou não;
+- o link é processado pela página segura do Firebase e retorna ao login do PWA
+  com uma confirmação clara para que o usuário entre usando a nova senha;
+- a troca dentro do aplicativo exige a senha atual, a nova senha e a confirmação;
+- o Firebase invalida as credenciais anteriores conforme suas regras de sessão;
+- o Worker encerra imediatamente todas as sessões legadas Cloudflare vinculadas
+  ao mesmo proprietário;
+- a alteração de senha é registrada no D1 em um histórico privado da própria
+  conta, sem guardar senha, token, endereço de e-mail ou conteúdo de campanha;
+- somente os 50 eventos mais recentes são conservados e os 20 mais recentes são
+  apresentados no painel;
+- sair da conta encerra tanto a sessão Firebase quanto qualquer sessão legada
+  mantida neste dispositivo.
+
+A migração `0003_account_security_events.sql` cria a tabela aditiva do histórico
+e seu índice por proprietário e data. Ela não altera campanhas nem identidades já
+existentes.
+
+## Etapa 8 — login com Google
+
+- o acesso utiliza a Conta Google habilitada no Firebase, sem armazenar senha no
+  aplicativo, no D1 ou nos backups;
+- navegadores compatíveis abrem o seletor de conta em uma janela; quando o popup
+  não é suportado ou o PWA está instalado em modo independente, o fluxo alterna
+  automaticamente para redirecionamento;
+- o retorno do redirecionamento é processado ao carregar o painel e qualquer erro
+  é apresentado em linguagem clara sem impedir o restante do aplicativo de abrir;
+- o primeiro acesso cria automaticamente o proprietário isolado no D1 quando a
+  primeira operação autenticada é realizada;
+- nome, e-mail e avatar da Conta Google são apresentados no perfil, com bloqueio
+  de URLs de avatar que não usem HTTPS;
+- contas Google reconhecidas pelo Firebase chegam como e-mail confirmado e podem
+  acessar campanhas permanentes sem confirmação adicional;
+- a persistência local do Firebase restaura a mesma sessão nos acessos seguintes;
+- o botão segue a identidade visual do Google com o símbolo colorido e o texto
+  localizado **Continuar com Google**.
+
+Conflitos entre um e-mail já cadastrado por senha e uma Conta Google são
+interrompidos com uma orientação explícita. A vinculação de provedores é tratada
+separadamente na Etapa 9 e nunca une identidades sem confirmação do usuário.
+
+## Etapa 9 — vinculação e conflitos de contas
+
+- quando o Google informa que o e-mail já pertence a outro método, a credencial
+  conflitante é mantida somente na memória da sessão atual;
+- o aplicativo apresenta uma confirmação dedicada e exige a senha da conta
+  original antes de vincular o Google;
+- cancelar a confirmação descarta a credencial pendente sem alterar contas,
+  campanhas ou sessões;
+- usuários autenticados por E-mail/senha podem vincular uma Conta Google pelo
+  gerenciamento da conta;
+- usuários autenticados exclusivamente pelo Google podem criar uma senha e passar
+  a entrar também por e-mail, mantendo o mesmo UID;
+- todos os métodos ativos são exibidos no painel e um provedor só pode ser
+  desconectado quando outro continuar disponível;
+- remover um método exige confirmação explícita e não remove a conta nem suas
+  campanhas;
+- credenciais já pertencentes a outra identidade são recusadas e nunca provocam
+  união automática ou transferência de dados;
+- depois de cada vínculo ou remoção, o token é renovado para que o D1 receba a
+  lista atual de provedores na próxima operação autenticada.
+
+Como o Firebase UID não muda durante essas operações, o proprietário interno do
+D1 também permanece o mesmo. Esta etapa não exige migração do banco nem altera o
+fluxo separado de vinculação das antigas contas Cloudflare.
+
+## Etapa 10 — migração dos usuários antigos
+
+- o cadastro de novas contas Cloudflare deixa de ser oferecido na interface; o
+  formulário antigo permanece somente para usuários que já possuem campanhas;
+- depois do login antigo, um assistente permite criar uma conta Firebase com
+  e-mail, entrar em uma conta existente ou utilizar a Conta Google;
+- o usuário pode interromper o processo antes da conclusão: a sessão, a senha e
+  as campanhas antigas continuam válidas enquanto o e-mail não estiver confirmado;
+- a conclusão exige simultaneamente uma sessão legada válida e um ID token
+  Firebase com e-mail confirmado;
+- campanhas da conta temporária Firebase e da conta antiga são reunidas em uma
+  transação; IDs repetidos bloqueiam toda a migração sem mover dados parcialmente;
+- o vínculo mantém o proprietário antigo no D1 e associa a ele o Firebase UID;
+- depois da confirmação final, todas as sessões legadas são revogadas e novos
+  logins pela senha antiga são recusados com orientação para entrar pelo Firebase;
+- o verificador da senha anterior não é apagado: a tabela de migração desativa o
+  acesso de modo reversível, preservando um caminho administrativo de rollback;
+- repetir a conclusão é idempotente e retorna o registro já consolidado;
+- o histórico de segurança registra data, campanhas preservadas e quantidade de
+  sessões encerradas, sem guardar e-mail, senha, token ou conteúdo de campanha.
+
+A migração `0004_legacy_account_migrations.sql` cria uma tabela aditiva que marca
+somente contas cuja transferência foi concluída. A ausência de registro significa
+que a migração continua pendente e o acesso antigo ainda pode ser usado para
+retomar o processo.
+
+## Etapa 11 — campanhas, salas e identidade da conta
+
+- campanhas permanentes da conta são consultadas automaticamente depois que a
+  sessão Firebase confirmada é restaurada;
+- a interface separa as campanhas salvas neste dispositivo das cópias privadas
+  mantidas na conta, sem carregar ou substituir nenhuma delas automaticamente;
+- toda leitura, gravação e exclusão no D1 continua filtrada pelo proprietário
+  autenticado, e uma campanha pertencente a outra conta responde como inexistente;
+- ao criar ou entrar em uma sala, o cliente envia o ID token somente no cabeçalho;
+  o Worker valida o token e converte a identidade em cabeçalhos internos que não
+  podem ser forjados pela requisição pública;
+- o Durable Object associa Mestre e jogadores ao ID interno da conta, registra a
+  autoria das alterações e publica somente o nome exibido e o estado autenticado;
+- e-mail, ID token, senha e credenciais Firebase nunca entram no estado da sala,
+  no snapshot da campanha, no backup ou na fila offline;
+- o modo convidado permanece disponível. Código, senha, token individual do
+  dispositivo e escolha de personagem continuam válidos sem exigir cadastro;
+- a campanha recebida por um Jogador permanece temporária. Sair, ser removido ou
+  ter a sala encerrada restaura a campanha pessoal que já estava no dispositivo.
+
+Esta etapa utiliza as tabelas e vínculos já existentes e, portanto, não cria uma
+nova migração D1. O Worker precisa ser publicado para ativar a identidade confiável
+nas salas, e o PWA precisa ser atualizado para utilizar o cache `v193`.
