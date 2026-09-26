@@ -15,8 +15,11 @@
     let pendingProviderLink = null;
     let unsubscribe = null;
     let resendTimer = null;
+    let resetTimer = null;
     const VERIFICATION_RESEND_COOLDOWN_MS = 60_000;
     const VERIFICATION_COOLDOWN_KEY = 'dnd_firebase_verification_cooldown_v1';
+    const PASSWORD_RESET_COOLDOWN_MS = 60_000;
+    const PASSWORD_RESET_COOLDOWN_KEY = 'dnd_firebase_password_reset_cooldown_v1';
 
     function escapeHtml(value) {
         return String(value ?? '')
@@ -81,6 +84,32 @@
         }));
     }
 
+    function passwordResetCooldownSeconds() {
+        const until = Number(root?.localStorage?.getItem?.(PASSWORD_RESET_COOLDOWN_KEY)) || 0;
+        const remaining = Math.ceil((until - Date.now()) / 1000);
+        if (remaining > 0) return remaining;
+        root?.localStorage?.removeItem?.(PASSWORD_RESET_COOLDOWN_KEY);
+        return 0;
+    }
+
+    function markPasswordResetSent() {
+        root?.localStorage?.setItem?.(PASSWORD_RESET_COOLDOWN_KEY, String(Date.now() + PASSWORD_RESET_COOLDOWN_MS));
+    }
+
+    function updatePasswordResetButton() {
+        if (resetTimer) root?.clearTimeout?.(resetTimer);
+        resetTimer = null;
+        const button = root?.document?.getElementById?.('firebasePasswordResetButton');
+        if (!button || mode !== 'reset') return;
+        const seconds = passwordResetCooldownSeconds();
+        button.disabled = busy || seconds > 0;
+        button.textContent = seconds > 0 ? `Aguarde ${seconds}s` : 'Enviar recuperação';
+        if (seconds > 0) {
+            resetTimer = root?.setTimeout?.(updatePasswordResetButton, 1_000);
+            resetTimer?.unref?.();
+        }
+    }
+
     function updateResendButton() {
         if (resendTimer) root?.clearTimeout?.(resendTimer);
         resendTimer = null;
@@ -138,15 +167,24 @@
                 <input id="firebaseAuthEmail" class="session-input" type="email" maxlength="254" autocapitalize="none" autocomplete="email" placeholder="E-mail" required>
                 ${reset ? '' : `<input id="firebaseAuthPassword" class="session-input" type="password" minlength="8" maxlength="128" autocomplete="${register ? 'new-password' : 'current-password'}" placeholder="Senha" required>`}
                 ${register ? '<input id="firebaseAuthPasswordConfirm" class="session-input" type="password" minlength="8" maxlength="128" autocomplete="new-password" placeholder="Repita a senha" required>' : ''}
-                <button type="submit" class="session-primary" ${busy ? 'disabled' : ''}>${busy ? 'Aguarde…' : (reset ? 'Enviar recuperação' : (register ? 'Criar e confirmar e-mail' : 'Entrar'))}</button>
+                <button ${reset ? 'id="firebasePasswordResetButton"' : ''} type="submit" class="session-primary" ${busy || (reset && passwordResetCooldownSeconds() > 0) ? 'disabled' : ''}>${busy ? 'Aguarde…' : (reset && passwordResetCooldownSeconds() > 0 ? `Aguarde ${passwordResetCooldownSeconds()}s` : (reset ? 'Enviar recuperação' : (register ? 'Criar e confirmar e-mail' : 'Entrar')))}</button>
                 ${reset ? '' : `<button type="button" class="firebase-google-button" onclick="loginFirebaseWithGoogle()" ${busy ? 'disabled' : ''}>${googleMark()}<span>Continuar com Google</span></button>`}
                 <div class="firebase-auth-links">
                     ${reset
                         ? '<button type="button" onclick="setFirebaseAuthMode(\'login\')">Voltar ao login</button>'
                         : `<button type="button" onclick="setFirebaseAuthMode('${register ? 'login' : 'register'}')">${register ? 'Já tenho uma conta' : 'Criar conta'}</button>${register ? '' : '<button type="button" onclick="setFirebaseAuthMode(\'reset\')">Esqueci a senha</button>'}`}
                 </div>
+                <button type="button" class="session-secondary firebase-offline-button" onclick="continueFirebaseOffline()">Continuar offline</button>
             </form>
         `;
+    }
+
+    function continueOffline() {
+        errorMessage = '';
+        noticeMessage = '';
+        root?.closeSessionTools?.();
+        root?.showToast?.('Modo offline mantido. Combate, fichas e inventário continuam disponíveis.');
+        return true;
     }
 
     function renderAuthenticated() {
@@ -244,6 +282,7 @@
         if (!panel) return false;
         panel.innerHTML = loading ? renderLoading() : (user ? renderAuthenticated() : renderAnonymous());
         updateResendButton();
+        updatePasswordResetButton();
         return true;
     }
 
@@ -315,8 +354,10 @@
         const email = formValue('firebaseAuthEmail').toLowerCase();
         if (!email) return false;
         if (mode === 'reset') {
+            if (passwordResetCooldownSeconds() > 0) return false;
             return perform(async () => {
                 await client.requestPasswordReset(email);
+                markPasswordResetSent();
                 mode = 'login';
                 noticeMessage = 'Se o e-mail estiver cadastrado, você receberá o link de recuperação.';
             });
@@ -522,6 +563,7 @@
         setMode,
         submit,
         loginWithGoogle,
+        continueOffline,
         completePendingGoogleLink,
         cancelPendingProviderLink,
         linkGoogleProvider,
@@ -539,6 +581,7 @@
     root.setFirebaseAuthMode = setMode;
     root.submitFirebaseAuthForm = submit;
     root.loginFirebaseWithGoogle = loginWithGoogle;
+    root.continueFirebaseOffline = continueOffline;
     root.completePendingFirebaseGoogleLink = completePendingGoogleLink;
     root.cancelPendingFirebaseProviderLink = cancelPendingProviderLink;
     root.linkFirebaseGoogleProvider = linkGoogleProvider;

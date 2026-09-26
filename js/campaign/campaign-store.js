@@ -431,6 +431,12 @@
 
     function createCampaign(options = {}) {
         if (!initialized) initialize({ installBridge: false });
+        const requestedId = String(options.id || '').trim();
+        if (requestedId && getRegistry().campaigns.some(entry => String(entry.id) === requestedId)) {
+            const error = new Error('Já existe uma campanha com este identificador.');
+            error.code = 'duplicate_campaign_id';
+            throw error;
+        }
         const currentSnapshot = migrations.snapshotLegacyStorage(storage);
         const emptyStorage = {
             getItem(key) {
@@ -442,11 +448,16 @@
             setItem() {}
         };
         const campaign = migrations.createCampaignFromLegacy(emptyStorage, {
-            id: options.id,
+            id: requestedId || undefined,
             name: options.name || 'Nova campanha',
             createdBy: options.createdBy || 'local-master',
             now: options.now
         });
+        if (getRegistry().campaigns.some(entry => String(entry.id) === String(campaign.id))) {
+            const error = new Error('Não foi possível gerar um identificador único para a campanha.');
+            error.code = 'duplicate_campaign_id';
+            throw error;
+        }
         campaign.metadata.migratedFromLegacy = false;
         persistCampaign(campaign);
         return migrations.clone(campaign);

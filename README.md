@@ -1158,6 +1158,10 @@ legado segue disponível sem migração ou exclusão automática de contas.
   ser repetida com segurança sem duplicar dados.
 - campanhas salvas neste dispositivo e campanhas privadas da conta aparecem em
   seções distintas, com carregamento remoto sempre explícito;
+- cada campanha possui um ID permanente gerado independentemente do nome; salvar
+  novamente atualiza a mesma campanha pelo ID;
+- campanhas da conta podem ser renomeadas sem criar cópias, e o D1 impede duas
+  campanhas diferentes da mesma conta de usarem o mesmo nome;
 - ao criar ou entrar em uma sala, uma conta ativa identifica com segurança o
   Mestre ou o Jogador sem substituir o código e a senha da sala;
 - o Worker ignora identidades declaradas pelo navegador, valida o token Firebase
@@ -1432,6 +1436,10 @@ Os testes verificam o isolamento entre personagens, a migração e o backup do a
 - [x] Contas opcionais com autenticação privada e sessões revogáveis
 - [x] Campanhas permanentes por proprietário no Cloudflare D1 com controle de revisão
 - [x] Nome personalizado ao salvar e exclusão confirmada de campanhas na nuvem
+- [x] IDs permanentes, nomes únicos e renomeação segura de campanhas na nuvem
+- [x] Dispositivos reconhecidos e revogáveis com histórico privado de segurança
+- [x] Limites persistentes, bloqueio administrativo e política de conteúdo para contas online
+- [x] Continuação offline explícita, campanhas locais preservadas e fila segura de reconexão
 - [x] Validação automatizada de saída voluntária, expulsão, encerramento e reconexão
 - [x] Assistente de evolução com múltiplos níveis, pontos protegidos, novas magias, histórico e desfazer
 - [x] Criação completa com raças, profissões, atributos, perícias e aprendizado de magias

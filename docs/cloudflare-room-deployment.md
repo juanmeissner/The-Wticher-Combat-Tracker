@@ -97,6 +97,10 @@ revogável do dispositivo; a senha da sala não é persistida.
    credenciais legadas e confira que as campanhas das duas contas aparecem juntas.
 10. Repita o teste com uma campanha de mesmo ID nas duas contas e confirme que a
     vinculação é bloqueada sem mover ou apagar nenhuma cópia.
+11. Salve duas campanhas com nomes diferentes, renomeie uma delas e confirme que
+    o ID permanece igual e que o nome novo aparece ao recarregar a lista.
+12. Tente salvar ou renomear outra campanha para o mesmo nome, inclusive mudando
+    maiúsculas ou espaços, e confirme que o Worker recusa a duplicidade.
 
 Antes de publicar a versão que conclui a migração das contas antigas, aplique as
 migrações pendentes e depois publique o Worker:
@@ -108,7 +112,20 @@ npx wrangler@latest deploy
 
 A Etapa 10 utiliza `0004_legacy_account_migrations.sql` para registrar a conclusão,
 revogar o acesso legado sem apagar seu verificador e permitir rollback
-administrativo. O comando aplica somente migrações ainda pendentes.
+administrativo. A migração `0005_unique_campaign_names.sql` acrescenta a chave
+normalizada do nome e impede nomes repetidos dentro da mesma conta. Se já houver
+duplicatas antigas, todas são preservadas e recebem um sufixo com o ID antes da
+criação do índice único. O comando aplica somente migrações ainda pendentes.
+
+A migração `0006_account_security_controls.sql` registra dispositivos por hash,
+limites persistentes e bloqueios administrativos. Depois de aplicá-la, publique o
+Worker para que os novos cabeçalhos CORS, a revogação de dispositivos e os limites
+de acesso entrem em vigor.
+
+Para bloquear administrativamente uma conta, use o painel D1 da Cloudflare e
+adicione seu `user_id` à tabela `account_blocks`, com motivo, data ISO e o operador.
+Para liberar a conta, remova somente esse registro. Campanhas, identidade e
+histórico não são apagados pelo bloqueio.
 
 ## Fluxo de teste entre dois dispositivos
 

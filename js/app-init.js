@@ -29,7 +29,8 @@ const APP_STORAGE_KEYS = new Set([
     'dnd_collaboration_endpoint_v1'
 ]);
 const APP_SENSITIVE_STORAGE_KEYS = new Set([
-    'dnd_cloud_account_session_v1'
+    'dnd_cloud_account_session_v1',
+    'dnd_cloud_account_device_v1'
 ]);
 
 let applicationRegistrationPromise = null;

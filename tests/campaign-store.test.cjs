@@ -54,6 +54,16 @@ const second = store.createCampaign({
 });
 assert.equal(second.metadata.name, 'Segunda campanha');
 assert.equal(store.getCampaigns().length, 2);
+assert.throws(() => store.createCampaign({
+    id: 'campaign-second',
+    name: 'Tentativa duplicada'
+}), error => error?.code === 'duplicate_campaign_id');
+
+const generatedA = store.createCampaign({ name: 'Campanha com ID automático A' });
+const generatedB = store.createCampaign({ name: 'Campanha com ID automático B' });
+assert.match(generatedA.id, /^campaign-/);
+assert.match(generatedB.id, /^campaign-/);
+assert.notEqual(generatedA.id, generatedB.id);
 
 const restored = store.activateCampaign('campaign-second', { reload: false });
 assert.equal(restored.id, 'campaign-second');

@@ -73,16 +73,103 @@ async function createTokenFactory(projectId = 'thewitcherrpgmanager') {
     return { makeToken, fetchKeys, nowMs: now * 1000 };
 }
 
-function request(url, method = 'GET', body, token = '') {
+function request(url, method = 'GET', body, token = '', extraHeaders = {}) {
     return new Request(url, {
         method,
         headers: {
             ...(body === undefined ? {} : { 'content-type': 'application/json' }),
-            ...(token ? { authorization: `Bearer ${token}` } : {})
+            ...(token ? { authorization: `Bearer ${token}` } : {}),
+            ...extraHeaders
         },
         body: body === undefined ? undefined : JSON.stringify(body)
     });
 }
+
+test('Worker registra, lista e revoga dispositivos, aplica bloqueio administrativo e limita tentativas', async () => {
+    const projectRoot = path.resolve(__dirname, '..');
+    const accountService = await import(pathToFileURL(path.join(projectRoot, 'cloudflare', 'src', 'account-service.mjs')).href);
+    const verifier = await import(pathToFileURL(path.join(projectRoot, 'cloudflare', 'src', 'firebase-token-verifier.mjs')).href);
+    verifier.resetFirebaseKeyCache();
+    const database = new DatabaseSync(':memory:');
+    for (const migration of [
+        '0001_accounts_and_campaigns.sql',
+        '0002_firebase_identities.sql',
+        '0003_account_security_events.sql',
+        '0004_legacy_account_migrations.sql',
+        '0005_unique_campaign_names.sql',
+        '0006_account_security_controls.sql'
+    ]) {
+        database.exec(fs.readFileSync(path.join(projectRoot, 'cloudflare', 'migrations', migration), 'utf8'));
+    }
+    const d1 = new D1DatabaseAdapter(database);
+    const tokens = await createTokenFactory();
+    const token = await tokens.makeToken();
+    const options = {
+        firebaseProjectId: 'thewitcherrpgmanager',
+        firebaseFetch: tokens.fetchKeys,
+        firebaseNowMs: tokens.nowMs
+    };
+    const firstDeviceHeaders = {
+        'x-witcher-device-id': 'device-primary-secret',
+        'x-witcher-device-label': 'Aplicativo · Windows'
+    };
+    const secondDeviceHeaders = {
+        'x-witcher-device-id': 'device-secondary-secret',
+        'x-witcher-device-label': 'Navegador · Android'
+    };
+
+    const profile = await accountService.handleAccountRequest(
+        request('https://account.test/api/account/me', 'GET', undefined, token, firstDeviceHeaders), d1, undefined, options
+    );
+    assert.equal(profile.status, 200);
+    const devicesResponse = await accountService.handleAccountRequest(
+        request('https://account.test/api/account/devices', 'GET', undefined, token, firstDeviceHeaders), d1, undefined, options
+    );
+    const devices = (await devicesResponse.json()).devices;
+    assert.equal(devices.length, 1);
+    assert.equal(devices[0].current, true);
+    assert.equal(devices[0].label, 'Aplicativo · Windows');
+    assert.notEqual(devices[0].id, firstDeviceHeaders['x-witcher-device-id']);
+
+    await accountService.handleAccountRequest(
+        request('https://account.test/api/account/me', 'GET', undefined, token, secondDeviceHeaders), d1, undefined, options
+    );
+    const revokedResponse = await accountService.handleAccountRequest(
+        request(`https://account.test/api/account/devices/${encodeURIComponent(devices[0].id)}`, 'DELETE', undefined, token, secondDeviceHeaders),
+        d1,
+        undefined,
+        options
+    );
+    assert.equal(revokedResponse.status, 200);
+    const deniedDevice = await accountService.handleAccountRequest(
+        request('https://account.test/api/account/me', 'GET', undefined, token, firstDeviceHeaders), d1, undefined, options
+    );
+    assert.equal(deniedDevice.status, 401);
+    assert.equal((await deniedDevice.json()).error, 'device_revoked');
+
+    const userId = database.prepare('SELECT user_id FROM firebase_identities WHERE firebase_uid = ?').get('firebase-uid-juan').user_id;
+    database.prepare(`
+        INSERT INTO account_blocks (user_id, reason, blocked_at, blocked_by, expires_at)
+        VALUES (?, 'Teste administrativo', ?, 'test-suite', NULL)
+    `).run(userId, new Date().toISOString());
+    const blocked = await accountService.handleAccountRequest(
+        request('https://account.test/api/account/me', 'GET', undefined, token, secondDeviceHeaders), d1, undefined, options
+    );
+    assert.equal(blocked.status, 403);
+    assert.equal((await blocked.json()).error, 'account_blocked');
+
+    let rateLimited;
+    for (let attempt = 0; attempt < 13; attempt++) {
+        rateLimited = await accountService.handleAccountRequest(request(
+            'https://account.test/api/account/login',
+            'POST',
+            { username: 'inexistente', password: 'senha-incorreta' }
+        ), d1);
+    }
+    assert.equal(rateLimited.status, 429);
+    assert.equal((await rateLimited.json()).error, 'rate_limited');
+    database.close();
+});
 
 test('Worker valida Firebase, cria vínculo D1 e isola campanhas por UID', async () => {
     const projectRoot = path.resolve(__dirname, '..');
@@ -94,6 +181,8 @@ test('Worker valida Firebase, cria vínculo D1 e isola campanhas por UID', async
     database.exec(fs.readFileSync(path.join(projectRoot, 'cloudflare', 'migrations', '0002_firebase_identities.sql'), 'utf8'));
     database.exec(fs.readFileSync(path.join(projectRoot, 'cloudflare', 'migrations', '0003_account_security_events.sql'), 'utf8'));
     database.exec(fs.readFileSync(path.join(projectRoot, 'cloudflare', 'migrations', '0004_legacy_account_migrations.sql'), 'utf8'));
+    database.exec(fs.readFileSync(path.join(projectRoot, 'cloudflare', 'migrations', '0005_unique_campaign_names.sql'), 'utf8'));
+    database.exec(fs.readFileSync(path.join(projectRoot, 'cloudflare', 'migrations', '0006_account_security_controls.sql'), 'utf8'));
     const d1 = new D1DatabaseAdapter(database);
     const tokens = await createTokenFactory();
     const token = await tokens.makeToken();
@@ -150,6 +239,8 @@ test('Worker rejeita e-mail não confirmado e token de outro projeto', async () 
     database.exec(fs.readFileSync(path.join(projectRoot, 'cloudflare', 'migrations', '0002_firebase_identities.sql'), 'utf8'));
     database.exec(fs.readFileSync(path.join(projectRoot, 'cloudflare', 'migrations', '0003_account_security_events.sql'), 'utf8'));
     database.exec(fs.readFileSync(path.join(projectRoot, 'cloudflare', 'migrations', '0004_legacy_account_migrations.sql'), 'utf8'));
+    database.exec(fs.readFileSync(path.join(projectRoot, 'cloudflare', 'migrations', '0005_unique_campaign_names.sql'), 'utf8'));
+    database.exec(fs.readFileSync(path.join(projectRoot, 'cloudflare', 'migrations', '0006_account_security_controls.sql'), 'utf8'));
     const d1 = new D1DatabaseAdapter(database);
     const tokens = await createTokenFactory();
     const options = {
@@ -185,6 +276,8 @@ test('Firebase vincula conta legada sem perder campanhas nem sessões antigas', 
     database.exec(fs.readFileSync(path.join(projectRoot, 'cloudflare', 'migrations', '0002_firebase_identities.sql'), 'utf8'));
     database.exec(fs.readFileSync(path.join(projectRoot, 'cloudflare', 'migrations', '0003_account_security_events.sql'), 'utf8'));
     database.exec(fs.readFileSync(path.join(projectRoot, 'cloudflare', 'migrations', '0004_legacy_account_migrations.sql'), 'utf8'));
+    database.exec(fs.readFileSync(path.join(projectRoot, 'cloudflare', 'migrations', '0005_unique_campaign_names.sql'), 'utf8'));
+    database.exec(fs.readFileSync(path.join(projectRoot, 'cloudflare', 'migrations', '0006_account_security_controls.sql'), 'utf8'));
     const d1 = new D1DatabaseAdapter(database);
     const tokens = await createTokenFactory();
     const token = await tokens.makeToken();
@@ -283,7 +376,9 @@ test('troca de senha encerra sessões legadas e registra histórico privado', as
         '0001_accounts_and_campaigns.sql',
         '0002_firebase_identities.sql',
         '0003_account_security_events.sql',
-        '0004_legacy_account_migrations.sql'
+        '0004_legacy_account_migrations.sql',
+        '0005_unique_campaign_names.sql',
+        '0006_account_security_controls.sql'
     ]) {
         database.exec(fs.readFileSync(path.join(projectRoot, 'cloudflare', 'migrations', migration), 'utf8'));
     }
@@ -372,6 +467,8 @@ test('vinculação bloqueia campanhas com o mesmo ID sem alterar nenhuma conta',
     database.exec(fs.readFileSync(path.join(projectRoot, 'cloudflare', 'migrations', '0002_firebase_identities.sql'), 'utf8'));
     database.exec(fs.readFileSync(path.join(projectRoot, 'cloudflare', 'migrations', '0003_account_security_events.sql'), 'utf8'));
     database.exec(fs.readFileSync(path.join(projectRoot, 'cloudflare', 'migrations', '0004_legacy_account_migrations.sql'), 'utf8'));
+    database.exec(fs.readFileSync(path.join(projectRoot, 'cloudflare', 'migrations', '0005_unique_campaign_names.sql'), 'utf8'));
+    database.exec(fs.readFileSync(path.join(projectRoot, 'cloudflare', 'migrations', '0006_account_security_controls.sql'), 'utf8'));
     const d1 = new D1DatabaseAdapter(database);
     const tokens = await createTokenFactory();
     const token = await tokens.makeToken();
@@ -414,6 +511,28 @@ test('vinculação bloqueia campanhas com o mesmo ID sem alterar nenhuma conta',
     assert.deepEqual(result.conflicts.map(item => item.id), ['same-id']);
     assert.equal(database.prepare('SELECT COUNT(*) AS total FROM cloud_campaigns WHERE id = ?').get('same-id').total, 2);
     assert.equal(database.prepare('SELECT user_id FROM firebase_identities WHERE firebase_uid = ?').get('firebase-uid-juan').user_id, originalIdentity.user_id);
+
+    await accountService.handleAccountRequest(request(
+        'https://account.test/api/account/campaigns/same-id',
+        'DELETE',
+        undefined,
+        token
+    ), d1, undefined, options);
+    await accountService.handleAccountRequest(request(
+        'https://account.test/api/account/campaigns/different-id',
+        'PUT',
+        { campaign: { id: 'different-id' }, name: 'Cópia antiga', expectedRevision: null },
+        token
+    ), d1, undefined, options);
+    const nameConflict = await accountService.handleAccountRequest(request(
+        'https://account.test/api/account/link-legacy',
+        'POST',
+        { username: 'conta.antiga', password: 'senha-antiga' },
+        token
+    ), d1, undefined, options);
+    assert.equal(nameConflict.status, 409);
+    assert.equal((await nameConflict.json()).error, 'legacy_campaign_name_conflict');
+    assert.equal(database.prepare('SELECT user_id FROM firebase_identities WHERE firebase_uid = ?').get('firebase-uid-juan').user_id, originalIdentity.user_id);
     database.close();
 });
 
@@ -427,7 +546,9 @@ test('migração guiada preserva campanhas e desativa o acesso legado somente ap
         '0001_accounts_and_campaigns.sql',
         '0002_firebase_identities.sql',
         '0003_account_security_events.sql',
-        '0004_legacy_account_migrations.sql'
+        '0004_legacy_account_migrations.sql',
+        '0005_unique_campaign_names.sql',
+        '0006_account_security_controls.sql'
     ]) {
         database.exec(fs.readFileSync(path.join(projectRoot, 'cloudflare', 'migrations', migration), 'utf8'));
     }
@@ -517,7 +638,9 @@ test('migração interrompida mantém a senha e a sessão antigas disponíveis',
         '0001_accounts_and_campaigns.sql',
         '0002_firebase_identities.sql',
         '0003_account_security_events.sql',
-        '0004_legacy_account_migrations.sql'
+        '0004_legacy_account_migrations.sql',
+        '0005_unique_campaign_names.sql',
+        '0006_account_security_controls.sql'
     ]) {
         database.exec(fs.readFileSync(path.join(projectRoot, 'cloudflare', 'migrations', migration), 'utf8'));
     }
@@ -566,8 +689,12 @@ test('configuração do Worker e cliente preservam Firebase e acesso legado', ()
     const migration = fs.readFileSync(path.join(projectRoot, 'cloudflare', 'migrations', '0002_firebase_identities.sql'), 'utf8');
     const securityMigration = fs.readFileSync(path.join(projectRoot, 'cloudflare', 'migrations', '0003_account_security_events.sql'), 'utf8');
     const legacyMigration = fs.readFileSync(path.join(projectRoot, 'cloudflare', 'migrations', '0004_legacy_account_migrations.sql'), 'utf8');
+    const controlsMigration = fs.readFileSync(path.join(projectRoot, 'cloudflare', 'migrations', '0006_account_security_controls.sql'), 'utf8');
+    const indexSource = fs.readFileSync(path.join(projectRoot, 'index.html'), 'utf8');
     assert.match(wrangler, /"FIREBASE_PROJECT_ID": "thewitcherrpgmanager"/);
     assert.match(worker, /firebaseProjectId: env\.FIREBASE_PROJECT_ID/);
+    assert.match(worker, /GET,POST,PUT,PATCH,DELETE,OPTIONS/);
+    assert.match(worker, /x-witcher-device-id,x-witcher-device-label/);
     assert.match(account, /firebaseAuthClient\.getIdToken/);
     assert.match(account, /firebase_email_unverified/);
     assert.match(account, /performRequest\(path, options, true\)/);
@@ -578,10 +705,17 @@ test('configuração do Worker e cliente preservam Firebase e acesso legado', ()
     assert.match(account, /completeLegacyAccountMigration/);
     assert.match(account, /\/api\/account\/migrate-legacy/);
     assert.match(account, /\/api\/account\/security-events/);
+    assert.match(account, /\/api\/account\/devices/);
+    assert.match(account, /x-witcher-device-id/);
     assert.match(migration, /CREATE TABLE IF NOT EXISTS firebase_identities/);
     assert.match(migration, /FOREIGN KEY \(user_id\) REFERENCES users\(id\) ON DELETE CASCADE/);
     assert.match(securityMigration, /CREATE TABLE IF NOT EXISTS account_security_events/);
     assert.match(securityMigration, /idx_account_security_events_user_created/);
     assert.match(legacyMigration, /CREATE TABLE IF NOT EXISTS legacy_account_migrations/);
     assert.match(legacyMigration, /firebase_uid TEXT NOT NULL UNIQUE/);
+    assert.match(controlsMigration, /CREATE TABLE IF NOT EXISTS account_devices/);
+    assert.match(controlsMigration, /CREATE TABLE IF NOT EXISTS account_blocks/);
+    assert.match(controlsMigration, /CREATE TABLE IF NOT EXISTS account_rate_limits/);
+    assert.match(indexSource, /Content-Security-Policy/);
+    assert.match(indexSource, /connect-src[^>]+identitytoolkit\.googleapis\.com/);
 });

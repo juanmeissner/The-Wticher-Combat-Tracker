@@ -1898,8 +1898,8 @@ function getAllowedOrigin(request, env) {
 function corsHeaders(origin) {
     return {
         'access-control-allow-origin': origin,
-        'access-control-allow-methods': 'GET,POST,PUT,DELETE,OPTIONS',
-        'access-control-allow-headers': 'content-type,authorization',
+        'access-control-allow-methods': 'GET,POST,PUT,PATCH,DELETE,OPTIONS',
+        'access-control-allow-headers': 'content-type,authorization,x-witcher-device-id,x-witcher-device-label',
         'access-control-max-age': '86400',
         'vary': 'Origin'
     };
@@ -1956,7 +1956,7 @@ export default {
             return jsonResponse({
                 ok: true,
                 service: 'witcher-combat-collaboration',
-                version: 6,
+                version: 7,
                 accounts: Boolean(env.ACCOUNT_DB),
                 firebase: Boolean(env.FIREBASE_PROJECT_ID)
             }, 200, headers);

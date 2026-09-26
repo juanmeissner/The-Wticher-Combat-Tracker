@@ -3,6 +3,19 @@ import { FirebaseTokenError, verifyFirebaseIdToken } from './firebase-token-veri
 const MAX_BODY_BYTES = 3 * 1024 * 1024;
 const PASSWORD_ITERATIONS = 100_000;
 const SESSION_LIFETIME_MS = 30 * 24 * 60 * 60_000;
+const DEVICE_ID_HEADER = 'x-witcher-device-id';
+const DEVICE_LABEL_HEADER = 'x-witcher-device-label';
+const ACCOUNT_RATE_WINDOW_MS = 60_000;
+
+class AccountSecurityError extends Error {
+    constructor(code, message, status = 403, detail = {}) {
+        super(message);
+        this.name = 'AccountSecurityError';
+        this.code = code;
+        this.status = status;
+        this.detail = detail;
+    }
+}
 
 function jsonResponse(value, status = 200) {
     return new Response(JSON.stringify(value), {
@@ -28,6 +41,131 @@ function randomSecret(byteLength = 32) {
 async function sha256(value) {
     const bytes = new TextEncoder().encode(String(value));
     return base64Url(new Uint8Array(await crypto.subtle.digest('SHA-256', bytes)));
+}
+
+function clientAddress(request) {
+    return String(
+        request.headers.get('cf-connecting-ip')
+        || request.headers.get('x-forwarded-for')?.split(',')[0]
+        || 'unknown-client'
+    ).trim().slice(0, 120);
+}
+
+async function enforceRateLimit(db, scope, subject, limit, windowMs) {
+    const subjectHash = await sha256(String(subject || 'anonymous'));
+    const now = new Date();
+    const nowIso = now.toISOString();
+    const existing = await db.prepare(`
+        SELECT window_started_at, attempts, blocked_until
+        FROM account_rate_limits
+        WHERE scope = ? AND subject_hash = ?
+    `).bind(scope, subjectHash).first();
+    const blockedUntil = existing?.blocked_until ? Date.parse(existing.blocked_until) : 0;
+    if (blockedUntil > now.getTime()) {
+        return Math.max(1, Math.ceil((blockedUntil - now.getTime()) / 1000));
+    }
+
+    const windowStartedAt = existing?.window_started_at ? Date.parse(existing.window_started_at) : 0;
+    const insideWindow = Number.isFinite(windowStartedAt) && now.getTime() - windowStartedAt < windowMs;
+    const attempts = insideWindow ? Math.max(0, Number(existing?.attempts) || 0) + 1 : 1;
+    const nextWindowStartedAt = insideWindow ? existing.window_started_at : nowIso;
+    const nextBlockedUntil = attempts > limit ? new Date(now.getTime() + windowMs).toISOString() : null;
+    await db.prepare(`
+        INSERT INTO account_rate_limits
+            (scope, subject_hash, window_started_at, attempts, blocked_until, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?)
+        ON CONFLICT(scope, subject_hash) DO UPDATE SET
+            window_started_at = excluded.window_started_at,
+            attempts = excluded.attempts,
+            blocked_until = excluded.blocked_until,
+            updated_at = excluded.updated_at
+    `).bind(scope, subjectHash, nextWindowStartedAt, attempts, nextBlockedUntil, nowIso).run();
+    return nextBlockedUntil ? Math.max(1, Math.ceil(windowMs / 1000)) : 0;
+}
+
+function rateLimitedResponse(retryAfterSeconds) {
+    const response = errorResponse(
+        'rate_limited',
+        'Muitas tentativas em pouco tempo. Aguarde antes de tentar novamente.',
+        429,
+        { retryAfterSeconds }
+    );
+    response.headers.set('retry-after', String(retryAfterSeconds));
+    return response;
+}
+
+async function insertSecurityEvent(db, userId, eventType, provider, details = {}) {
+    const id = `security-${crypto.randomUUID()}`;
+    const createdAt = new Date().toISOString();
+    await db.prepare(`
+        INSERT INTO account_security_events
+            (id, user_id, event_type, provider, details_json, created_at)
+        VALUES (?, ?, ?, ?, ?, ?)
+    `).bind(id, userId, eventType, provider, JSON.stringify(details), createdAt).run();
+    return { id, event_type: eventType, provider, details_json: JSON.stringify(details), created_at: createdAt };
+}
+
+async function assertAccountNotBlocked(db, userId) {
+    const now = new Date().toISOString();
+    const block = await db.prepare(`
+        SELECT reason, expires_at
+        FROM account_blocks
+        WHERE user_id = ? AND (expires_at IS NULL OR expires_at > ?)
+    `).bind(userId, now).first();
+    if (!block) return;
+    throw new AccountSecurityError(
+        'account_blocked',
+        'Esta conta está temporariamente indisponível. Entre em contato com o administrador.',
+        403,
+        { expiresAt: block.expires_at || null }
+    );
+}
+
+function requestDevice(request) {
+    const id = String(request.headers.get(DEVICE_ID_HEADER) || '').trim().slice(0, 160);
+    const label = String(request.headers.get(DEVICE_LABEL_HEADER) || 'Dispositivo').trim().slice(0, 80) || 'Dispositivo';
+    return { id, label };
+}
+
+async function trackAccountDevice(request, db, auth) {
+    const device = requestDevice(request);
+    if (!device.id) return auth;
+    const deviceHash = await sha256(device.id);
+    const existing = await db.prepare(`
+        SELECT revoked_at
+        FROM account_devices
+        WHERE user_id = ? AND device_id_hash = ?
+    `).bind(auth.user.id, deviceHash).first();
+    if (existing?.revoked_at) {
+        throw new AccountSecurityError(
+            'device_revoked',
+            'O acesso deste dispositivo foi revogado. Entre novamente em outro dispositivo autorizado.',
+            401
+        );
+    }
+    const now = new Date().toISOString();
+    const inserted = await db.prepare(`
+        INSERT OR IGNORE INTO account_devices
+            (user_id, device_id_hash, label, first_seen_at, last_seen_at, revoked_at, revoked_by)
+        VALUES (?, ?, ?, ?, ?, NULL, NULL)
+    `).bind(auth.user.id, deviceHash, device.label, now, now).run();
+    await db.prepare(`
+        UPDATE account_devices
+        SET label = ?, last_seen_at = ?
+        WHERE user_id = ? AND device_id_hash = ? AND revoked_at IS NULL
+    `).bind(device.label, now, auth.user.id, deviceHash).run();
+    if (Number(inserted.meta?.changes) === 1) {
+        await insertSecurityEvent(db, auth.user.id, 'device_registered', auth.provider, {
+            deviceId: deviceHash,
+            label: device.label
+        });
+    }
+    return { ...auth, deviceHash, deviceLabel: device.label };
+}
+
+async function finalizeAuthentication(request, db, auth) {
+    await assertAccountNotBlocked(db, auth.user.id);
+    return trackAccountDevice(request, db, auth);
 }
 
 async function derivePassword(password, salt, iterations = PASSWORD_ITERATIONS) {
@@ -66,6 +204,29 @@ async function readJson(request) {
 
 export function normalizeUsername(value) {
     return String(value || '').trim().toLowerCase();
+}
+
+export function normalizeCampaignName(value) {
+    return String(value || '').trim().replace(/\s+/g, ' ');
+}
+
+export function campaignNameKey(value) {
+    return normalizeCampaignName(value).toLowerCase();
+}
+
+async function findCampaignNameConflict(db, ownerUserId, name, excludedCampaignId = '') {
+    const key = campaignNameKey(name);
+    const result = await db.prepare(`
+        SELECT id, name
+        FROM cloud_campaigns
+        WHERE owner_user_id = ? AND id <> ?
+        LIMIT 100
+    `).bind(ownerUserId, String(excludedCampaignId || '')).all();
+    return (result.results || []).find(row => campaignNameKey(row.name) === key) || null;
+}
+
+function isUniqueConstraintError(error) {
+    return /unique constraint|constraint failed/i.test(String(error?.message || error || ''));
 }
 
 export function validateAccountInput(body = {}, options = {}) {
@@ -238,7 +399,7 @@ async function authenticate(request, db, options = {}) {
     if (!match) return null;
     const token = match[1];
     const legacy = await authenticateLegacyToken(token, db);
-    if (legacy) return legacy;
+    if (legacy) return finalizeAuthentication(request, db, legacy);
     if (!options.firebaseProjectId || token.split('.').length !== 3) return null;
     const claims = await verifyFirebaseIdToken(token, {
         projectId: options.firebaseProjectId,
@@ -246,7 +407,8 @@ async function authenticate(request, db, options = {}) {
         nowMs: options.firebaseNowMs
     });
     await assertFirebaseSessionAllowed(db, claims);
-    return ensureFirebaseAccount(db, claims);
+    const firebase = await ensureFirebaseAccount(db, claims);
+    return finalizeAuthentication(request, db, firebase);
 }
 
 export async function authenticateOptionalAccount(request, db, options = {}) {
@@ -271,6 +433,9 @@ export async function authenticateOptionalAccount(request, db, options = {}) {
         if (error instanceof FirebaseTokenError) {
             return { auth: null, error: errorResponse(error.code, error.message, error.status) };
         }
+        if (error instanceof AccountSecurityError) {
+            return { auth: null, error: errorResponse(error.code, error.message, error.status, error.detail) };
+        }
         throw error;
     }
 }
@@ -278,10 +443,22 @@ export async function authenticateOptionalAccount(request, db, options = {}) {
 async function requireAuthentication(request, db, options = {}) {
     try {
         const auth = await authenticate(request, db, options);
-        return auth || errorResponse('account_unauthorized', 'Entre na sua conta para continuar.', 401);
+        if (!auth) return errorResponse('account_unauthorized', 'Entre na sua conta para continuar.', 401);
+        const writeRequest = !['GET', 'HEAD', 'OPTIONS'].includes(request.method);
+        const retryAfter = await enforceRateLimit(
+            db,
+            writeRequest ? 'account_write' : 'account_read',
+            auth.user.id,
+            writeRequest ? 60 : 180,
+            ACCOUNT_RATE_WINDOW_MS
+        );
+        return retryAfter ? rateLimitedResponse(retryAfter) : auth;
     } catch (error) {
         if (error instanceof FirebaseTokenError) {
             return errorResponse(error.code, error.message, error.status);
+        }
+        if (error instanceof AccountSecurityError) {
+            return errorResponse(error.code, error.message, error.status, error.detail);
         }
         throw error;
     }
@@ -339,6 +516,7 @@ async function login(request, db) {
     if (!timingSafeEqual(verifier, row.password_verifier)) {
         return errorResponse('invalid_credentials', 'Usuário ou senha inválidos.', 401);
     }
+    await assertAccountNotBlocked(db, row.id);
     const accountSession = await createSession(db, row.id, body.deviceId);
     return jsonResponse({ ok: true, user: publicUser(row), ...accountSession });
 }
@@ -353,6 +531,15 @@ async function linkLegacyAccount(request, db, options = {}) {
             403
         );
     }
+
+    const retryAfter = await enforceRateLimit(
+        db,
+        'legacy_link',
+        `${auth.user.id}:${clientAddress(request)}`,
+        8,
+        15 * 60_000
+    );
+    if (retryAfter) return rateLimitedResponse(retryAfter);
 
     const body = await readJson(request);
     const username = normalizeUsername(body.username);
@@ -414,6 +601,34 @@ async function linkLegacyAccount(request, db, options = {}) {
             'Existem campanhas com o mesmo identificador nas duas contas. Remova uma das cópias antes de vincular.',
             409,
             { conflicts }
+        );
+    }
+
+    const nameConflictsResult = await db.prepare(`
+        SELECT source.id AS firebase_id,
+               source.name AS firebase_name,
+               target.id AS legacy_id,
+               target.name AS legacy_name
+        FROM cloud_campaigns source
+        JOIN cloud_campaigns target
+          ON target.owner_user_id = ?
+         AND target.name_key = source.name_key
+         AND target.id <> source.id
+        WHERE source.owner_user_id = ?
+        ORDER BY source.updated_at DESC
+    `).bind(legacy.id, auth.user.id).all();
+    const nameConflicts = (nameConflictsResult.results || []).map(row => ({
+        firebaseId: String(row.firebase_id),
+        firebaseName: String(row.firebase_name),
+        legacyId: String(row.legacy_id),
+        legacyName: String(row.legacy_name)
+    }));
+    if (nameConflicts.length) {
+        return errorResponse(
+            'legacy_campaign_name_conflict',
+            'Existem campanhas diferentes com o mesmo nome nas duas contas. Renomeie uma delas antes de vincular.',
+            409,
+            { conflicts: nameConflicts }
         );
     }
 
@@ -558,6 +773,34 @@ async function completeLegacyMigration(request, db, options = {}) {
         );
     }
 
+    const nameConflictsResult = sameOwner ? { results: [] } : await db.prepare(`
+        SELECT source.id AS firebase_id,
+               source.name AS firebase_name,
+               target.id AS legacy_id,
+               target.name AS legacy_name
+        FROM cloud_campaigns source
+        JOIN cloud_campaigns target
+          ON target.owner_user_id = ?
+         AND target.name_key = source.name_key
+         AND target.id <> source.id
+        WHERE source.owner_user_id = ?
+        ORDER BY source.updated_at DESC
+    `).bind(legacy.id, auth.user.id).all();
+    const nameConflicts = (nameConflictsResult.results || []).map(row => ({
+        firebaseId: String(row.firebase_id),
+        firebaseName: String(row.firebase_name),
+        legacyId: String(row.legacy_id),
+        legacyName: String(row.legacy_name)
+    }));
+    if (nameConflicts.length) {
+        return errorResponse(
+            'legacy_campaign_name_conflict',
+            'Existem campanhas diferentes com o mesmo nome nas duas contas. Renomeie uma delas antes de concluir a migração.',
+            409,
+            { conflicts: nameConflicts }
+        );
+    }
+
     const sourceCountRow = sameOwner ? { total: 0 } : await db.prepare(
         'SELECT COUNT(*) AS total FROM cloud_campaigns WHERE owner_user_id = ?'
     ).bind(auth.user.id).first();
@@ -693,6 +936,66 @@ async function listSecurityEvents(request, db, options = {}) {
     });
 }
 
+function deviceSummary(row, currentDeviceHash = '') {
+    return {
+        id: String(row.device_id_hash),
+        label: String(row.label || 'Dispositivo'),
+        firstSeenAt: String(row.first_seen_at),
+        lastSeenAt: String(row.last_seen_at),
+        revokedAt: row.revoked_at ? String(row.revoked_at) : null,
+        current: String(row.device_id_hash) === String(currentDeviceHash || '')
+    };
+}
+
+async function listDevices(request, db, options = {}) {
+    const auth = await requireAuthentication(request, db, options);
+    if (auth instanceof Response) return auth;
+    const result = await db.prepare(`
+        SELECT device_id_hash, label, first_seen_at, last_seen_at, revoked_at
+        FROM account_devices
+        WHERE user_id = ?
+        ORDER BY revoked_at IS NULL DESC, last_seen_at DESC
+        LIMIT 30
+    `).bind(auth.user.id).all();
+    return jsonResponse({
+        ok: true,
+        devices: (result.results || []).map(row => deviceSummary(row, auth.deviceHash))
+    });
+}
+
+async function revokeDevice(request, db, deviceHash, options = {}) {
+    const auth = await requireAuthentication(request, db, options);
+    if (auth instanceof Response) return auth;
+    if (!/^[A-Za-z0-9_-]{40,64}$/.test(deviceHash)) {
+        return errorResponse('invalid_device', 'O dispositivo informado é inválido.', 400);
+    }
+    const existing = await db.prepare(`
+        SELECT device_id_hash, label, first_seen_at, last_seen_at, revoked_at
+        FROM account_devices
+        WHERE user_id = ? AND device_id_hash = ?
+    `).bind(auth.user.id, deviceHash).first();
+    if (!existing) return errorResponse('device_not_found', 'Dispositivo não encontrado.', 404);
+    const now = new Date().toISOString();
+    if (!existing.revoked_at) {
+        await db.prepare(`
+            UPDATE account_devices
+            SET revoked_at = ?, revoked_by = ?
+            WHERE user_id = ? AND device_id_hash = ? AND revoked_at IS NULL
+        `).bind(now, auth.user.id, auth.user.id, deviceHash).run();
+        existing.revoked_at = now;
+        await insertSecurityEvent(db, auth.user.id, 'device_revoked', auth.provider, {
+            deviceId: deviceHash,
+            label: String(existing.label || 'Dispositivo'),
+            currentDevice: deviceHash === auth.deviceHash
+        });
+    }
+    return jsonResponse({
+        ok: true,
+        currentDeviceRevoked: deviceHash === auth.deviceHash,
+        device: deviceSummary(existing, auth.deviceHash)
+    });
+}
+
 async function recordPasswordChanged(request, db, options = {}) {
     const auth = await requireAuthentication(request, db, options);
     if (auth instanceof Response) return auth;
@@ -780,6 +1083,11 @@ async function getCampaign(request, db, campaignId, options = {}) {
     let campaign;
     try { campaign = JSON.parse(row.snapshot_json); } catch { campaign = null; }
     if (!campaign) return errorResponse('invalid_campaign_snapshot', 'O snapshot desta campanha está corrompido.', 500);
+    campaign = {
+        ...campaign,
+        id: String(row.id),
+        metadata: { ...(campaign.metadata || {}), name: String(row.name) }
+    };
     return jsonResponse({ ok: true, campaign, cloud: campaignSummary(row) });
 }
 
@@ -794,10 +1102,20 @@ async function saveCampaign(request, db, campaignId, options = {}) {
     if (String(campaign.id || '') !== campaignId) {
         return errorResponse('campaign_id_mismatch', 'O identificador da campanha não corresponde ao endereço.');
     }
-    const name = String(body.name ?? campaign.metadata?.name ?? '').trim();
+    const name = normalizeCampaignName(body.name ?? campaign.metadata?.name ?? '');
     if (!name || name.length > 100) {
         return errorResponse('invalid_campaign_name', 'Informe um nome de campanha com até 100 caracteres.');
     }
+    const nameConflict = await findCampaignNameConflict(db, auth.user.id, name, campaignId);
+    if (nameConflict) {
+        return errorResponse(
+            'duplicate_campaign_name',
+            `Já existe uma campanha chamada "${nameConflict.name}" nesta conta.`,
+            409,
+            { conflictingCampaignId: String(nameConflict.id) }
+        );
+    }
+    const nameKey = campaignNameKey(name);
     const storedCampaign = {
         ...campaign,
         metadata: { ...(campaign.metadata || {}), name }
@@ -822,25 +1140,128 @@ async function saveCampaign(request, db, campaignId, options = {}) {
     const now = new Date().toISOString();
     const revision = existing ? Number(existing.revision) + 1 : 1;
     if (existing) {
-        const updated = await db.prepare(`
-            UPDATE cloud_campaigns
-            SET name = ?, snapshot_json = ?, revision = ?, updated_at = ?
-            WHERE owner_user_id = ? AND id = ? AND revision = ?
-        `).bind(name, snapshotJson, revision, now, auth.user.id, campaignId, Number(existing.revision)).run();
+        let updated;
+        try {
+            updated = await db.prepare(`
+                UPDATE cloud_campaigns
+                SET name = ?, name_key = ?, snapshot_json = ?, revision = ?, updated_at = ?
+                WHERE owner_user_id = ? AND id = ? AND revision = ?
+            `).bind(name, nameKey, snapshotJson, revision, now, auth.user.id, campaignId, Number(existing.revision)).run();
+        } catch (error) {
+            if (isUniqueConstraintError(error)) {
+                return errorResponse('duplicate_campaign_name', 'Já existe uma campanha com esse nome nesta conta.', 409);
+            }
+            throw error;
+        }
         if (Number(updated.meta?.changes) !== 1) {
             return errorResponse('cloud_campaign_conflict', 'A campanha foi alterada em outro dispositivo.', 409);
         }
     } else {
-        await db.prepare(`
-            INSERT INTO cloud_campaigns
-                (id, owner_user_id, name, snapshot_json, revision, created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
-        `).bind(campaignId, auth.user.id, name, snapshotJson, revision, now, now).run();
+        try {
+            await db.prepare(`
+                INSERT INTO cloud_campaigns
+                    (id, owner_user_id, name, name_key, snapshot_json, revision, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            `).bind(campaignId, auth.user.id, name, nameKey, snapshotJson, revision, now, now).run();
+        } catch (error) {
+            if (isUniqueConstraintError(error)) {
+                return errorResponse('duplicate_campaign_name', 'Já existe uma campanha com esse nome nesta conta.', 409);
+            }
+            throw error;
+        }
     }
     return jsonResponse({
         ok: true,
         cloud: { id: campaignId, name, revision, createdAt: existing?.created_at || now, updatedAt: now }
     }, existing ? 200 : 201);
+}
+
+async function renameCampaign(request, db, campaignId, options = {}) {
+    const auth = await requireAuthentication(request, db, options);
+    if (auth instanceof Response) return auth;
+    const body = await readJson(request);
+    const name = normalizeCampaignName(body.name);
+    if (!name || name.length > 100) {
+        return errorResponse('invalid_campaign_name', 'Informe um nome de campanha com até 100 caracteres.');
+    }
+
+    const existing = await db.prepare(`
+        SELECT id, name, snapshot_json, revision, created_at
+        FROM cloud_campaigns
+        WHERE owner_user_id = ? AND id = ?
+    `).bind(auth.user.id, campaignId).first();
+    if (!existing) return errorResponse('campaign_not_found', 'Campanha online não encontrada.', 404);
+
+    const expectedRevision = body.expectedRevision === null || body.expectedRevision === undefined
+        ? null
+        : Math.max(0, Number(body.expectedRevision) || 0);
+    if (expectedRevision !== null && Number(existing.revision) !== expectedRevision) {
+        return errorResponse('cloud_campaign_conflict', 'Existe uma versão mais recente desta campanha na nuvem.', 409, {
+            currentRevision: Number(existing.revision)
+        });
+    }
+
+    const nameConflict = await findCampaignNameConflict(db, auth.user.id, name, campaignId);
+    if (nameConflict) {
+        return errorResponse(
+            'duplicate_campaign_name',
+            `Já existe uma campanha chamada "${nameConflict.name}" nesta conta.`,
+            409,
+            { conflictingCampaignId: String(nameConflict.id) }
+        );
+    }
+
+    let campaign;
+    try { campaign = JSON.parse(existing.snapshot_json); } catch { campaign = null; }
+    if (!campaign) return errorResponse('invalid_campaign_snapshot', 'O snapshot desta campanha está corrompido.', 500);
+    campaign = {
+        ...campaign,
+        id: campaignId,
+        metadata: { ...(campaign.metadata || {}), name }
+    };
+    const snapshotJson = JSON.stringify(campaign);
+    if (new TextEncoder().encode(snapshotJson).byteLength > MAX_BODY_BYTES) {
+        return errorResponse('payload_too_large', 'A campanha ultrapassa o limite de 3 MB.', 413);
+    }
+
+    const now = new Date().toISOString();
+    const revision = Number(existing.revision) + 1;
+    let updated;
+    try {
+        updated = await db.prepare(`
+            UPDATE cloud_campaigns
+            SET name = ?, name_key = ?, snapshot_json = ?, revision = ?, updated_at = ?
+            WHERE owner_user_id = ? AND id = ? AND revision = ?
+        `).bind(
+            name,
+            campaignNameKey(name),
+            snapshotJson,
+            revision,
+            now,
+            auth.user.id,
+            campaignId,
+            Number(existing.revision)
+        ).run();
+    } catch (error) {
+        if (isUniqueConstraintError(error)) {
+            return errorResponse('duplicate_campaign_name', 'Já existe uma campanha com esse nome nesta conta.', 409);
+        }
+        throw error;
+    }
+    if (Number(updated.meta?.changes) !== 1) {
+        return errorResponse('cloud_campaign_conflict', 'A campanha foi alterada em outro dispositivo.', 409);
+    }
+
+    return jsonResponse({
+        ok: true,
+        cloud: {
+            id: campaignId,
+            name,
+            revision,
+            createdAt: String(existing.created_at),
+            updatedAt: now
+        }
+    });
 }
 
 async function deleteCampaign(request, db, campaignId, options = {}) {
@@ -871,6 +1292,8 @@ export function isAccountRequest(url) {
         || url.pathname === '/api/account/link-legacy'
         || url.pathname === '/api/account/migrate-legacy'
         || url.pathname === '/api/account/security-events'
+        || url.pathname === '/api/account/devices'
+        || /^\/api\/account\/devices\/[^/]+$/.test(url.pathname)
         || url.pathname === '/api/account/security/password-changed'
         || url.pathname === '/api/account/campaigns'
         || /^\/api\/account\/campaigns\/[^/]+$/.test(url.pathname);
@@ -879,20 +1302,32 @@ export function isAccountRequest(url) {
 export async function handleAccountRequest(request, db, url = new URL(request.url), options = {}) {
     if (!db) return errorResponse('accounts_unavailable', 'As contas online ainda não estão configuradas.', 503);
     try {
-        if (request.method === 'POST' && url.pathname === '/api/account/register') return register(request, db);
-        if (request.method === 'POST' && url.pathname === '/api/account/login') return login(request, db);
+        if (request.method === 'POST' && url.pathname === '/api/account/register') {
+            const retryAfter = await enforceRateLimit(db, 'legacy_register', clientAddress(request), 5, 60 * 60_000);
+            return retryAfter ? rateLimitedResponse(retryAfter) : register(request, db);
+        }
+        if (request.method === 'POST' && url.pathname === '/api/account/login') {
+            const retryAfter = await enforceRateLimit(db, 'legacy_login', clientAddress(request), 12, 15 * 60_000);
+            return retryAfter ? rateLimitedResponse(retryAfter) : login(request, db);
+        }
         if (request.method === 'POST' && url.pathname === '/api/account/logout') return logout(request, db, options);
         if (request.method === 'POST' && url.pathname === '/api/account/link-legacy') return linkLegacyAccount(request, db, options);
         if (request.method === 'POST' && url.pathname === '/api/account/migrate-legacy') return completeLegacyMigration(request, db, options);
         if (request.method === 'POST' && url.pathname === '/api/account/security/password-changed') return recordPasswordChanged(request, db, options);
         if (request.method === 'GET' && url.pathname === '/api/account/me') return getProfile(request, db, options);
         if (request.method === 'GET' && url.pathname === '/api/account/security-events') return listSecurityEvents(request, db, options);
+        if (request.method === 'GET' && url.pathname === '/api/account/devices') return listDevices(request, db, options);
+        const deviceMatch = url.pathname.match(/^\/api\/account\/devices\/([^/]+)$/);
+        if (deviceMatch && request.method === 'DELETE') {
+            return revokeDevice(request, db, decodeURIComponent(deviceMatch[1]), options);
+        }
         if (request.method === 'GET' && url.pathname === '/api/account/campaigns') return listCampaigns(request, db, options);
         const campaignMatch = url.pathname.match(/^\/api\/account\/campaigns\/([^/]+)$/);
         if (campaignMatch) {
             const campaignId = decodeURIComponent(campaignMatch[1]);
             if (request.method === 'GET') return getCampaign(request, db, campaignId, options);
             if (request.method === 'PUT') return saveCampaign(request, db, campaignId, options);
+            if (request.method === 'PATCH') return renameCampaign(request, db, campaignId, options);
             if (request.method === 'DELETE') return deleteCampaign(request, db, campaignId, options);
         }
         return errorResponse('not_found', 'Rota de conta não encontrada.', 404);
@@ -902,6 +1337,9 @@ export async function handleAccountRequest(request, db, url = new URL(request.ur
             return errorResponse('payload_too_large', 'Os dados ultrapassam o limite de 3 MB.', 413);
         }
         if (error instanceof SyntaxError) return errorResponse('invalid_json', 'Os dados enviados são inválidos.', 400);
+        if (error instanceof AccountSecurityError) {
+            return errorResponse(error.code, error.message, error.status, error.detail);
+        }
         return errorResponse('account_service_error', 'Não foi possível processar a conta agora.', 500);
     }
 }

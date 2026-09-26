@@ -100,6 +100,8 @@ function createHarness(initialUser, options = {}) {
         removeItem: key => storage.delete(key)
     };
     global.confirm = () => options.confirmUnlink !== false;
+    global.closeSessionTools = () => calls.push(['offline']);
+    global.showToast = message => calls.push(['toast', message]);
     delete require.cache[require.resolve(uiPath)];
     const ui = require(uiPath);
 
@@ -112,6 +114,8 @@ test.afterEach(() => {
     delete global.cloudAccount;
     delete global.localStorage;
     delete global.confirm;
+    delete global.closeSessionTools;
+    delete global.showToast;
     delete global.firebaseAuthUI;
     delete global.updateFirebaseProfile;
     delete global.changeFirebasePassword;
@@ -122,6 +126,19 @@ test.afterEach(() => {
     delete global.linkFirebaseGoogleProvider;
     delete global.linkFirebasePasswordProvider;
     delete global.unlinkFirebaseProvider;
+    delete global.continueFirebaseOffline;
+});
+
+test('entrada opcional permite continuar offline sem exigir conta', async () => {
+    const harness = createHarness(null);
+    await harness.ui.mountPanel();
+
+    assert.match(harness.panel.innerHTML, /Continuar offline/);
+    assert.equal(harness.ui.continueOffline(), true);
+    assert.deepEqual(harness.calls.slice(-2), [
+        ['offline'],
+        ['toast', 'Modo offline mantido. Combate, fichas e inventário continuam disponíveis.']
+    ]);
 });
 
 test('entrada anônima apresenta o botão Google oficial e aciona o provedor', async () => {

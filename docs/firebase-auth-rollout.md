@@ -285,7 +285,103 @@ retomar o processo.
   dispositivo e escolha de personagem continuam válidos sem exigir cadastro;
 - a campanha recebida por um Jogador permanece temporária. Sair, ser removido ou
   ter a sala encerrada restaura a campanha pessoal que já estava no dispositivo.
+- cada campanha permanente mantém um ID imutável e os salvamentos seguintes
+  atualizam exclusivamente esse ID, sem utilizar o nome como identidade;
+- campanhas podem ser renomeadas diretamente na lista da conta, mantendo ID,
+  proprietário, histórico de criação e snapshot;
+- nomes são únicos dentro de cada conta. Diferenças apenas de maiúsculas ou
+  espaços não permitem criar uma segunda campanha com o mesmo nome;
+- a migração `0005_unique_campaign_names.sql` preserva campanhas antigas e
+  resolve duplicatas anteriores antes de ativar a restrição no D1.
 
-Esta etapa utiliza as tabelas e vínculos já existentes e, portanto, não cria uma
-nova migração D1. O Worker precisa ser publicado para ativar a identidade confiável
-nas salas, e o PWA precisa ser atualizado para utilizar o cache `v193`.
+O Worker precisa ser publicado para ativar a identidade confiável e as regras de
+nomes nas salas e campanhas. O PWA precisa ser atualizado para utilizar o cache
+`v195`.
+
+## Etapa 12 — segurança e proteção contra abuso
+
+- cada instalação gera um identificador local exclusivo, enviado apenas em
+  cabeçalhos autenticados e armazenado no D1 somente como hash;
+- a conta lista os dispositivos ativos, identifica o dispositivo atual e permite
+  revogar remotamente os demais sem expor o identificador original;
+- novo dispositivo, revogação, troca de senha e migração passam a compor o
+  histórico privado de segurança;
+- o Worker rejeita dispositivos revogados e contas com bloqueio administrativo
+  antes de consultar ou alterar campanhas;
+- login legado, cadastro, vínculo de conta e rotas autenticadas possuem limites
+  persistentes no D1 e retornam `429` com tempo de espera quando há abuso;
+- recuperação de senha e reenvio de confirmação possuem espera local, além das
+  proteções nativas do Firebase, mantendo mensagens neutras contra enumeração;
+- todos os endpoints privados continuam exigindo e validando o token Firebase ou
+  a sessão legada antes de acessar dados do proprietário;
+- a Política de Segurança de Conteúdo restringe scripts, conexões, frames e
+  formulários às origens necessárias para o PWA, Firebase, Google e Worker;
+- senha, token, identificador bruto do dispositivo e credenciais nunca entram em
+  backups, snapshots, relatórios ou registros de segurança.
+
+A migração `0006_account_security_controls.sql` cria as tabelas de dispositivos,
+bloqueios e limites de requisição. Bloqueios administrativos são intencionalmente
+operados no D1 e sempre auditáveis; não existe botão público para bloquear contas.
+
+No Firebase Console, ative também **Proteção contra enumeração de e-mail** nas
+configurações de autenticação. Essa proteção pertence ao projeto Firebase e não
+pode ser habilitada pelo código público do PWA.
+
+Depois de aplicar as migrações `0005` e `0006`, publique o Worker e o PWA. Esta
+etapa utiliza o cache `v195`.
+
+## Etapa 13 — modo offline
+
+- cadastro e login continuam opcionais; **Continuar offline** fecha a área de
+  conta e mantém combate, fichas, inventário, Mundo e configurações locais;
+- campanhas do dispositivo permanecem no IndexedDB e são exibidas separadamente
+  das cópias privadas da conta;
+- uma campanha local pode ser vinculada posteriormente usando **Salvar campanha
+  atual**, sempre com seu ID permanente;
+- carregar uma campanha remota registra uma cópia própria sem apagar a campanha
+  local que estava ativa;
+- revisão esperada, conflito explícito e nomes únicos impedem substituição
+  silenciosa de outra versão ou campanha;
+- durante uma sala, o indicador diferencia conexão, sincronização, alterações
+  pendentes, conflito e revogação, incluindo a quantidade ainda não confirmada;
+- comandos feitos sem conexão permanecem na fila persistente do IndexedDB e são
+  reenviados em ordem depois da reconexão, com IDs idempotentes para não repetir
+  ações;
+- saída, expulsão e encerramento descartam somente a cópia temporária recebida da
+  sala e restauram automaticamente a campanha offline anterior;
+- Service Worker, módulos Firebase locais e recursos essenciais preservam a
+  inicialização do PWA sem internet.
+
+O modo local continua sendo o estado padrão. A indisponibilidade do Firebase ou
+do Worker não bloqueia nenhuma ferramenta de mesa que não dependa da nuvem.
+
+## Etapa 14 — testes e publicação
+
+Validação local concluída:
+
+- suíte completa com 166 testes aprovados;
+- tokens válidos, expirados, adulterados e emitidos para outro projeto;
+- confirmação, reenvio, recuperação neutra, alteração de senha e provedores;
+- vínculo e migração de conta antiga sem perda de campanhas;
+- IDs, nomes únicos, revisão, conflitos e isolamento entre proprietários;
+- dois dispositivos, revogação, bloqueio administrativo e limites de abuso;
+- saída, expulsão, encerramento, queda temporária e fila de reconexão;
+- cache `v195`, recursos offline e bundle Firebase local;
+- interface em 390 × 844 e 1440 × 900 sem overflow horizontal;
+- empacotamento do Worker pelo Wrangler em modo `--dry-run`.
+
+Validação de produção pendente após publicação:
+
+1. aplicar as migrações remotas `0005` e `0006`;
+2. publicar o Worker Cloudflare;
+3. publicar o PWA no GitHub Pages;
+4. confirmar a proteção contra enumeração no Firebase Console;
+5. testar recebimento real de confirmação e recuperação;
+6. testar popup e redirecionamento Google no navegador e no PWA instalado;
+7. entrar pela mesma conta em dois dispositivos, revogar um deles e confirmar o
+   bloqueio no acesso seguinte;
+8. validar renomeação, nome duplicado, modo offline, reconexão e conflito de
+   revisão contra o D1 de produção.
+
+A Etapa 14 só deve ser considerada integralmente concluída depois desse roteiro
+de produção. Nenhuma publicação é feita automaticamente pelos testes locais.

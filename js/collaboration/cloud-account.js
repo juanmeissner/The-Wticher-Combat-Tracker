@@ -7,6 +7,7 @@
 
     const SESSION_KEY = 'dnd_cloud_account_session_v1';
     const MIGRATION_KEY = 'dnd_cloud_account_migration_v1';
+    const DEVICE_KEY = 'dnd_cloud_account_device_v1';
     const REFRESH_INTERVAL_MS = 30_000;
     let accountSession = readSession();
     let firebaseUser = null;
@@ -14,11 +15,27 @@
     let remoteUser = null;
     let campaigns = [];
     let securityEvents = [];
+    let accountDevices = [];
     let formMode = 'login';
     let loading = false;
     let errorMessage = '';
     let lastRefreshAt = 0;
     let migrationState = readMigrationState();
+
+    function getAccountDeviceId() {
+        let value = String(root?.localStorage?.getItem?.(DEVICE_KEY) || '').trim();
+        if (value) return value;
+        value = root?.crypto?.randomUUID?.()
+            || `device-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 14)}`;
+        root?.localStorage?.setItem?.(DEVICE_KEY, value);
+        return value;
+    }
+
+    function getAccountDeviceLabel() {
+        const platform = String(root?.navigator?.userAgentData?.platform || root?.navigator?.platform || '').trim();
+        const displayMode = root?.matchMedia?.('(display-mode: standalone)')?.matches ? 'Aplicativo' : 'Navegador';
+        return [displayMode, platform].filter(Boolean).join(' · ').slice(0, 80) || 'Dispositivo';
+    }
 
     function readSession() {
         try {
@@ -108,6 +125,8 @@
             method: options.method || 'GET',
             headers: {
                 'content-type': 'application/json',
+                'x-witcher-device-id': getAccountDeviceId(),
+                'x-witcher-device-label': getAccountDeviceLabel(),
                 ...(bearerToken ? { authorization: `Bearer ${bearerToken}` } : {})
             },
             body: options.body === undefined ? undefined : JSON.stringify(options.body)
@@ -133,6 +152,7 @@
                 persistSession(null);
                 remoteUser = null;
                 campaigns = [];
+                accountDevices = [];
             }
             const error = new Error(result.message || `Falha de conexão (${response.status}).`);
             error.code = result.error || 'cloud_account_request_failed';
@@ -152,6 +172,22 @@
             .replaceAll("'", '&#039;');
     }
 
+    function normalizeCampaignName(value) {
+        return String(value || '').trim().replace(/\s+/g, ' ');
+    }
+
+    function campaignNameKey(value) {
+        return normalizeCampaignName(value).toLowerCase();
+    }
+
+    function hasCampaignNameConflict(name, excludedCampaignId = '') {
+        const key = campaignNameKey(name);
+        return campaigns.find(campaign => (
+            String(campaign.id) !== String(excludedCampaignId || '')
+            && campaignNameKey(campaign.name) === key
+        )) || null;
+    }
+
     function getPanelMarkup() {
         const open = isAuthenticated() ? ' open' : '';
         return `<details class="cloud-account-legacy"${open}><summary>${isFirebaseAuthenticated() ? 'Campanhas permanentes da conta' : 'Acesso legado às campanhas Cloudflare'}</summary><section id="cloudAccountPanel" class="cloud-account-panel" aria-live="polite"></section></details>`;
@@ -169,6 +205,7 @@
                 </div>
                 <div class="cloud-campaign-card-actions">
                     <button type="button" class="session-secondary" onclick="requestLoadCloudCampaign('${encodeURIComponent(campaign.id)}')">Carregar</button>
+                    <button type="button" class="session-secondary" onclick="requestRenameCloudCampaign('${encodeURIComponent(campaign.id)}')">Renomear</button>
                     <button type="button" class="session-danger" onclick="requestDeleteCloudCampaign('${encodeURIComponent(campaign.id)}')" aria-label="Excluir ${escapeHtml(campaign.name)}">Excluir</button>
                 </div>
             </article>
@@ -264,6 +301,8 @@
     function securityEventLabel(event) {
         if (event?.type === 'password_changed') return 'Senha alterada';
         if (event?.type === 'legacy_migration_completed') return 'Conta antiga migrada';
+        if (event?.type === 'device_registered') return 'Novo dispositivo reconhecido';
+        if (event?.type === 'device_revoked') return 'Acesso de dispositivo revogado';
         return 'Alteração de segurança';
     }
 
@@ -273,10 +312,13 @@
             ? securityEvents.map(event => {
                 const revoked = Math.max(0, Number(event?.details?.revokedLegacySessions) || 0);
                 const migrated = event?.type === 'legacy_migration_completed';
+                const deviceEvent = event?.type === 'device_registered' || event?.type === 'device_revoked';
                 const moved = Math.max(0, Number(event?.details?.movedCampaigns) || 0);
                 const preserved = Math.max(0, Number(event?.details?.preservedLegacyCampaigns) || 0);
                 const totalMigrated = moved + preserved;
-                const detail = migrated
+                const detail = deviceEvent
+                    ? String(event?.details?.label || 'Dispositivo')
+                    : migrated
                     ? `${totalMigrated} campanha${totalMigrated === 1 ? '' : 's'} preservada${totalMigrated === 1 ? '' : 's'} · acesso antigo desativado`
                     : revoked > 0
                     ? `${revoked} sessão${revoked === 1 ? '' : 'ões'} antiga${revoked === 1 ? '' : 's'} encerrada${revoked === 1 ? '' : 's'}`
@@ -299,6 +341,32 @@
         `;
     }
 
+    function renderAccountDevices() {
+        if (!isFirebaseAuthenticated()) return '';
+        const activeDevices = accountDevices.filter(device => !device.revokedAt);
+        const content = activeDevices.length
+            ? activeDevices.map(device => {
+                const date = new Date(device.lastSeenAt);
+                const timestamp = Number.isNaN(date.getTime()) ? '' : date.toLocaleString('pt-BR');
+                return `
+                    <li class="cloud-device-row${device.current ? ' is-current' : ''}">
+                        <span aria-hidden="true">${device.current ? '📱' : '💻'}</span>
+                        <div><strong>${escapeHtml(device.label)}</strong><small>${device.current ? 'Este dispositivo' : 'Último acesso'}${timestamp ? ` · ${escapeHtml(timestamp)}` : ''}</small></div>
+                        ${device.current
+                            ? '<em>Atual</em>'
+                            : `<button type="button" class="session-danger" onclick="requestRevokeCloudDevice('${encodeURIComponent(device.id)}')" ${loading ? 'disabled' : ''}>Revogar</button>`}
+                    </li>
+                `;
+            }).join('')
+            : '<p class="cloud-account-empty">Nenhum dispositivo ativo foi registrado.</p>';
+        return `
+            <details class="cloud-security-history cloud-account-devices">
+                <summary>📱 Dispositivos com acesso</summary>
+                <div class="cloud-security-history-body">${activeDevices.length ? `<ul>${content}</ul>` : content}</div>
+            </details>
+        `;
+    }
+
     function renderAuthenticated() {
         const connectedUser = remoteUser || firebaseUser || accountSession?.user || {};
         const localCampaigns = getLocalCampaigns();
@@ -311,6 +379,7 @@
             ${errorMessage ? `<p class="cloud-account-error">${escapeHtml(errorMessage)}</p>` : ''}
             ${renderLegacyMigration()}
             ${renderLegacyLink()}
+            ${renderAccountDevices()}
             ${renderSecurityHistory()}
             <section class="campaign-storage-section">
                 <header><div><strong>💾 Neste dispositivo</strong><small>Disponíveis offline</small></div><span>${localCampaigns.length}</span></header>
@@ -364,6 +433,7 @@
             remoteUser = null;
             campaigns = [];
             securityEvents = [];
+            accountDevices = [];
             lastRefreshAt = 0;
         }
         const details = root?.document?.querySelector?.('.cloud-account-legacy');
@@ -511,17 +581,21 @@
         errorMessage = '';
         renderPanel();
         try {
-            const [profile, cloudCampaigns, security] = await Promise.all([
+            const [profile, cloudCampaigns, security, devices] = await Promise.all([
                 request('/api/account/me'),
                 request('/api/account/campaigns'),
                 isFirebaseAuthenticated()
                     ? request('/api/account/security-events').catch(() => null)
+                    : Promise.resolve(null),
+                isFirebaseAuthenticated()
+                    ? request('/api/account/devices').catch(() => null)
                     : Promise.resolve(null)
             ]);
             remoteUser = profile.user || null;
             if (!isFirebaseAuthenticated()) persistSession({ ...accountSession, user: profile.user });
             campaigns = Array.isArray(cloudCampaigns.campaigns) ? cloudCampaigns.campaigns : [];
             securityEvents = Array.isArray(security?.events) ? security.events : [];
+            accountDevices = Array.isArray(devices?.devices) ? devices.devices : [];
             lastRefreshAt = Date.now();
             return true;
         } catch (error) {
@@ -593,6 +667,7 @@
         remoteUser = null;
         campaigns = [];
         securityEvents = [];
+        accountDevices = [];
         errorMessage = '';
         loading = false;
         renderPanel();
@@ -619,8 +694,49 @@
         }
     }
 
+    async function revokeDevice(deviceId) {
+        if (!isFirebaseAuthenticated() || loading) return false;
+        loading = true;
+        errorMessage = '';
+        renderPanel();
+        try {
+            const result = await request(`/api/account/devices/${encodeURIComponent(deviceId)}`, { method: 'DELETE' });
+            accountDevices = accountDevices.map(device => device.id === deviceId
+                ? { ...device, revokedAt: result.device?.revokedAt || new Date().toISOString() }
+                : device);
+            root?.showToast?.('🔒 Acesso do dispositivo revogado.');
+            return true;
+        } catch (error) {
+            errorMessage = error.message;
+            return false;
+        } finally {
+            loading = false;
+            renderPanel();
+        }
+    }
+
+    function requestRevokeDevice(encodedId) {
+        const deviceId = decodeURIComponent(encodedId);
+        const device = accountDevices.find(entry => entry.id === deviceId);
+        const action = () => void revokeDevice(deviceId);
+        if (root?.openSessionConfirm) {
+            root.openSessionConfirm({
+                title: 'Revogar acesso deste dispositivo?',
+                message: `${device?.label || 'Este dispositivo'} perderá o acesso às campanhas desta conta.`,
+                confirmLabel: 'Revogar acesso',
+                danger: true,
+                onConfirm: action
+            });
+        } else if (root?.confirm?.(`Revogar o acesso de ${device?.label || 'este dispositivo'}?`)) action();
+        return true;
+    }
+
     function closeCampaignNameDialog() {
         root?.document?.getElementById('cloudCampaignNameDialog')?.remove();
+    }
+
+    function closeCampaignRenameDialog() {
+        root?.document?.getElementById('cloudCampaignRenameDialog')?.remove();
     }
 
     function requestSaveActiveCampaign() {
@@ -664,10 +780,20 @@
 
     async function confirmSaveActiveCampaign() {
         const input = root?.document?.getElementById('cloudCampaignNameInput');
-        const name = String(input?.value || '').trim();
+        const name = normalizeCampaignName(input?.value);
         const error = root?.document?.getElementById('cloudCampaignNameError');
         if (!name) {
             if (error) error.hidden = false;
+            input?.focus?.();
+            return false;
+        }
+        const activeCampaignId = root?.campaignStore?.getActiveCampaign?.()?.id || '';
+        const duplicate = hasCampaignNameConflict(name, activeCampaignId);
+        if (duplicate) {
+            if (error) {
+                error.textContent = `Já existe uma campanha chamada "${duplicate.name}" nesta conta.`;
+                error.hidden = false;
+            }
             input?.focus?.();
             return false;
         }
@@ -691,8 +817,14 @@
         const campaign = root?.campaignStore?.checkpoint?.({ reason: 'cloud-campaign-save' })
             || root?.campaignStore?.getActiveCampaign?.();
         if (!campaign?.id) return false;
-        const name = String(nameOverride || campaign.metadata?.name || '').trim();
+        const name = normalizeCampaignName(nameOverride || campaign.metadata?.name || '');
         if (!name) return false;
+        const duplicate = hasCampaignNameConflict(name, campaign.id);
+        if (duplicate) {
+            errorMessage = `Já existe uma campanha chamada "${duplicate.name}" nesta conta.`;
+            renderPanel();
+            return false;
+        }
         const cloudCampaign = {
             ...campaign,
             metadata: { ...(campaign.metadata || {}), name }
@@ -718,7 +850,105 @@
         } catch (error) {
             errorMessage = error.code === 'cloud_campaign_conflict'
                 ? 'Existe uma versão mais recente. Atualize a lista antes de decidir qual versão carregar.'
+                : error.code === 'duplicate_campaign_name'
+                ? 'Já existe uma campanha com esse nome nesta conta.'
                 : error.message;
+            return false;
+        } finally {
+            loading = false;
+            renderPanel();
+        }
+    }
+
+    function requestRenameCampaign(encodedId) {
+        if (!isAuthenticated() || loading) return false;
+        const campaignId = decodeURIComponent(encodedId);
+        const campaign = campaigns.find(entry => String(entry.id) === String(campaignId));
+        if (!campaign) return false;
+        const modal = root?.document?.createElement?.('div');
+        if (!modal) return false;
+        closeCampaignRenameDialog();
+        modal.id = 'cloudCampaignRenameDialog';
+        modal.className = 'session-overlay';
+        modal.innerHTML = `
+            <section class="session-dialog cloud-campaign-name-dialog" role="dialog" aria-modal="true" aria-labelledby="cloudCampaignRenameTitle">
+                <h2 id="cloudCampaignRenameTitle">Renomear campanha</h2>
+                <p>O ID permanente será preservado. Todos os próximos salvamentos continuarão atualizando esta mesma campanha.</p>
+                <label class="collaboration-field">
+                    <span>Novo nome</span>
+                    <input id="cloudCampaignRenameInput" class="session-input" maxlength="100" autocomplete="off" value="${escapeHtml(campaign.name)}">
+                </label>
+                <p id="cloudCampaignRenameError" class="cloud-account-error" hidden>Informe um nome diferente para a campanha.</p>
+                <div class="session-dialog-actions">
+                    <button type="button" class="session-secondary" onclick="closeCloudCampaignRenameDialog()">Cancelar</button>
+                    <button type="button" class="session-primary" onclick="confirmRenameCloudCampaign('${encodeURIComponent(campaign.id)}')">Renomear</button>
+                </div>
+            </section>
+        `;
+        root.document.body.appendChild(modal);
+        const input = root.document.getElementById('cloudCampaignRenameInput');
+        input?.focus?.();
+        input?.select?.();
+        input?.addEventListener?.('keydown', event => {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                void confirmRenameCampaign(encodeURIComponent(campaign.id));
+            }
+        });
+        return true;
+    }
+
+    async function confirmRenameCampaign(encodedId) {
+        const campaignId = decodeURIComponent(encodedId);
+        const campaign = campaigns.find(entry => String(entry.id) === String(campaignId));
+        const input = root?.document?.getElementById('cloudCampaignRenameInput');
+        const error = root?.document?.getElementById('cloudCampaignRenameError');
+        const name = normalizeCampaignName(input?.value);
+        if (!campaign || !name || campaignNameKey(name) === campaignNameKey(campaign.name)) {
+            if (error) {
+                error.textContent = !name ? 'Informe um nome para a campanha.' : 'Informe um nome diferente do atual.';
+                error.hidden = false;
+            }
+            input?.focus?.();
+            return false;
+        }
+        const duplicate = hasCampaignNameConflict(name, campaignId);
+        if (duplicate) {
+            if (error) {
+                error.textContent = `Já existe uma campanha chamada "${duplicate.name}" nesta conta.`;
+                error.hidden = false;
+            }
+            input?.focus?.();
+            return false;
+        }
+
+        loading = true;
+        errorMessage = '';
+        try {
+            const result = await request(`/api/account/campaigns/${encodeURIComponent(campaignId)}`, {
+                method: 'PATCH',
+                body: { name, expectedRevision: campaign.revision }
+            });
+            const index = campaigns.findIndex(entry => String(entry.id) === String(campaignId));
+            if (index >= 0) campaigns[index] = result.cloud;
+            const activeCampaign = root?.campaignStore?.getActiveCampaign?.();
+            if (String(activeCampaign?.id || '') === String(campaignId)) {
+                root?.campaignStore?.updateMetadata?.({ name });
+            }
+            root?.showToast?.(`✏️ Campanha renomeada para ${name}.`);
+            closeCampaignRenameDialog();
+            return true;
+        } catch (requestError) {
+            const message = requestError.code === 'duplicate_campaign_name'
+                ? 'Já existe uma campanha com esse nome nesta conta.'
+                : requestError.code === 'cloud_campaign_conflict'
+                ? 'A campanha foi alterada em outro dispositivo. Atualize a lista e tente novamente.'
+                : requestError.message;
+            errorMessage = message;
+            if (error) {
+                error.textContent = message;
+                error.hidden = false;
+            }
             return false;
         } finally {
             loading = false;
@@ -802,11 +1032,12 @@
     }
 
     function getState() {
-        return JSON.parse(JSON.stringify({ accountSession, firebaseUser, firebaseCandidateUser, remoteUser, campaigns, securityEvents, migrationState, formMode, loading, errorMessage }));
+        return JSON.parse(JSON.stringify({ accountSession, firebaseUser, firebaseCandidateUser, remoteUser, campaigns, securityEvents, accountDevices, migrationState, formMode, loading, errorMessage }));
     }
 
     const api = Object.freeze({
         SESSION_KEY,
+        DEVICE_KEY,
         getPanelMarkup,
         mountPanel,
         useFirebaseUser,
@@ -820,12 +1051,17 @@
         completeLegacyMigration,
         linkLegacyAccount,
         recordPasswordChanged,
+        revokeDevice,
+        requestRevokeDevice,
         refreshAccount,
         logout,
         requestSaveActiveCampaign,
         confirmSaveActiveCampaign,
         closeCampaignNameDialog,
         saveActiveCampaign,
+        requestRenameCampaign,
+        confirmRenameCampaign,
+        closeCampaignRenameDialog,
         deleteCampaign,
         requestDeleteCampaign,
         loadCampaign,
@@ -849,7 +1085,11 @@
     root.confirmSaveActiveCampaignToCloud = confirmSaveActiveCampaign;
     root.closeCloudCampaignNameDialog = closeCampaignNameDialog;
     root.saveActiveCampaignToCloud = saveActiveCampaign;
+    root.requestRenameCloudCampaign = requestRenameCampaign;
+    root.confirmRenameCloudCampaign = confirmRenameCampaign;
+    root.closeCloudCampaignRenameDialog = closeCampaignRenameDialog;
     root.requestDeleteCloudCampaign = requestDeleteCampaign;
     root.requestLoadCloudCampaign = requestLoadCampaign;
+    root.requestRevokeCloudDevice = requestRevokeDevice;
     return api;
 });
