@@ -1156,12 +1156,16 @@ legado segue disponível sem migração ou exclusão automática de contas.
 - IDs de campanha repetidos bloqueiam a migração inteira, sem cópias parciais;
 - a conclusão fica registrada no D1 e no histórico privado de segurança, e pode
   ser repetida com segurança sem duplicar dados.
-- campanhas salvas neste dispositivo e campanhas privadas da conta aparecem em
-  seções distintas, com carregamento remoto sempre explícito;
+- campanhas salvas neste dispositivo e na conta são reunidas pelo ID permanente
+  em um único card, com indicadores de campanha ativa, dispositivo e nuvem;
 - cada campanha possui um ID permanente gerado independentemente do nome; salvar
   novamente atualiza a mesma campanha pelo ID;
-- campanhas da conta podem ser renomeadas sem criar cópias, e o D1 impede duas
-  campanhas diferentes da mesma conta de usarem o mesmo nome;
+- campanhas vinculadas podem ser criadas, abertas e renomeadas pela mesma tela
+  sem criar cópias; nomes repetidos são bloqueados no dispositivo e no D1;
+- o salvamento automático espera 15 segundos sem mudanças e respeita pelo menos
+  60 segundos entre envios, podendo ser desligado individualmente em cada campanha;
+- a remoção diferencia com clareza a cópia local da cópia na nuvem e nunca apaga
+  ambas silenciosamente;
 - ao criar ou entrar em uma sala, uma conta ativa identifica com segurança o
   Mestre ou o Jogador sem substituir o código e a senha da sala;
 - o Worker ignora identidades declaradas pelo navegador, valida o token Firebase
@@ -1189,8 +1193,9 @@ exclusivamente no dispositivo. Ao utilizar a colaboração, um snapshot projetad
 da campanha é mantido temporariamente no Durable Object da sala. No dispositivo
 do Jogador, esse snapshot remoto fica isolado da campanha local e é descartado ao
 sair, ser removido ou quando a sala termina; em seguida, a campanha offline é
-restaurada automaticamente. Ao escolher **Salvar campanha atual** em uma conta,
-uma cópia permanente e privada é enviada ao D1. No modo local, o IndexedDB é o
+restaurada automaticamente. Ao vincular uma campanha à conta, uma cópia permanente
+e privada é enviada ao D1 e passa a receber salvamentos automáticos controlados.
+No modo local, o IndexedDB é o
 armazenamento principal das campanhas e preserva:
 
 - combate atual;

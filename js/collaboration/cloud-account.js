@@ -8,7 +8,10 @@
     const SESSION_KEY = 'dnd_cloud_account_session_v1';
     const MIGRATION_KEY = 'dnd_cloud_account_migration_v1';
     const DEVICE_KEY = 'dnd_cloud_account_device_v1';
+    const CLOUD_LINKS_KEY = 'dnd_cloud_campaign_links_v1';
     const REFRESH_INTERVAL_MS = 30_000;
+    const AUTO_SAVE_DEBOUNCE_MS = 15_000;
+    const AUTO_SAVE_MIN_INTERVAL_MS = 60_000;
     let accountSession = readSession();
     let firebaseUser = null;
     let firebaseCandidateUser = null;
@@ -21,6 +24,37 @@
     let errorMessage = '';
     let lastRefreshAt = 0;
     let migrationState = readMigrationState();
+    let cloudLinks = readCloudLinks();
+    let autoSaveTimer = null;
+    let autoSaveInFlight = false;
+    let campaignUnsubscribe = null;
+
+    function readCloudLinks() {
+        try {
+            const value = JSON.parse(root?.localStorage?.getItem?.(CLOUD_LINKS_KEY) || '{}');
+            return value && typeof value === 'object' && !Array.isArray(value) ? value : {};
+        } catch {
+            root?.localStorage?.removeItem?.(CLOUD_LINKS_KEY);
+            return {};
+        }
+    }
+
+    function persistCloudLinks() {
+        root?.localStorage?.setItem?.(CLOUD_LINKS_KEY, JSON.stringify(cloudLinks));
+    }
+
+    function updateCloudLink(campaignId, changes = {}) {
+        const id = String(campaignId || '');
+        if (!id) return null;
+        cloudLinks[id] = { ...(cloudLinks[id] || {}), ...changes };
+        persistCloudLinks();
+        return cloudLinks[id];
+    }
+
+    function removeCloudLink(campaignId) {
+        delete cloudLinks[String(campaignId || '')];
+        persistCloudLinks();
+    }
 
     function getAccountDeviceId() {
         let value = String(root?.localStorage?.getItem?.(DEVICE_KEY) || '').trim();
@@ -182,7 +216,7 @@
 
     function hasCampaignNameConflict(name, excludedCampaignId = '') {
         const key = campaignNameKey(name);
-        return campaigns.find(campaign => (
+        return getUnifiedCampaigns().find(campaign => (
             String(campaign.id) !== String(excludedCampaignId || '')
             && campaignNameKey(campaign.name) === key
         )) || null;
@@ -193,43 +227,92 @@
         return `<details class="cloud-account-legacy"${open}><summary>${isFirebaseAuthenticated() ? 'Campanhas permanentes da conta' : 'Acesso legado às campanhas Cloudflare'}</summary><section id="cloudAccountPanel" class="cloud-account-panel" aria-live="polite"></section></details>`;
     }
 
-    function renderCampaigns() {
-        if (!campaigns.length) {
-            return '<p class="cloud-account-empty">Nenhuma campanha foi salva nesta conta.</p>';
-        }
-        return campaigns.map(campaign => `
-            <article class="cloud-campaign-card">
-                <div>
-                    <strong>${escapeHtml(campaign.name)}</strong>
-                    <small>Versão ${campaign.revision} · ${escapeHtml(new Date(campaign.updatedAt).toLocaleString('pt-BR'))}</small>
-                </div>
-                <div class="cloud-campaign-card-actions">
-                    <button type="button" class="session-secondary" onclick="requestLoadCloudCampaign('${encodeURIComponent(campaign.id)}')">Carregar</button>
-                    <button type="button" class="session-secondary" onclick="requestRenameCloudCampaign('${encodeURIComponent(campaign.id)}')">Renomear</button>
-                    <button type="button" class="session-danger" onclick="requestDeleteCloudCampaign('${encodeURIComponent(campaign.id)}')" aria-label="Excluir ${escapeHtml(campaign.name)}">Excluir</button>
-                </div>
-            </article>
-        `).join('');
-    }
-
     function getLocalCampaigns() {
         return root?.campaignStore?.getCampaigns?.() || [];
     }
 
-    function renderLocalCampaigns(localCampaigns = getLocalCampaigns()) {
-        const activeId = root?.campaignStore?.getActiveCampaign?.()?.id;
-        if (!localCampaigns.length) {
-            return '<p class="cloud-account-empty">Nenhuma campanha permanente neste dispositivo.</p>';
+    function getUnifiedCampaigns() {
+        const activeId = String(root?.campaignStore?.getActiveCampaign?.()?.id || '');
+        const merged = new Map();
+        getLocalCampaigns().forEach(local => merged.set(String(local.id), {
+            id: String(local.id),
+            name: local.name || 'Campanha local',
+            local,
+            cloud: null,
+            active: String(local.id) === activeId
+        }));
+        campaigns.forEach(cloud => {
+            const id = String(cloud.id);
+            const current = merged.get(id) || { id, local: null, active: false };
+            merged.set(id, { ...current, name: current.local?.name || cloud.name, cloud });
+        });
+        return Array.from(merged.values()).sort((left, right) => {
+            if (left.active !== right.active) return left.active ? -1 : 1;
+            const leftDate = Date.parse(left.local?.updatedAt || left.cloud?.updatedAt || 0) || 0;
+            const rightDate = Date.parse(right.local?.updatedAt || right.cloud?.updatedAt || 0) || 0;
+            return rightDate - leftDate || String(left.name).localeCompare(String(right.name), 'pt-BR');
+        });
+    }
+
+    function getCampaignSyncState(item) {
+        if (!item.local) return { className: 'is-cloud-only', label: 'Disponível para baixar' };
+        if (!item.cloud) return { className: 'is-local-only', label: 'Somente neste dispositivo' };
+        const link = cloudLinks[item.id];
+        if (link?.conflict) return { className: 'has-conflict', label: 'Conflito encontrado · escolha a versão' };
+        if (!link?.lastSyncedAt) return { className: 'needs-sync', label: 'Vínculo identificado · sincronização pendente' };
+        if (Number(item.local.revision || 0) > Number(link.localRevision || 0)) {
+            return { className: 'needs-sync', label: 'Alterações aguardando sincronização' };
         }
-        return localCampaigns.map(campaign => `
-            <article class="cloud-campaign-card cloud-campaign-card-local">
-                <div>
-                    <strong>${escapeHtml(campaign.name || 'Campanha local')}</strong>
-                    <small>${String(campaign.id) === String(activeId) ? 'Ativa agora · ' : ''}Salva somente neste dispositivo</small>
-                </div>
-                <span class="campaign-storage-badge is-local">Dispositivo</span>
-            </article>
-        `).join('');
+        const date = new Date(link.lastSyncedAt);
+        const time = Number.isNaN(date.getTime()) ? '' : date.toLocaleString('pt-BR');
+        return { className: 'is-synced', label: `Sincronizada${time ? ` · ${time}` : ''}` };
+    }
+
+    function renderUnifiedCampaigns() {
+        const items = getUnifiedCampaigns();
+        if (!items.length) return '<p class="cloud-account-empty">Nenhuma campanha criada ainda.</p>';
+        return items.map(item => {
+            const sync = getCampaignSyncState(item);
+            const encodedId = encodeURIComponent(item.id);
+            const link = cloudLinks[item.id] || {};
+            const primaryAction = item.local
+                ? (item.active
+                    ? '<span class="campaign-active-label">✓ Em uso</span>'
+                    : `<button type="button" class="campaign-action-primary" onclick="activateManagedCampaign('${encodedId}')">Abrir</button>`)
+                : `<button type="button" class="campaign-action-primary" onclick="requestLoadCloudCampaign('${encodedId}')">Baixar</button>`;
+            const syncAction = item.local && !item.cloud
+                ? `<button type="button" class="campaign-action-icon" onclick="saveManagedCampaign('${encodedId}')" title="Salvar na nuvem" aria-label="Salvar ${escapeHtml(item.name)} na nuvem">☁️</button>`
+                : item.local && item.cloud && sync.className !== 'is-synced'
+                ? `<button type="button" class="campaign-action-icon" onclick="saveManagedCampaign('${encodedId}')" title="Sincronizar agora" aria-label="Sincronizar ${escapeHtml(item.name)}">↻</button>`
+                : '';
+            const autoSync = item.local && item.cloud ? `
+                <label class="campaign-auto-sync" title="Sincroniza após um intervalo sem alterações">
+                    <input type="checkbox" ${link.autoSync === false ? '' : 'checked'} onchange="toggleCampaignAutoSync('${encodedId}', this.checked)">
+                    <span>Auto</span>
+                </label>` : '';
+            return `
+                <article class="cloud-campaign-card managed-campaign-card ${item.active ? 'is-active' : ''} ${sync.className}">
+                    <div class="managed-campaign-main">
+                        <div class="managed-campaign-title">
+                            <strong>${escapeHtml(item.name)}</strong>
+                            <div class="managed-campaign-badges">
+                                ${item.active ? '<span class="campaign-storage-badge is-active">Ativa</span>' : ''}
+                                ${item.local ? '<span class="campaign-storage-badge is-local">Dispositivo</span>' : ''}
+                                ${item.cloud ? '<span class="campaign-storage-badge is-cloud">Nuvem</span>' : ''}
+                            </div>
+                        </div>
+                        <small class="campaign-sync-status"><span aria-hidden="true"></span>${escapeHtml(sync.label)}</small>
+                    </div>
+                    <div class="cloud-campaign-card-actions">
+                        ${autoSync}
+                        ${syncAction}
+                        <button type="button" class="campaign-action-icon" onclick="requestRenameCloudCampaign('${encodedId}')" title="Renomear" aria-label="Renomear ${escapeHtml(item.name)}">✎</button>
+                        <button type="button" class="campaign-action-icon" onclick="openManagedCampaignMenu('${encodedId}')" title="Gerenciar" aria-label="Gerenciar ${escapeHtml(item.name)}">•••</button>
+                        ${primaryAction}
+                    </div>
+                </article>
+            `;
+        }).join('');
     }
 
     function renderLegacyLink() {
@@ -369,29 +452,27 @@
 
     function renderAuthenticated() {
         const connectedUser = remoteUser || firebaseUser || accountSession?.user || {};
-        const localCampaigns = getLocalCampaigns();
+        const unifiedCampaigns = getUnifiedCampaigns();
         return `
             <div class="cloud-account-heading">
-                <div><span>☁️</span><strong>Campanhas na nuvem</strong><small>${escapeHtml(connectedUser.displayName || connectedUser.email || connectedUser.username || 'Conta conectada')}</small></div>
+                <div><span>☁️</span><strong>Suas campanhas</strong><small>${escapeHtml(connectedUser.displayName || connectedUser.email || connectedUser.username || 'Conta conectada')}</small></div>
                 <button type="button" class="session-small-button" onclick="logoutCloudAccount()" ${loading ? 'disabled' : ''}>Sair</button>
             </div>
-            <p class="cloud-account-copy">As campanhas do dispositivo e as cópias privadas da conta permanecem separadas. Carregar uma campanha nunca apaga a campanha local atual.</p>
+            <p class="cloud-account-copy">Campanhas com o mesmo ID aparecem juntas. Você sempre sabe qual está ativa e onde cada cópia está salva.</p>
             ${errorMessage ? `<p class="cloud-account-error">${escapeHtml(errorMessage)}</p>` : ''}
             ${renderLegacyMigration()}
             ${renderLegacyLink()}
             ${renderAccountDevices()}
             ${renderSecurityHistory()}
-            <section class="campaign-storage-section">
-                <header><div><strong>💾 Neste dispositivo</strong><small>Disponíveis offline</small></div><span>${localCampaigns.length}</span></header>
-                <div class="cloud-campaign-list">${renderLocalCampaigns(localCampaigns)}</div>
-            </section>
-            <section class="campaign-storage-section is-cloud">
-                <header><div><strong>☁️ Na sua conta</strong><small>Privadas e acessíveis após login</small></div><span>${campaigns.length}</span></header>
-            <div class="cloud-account-actions">
-                <button type="button" class="session-primary" onclick="requestSaveActiveCampaignToCloud()" ${loading ? 'disabled' : ''}>${loading ? 'Aguarde...' : 'Salvar campanha atual'}</button>
-                <button type="button" class="session-secondary" onclick="refreshCloudAccount()" ${loading ? 'disabled' : ''}>Atualizar lista</button>
-            </div>
-            <div class="cloud-campaign-list">${renderCampaigns()}</div>
+            <section class="campaign-storage-section campaign-manager">
+                <header class="campaign-manager-toolbar">
+                    <div><strong>Campanhas</strong><small>${unifiedCampaigns.length} ${unifiedCampaigns.length === 1 ? 'campanha' : 'campanhas'}</small></div>
+                    <div class="campaign-manager-toolbar-actions">
+                        <button type="button" class="campaign-refresh-button" onclick="refreshCloudAccount()" ${loading ? 'disabled' : ''} title="Atualizar campanhas" aria-label="Atualizar campanhas">↻</button>
+                        <button type="button" class="campaign-create-button" onclick="requestCreateManagedCampaign()" ${loading ? 'disabled' : ''}><span aria-hidden="true">＋</span> Nova campanha</button>
+                    </div>
+                </header>
+                <div class="cloud-campaign-list managed-campaign-list">${renderUnifiedCampaigns()}</div>
             </section>
         `;
     }
@@ -419,6 +500,7 @@
     }
 
     function mountPanel() {
+        installCampaignAutoSave();
         renderPanel();
         if (isAuthenticated() && (!remoteUser || Date.now() - lastRefreshAt > REFRESH_INTERVAL_MS)) {
             void refreshAccount();
@@ -597,6 +679,7 @@
             securityEvents = Array.isArray(security?.events) ? security.events : [];
             accountDevices = Array.isArray(devices?.devices) ? devices.devices : [];
             lastRefreshAt = Date.now();
+            scheduleCampaignAutoSave();
             return true;
         } catch (error) {
             errorMessage = error.message;
@@ -739,6 +822,145 @@
         root?.document?.getElementById('cloudCampaignRenameDialog')?.remove();
     }
 
+    function closeManagedCampaignDialog() {
+        root?.document?.getElementById('managedCampaignDialog')?.remove();
+    }
+
+    function findUnifiedCampaign(campaignId) {
+        return getUnifiedCampaigns().find(item => String(item.id) === String(campaignId)) || null;
+    }
+
+    function activateManagedCampaign(encodedId) {
+        const campaignId = decodeURIComponent(encodedId);
+        const activated = root?.campaignStore?.activateCampaign?.(campaignId);
+        if (!activated) errorMessage = 'Não foi possível abrir esta campanha no dispositivo.';
+        return Boolean(activated);
+    }
+
+    function requestCreateManagedCampaign() {
+        if (loading) return false;
+        const modal = root?.document?.createElement?.('div');
+        if (!modal) return false;
+        closeManagedCampaignDialog();
+        modal.id = 'managedCampaignDialog';
+        modal.className = 'session-overlay';
+        modal.innerHTML = `
+            <section class="session-dialog cloud-campaign-name-dialog" role="dialog" aria-modal="true" aria-labelledby="managedCampaignCreateTitle">
+                <div class="managed-dialog-heading"><div><small>NOVA CAMPANHA</small><h2 id="managedCampaignCreateTitle">Começar uma campanha</h2></div><button type="button" class="managed-dialog-close" onclick="closeManagedCampaignDialog()" aria-label="Fechar">×</button></div>
+                <label class="collaboration-field">
+                    <span>Nome da campanha</span>
+                    <input id="managedCampaignNameInput" class="session-input" maxlength="100" autocomplete="off" placeholder="Ex.: Caçada em Velen">
+                </label>
+                ${isAuthenticated() ? `<label class="managed-cloud-choice"><input id="managedCampaignCloudInput" type="checkbox" checked><span><strong>Salvar também na nuvem</strong><small>Disponível nos seus outros dispositivos</small></span></label>` : ''}
+                <p id="managedCampaignError" class="cloud-account-error" hidden></p>
+                <div class="session-dialog-actions">
+                    <button type="button" class="session-secondary" onclick="closeManagedCampaignDialog()">Cancelar</button>
+                    <button type="button" class="session-primary" onclick="confirmCreateManagedCampaign()">Criar e abrir</button>
+                </div>
+            </section>`;
+        root.document.body.appendChild(modal);
+        const input = root.document.getElementById('managedCampaignNameInput');
+        input?.focus?.();
+        input?.addEventListener?.('keydown', event => {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                void confirmCreateManagedCampaign();
+            }
+        });
+        return true;
+    }
+
+    async function confirmCreateManagedCampaign() {
+        const input = root?.document?.getElementById('managedCampaignNameInput');
+        const error = root?.document?.getElementById('managedCampaignError');
+        const name = normalizeCampaignName(input?.value);
+        if (!name) {
+            if (error) { error.textContent = 'Informe o nome da campanha.'; error.hidden = false; }
+            input?.focus?.();
+            return false;
+        }
+        const duplicate = hasCampaignNameConflict(name);
+        if (duplicate) {
+            if (error) { error.textContent = `Já existe uma campanha chamada "${duplicate.name}".`; error.hidden = false; }
+            input?.focus?.();
+            return false;
+        }
+        try {
+            const campaign = root?.campaignStore?.createCampaign?.({ name });
+            if (!campaign?.id) throw new Error('Não foi possível criar a campanha.');
+            const saveCloud = Boolean(root?.document?.getElementById('managedCampaignCloudInput')?.checked);
+            let cloudSaved = true;
+            if (saveCloud && isAuthenticated()) cloudSaved = await saveCampaignById(campaign.id, name, { quiet: true });
+            closeManagedCampaignDialog();
+            root?.showToast?.(cloudSaved
+                ? `✨ ${name} criada.`
+                : `⚠️ ${name} foi criada no dispositivo. A cópia na nuvem poderá ser enviada depois.`);
+            root?.campaignStore?.activateCampaign?.(campaign.id);
+            return true;
+        } catch (createError) {
+            if (error) { error.textContent = createError.message; error.hidden = false; }
+            return false;
+        }
+    }
+
+    function toggleCampaignAutoSync(encodedId, enabled) {
+        const campaignId = decodeURIComponent(encodedId);
+        updateCloudLink(campaignId, { autoSync: Boolean(enabled) });
+        if (enabled) scheduleCampaignAutoSave(campaignId);
+        renderPanel();
+        return true;
+    }
+
+    function openManagedCampaignMenu(encodedId) {
+        const campaignId = decodeURIComponent(encodedId);
+        const item = findUnifiedCampaign(campaignId);
+        const modal = root?.document?.createElement?.('div');
+        if (!item || !modal) return false;
+        closeManagedCampaignDialog();
+        modal.id = 'managedCampaignDialog';
+        modal.className = 'session-overlay';
+        modal.innerHTML = `
+            <section class="session-dialog managed-campaign-menu" role="dialog" aria-modal="true" aria-labelledby="managedCampaignMenuTitle">
+                <div class="managed-dialog-heading"><div><small>GERENCIAR</small><h2 id="managedCampaignMenuTitle">${escapeHtml(item.name)}</h2></div><button type="button" class="managed-dialog-close" onclick="closeManagedCampaignDialog()" aria-label="Fechar">×</button></div>
+                <div class="managed-campaign-menu-actions">
+                    <button type="button" class="session-secondary" onclick="closeManagedCampaignDialog(); requestRenameCloudCampaign('${encodedId}')"><span>✎</span><div><strong>Renomear</strong><small>Preserva o ID e o vínculo</small></div></button>
+                    ${item.cloud ? `<button type="button" class="session-danger" onclick="closeManagedCampaignDialog(); requestDeleteCloudCampaign('${encodedId}')"><span>☁️</span><div><strong>Remover da nuvem</strong><small>Mantém a cópia do dispositivo</small></div></button>` : ''}
+                    ${item.local ? `<button type="button" class="session-danger" ${item.active ? 'disabled' : ''} onclick="deleteLocalManagedCampaign('${encodedId}')"><span>💾</span><div><strong>Remover do dispositivo</strong><small>${item.active ? 'Abra outra campanha antes' : 'Mantém a cópia na nuvem'}</small></div></button>` : ''}
+                </div>
+            </section>`;
+        root.document.body.appendChild(modal);
+        return true;
+    }
+
+    async function deleteLocalManagedCampaign(encodedId) {
+        const campaignId = decodeURIComponent(encodedId);
+        const item = findUnifiedCampaign(campaignId);
+        if (!item?.local || item.active) return false;
+        const action = async () => {
+            try {
+                await root?.campaignStore?.deleteCampaign?.(campaignId);
+                if (!item.cloud) removeCloudLink(campaignId);
+                closeManagedCampaignDialog();
+                renderPanel();
+                root?.showToast?.(`🗑️ ${item.name} removida deste dispositivo.`);
+            } catch (deleteError) {
+                errorMessage = deleteError.message;
+                renderPanel();
+            }
+        };
+        if (root?.openSessionConfirm) {
+            closeManagedCampaignDialog();
+            root.openSessionConfirm({
+                title: 'Remover deste dispositivo?',
+                message: `${item.name} deixará de ficar disponível offline. A cópia na nuvem não será apagada.`,
+                confirmLabel: 'Remover do dispositivo',
+                danger: true,
+                onConfirm: action
+            });
+        } else if (root?.confirm?.(`Remover ${item.name} deste dispositivo?`)) await action();
+        return true;
+    }
+
     function requestSaveActiveCampaign() {
         if (!isAuthenticated() || loading) return false;
         const campaign = root?.campaignStore?.getActiveCampaign?.();
@@ -807,15 +1029,17 @@
         return saved;
     }
 
-    async function saveActiveCampaign(nameOverride = '') {
-        if (!isAuthenticated() || loading) return false;
+    async function saveCampaignById(campaignId, nameOverride = '', options = {}) {
+        if (!isAuthenticated() || (loading && !options.background)) return false;
         if (root?.collaborationSession?.isPlayer?.()) {
             errorMessage = 'Somente o Mestre pode salvar uma campanha na nuvem.';
             renderPanel();
             return false;
         }
-        const campaign = root?.campaignStore?.checkpoint?.({ reason: 'cloud-campaign-save' })
-            || root?.campaignStore?.getActiveCampaign?.();
+        const active = root?.campaignStore?.getActiveCampaign?.();
+        const campaign = String(active?.id || '') === String(campaignId)
+            ? (root?.campaignStore?.checkpoint?.({ reason: options.background ? 'cloud-auto-save' : 'cloud-campaign-save' }) || active)
+            : root?.campaignStore?.getCampaign?.(campaignId);
         if (!campaign?.id) return false;
         const name = normalizeCampaignName(nameOverride || campaign.metadata?.name || '');
         if (!name) return false;
@@ -830,9 +1054,9 @@
             metadata: { ...(campaign.metadata || {}), name }
         };
         const known = campaigns.find(entry => String(entry.id) === String(campaign.id));
-        loading = true;
+        if (!options.background) loading = true;
         errorMessage = '';
-        renderPanel();
+        if (!options.background) renderPanel();
         try {
             const result = await request(`/api/account/campaigns/${encodeURIComponent(campaign.id)}`, {
                 method: 'PUT',
@@ -845,7 +1069,14 @@
             const index = campaigns.findIndex(entry => String(entry.id) === String(campaign.id));
             if (index >= 0) campaigns[index] = result.cloud;
             else campaigns.unshift(result.cloud);
-            root?.showToast?.(`☁️ ${name} salva na nuvem.`);
+            updateCloudLink(campaign.id, {
+                cloudRevision: result.cloud?.revision ?? known?.revision ?? null,
+                localRevision: campaign.revision || 0,
+                lastSyncedAt: new Date().toISOString(),
+                autoSync: cloudLinks[campaign.id]?.autoSync !== false,
+                conflict: false
+            });
+            if (!options.quiet) root?.showToast?.(`☁️ ${name} salva na nuvem.`);
             return true;
         } catch (error) {
             errorMessage = error.code === 'cloud_campaign_conflict'
@@ -853,17 +1084,70 @@
                 : error.code === 'duplicate_campaign_name'
                 ? 'Já existe uma campanha com esse nome nesta conta.'
                 : error.message;
+            if (error.code === 'cloud_campaign_conflict') updateCloudLink(campaign.id, { conflict: true });
             return false;
         } finally {
-            loading = false;
+            if (!options.background) loading = false;
             renderPanel();
         }
     }
 
-    function requestRenameCampaign(encodedId) {
-        if (!isAuthenticated() || loading) return false;
+    async function saveManagedCampaign(encodedId) {
         const campaignId = decodeURIComponent(encodedId);
-        const campaign = campaigns.find(entry => String(entry.id) === String(campaignId));
+        const item = findUnifiedCampaign(campaignId);
+        if (!item?.local) return false;
+        return saveCampaignById(campaignId, item.local.name || item.name);
+    }
+
+    async function saveActiveCampaign(nameOverride = '') {
+        const campaignId = root?.campaignStore?.getActiveCampaign?.()?.id;
+        return campaignId ? saveCampaignById(campaignId, nameOverride) : false;
+    }
+
+    function scheduleCampaignAutoSave(campaignId = '') {
+        if (!isAuthenticated() || root?.collaborationSession?.isPlayer?.()) return false;
+        const active = root?.campaignStore?.getActiveCampaign?.();
+        const id = String(campaignId || active?.id || '');
+        const item = findUnifiedCampaign(id);
+        const link = cloudLinks[id];
+        if (!item?.active || !item.local || !item.cloud || !link?.lastSyncedAt || link.autoSync === false || link.conflict) return false;
+        if (Number(item.local.revision || 0) <= Number(link?.localRevision || 0)) return false;
+        if (autoSaveTimer) root?.clearTimeout?.(autoSaveTimer);
+        const elapsed = Date.now() - (Date.parse(link?.lastSyncedAt || 0) || 0);
+        const wait = Math.max(AUTO_SAVE_DEBOUNCE_MS, AUTO_SAVE_MIN_INTERVAL_MS - elapsed);
+        autoSaveTimer = root?.setTimeout?.(() => void runCampaignAutoSave(id), wait) || null;
+        return true;
+    }
+
+    async function runCampaignAutoSave(campaignId) {
+        autoSaveTimer = null;
+        if (autoSaveInFlight || root?.navigator?.onLine === false) return false;
+        const item = findUnifiedCampaign(campaignId);
+        const link = cloudLinks[campaignId];
+        if (!item?.active || !item.local || !item.cloud || !link?.lastSyncedAt || link.autoSync === false || link.conflict) return false;
+        autoSaveInFlight = true;
+        try {
+            return await saveCampaignById(campaignId, item.local.name || item.name, { background: true, quiet: true });
+        } finally {
+            autoSaveInFlight = false;
+        }
+    }
+
+    function installCampaignAutoSave() {
+        if (campaignUnsubscribe || !root?.campaignStore?.subscribe) return false;
+        campaignUnsubscribe = root.campaignStore.subscribe(event => {
+            renderPanel();
+            if (event?.reason === 'campaign-activated') return;
+            scheduleCampaignAutoSave(event?.campaign?.id);
+        });
+        root?.addEventListener?.('online', () => scheduleCampaignAutoSave());
+        return true;
+    }
+
+    function requestRenameCampaign(encodedId) {
+        if (loading) return false;
+        const campaignId = decodeURIComponent(encodedId);
+        const campaign = findUnifiedCampaign(campaignId);
         if (!campaign) return false;
         const modal = root?.document?.createElement?.('div');
         if (!modal) return false;
@@ -900,7 +1184,7 @@
 
     async function confirmRenameCampaign(encodedId) {
         const campaignId = decodeURIComponent(encodedId);
-        const campaign = campaigns.find(entry => String(entry.id) === String(campaignId));
+        const campaign = findUnifiedCampaign(campaignId);
         const input = root?.document?.getElementById('cloudCampaignRenameInput');
         const error = root?.document?.getElementById('cloudCampaignRenameError');
         const name = normalizeCampaignName(input?.value);
@@ -925,16 +1209,22 @@
         loading = true;
         errorMessage = '';
         try {
-            const result = await request(`/api/account/campaigns/${encodeURIComponent(campaignId)}`, {
-                method: 'PATCH',
-                body: { name, expectedRevision: campaign.revision }
-            });
-            const index = campaigns.findIndex(entry => String(entry.id) === String(campaignId));
-            if (index >= 0) campaigns[index] = result.cloud;
-            const activeCampaign = root?.campaignStore?.getActiveCampaign?.();
-            if (String(activeCampaign?.id || '') === String(campaignId)) {
-                root?.campaignStore?.updateMetadata?.({ name });
+            let cloudResult = null;
+            if (campaign.cloud) {
+                cloudResult = await request(`/api/account/campaigns/${encodeURIComponent(campaignId)}`, {
+                    method: 'PATCH',
+                    body: { name, expectedRevision: campaign.cloud.revision }
+                });
+                const index = campaigns.findIndex(entry => String(entry.id) === String(campaignId));
+                if (index >= 0) campaigns[index] = cloudResult.cloud;
             }
+            const renamedLocal = campaign.local ? root?.campaignStore?.renameCampaign?.(campaignId, name) : null;
+            if (cloudResult?.cloud && renamedLocal) updateCloudLink(campaignId, {
+                cloudRevision: cloudResult.cloud.revision,
+                localRevision: renamedLocal.revision,
+                lastSyncedAt: new Date().toISOString(),
+                conflict: false
+            });
             root?.showToast?.(`✏️ Campanha renomeada para ${name}.`);
             closeCampaignRenameDialog();
             return true;
@@ -966,6 +1256,7 @@
                 method: 'DELETE'
             });
             campaigns = campaigns.filter(entry => String(entry.id) !== String(campaignId));
+            removeCloudLink(campaignId);
             root?.showToast?.(`🗑️ ${result.cloud?.name || 'Campanha'} removida da nuvem.`);
             return true;
         } catch (error) {
@@ -1004,6 +1295,14 @@
                 transient: false
             });
             if (!campaign) throw new Error('Não foi possível abrir a campanha recebida.');
+            const cloud = result.cloud || campaigns.find(entry => String(entry.id) === String(campaignId));
+            updateCloudLink(campaignId, {
+                cloudRevision: cloud?.revision ?? null,
+                localRevision: campaign.revision || 0,
+                lastSyncedAt: new Date().toISOString(),
+                autoSync: cloudLinks[campaignId]?.autoSync !== false,
+                conflict: false
+            });
             root?.applyRemoteCampaignView?.(campaign);
             root?.showToast?.(`☁️ ${result.cloud?.name || 'Campanha'} carregada.`);
             root?.closeSessionTools?.();
@@ -1032,12 +1331,13 @@
     }
 
     function getState() {
-        return JSON.parse(JSON.stringify({ accountSession, firebaseUser, firebaseCandidateUser, remoteUser, campaigns, securityEvents, accountDevices, migrationState, formMode, loading, errorMessage }));
+        return JSON.parse(JSON.stringify({ accountSession, firebaseUser, firebaseCandidateUser, remoteUser, campaigns, cloudLinks, securityEvents, accountDevices, migrationState, formMode, loading, errorMessage }));
     }
 
     const api = Object.freeze({
         SESSION_KEY,
         DEVICE_KEY,
+        CLOUD_LINKS_KEY,
         getPanelMarkup,
         mountPanel,
         useFirebaseUser,
@@ -1059,6 +1359,15 @@
         confirmSaveActiveCampaign,
         closeCampaignNameDialog,
         saveActiveCampaign,
+        saveManagedCampaign,
+        activateManagedCampaign,
+        requestCreateManagedCampaign,
+        confirmCreateManagedCampaign,
+        closeManagedCampaignDialog,
+        toggleCampaignAutoSync,
+        openManagedCampaignMenu,
+        deleteLocalManagedCampaign,
+        installCampaignAutoSave,
         requestRenameCampaign,
         confirmRenameCampaign,
         closeCampaignRenameDialog,
@@ -1085,11 +1394,20 @@
     root.confirmSaveActiveCampaignToCloud = confirmSaveActiveCampaign;
     root.closeCloudCampaignNameDialog = closeCampaignNameDialog;
     root.saveActiveCampaignToCloud = saveActiveCampaign;
+    root.saveManagedCampaign = saveManagedCampaign;
+    root.activateManagedCampaign = activateManagedCampaign;
+    root.requestCreateManagedCampaign = requestCreateManagedCampaign;
+    root.confirmCreateManagedCampaign = confirmCreateManagedCampaign;
+    root.closeManagedCampaignDialog = closeManagedCampaignDialog;
+    root.toggleCampaignAutoSync = toggleCampaignAutoSync;
+    root.openManagedCampaignMenu = openManagedCampaignMenu;
+    root.deleteLocalManagedCampaign = deleteLocalManagedCampaign;
     root.requestRenameCloudCampaign = requestRenameCampaign;
     root.confirmRenameCloudCampaign = confirmRenameCampaign;
     root.closeCloudCampaignRenameDialog = closeCampaignRenameDialog;
     root.requestDeleteCloudCampaign = requestDeleteCampaign;
     root.requestLoadCloudCampaign = requestLoadCampaign;
     root.requestRevokeCloudDevice = requestRevokeDevice;
+    installCampaignAutoSave();
     return api;
 });

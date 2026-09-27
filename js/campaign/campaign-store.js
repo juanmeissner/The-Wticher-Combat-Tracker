@@ -95,7 +95,7 @@
         writeDirect(ACTIVE_CAMPAIGN_KEY, String(registry.activeCampaignId || ''));
     }
 
-    function updateRegistryEntry(campaign) {
+    function updateRegistryEntry(campaign, options = {}) {
         const registry = getRegistry();
         const summary = {
             id: campaign.id,
@@ -108,12 +108,12 @@
 
         if (index >= 0) registry.campaigns[index] = summary;
         else registry.campaigns.push(summary);
-        registry.activeCampaignId = campaign.id;
+        if (options.setActive !== false) registry.activeCampaignId = campaign.id;
         persistRegistry(registry);
         return registry;
     }
 
-    function persistCampaign(campaign) {
+    function persistCampaign(campaign, options = {}) {
         if (transientRemoteActive && campaign?.id === activeCampaign?.id) return;
         if (durableBootstrapPlaceholder && !durableHydrated && campaign?.id === activeCampaign?.id) {
             return;
@@ -124,7 +124,7 @@
         } else {
             writeDirect(campaignStorageKey(campaign.id), JSON.stringify(campaign));
         }
-        updateRegistryEntry(campaign);
+        updateRegistryEntry(campaign, options);
     }
 
     function snapshotRuntimeStorage() {
@@ -340,6 +340,16 @@
         return activeCampaign ? migrations.clone(activeCampaign) : null;
     }
 
+    function getCampaign(id) {
+        if (!initialized) initialize({ installBridge: false });
+        const campaignId = String(id || '').trim();
+        if (!campaignId) return null;
+        if (String(activeCampaign?.id || '') === campaignId) return getActiveCampaign();
+        const stored = durableCampaignCache.get(campaignId)
+            || parse(readDirect(campaignStorageKey(campaignId)), null);
+        return stored ? migrations.clone(migrations.normalizeCampaign(stored)) : null;
+    }
+
     function getCampaigns() {
         return migrations.clone(getRegistry().campaigns);
     }
@@ -505,6 +515,63 @@
         return getActiveCampaign();
     }
 
+    function renameCampaign(id, name) {
+        if (!initialized) initialize({ installBridge: false });
+        const campaignId = String(id || '').trim();
+        const normalizedName = String(name || '').trim().replace(/\s+/g, ' ');
+        if (!campaignId || !normalizedName || normalizedName.length > 100) {
+            const error = new Error('Informe um nome de campanha com até 100 caracteres.');
+            error.code = 'invalid_campaign_name';
+            throw error;
+        }
+        const duplicate = getRegistry().campaigns.find(entry => (
+            String(entry.id) !== campaignId
+            && String(entry.name || '').trim().toLocaleLowerCase('pt-BR') === normalizedName.toLocaleLowerCase('pt-BR')
+        ));
+        if (duplicate) {
+            const error = new Error(`Já existe uma campanha chamada "${duplicate.name}" neste dispositivo.`);
+            error.code = 'duplicate_campaign_name';
+            throw error;
+        }
+
+        const source = String(activeCampaign?.id || '') === campaignId
+            ? activeCampaign
+            : (durableCampaignCache.get(campaignId) || parse(readDirect(campaignStorageKey(campaignId)), null));
+        if (!source) return null;
+        const campaign = migrations.normalizeCampaign(source);
+        if (String(campaign.metadata?.name || '').trim() === normalizedName) return migrations.clone(campaign);
+        const now = new Date().toISOString();
+        campaign.metadata = { ...(campaign.metadata || {}), name: normalizedName };
+        campaign.revision += 1;
+        campaign.updatedAt = now;
+        campaign.entityVersions = { ...(campaign.entityVersions || {}), metadata: campaign.revision };
+        if (String(activeCampaign?.id || '') === campaignId) activeCampaign = campaign;
+        persistCampaign(campaign, { setActive: String(activeCampaign?.id || '') === campaignId });
+        emit('campaign-renamed', { updatedCampaignId: campaignId });
+        return migrations.clone(campaign);
+    }
+
+    async function deleteCampaign(id) {
+        if (!initialized) initialize({ installBridge: false });
+        await durableReadyPromise;
+        const campaignId = String(id || '').trim();
+        if (!campaignId) return false;
+        if (String(activeCampaign?.id || '') === campaignId) {
+            const error = new Error('Ative outra campanha antes de remover esta do dispositivo.');
+            error.code = 'active_campaign_delete_denied';
+            throw error;
+        }
+        const registry = getRegistry();
+        if (!registry.campaigns.some(entry => String(entry.id) === campaignId)) return false;
+        registry.campaigns = registry.campaigns.filter(entry => String(entry.id) !== campaignId);
+        persistRegistry(registry);
+        durableCampaignCache.delete(campaignId);
+        removeDirect(campaignStorageKey(campaignId));
+        await durable?.deleteCampaign?.(campaignId);
+        emit('campaign-deleted', { deletedCampaignId: campaignId });
+        return true;
+    }
+
     function updateStateSlice(key, valueOrUpdater, options = {}) {
         if (!initialized) initialize({ installBridge: false });
         if (!activeCampaign || !key) return null;
@@ -653,12 +720,15 @@
         campaignStorageKey,
         initialize,
         getActiveCampaign,
+        getCampaign,
         getCampaigns,
         checkpoint,
         scheduleCheckpoint,
         createCampaign,
         activateCampaign,
         updateMetadata,
+        renameCampaign,
+        deleteCampaign,
         updateStateSlice,
         applyRemoteCampaign,
         isTransientRemoteCampaign,

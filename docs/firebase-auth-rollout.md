@@ -334,10 +334,10 @@ etapa utiliza o cache `v195`.
 
 - cadastro e login continuam opcionais; **Continuar offline** fecha a área de
   conta e mantém combate, fichas, inventário, Mundo e configurações locais;
-- campanhas do dispositivo permanecem no IndexedDB e são exibidas separadamente
-  das cópias privadas da conta;
-- uma campanha local pode ser vinculada posteriormente usando **Salvar campanha
-  atual**, sempre com seu ID permanente;
+- campanhas do dispositivo permanecem no IndexedDB e são reunidas às cópias da
+  conta pelo mesmo ID permanente, sem perder a indicação de onde cada cópia existe;
+- uma campanha local pode ser vinculada posteriormente pelo botão de nuvem do
+  próprio card e passa a receber salvamentos automáticos controlados;
 - carregar uma campanha remota registra uma cópia própria sem apagar a campanha
   local que estava ativa;
 - revisão esperada, conflito explícito e nomes únicos impedem substituição
@@ -357,31 +357,45 @@ do Worker não bloqueia nenhuma ferramenta de mesa que não dependa da nuvem.
 
 ## Etapa 14 — testes e publicação
 
-Validação local concluída:
+Validação automatizada concluída em 26/09/2026:
 
-- suíte completa com 166 testes aprovados;
+- suíte completa com 167 testes aprovados;
 - tokens válidos, expirados, adulterados e emitidos para outro projeto;
 - confirmação, reenvio, recuperação neutra, alteração de senha e provedores;
 - vínculo e migração de conta antiga sem perda de campanhas;
 - IDs, nomes únicos, revisão, conflitos e isolamento entre proprietários;
 - dois dispositivos, revogação, bloqueio administrativo e limites de abuso;
 - saída, expulsão, encerramento, queda temporária e fila de reconexão;
-- cache `v195`, recursos offline e bundle Firebase local;
+- cache `v196`, recursos offline e bundle Firebase local reproduzível;
+- campanhas locais e remotas reunidas por ID, criação, renomeação, remoção
+  independente, estado ativo e salvamento automático com limite de requisições;
 - interface em 390 × 844 e 1440 × 900 sem overflow horizontal;
-- empacotamento do Worker pelo Wrangler em modo `--dry-run`.
+- compilação do CSS estático e do bundle Firebase concluída;
+- empacotamento do Worker validado pelo Wrangler 4.141.0 em modo `--dry-run`;
+- D1 remoto consultado pelo Wrangler sem migrações pendentes;
+- Worker e GitHub Pages públicos responderam HTTP 200.
 
-Validação de produção pendente após publicação:
+Execute a auditoria novamente antes de cada publicação:
 
-1. aplicar as migrações remotas `0005` e `0006`;
-2. publicar o Worker Cloudflare;
-3. publicar o PWA no GitHub Pages;
-4. confirmar a proteção contra enumeração no Firebase Console;
-5. testar recebimento real de confirmação e recuperação;
-6. testar popup e redirecionamento Google no navegador e no PWA instalado;
+```powershell
+npm run verify:release
+```
+
+Situação da publicação atual:
+
+1. migrações remotas `0005` e `0006`: **aplicadas**;
+2. Worker Cloudflare: **online e respondendo**;
+3. PWA no GitHub Pages: **online**, mas ainda publicando o cache `v193`; o cache
+   `v196` desta entrega será publicado somente após validação e commit;
+4. proteção contra enumeração no Firebase Console: **confirmação manual necessária**;
+5. recebimento real de confirmação e recuperação: **validar após publicar**;
+6. popup e redirecionamento Google no navegador e no PWA instalado: **validar
+   após publicar**;
 7. entrar pela mesma conta em dois dispositivos, revogar um deles e confirmar o
    bloqueio no acesso seguinte;
-8. validar renomeação, nome duplicado, modo offline, reconexão e conflito de
-   revisão contra o D1 de produção.
+8. validar criação, campanha ativa, vínculo por ID, renomeação, nome duplicado,
+   salvamento automático, modo offline, reconexão e conflito de revisão contra o
+   D1 de produção.
 
 A Etapa 14 só deve ser considerada integralmente concluída depois desse roteiro
 de produção. Nenhuma publicação é feita automaticamente pelos testes locais.

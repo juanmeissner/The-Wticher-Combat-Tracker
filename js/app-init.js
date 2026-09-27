@@ -25,6 +25,7 @@ const APP_STORAGE_KEYS = new Set([
     'dnd_campaign_preferences',
     'dnd_campaign_registry_v1',
     'dnd_active_campaign_v1',
+    'dnd_cloud_campaign_links_v1',
     'dnd_collaboration_session_v1',
     'dnd_collaboration_endpoint_v1'
 ]);

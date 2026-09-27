@@ -64,6 +64,11 @@ const generatedB = store.createCampaign({ name: 'Campanha com ID automático B' 
 assert.match(generatedA.id, /^campaign-/);
 assert.match(generatedB.id, /^campaign-/);
 assert.notEqual(generatedA.id, generatedB.id);
+assert.equal(store.getCampaign(generatedA.id).metadata.name, 'Campanha com ID automático A');
+const renamedGenerated = store.renameCampaign(generatedA.id, 'Campanha renomeada fora de foco');
+assert.equal(renamedGenerated.metadata.name, 'Campanha renomeada fora de foco');
+assert.equal(store.getCampaigns().find(entry => entry.id === generatedA.id).name, 'Campanha renomeada fora de foco');
+assert.throws(() => store.renameCampaign(generatedB.id, 'Campanha renomeada fora de foco'), error => error?.code === 'duplicate_campaign_name');
 
 const restored = store.activateCampaign('campaign-second', { reload: false });
 assert.equal(restored.id, 'campaign-second');
